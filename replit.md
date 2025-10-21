@@ -7,15 +7,22 @@ Case Compass is a legal case management and education platform focused on Georgi
 React Native mobile application using Expo framework
 
 ## Recent Changes (October 21, 2025)
+### Project Restructuring
 - Converted from React web (Vite) to React Native (Expo)
-- Set up Expo SDK 52 with React Native 0.76.9
-- Implemented complete app structure with multiple screens:
-  - Landing page with registration and login
-  - User dashboard with stats and navigation
-  - Case roadmap with litigation stages
-  - Video library
-  - Medical documentation hub
-- Configured workflow to run Expo development server on port 5000
+- Organized codebase into proper project structure:
+  - `src/screens/` - All screen components (Landing, Login, Register, Dashboard, Roadmap, Videos, MedicalHub)
+  - `src/constants/` - Mock data and constants
+  - `src/utils/` - Utility functions (gamification logic)
+  - `src/styles/` - Common styles
+  - `src/components/` - Reusable components (future use)
+- Split monolithic App.js into modular, maintainable components
+- Created utility functions for gamification calculations
+- Centralized constants and mock data
+
+### Technical Setup
+- Expo SDK 52 with React Native 0.76.9
+- Metro bundler for web and mobile
+- Configured workflow to run on port 5000
 
 ## Tech Stack
 - **Framework**: Expo SDK 52
@@ -27,11 +34,26 @@ React Native mobile application using Expo framework
 ## Project Structure
 ```
 /
-├── App.js              # Main application component with all screens
-├── app.json            # Expo configuration
-├── babel.config.js     # Babel configuration for Expo
-├── package.json        # Dependencies and scripts
-└── .gitignore         # Expo/React Native specific ignores
+├── App.js                      # Main app container with state management
+├── src/
+│   ├── screens/                # Screen components
+│   │   ├── LandingScreen.js
+│   │   ├── LoginScreen.js
+│   │   ├── RegisterScreen.js
+│   │   ├── DashboardScreen.js
+│   │   ├── RoadmapScreen.js
+│   │   ├── VideosScreen.js
+│   │   └── MedicalHubScreen.js
+│   ├── components/             # Reusable components
+│   ├── utils/                  # Utility functions
+│   │   └── gamification.js
+│   ├── constants/              # Constants and mock data
+│   │   └── mockData.js
+│   └── styles/                 # Shared styles
+│       └── commonStyles.js
+├── app.json                    # Expo configuration
+├── babel.config.js             # Babel configuration
+└── package.json                # Dependencies
 ```
 
 ## Key Features
@@ -41,19 +63,28 @@ React Native mobile application using Expo framework
    - Coin system for completing milestones
    - Daily login streaks with bonuses
    - Convert coins to account credits ($7 max/month)
-4. **Case Roadmap**: 8-stage litigation journey tracking
+4. **Case Roadmap**: 8-stage litigation journey with progress tracking
 5. **Video Library**: Educational video tutorials (5 videos)
 6. **Medical Hub**: HIPAA-compliant document storage (placeholder)
 
 ## Running the App
 The Expo server runs automatically via the configured workflow:
-- Web: http://localhost:5000
-- Mobile: Scan QR code with Expo Go app
-- Command: `npx expo start --web --port 5000`
+- **Web**: http://localhost:5000
+- **Mobile**: Scan QR code with Expo Go app
+- **Command**: `npx expo start --web --port 5000`
 
 ## Development Notes
+- Modular component structure for easy maintenance
+- Centralized constants for easy updates
+- Utility functions for reusable logic
 - Currently uses mock data and local state management
 - Backend API integration needed for production
 - Email verification system to be implemented
 - File upload for medical documents to be added
 - Video player integration pending
+
+## Code Organization
+- **State Management**: Centralized in App.js, passed to screens via props
+- **Styles**: Common styles shared, screen-specific styles in each component
+- **Constants**: All mock data and configuration in `src/constants/`
+- **Utils**: Reusable functions in `src/utils/`

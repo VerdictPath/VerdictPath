@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ScrollView, 
-  TouchableOpacity,
-  TextInput,
-  SafeAreaView,
-  StatusBar,
-  Alert
-} from 'react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, StatusBar, Alert } from 'react-native';
+import { commonStyles } from './src/styles/commonStyles';
+import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
+import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
+
+import LandingScreen from './src/screens/LandingScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import RoadmapScreen from './src/screens/RoadmapScreen';
+import VideosScreen from './src/screens/VideosScreen';
+import MedicalHubScreen from './src/screens/MedicalHubScreen';
 
 const CaseCompassApp = () => {
   const [currentScreen, setCurrentScreen] = useState('landing');
-  const [userType, setUserType] = useState('individual');
+  const [userType, setUserType] = useState(USER_TYPES.INDIVIDUAL);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [coins, setCoins] = useState(0);
@@ -24,24 +25,7 @@ const CaseCompassApp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firmCode, setFirmCode] = useState('');
 
-  const [litigationStages, setLitigationStages] = useState([
-    { id: 1, name: 'Pre-Litigation', coins: 10, completed: false, description: 'Initial consultation and case evaluation' },
-    { id: 2, name: 'Complaint Filed', coins: 25, completed: false, description: 'Lawsuit officially filed with the court' },
-    { id: 3, name: 'Discovery Begins', coins: 50, completed: false, description: 'Information exchange phase starts' },
-    { id: 4, name: 'Depositions', coins: 75, completed: false, description: 'Sworn testimony recorded' },
-    { id: 5, name: 'Mediation', coins: 50, completed: false, description: 'Attempt to settle with mediator' },
-    { id: 6, name: 'Trial Prep', coins: 100, completed: false, description: 'Preparing for court trial' },
-    { id: 7, name: 'Trial/Settlement', coins: 100, completed: false, description: 'Case resolution' },
-    { id: 8, name: 'Case Resolved', coins: 200, completed: false, description: 'Final resolution achieved' }
-  ]);
-
-  const videos = [
-    { id: 1, title: 'Understanding Discovery', price: 3.99, tier: 'free', duration: '12 min' },
-    { id: 2, title: 'Deposition Deep Dive', price: 4.99, tier: 'premium', duration: '25 min' },
-    { id: 3, title: 'Mediation Mastery', price: 4.99, tier: 'premium', duration: '30 min' },
-    { id: 4, title: 'Trial Preparation Guide', price: 4.99, tier: 'premium', duration: '28 min' },
-    { id: 5, title: 'Medical Bills 101', price: 1.99, tier: 'basic', duration: '8 min' }
-  ];
+  const [litigationStages, setLitigationStages] = useState(LITIGATION_STAGES);
 
   const handleRegister = () => {
     if (!email || !password) {
@@ -83,774 +67,113 @@ const CaseCompassApp = () => {
     setCurrentScreen('landing');
   };
 
-  const calculateDailyBonus = (streak) => {
-    const bonuses = [5, 7, 10, 12, 15, 20, 30];
-    return bonuses[Math.min(streak - 1, 6)];
-  };
-
-  const claimDailyBonus = () => {
+  const handleClaimDailyBonus = () => {
     const bonus = calculateDailyBonus(loginStreak + 1);
     setCoins(coins + bonus);
     setLoginStreak(loginStreak + 1);
     Alert.alert('Daily Bonus!', `You earned ${bonus} coins! ${loginStreak + 1} day streak! 🎉`);
   };
 
-  const convertCoinsToCredits = () => {
-    const credits = Math.floor(coins / 500);
-    const maxCredits = 7;
-    const actualCredits = Math.min(credits, maxCredits);
+  const handleConvertCoinsToCredits = () => {
+    const actualCredits = calculateCreditsFromCoins(coins);
+    const coinsNeeded = calculateCoinsNeeded(actualCredits);
+    
+    if (actualCredits === 0) {
+      Alert.alert('Not Enough Coins', 'You need at least 500 coins to convert to credits.');
+      return;
+    }
     
     Alert.alert(
       'Convert Coins',
-      `Convert ${actualCredits * 500} coins to $${actualCredits} in credits?`,
+      `Convert ${coinsNeeded} coins to $${actualCredits} in credits?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Convert', onPress: () => {
-          setCoins(coins - (actualCredits * 500));
+          setCoins(coins - coinsNeeded);
           Alert.alert('Success!', `$${actualCredits} added to your account credits!`);
         }}
       ]
     );
   };
 
-  const LandingScreen = () => (
-    <View style={styles.container}>
-      <View style={styles.heroSection}>
-        <Text style={styles.logo}>⚖️ Case Compass</Text>
-        <Text style={styles.tagline}>Navigate Your Legal Journey with Confidence</Text>
-        <Text style={styles.subtitle}>Georgia Civil Litigation Education</Text>
-      </View>
+  const handleCompleteStage = (stageId, stageCoins) => {
+    setLitigationStages(prevStages => 
+      prevStages.map(s => 
+        s.id === stageId ? { ...s, completed: true } : s
+      )
+    );
+    setCoins(coins + stageCoins);
+  };
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.primaryButton}
-          onPress={() => setCurrentScreen('register')}
-        >
-          <Text style={styles.buttonText}>Get Started</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.secondaryButton}
-          onPress={() => setCurrentScreen('login')}
-        >
-          <Text style={styles.secondaryButtonText}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.featuresContainer}>
-        <Text style={styles.featureTitle}>What You'll Get:</Text>
-        <Text style={styles.featureItem}>📍 Interactive case roadmap</Text>
-        <Text style={styles.featureItem}>🎮 Earn coins as you progress</Text>
-        <Text style={styles.featureItem}>🎓 Expert video tutorials</Text>
-        <Text style={styles.featureItem}>🏥 Secure medical records storage</Text>
-        <Text style={styles.featureItem}>⚡ Daily login rewards</Text>
-      </View>
-    </View>
-  );
-
-  const RegisterScreen = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Create Your Account</Text>
-        
-        <Text style={styles.label}>I am a:</Text>
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity 
-            style={[styles.toggleButton, userType === 'individual' && styles.toggleButtonActive]}
-            onPress={() => setUserType('individual')}
-          >
-            <Text style={[styles.toggleText, userType === 'individual' && styles.toggleTextActive]}>
-              Individual
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.toggleButton, userType === 'lawfirm' && styles.toggleButtonActive]}
-            onPress={() => setUserType('lawfirm')}
-          >
-            <Text style={[styles.toggleText, userType === 'lawfirm' && styles.toggleTextActive]}>
-              Law Firm
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.toggleButton, userType === 'medicalprovider' && styles.toggleButtonActive]}
-            onPress={() => setUserType('medicalprovider')}
-          >
-            <Text style={[styles.toggleText, userType === 'medicalprovider' && styles.toggleTextActive]}>
-              Medical Provider
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-        />
-
-        {userType === 'individual' && (
-          <TextInput
-            style={styles.input}
-            placeholder="Law Firm or Provider Code (Optional)"
-            value={firmCode}
-            onChangeText={setFirmCode}
-          />
-        )}
-
-        <TouchableOpacity style={styles.primaryButton} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Create Account</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setCurrentScreen('login')}>
-          <Text style={styles.linkText}>Already have an account? Sign In</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.disclaimer}>
-          By creating an account, you agree to our Terms of Service and Privacy Policy. 
-          This app provides educational information, not legal advice.
-        </Text>
-      </View>
-    </ScrollView>
-  );
-
-  const LoginScreen = () => (
-    <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Welcome Back</Text>
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => setCurrentScreen('register')}>
-          <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const DashboardScreen = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.dashboardHeader}>
-        <Text style={styles.welcomeText}>Welcome back! 👋</Text>
-        <Text style={styles.emailText}>{user?.email}</Text>
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>🪙 {coins}</Text>
-            <Text style={styles.statLabel}>Coins</Text>
-          </View>
-          
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>🔥 {loginStreak}</Text>
-            <Text style={styles.statLabel}>Day Streak</Text>
-          </View>
-          
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>💎 {user?.subscription}</Text>
-            <Text style={styles.statLabel}>Tier</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.bonusButton} onPress={claimDailyBonus}>
-          <Text style={styles.bonusButtonText}>
-            🎁 Claim Daily Bonus ({calculateDailyBonus(loginStreak + 1)} coins)
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.menuContainer}>
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => setCurrentScreen('roadmap')}
-        >
-          <Text style={styles.menuIcon}>🗺️</Text>
-          <Text style={styles.menuText}>Case Roadmap</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => setCurrentScreen('videos')}
-        >
-          <Text style={styles.menuIcon}>🎥</Text>
-          <Text style={styles.menuText}>Video Library</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => setCurrentScreen('medical')}
-        >
-          <Text style={styles.menuIcon}>🏥</Text>
-          <Text style={styles.menuText}>Medical Hub</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={convertCoinsToCredits}
-        >
-          <Text style={styles.menuIcon}>💰</Text>
-          <Text style={styles.menuText}>Convert Coins</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={handleLogout}
-        >
-          <Text style={styles.menuIcon}>🚪</Text>
-          <Text style={styles.menuText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
-
-  const RoadmapScreen = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Case Journey</Text>
-      </View>
-
-      <View style={styles.roadmapContainer}>
-        {litigationStages.map((stage, index) => (
-          <View key={stage.id} style={styles.stageItem}>
-            <View style={[styles.stageCircle, stage.completed && styles.stageCircleCompleted]}>
-              <Text style={styles.stageNumber}>{stage.completed ? '✓' : index + 1}</Text>
-            </View>
-            
-            <View style={styles.stageContent}>
-              <Text style={styles.stageName}>{stage.name}</Text>
-              <Text style={styles.stageDescription}>{stage.description}</Text>
-              <Text style={styles.stageCoins}>🪙 {stage.coins} coins</Text>
-              
-              {!stage.completed && (
-                <TouchableOpacity 
-                  style={styles.markCompleteButton}
-                  onPress={() => {
-                    setLitigationStages(prevStages => 
-                      prevStages.map(s => 
-                        s.id === stage.id ? { ...s, completed: true } : s
-                      )
-                    );
-                    setCoins(coins + stage.coins);
-                    Alert.alert('Milestone Complete!', `You earned ${stage.coins} coins! 🎉`);
-                  }}
-                >
-                  <Text style={styles.markCompleteText}>Mark Complete</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
-  );
-
-  const VideosScreen = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Video Library</Text>
-      </View>
-
-      <View style={styles.videosContainer}>
-        {videos.map(video => (
-          <View key={video.id} style={styles.videoCard}>
-            <View style={styles.videoThumbnail}>
-              <Text style={styles.videoIcon}>🎥</Text>
-            </View>
-            
-            <View style={styles.videoInfo}>
-              <Text style={styles.videoTitle}>{video.title}</Text>
-              <Text style={styles.videoDuration}>{video.duration}</Text>
-              <View style={styles.videoFooter}>
-                <Text style={styles.videoPrice}>${video.price}</Text>
-                <TouchableOpacity 
-                  style={styles.watchButton}
-                  onPress={() => Alert.alert('Coming Soon', 'Video player integration in progress')}
-                >
-                  <Text style={styles.watchButtonText}>Watch</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
-  );
-
-  const MedicalHubScreen = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Medical Documentation Hub</Text>
-      </View>
-
-      <View style={styles.secureNotice}>
-        <Text style={styles.secureIcon}>🔒</Text>
-        <Text style={styles.secureText}>HIPAA-Compliant Secure Storage</Text>
-      </View>
-
-      <View style={styles.medicalContainer}>
-        <TouchableOpacity 
-          style={styles.uploadButton}
-          onPress={() => Alert.alert('Coming Soon', 'File upload integration in progress')}
-        >
-          <Text style={styles.uploadButtonText}>📷 Upload Medical Bill</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.uploadButton}
-          onPress={() => Alert.alert('Coming Soon', 'Provider management in progress')}
-        >
-          <Text style={styles.uploadButtonText}>➕ Add Medical Provider</Text>
-        </TouchableOpacity>
-
-        <View style={styles.placeholderBox}>
-          <Text style={styles.placeholderText}>Your medical documents will appear here</Text>
-        </View>
-      </View>
-    </ScrollView>
-  );
+  const handleNavigate = (screen) => {
+    setCurrentScreen(screen);
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      {currentScreen === 'landing' && <LandingScreen />}
-      {currentScreen === 'register' && <RegisterScreen />}
-      {currentScreen === 'login' && <LoginScreen />}
-      {currentScreen === 'dashboard' && <DashboardScreen />}
-      {currentScreen === 'roadmap' && <RoadmapScreen />}
-      {currentScreen === 'videos' && <VideosScreen />}
-      {currentScreen === 'medical' && <MedicalHubScreen />}
+      
+      {currentScreen === 'landing' && (
+        <LandingScreen onNavigate={handleNavigate} />
+      )}
+      
+      {currentScreen === 'register' && (
+        <RegisterScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          userType={userType}
+          setUserType={setUserType}
+          firmCode={firmCode}
+          setFirmCode={setFirmCode}
+          onRegister={handleRegister}
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentScreen === 'login' && (
+        <LoginScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          onLogin={handleLogin}
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentScreen === 'dashboard' && (
+        <DashboardScreen
+          user={user}
+          coins={coins}
+          loginStreak={loginStreak}
+          onClaimBonus={handleClaimDailyBonus}
+          onConvertCoins={handleConvertCoinsToCredits}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+        />
+      )}
+      
+      {currentScreen === 'roadmap' && (
+        <RoadmapScreen
+          litigationStages={litigationStages}
+          onCompleteStage={handleCompleteStage}
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentScreen === 'videos' && (
+        <VideosScreen onNavigate={handleNavigate} />
+      )}
+      
+      {currentScreen === 'medical' && (
+        <MedicalHubScreen onNavigate={handleNavigate} />
+      )}
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-  },
-  logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 10,
-  },
-  tagline: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#34495e',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-  },
-  primaryButton: {
-    backgroundColor: '#3498db',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    backgroundColor: '#fff',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#3498db',
-  },
-  secondaryButtonText: {
-    color: '#3498db',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  featuresContainer: {
-    padding: 30,
-    marginTop: 30,
-  },
-  featureTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 15,
-  },
-  featureItem: {
-    fontSize: 16,
-    color: '#34495e',
-    marginBottom: 10,
-  },
-  formContainer: {
-    padding: 20,
-  },
-  formTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 30,
-    textAlign: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 10,
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  toggleButton: {
-    flex: 1,
-    padding: 12,
-    borderWidth: 2,
-    borderColor: '#bdc3c7',
-    backgroundColor: '#fff',
-    marginHorizontal: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  toggleButtonActive: {
-    borderColor: '#3498db',
-    backgroundColor: '#3498db',
-  },
-  toggleText: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    fontWeight: '600',
-  },
-  toggleTextActive: {
-    color: '#fff',
-  },
-  input: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  linkText: {
-    color: '#3498db',
-    textAlign: 'center',
-    marginTop: 15,
-    fontSize: 16,
-  },
-  disclaimer: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    marginTop: 20,
-    lineHeight: 18,
-  },
-  dashboardHeader: {
-    backgroundColor: '#fff',
-    padding: 20,
-    marginBottom: 20,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  emailText: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#ecf0f1',
-    padding: 15,
-    borderRadius: 10,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#7f8c8d',
-  },
-  bonusButton: {
-    backgroundColor: '#e74c3c',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  bonusButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  menuContainer: {
-    padding: 10,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  menuIcon: {
-    fontSize: 32,
-    marginRight: 15,
-  },
-  menuText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  backButton: {
-    fontSize: 18,
-    color: '#3498db',
-    marginBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  roadmapContainer: {
-    padding: 20,
-  },
-  stageItem: {
-    flexDirection: 'row',
-    marginBottom: 30,
-  },
-  stageCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#bdc3c7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  stageCircleCompleted: {
-    backgroundColor: '#27ae60',
-  },
-  stageNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  stageContent: {
-    flex: 1,
-  },
-  stageName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  stageDescription: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 5,
-  },
-  stageCoins: {
-    fontSize: 14,
-    color: '#f39c12',
-    marginBottom: 10,
-  },
-  markCompleteButton: {
-    backgroundColor: '#3498db',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  markCompleteText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  videosContainer: {
-    padding: 20,
-  },
-  videoCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 15,
-    overflow: 'hidden',
-  },
-  videoThumbnail: {
-    width: 120,
-    backgroundColor: '#ecf0f1',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  videoIcon: {
-    fontSize: 48,
-  },
-  videoInfo: {
-    flex: 1,
-    padding: 15,
-  },
-  videoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  videoDuration: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 10,
-  },
-  videoFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  videoPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
-  watchButton: {
-    backgroundColor: '#3498db',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  watchButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  secureNotice: {
-    backgroundColor: '#27ae60',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 15,
-    marginBottom: 20,
-  },
-  secureIcon: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  secureText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  medicalContainer: {
-    padding: 20,
-  },
-  uploadButton: {
-    backgroundColor: '#3498db',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  uploadButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  placeholderBox: {
-    backgroundColor: '#fff',
-    padding: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 20,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderStyle: 'dashed',
-  },
-  placeholderText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-});
 
 export default CaseCompassApp;
