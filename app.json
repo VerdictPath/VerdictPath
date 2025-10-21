@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Case Compass",
+    "slug": "case-compass",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#3498db"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.casecompass.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#3498db"
+      },
+      "package": "com.casecompass.app"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
