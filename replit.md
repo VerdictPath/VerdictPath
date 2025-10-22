@@ -8,25 +8,28 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
-### October 22, 2025 - Expandable Sub-Stages Implementation
-- Added expandable sub-stages system to litigation roadmap
-- Pre-Litigation stage now contains 9 detailed sub-tasks:
-  - 🚔 Police Report (10 coins)
-  - 📹 Body Cam Footage (10 coins)
-  - 🎥 Dash Cam Footage (10 coins)
-  - 📸 Pictures (5 coins)
-  - 💳 Health Insurance Card (5 coins)
-  - 🏢 Auto Insurance Company (5 coins)
-  - 🔢 Auto Insurance Policy Number (5 coins)
-  - 💵 Medical Bills (15 coins)
-  - 📋 Medical Records (35 coins)
-- Implemented expandable/collapsible stages (tap to expand Pre-Litigation)
-- Added progress tracking across all stages and sub-stages
-- Sub-stages award individual coins; completing all awards bonus coins
-- Enhanced reward system: completing all Pre-Litigation sub-stages (100 coins) + bonus (100 coins)
-- Maintained pirate map theme with aged parchment aesthetic
-- Avatar marker shows current progress position
-- Visual hierarchy with connecting lines for sub-stages
+### October 22, 2025 - Interactive Treasure Map with Modals
+- Transformed roadmap into fully interactive pirate treasure map
+- **Treasure Chest Interface**: Each stage represented as positioned treasure chest (💰/🏆)
+- **Modal-Based Details**: Click any treasure to open detailed stage modal with:
+  - Stage description and progress tracking
+  - All sub-stages with individual completion buttons
+  - Tutorial video library (1-2 videos per stage)
+  - "Mark Entire Stage Complete" option
+- **All 8 Stages Enhanced** with sub-stages and videos:
+  - Pre-Litigation: 9 steps (Police Report, Footage, Insurance, Medical Records)
+  - Complaint Filed: 3 steps (Draft, File, Serve)
+  - Discovery: 3 steps (Interrogatories, Documents, Admissions)
+  - Depositions: 3 steps (Prep, Your Deposition, Opposing Party)
+  - Mediation: 3 steps (Prep, Session, Negotiation)
+  - Trial Prep: 3 steps (Witnesses, Exhibits, Strategy)
+  - Trial/Settlement: 3 steps (Opening, Evidence, Closing)
+  - Case Resolved: 2 steps (Judgment, Closure)
+- **Video Tutorials**: 12+ educational videos integrated into stages
+- **Avatar Integration**: User's selected avatar appears on current treasure chest
+- **Visual Design**: Scrollable parchment map with decorative elements (⚓🦜🏴‍☠️🗡️🌊🧭)
+- **Improved UX**: Modal slides up from bottom for easy access on mobile
+- **Smart Completion**: Option to complete all steps at once or individually
 
 ### October 22, 2025 - Pirate Map Feature
 - Implemented interactive pirate map-themed litigation roadmap

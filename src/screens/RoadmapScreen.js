@@ -21,10 +21,6 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
 
   const handleSubStageComplete = (subStageId, subStageCoins) => {
     onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
-    const updatedStage = litigationStages.find(s => s.id === selectedStage.id);
-    if (updatedStage) {
-      setSelectedStage(updatedStage);
-    }
   };
 
   const completeEntireStage = () => {
@@ -92,8 +88,10 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
   const renderStageModal = () => {
     if (!selectedStage) return null;
 
-    const completedSubStages = selectedStage.subStages?.filter(s => s.completed).length || 0;
-    const totalSubStages = selectedStage.subStages?.length || 0;
+    const currentStage = litigationStages.find(s => s.id === selectedStage.id) || selectedStage;
+
+    const completedSubStages = currentStage.subStages?.filter(s => s.completed).length || 0;
+    const totalSubStages = currentStage.subStages?.length || 0;
     const progress = totalSubStages > 0 ? Math.round((completedSubStages / totalSubStages) * 100) : 0;
 
     return (
@@ -106,14 +104,14 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedStage.name}</Text>
+              <Text style={styles.modalTitle}>{currentStage.name}</Text>
               <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalDescription}>{selectedStage.description}</Text>
+              <Text style={styles.modalDescription}>{currentStage.description}</Text>
 
               {totalSubStages > 0 && (
                 <View style={styles.progressSection}>
@@ -126,13 +124,13 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
 
               <View style={styles.coinsSection}>
                 <Text style={styles.coinsSectionTitle}>🪙 Bonus Reward</Text>
-                <Text style={styles.coinsAmount}>{selectedStage.coins} coins</Text>
+                <Text style={styles.coinsAmount}>{currentStage.coins} coins</Text>
               </View>
 
-              {selectedStage.subStages && selectedStage.subStages.length > 0 && (
+              {currentStage.subStages && currentStage.subStages.length > 0 && (
                 <View style={styles.subStagesSection}>
                   <Text style={styles.sectionTitle}>📋 Steps in this Stage</Text>
-                  {selectedStage.subStages.map(subStage => (
+                  {currentStage.subStages.map(subStage => (
                     <View key={subStage.id} style={styles.subStageRow}>
                       <View style={styles.subStageLeft}>
                         <Text style={styles.subStageRowIcon}>{subStage.icon}</Text>
@@ -158,10 +156,10 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                 </View>
               )}
 
-              {selectedStage.videos && selectedStage.videos.length > 0 && (
+              {currentStage.videos && currentStage.videos.length > 0 && (
                 <View style={styles.videosSection}>
                   <Text style={styles.sectionTitle}>🎬 Tutorial Videos</Text>
-                  {selectedStage.videos.map(video => (
+                  {currentStage.videos.map(video => (
                     <TouchableOpacity
                       key={video.id}
                       style={styles.videoCard}
@@ -180,7 +178,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                 </View>
               )}
 
-              {!selectedStage.completed && (
+              {!currentStage.completed && (
                 <TouchableOpacity
                   style={[styles.completeStageButton, selectedAvatar && { backgroundColor: selectedAvatar.color }]}
                   onPress={completeEntireStage}
@@ -191,7 +189,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                 </TouchableOpacity>
               )}
 
-              {selectedStage.completed && (
+              {currentStage.completed && (
                 <View style={styles.completedBanner}>
                   <Text style={styles.completedBannerText}>🏆 Stage Completed!</Text>
                 </View>
