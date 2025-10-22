@@ -6,7 +6,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Gather all necessary documentation before filing your case',
     expanded: false,
-    position: { top: '15%', left: '10%' },
+    position: { top: '8%', left: '15%' },
     subStages: [
       { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Upload the official police accident report', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
       { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Upload body camera footage if available', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
@@ -30,7 +30,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Your lawsuit is officially filed with the court',
     expanded: false,
-    position: { top: '25%', left: '65%' },
+    position: { top: '8%', left: '60%' },
     subStages: [
       { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document' },
       { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit complaint to the court' },
@@ -47,7 +47,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Exchange information with the opposing party',
     expanded: false,
-    position: { top: '40%', left: '25%' },
+    position: { top: '25%', left: '35%' },
     subStages: [
       { id: 'disc-1', name: 'Interrogatories', coins: 10, completed: false, icon: '❓', description: 'Written questions for the other party' },
       { id: 'disc-2', name: 'Request for Production of Documents', coins: 10, completed: false, icon: '📄', description: 'Request relevant documents from the opposing party' },
@@ -67,7 +67,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Sworn testimony is recorded under oath',
     expanded: false,
-    position: { top: '50%', left: '70%' },
+    position: { top: '42%', left: '65%' },
     subStages: [
       { id: 'dep-1', name: 'Deposition Preparation', coins: 25, completed: false, icon: '📖', description: 'Prepare for your testimony' },
       { id: 'dep-2', name: 'Your Deposition', coins: 25, completed: false, icon: '🎤', description: 'Give sworn testimony' },
@@ -86,7 +86,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Attempt to settle the case with a neutral mediator',
     expanded: false,
-    position: { top: '65%', left: '15%' },
+    position: { top: '58%', left: '20%' },
     subStages: [
       { id: 'med-1', name: 'Mediation Prep', coins: 15, completed: false, icon: '📋', description: 'Prepare settlement strategy' },
       { id: 'med-2', name: 'Mediation Session', coins: 25, completed: false, icon: '🤝', description: 'Attend mediation meeting' },
@@ -103,7 +103,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Prepare your case for trial presentation',
     expanded: false,
-    position: { top: '75%', left: '60%' },
+    position: { top: '58%', left: '70%' },
     subStages: [
       { id: 'tp-1', name: 'Prepare your Testimony', coins: 25, completed: false, icon: '📖', description: 'Prepare what you will say on the stand' },
       { id: 'tp-2', name: 'Confirm Exhibits and Evidence with your Attorney', coins: 20, completed: false, icon: '🗂️', description: 'Review all exhibits and evidence with your lawyer' },
@@ -123,7 +123,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Present your case in court',
     expanded: false,
-    position: { top: '82%', left: '20%' },
+    position: { top: '74%', left: '35%' },
     subStages: [
       { id: 'trial-1', name: 'Opening Statements', coins: 30, completed: false, icon: '🗣️', description: 'Present opening arguments' },
       { id: 'trial-2', name: 'Presentation of Evidence', coins: 40, completed: false, icon: '📊', description: 'Present evidence and witnesses' },
@@ -140,7 +140,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Reach a settlement agreement with the opposing party',
     expanded: false,
-    position: { top: '88%', left: '55%' },
+    position: { top: '74%', left: '65%' },
     subStages: [
       { id: 'settle-1', name: 'Settlement Negotiation', coins: 25, completed: false, icon: '💼', description: 'Negotiate settlement terms' },
       { id: 'settle-2', name: 'Settlement Agreement', coins: 30, completed: false, icon: '📝', description: 'Draft and sign settlement agreement' },
@@ -157,7 +157,7 @@ export const LITIGATION_STAGES = [
     completed: false,
     description: 'Your case reaches final resolution - congratulations!',
     expanded: false,
-    position: { top: '95%', left: '80%' },
+    position: { top: '88%', left: '45%' },
     subStages: [
       { id: 'cr-1', name: 'Judgment Entry', coins: 100, completed: false, icon: '⚖️', description: 'Court enters final judgment' },
       { id: 'cr-2', name: 'Case Closure', coins: 100, completed: false, icon: '🎊', description: 'Close out the case' }
