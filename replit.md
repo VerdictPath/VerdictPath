@@ -76,15 +76,16 @@ React Native mobile application using Expo framework
   - All sub-stages with individual completion buttons
   - Tutorial video library (1-2 videos per stage)
   - "Mark Entire Stage Complete" option
-- **All 8 Stages Enhanced** with sub-stages and videos:
+- **All 9 Stages Enhanced** with sub-stages and videos:
   - Pre-Litigation: 9 steps (Police Report, Footage, Insurance, Medical Records)
   - Complaint Filed: 3 steps (Draft, File, Serve)
   - Discovery Begins: 5 steps (Interrogatories, Request for Production of Documents, Request for Admissions, Entry Upon Land for Inspection, Experts)
   - Depositions: 4 steps (Prep, Your Deposition, Opposing Party, Expert Deposition)
   - Mediation: 3 steps (Prep, Session, Negotiation)
   - Trial Prep: 5 steps (Prepare your Testimony, Confirm Exhibits and Evidence with your Attorney, Arrange to miss work, Arrange Transportation, Discuss Trial Strategy)
-  - Trial/Settlement: 3 steps (Opening, Evidence, Closing)
-  - Case Resolved: 2 steps (Judgment, Closure)
+  - Trial: 3 steps (Opening Statements, Presentation of Evidence, Closing Arguments)
+  - Settlement: 3 steps (Settlement Negotiation, Settlement Agreement, Settlement Payment)
+  - Case Resolved: 2 steps (Judgment Entry, Case Closure)
 - **Video Tutorials**: 12+ educational videos integrated into stages
 - **Avatar Integration**: User's selected avatar appears on current treasure chest
 - **Visual Design**: Scrollable parchment map with decorative elements (⚓🦜🏴‍☠️🗡️🌊🧭)
@@ -167,7 +168,7 @@ React Native mobile application using Expo framework
    - Daily login streaks with bonuses
    - Convert coins to account credits ($7 max/month)
    - Avatar-based progress tracking
-5. **Interactive Pirate Map**: Visual treasure map showing 8-stage litigation journey
+5. **Interactive Pirate Map**: Visual treasure map showing 9-stage litigation journey
    - Stages displayed as islands/locations
    - Avatar marker shows current progress
    - Pirate-themed aesthetics (parchment, decorations, legend)

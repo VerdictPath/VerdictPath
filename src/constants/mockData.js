@@ -118,16 +118,16 @@ export const LITIGATION_STAGES = [
   },
   {
     id: 7,
-    name: 'Trial/Settlement',
+    name: 'Trial',
     coins: 100,
     completed: false,
-    description: 'Present your case in court or reach final settlement',
+    description: 'Present your case in court',
     expanded: false,
-    position: { top: '85%', left: '30%' },
+    position: { top: '82%', left: '20%' },
     subStages: [
-      { id: 'ts-1', name: 'Opening Statements', coins: 30, completed: false, icon: '🗣️', description: 'Present opening arguments' },
-      { id: 'ts-2', name: 'Presentation of Evidence', coins: 40, completed: false, icon: '📊', description: 'Present evidence and witnesses' },
-      { id: 'ts-3', name: 'Closing Arguments', coins: 30, completed: false, icon: '⚡', description: 'Deliver closing statements' }
+      { id: 'trial-1', name: 'Opening Statements', coins: 30, completed: false, icon: '🗣️', description: 'Present opening arguments' },
+      { id: 'trial-2', name: 'Presentation of Evidence', coins: 40, completed: false, icon: '📊', description: 'Present evidence and witnesses' },
+      { id: 'trial-3', name: 'Closing Arguments', coins: 30, completed: false, icon: '⚡', description: 'Deliver closing statements' }
     ],
     videos: [
       { id: 'v11', title: 'Trial Tactics', price: 6.99, duration: '40 min', tier: 'premium' }
@@ -135,18 +135,35 @@ export const LITIGATION_STAGES = [
   },
   {
     id: 8,
+    name: 'Settlement',
+    coins: 75,
+    completed: false,
+    description: 'Reach a settlement agreement with the opposing party',
+    expanded: false,
+    position: { top: '88%', left: '55%' },
+    subStages: [
+      { id: 'settle-1', name: 'Settlement Negotiation', coins: 25, completed: false, icon: '💼', description: 'Negotiate settlement terms' },
+      { id: 'settle-2', name: 'Settlement Agreement', coins: 30, completed: false, icon: '📝', description: 'Draft and sign settlement agreement' },
+      { id: 'settle-3', name: 'Settlement Payment', coins: 20, completed: false, icon: '💰', description: 'Receive settlement payment' }
+    ],
+    videos: [
+      { id: 'v12', title: 'Settlement Strategies', price: 4.99, duration: '26 min', tier: 'premium' }
+    ]
+  },
+  {
+    id: 9,
     name: 'Case Resolved',
     coins: 200,
     completed: false,
     description: 'Your case reaches final resolution - congratulations!',
     expanded: false,
-    position: { top: '92%', left: '75%' },
+    position: { top: '95%', left: '80%' },
     subStages: [
       { id: 'cr-1', name: 'Judgment Entry', coins: 100, completed: false, icon: '⚖️', description: 'Court enters final judgment' },
       { id: 'cr-2', name: 'Case Closure', coins: 100, completed: false, icon: '🎊', description: 'Close out the case' }
     ],
     videos: [
-      { id: 'v12', title: 'Post-Trial Procedures', price: 3.99, duration: '18 min', tier: 'basic' }
+      { id: 'v13', title: 'Post-Trial Procedures', price: 3.99, duration: '18 min', tier: 'basic' }
     ]
   }
 ];
