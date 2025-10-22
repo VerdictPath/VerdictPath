@@ -33,21 +33,30 @@ React Native mobile application using Expo framework
 - **Registration Flow**: Landing → Register (user type) → Subscription Selection → Login → Dashboard
 - **Stage Names on Map**: Small text labels below each treasure chest for better navigation
 
+### October 22, 2025 - Medical Hub Upload Validation
+- **Medical Hub Upload System**: Full document upload functionality in Medical Hub
+  - Separate upload sections for Medical Bills and Medical Records
+  - "Take Photo" or "Choose Files" upload options for each document type
+  - View uploaded documents with file lists and counts
+  - Real-time upload status tracking
+- **Completion Validation**: Medical Bills and Medical Records in Pre-Litigation stage can only be marked complete after uploading documents in Medical Hub
+  - Users redirected to Medical Hub if attempting to mark complete without uploads
+  - Clear error messages guide users to upload required documents
+  - Upload status synchronized between Roadmap and Medical Hub
+
 ### October 22, 2025 - Document Upload and Data Entry Functionality
 - **File Upload System**: Added document upload functionality to Pre-Litigation stage
 - **Upload-Based Tasks**: 5 tasks require file uploads
   - Police Report, Body Cam, Dash Cam, Pictures, Health Insurance Card
-  - Medical Bills and Medical Records link to Medical Hub
 - **Data Entry Tasks**: 2 tasks use simple text input instead of uploads
   - Auto Insurance Company (text entry for company name)
   - Auto Insurance Policy Number (text entry for policy number)
-- **No Upload Validation**: "Mark Complete" button always available regardless of upload/entry status
 - **Multi-File Support**: Users can upload multiple files per upload-based task
 - **File Type Filters**: Each upload task specifies accepted formats (PDF, JPG, PNG, MP4, etc.)
 - **Upload Options**: "Take Photo" or "Choose Files" for upload tasks
 - **View Uploaded Files**: Users can review uploaded file lists
 - **Data Entry UI**: Purple "✏️ Enter Information" button for text-based tasks
-- **Medical Hub Integration**: Medical documents redirect to Medical Hub screen
+- **Medical Hub Integration**: Medical Bills and Medical Records redirect to Medical Hub screen
 - **Upload Status**: Visual indicators show upload status (📤 Upload Files / Upload More)
 - **Data Entry Display**: Shows saved information with "Edit Information" option
 

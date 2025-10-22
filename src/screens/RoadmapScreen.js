@@ -5,7 +5,7 @@ import AvatarSelector from '../components/AvatarSelector';
 
 const { width, height } = Dimensions.get('window');
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry }) => {
+const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
 
@@ -114,21 +114,38 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
     const subStage = currentStage.subStages.find(s => s.id === subStageId);
     
     if (subStage.linkToMedicalHub) {
-      Alert.alert(
-        'Medical Hub Required',
-        'Please complete this step in the Medical Hub first.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Go to Medical Hub', 
-            onPress: () => {
-              closeModal();
-              onNavigate('medical');
+      // Check if documents are uploaded in Medical Hub
+      const isMedicalBills = subStageId === 'pre-8';
+      const isMedicalRecords = subStageId === 'pre-9';
+      
+      let hasUploads = false;
+      let documentType = '';
+      
+      if (isMedicalBills) {
+        hasUploads = medicalHubUploads.medicalBills && medicalHubUploads.medicalBills.length > 0;
+        documentType = 'Medical Bills';
+      } else if (isMedicalRecords) {
+        hasUploads = medicalHubUploads.medicalRecords && medicalHubUploads.medicalRecords.length > 0;
+        documentType = 'Medical Records';
+      }
+      
+      if (!hasUploads) {
+        Alert.alert(
+          '📤 Upload Required',
+          `Please upload ${documentType} in the Medical Hub before marking this step as complete.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Go to Medical Hub', 
+              onPress: () => {
+                closeModal();
+                onNavigate('medical');
+              }
             }
-          }
-        ]
-      );
-      return;
+          ]
+        );
+        return;
+      }
     }
 
     onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);

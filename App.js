@@ -31,6 +31,10 @@ const CaseCompassApp = () => {
 
   const [litigationStages, setLitigationStages] = useState(LITIGATION_STAGES);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [medicalHubUploads, setMedicalHubUploads] = useState({
+    medicalBills: [],
+    medicalRecords: []
+  });
 
   const handleRegister = () => {
     if (!email || !password) {
@@ -230,6 +234,13 @@ const CaseCompassApp = () => {
     );
   };
 
+  const handleMedicalHubUpload = (documentType, fileName) => {
+    setMedicalHubUploads(prev => ({
+      ...prev,
+      [documentType]: [...prev[documentType], fileName]
+    }));
+  };
+
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
   };
@@ -301,6 +312,7 @@ const CaseCompassApp = () => {
           onPurchaseVideo={handlePurchaseVideo}
           onUploadFile={handleUploadFile}
           onDataEntry={handleDataEntry}
+          medicalHubUploads={medicalHubUploads}
         />
       )}
       
@@ -309,7 +321,11 @@ const CaseCompassApp = () => {
       )}
       
       {currentScreen === 'medical' && (
-        <MedicalHubScreen onNavigate={handleNavigate} />
+        <MedicalHubScreen 
+          onNavigate={handleNavigate} 
+          onUploadMedicalDocument={handleMedicalHubUpload}
+          medicalHubUploads={medicalHubUploads}
+        />
       )}
     </SafeAreaView>
   );
