@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   legend: {
     position: 'absolute',
     bottom: 20,
-    right: 20,
+    left: 20,
     backgroundColor: '#f4e4c1',
     padding: 15,
     borderRadius: 10,
