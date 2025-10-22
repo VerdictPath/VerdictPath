@@ -1,0 +1,1937 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  ScrollView, 
+  TouchableOpacity,
+  TextInput,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+  Modal,
+  Dimensions
+} from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+// ============================================
+// CASE COMPASS - COMPLETE APP WITH PIRATE MAP
+// ============================================
+
+const CaseCompassApp = () => {
+  // ============================================
+  // STATE MANAGEMENT
+  // ============================================
+  const [currentScreen, setCurrentScreen] = useState('landing');
+  const [userType, setUserType] = useState('individual');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [coins, setCoins] = useState(0);
+  const [loginStreak, setLoginStreak] = useState(0);
+
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [firmCode, setFirmCode] = useState('');
+
+  // Modal states
+  const [selectedStage, setSelectedStage] = useState(null);
+  const [stageModalVisible, setStageModalVisible] = useState(false);
+
+  // ============================================
+  // ROADMAP DATA WITH PIRATE MAP POSITIONS
+  // ============================================
+  const [roadmapStages, setRoadmapStages] = useState([
+    {
+      id: 1,
+      name: 'Pre-Litigation',
+      coins: 100,
+      completed: false,
+      description: 'Gather all necessary documentation before filing your case',
+      position: { top: '20%', left: '15%' },
+      label: 'Dead Man\'s Cove',
+      subStages: [
+        { 
+          id: 'pre-1', 
+          name: 'Police Report', 
+          coins: 10, 
+          completed: false, 
+          icon: '🚔',
+          description: 'Upload the official police accident report',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-2', 
+          name: 'Body Cam Footage', 
+          coins: 10, 
+          completed: false, 
+          icon: '📹',
+          description: 'Upload body camera footage if available',
+          acceptedFormats: 'MP4, MOV, AVI',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-3', 
+          name: 'Dash Cam Footage', 
+          coins: 10, 
+          completed: false, 
+          icon: '🎥',
+          description: 'Upload dash camera recordings',
+          acceptedFormats: 'MP4, MOV, AVI',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-4', 
+          name: 'Pictures', 
+          coins: 5, 
+          completed: false, 
+          icon: '📸',
+          description: 'Upload photos of accident scene, vehicle damage, and injuries',
+          acceptedFormats: 'JPG, PNG, HEIC',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-5', 
+          name: 'Health Insurance Card', 
+          coins: 5, 
+          completed: false, 
+          icon: '💳',
+          description: 'Upload copy of health insurance card (front and back)',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-6', 
+          name: 'Auto Insurance Company', 
+          coins: 5, 
+          completed: false, 
+          icon: '🏢',
+          description: 'Upload auto insurance provider information',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-7', 
+          name: 'Auto Insurance Policy Number', 
+          coins: 5, 
+          completed: false, 
+          icon: '🔢',
+          description: 'Upload your auto insurance policy documents',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: []
+        },
+        { 
+          id: 'pre-8', 
+          name: 'Medical Bills', 
+          coins: 15, 
+          completed: false, 
+          icon: '💵',
+          description: 'Upload all medical treatment bills',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: [],
+          linkToMedicalHub: true
+        },
+        { 
+          id: 'pre-9', 
+          name: 'Medical Records', 
+          coins: 35, 
+          completed: false, 
+          icon: '📋',
+          description: 'Upload complete medical records and reports',
+          acceptedFormats: 'PDF, JPG, PNG',
+          uploaded: false,
+          uploadedFiles: [],
+          linkToMedicalHub: true
+        }
+      ],
+      videos: [
+        { id: 'v1', title: 'Pre-Litigation Essentials', price: 2.99, duration: '15 min' },
+        { id: 'v2', title: 'Document Collection Guide', price: 3.99, duration: '20 min' }
+      ]
+    },
+    {
+      id: 2,
+      name: 'Complaint Filed',
+      coins: 25,
+      completed: false,
+      description: 'Your lawsuit is officially filed with the court',
+      position: { top: '32%', left: '68%' },
+      label: 'Skull Island',
+      subStages: [
+        { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Create initial complaint document' },
+        { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit to court system' },
+        { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Legally notify defendant' }
+      ],
+      videos: [
+        { id: 'v3', title: 'Filing Your Complaint', price: 4.99, duration: '18 min' }
+      ]
+    },
+    {
+      id: 3,
+      name: 'Discovery Begins',
+      coins: 50,
+      completed: false,
+      description: 'Exchange information with the opposing party',
+      position: { top: '45%', left: '25%' },
+      label: 'Serpent\'s Bay',
+      subStages: [
+        { id: 'disc-1', name: 'Interrogatories', coins: 15, completed: false, icon: '❓', description: 'Answer written questions' },
+        { id: 'disc-2', name: 'Document Requests', coins: 15, completed: false, icon: '📄', description: 'Provide requested documents' },
+        { id: 'disc-3', name: 'Admissions', coins: 20, completed: false, icon: '✅', description: 'Respond to admission requests' }
+      ],
+      videos: [
+        { id: 'v4', title: 'Understanding Discovery', price: 3.99, duration: '22 min' },
+        { id: 'v5', title: 'Discovery Response Strategies', price: 4.99, duration: '25 min' }
+      ]
+    },
+    {
+      id: 4,
+      name: 'Depositions',
+      coins: 75,
+      completed: false,
+      description: 'Sworn testimony is recorded under oath',
+      position: { top: '55%', left: '72%' },
+      label: 'Blackbeard\'s Port',
+      subStages: [
+        { id: 'dep-1', name: 'Deposition Preparation', coins: 25, completed: false, icon: '📖', description: 'Prepare for questioning' },
+        { id: 'dep-2', name: 'Your Deposition', coins: 30, completed: false, icon: '🎤', description: 'Give your testimony' },
+        { id: 'dep-3', name: 'Opposing Party Deposition', coins: 20, completed: false, icon: '👥', description: 'Witness other depositions' }
+      ],
+      videos: [
+        { id: 'v6', title: 'Deposition Deep Dive', price: 4.99, duration: '30 min' },
+        { id: 'v7', title: 'How to Testify Effectively', price: 5.99, duration: '28 min' }
+      ]
+    },
+    {
+      id: 5,
+      name: 'Mediation',
+      coins: 50,
+      completed: false,
+      description: 'Attempt to settle the case with a neutral mediator',
+      position: { top: '68%', left: '18%' },
+      label: 'Parley Point',
+      subStages: [
+        { id: 'med-1', name: 'Mediation Prep', coins: 15, completed: false, icon: '📋', description: 'Prepare settlement strategy' },
+        { id: 'med-2', name: 'Mediation Session', coins: 25, completed: false, icon: '🤝', description: 'Attend mediation meeting' },
+        { id: 'med-3', name: 'Settlement Negotiation', coins: 10, completed: false, icon: '💼', description: 'Negotiate terms' }
+      ],
+      videos: [
+        { id: 'v8', title: 'Mediation Mastery', price: 4.99, duration: '24 min' }
+      ]
+    },
+    {
+      id: 6,
+      name: 'Trial Prep',
+      coins: 100,
+      completed: false,
+      description: 'Prepare your case for trial presentation',
+      position: { top: '78%', left: '58%' },
+      label: 'Justice Harbor',
+      subStages: [
+        { id: 'tp-1', name: 'Witness Preparation', coins: 30, completed: false, icon: '👨‍⚖️', description: 'Prep witnesses for testimony' },
+        { id: 'tp-2', name: 'Exhibit Organization', coins: 25, completed: false, icon: '🗂️', description: 'Organize evidence and exhibits' },
+        { id: 'tp-3', name: 'Trial Strategy', coins: 45, completed: false, icon: '🎯', description: 'Develop trial presentation plan' }
+      ],
+      videos: [
+        { id: 'v9', title: 'Trial Preparation Guide', price: 5.99, duration: '35 min' },
+        { id: 'v10', title: 'Courtroom Procedures', price: 4.99, duration: '28 min' }
+      ]
+    },
+    {
+      id: 7,
+      name: 'Trial/Settlement',
+      coins: 100,
+      completed: false,
+      description: 'Present your case in court or reach final settlement',
+      position: { top: '86%', left: '30%' },
+      label: 'Victory Shores',
+      subStages: [
+        { id: 'ts-1', name: 'Opening Statements', coins: 30, completed: false, icon: '🗣️', description: 'Present opening arguments' },
+        { id: 'ts-2', name: 'Presentation of Evidence', coins: 40, completed: false, icon: '📊', description: 'Present case evidence' },
+        { id: 'ts-3', name: 'Closing Arguments', coins: 30, completed: false, icon: '⚡', description: 'Make final arguments' }
+      ],
+      videos: [
+        { id: 'v11', title: 'Trial Tactics', price: 6.99, duration: '40 min' }
+      ]
+    },
+    {
+      id: 8,
+      name: 'Case Resolved',
+      coins: 200,
+      completed: false,
+      description: 'Your case reaches final resolution - congratulations!',
+      position: { top: '92%', left: '75%' },
+      label: 'Treasure Isle',
+      subStages: [
+        { id: 'cr-1', name: 'Judgment Entry', coins: 100, completed: false, icon: '⚖️', description: 'Court enters judgment' },
+        { id: 'cr-2', name: 'Case Closure', coins: 100, completed: false, icon: '🎊', description: 'Finalize all matters' }
+      ],
+      videos: [
+        { id: 'v12', title: 'Post-Trial Procedures', price: 3.99, duration: '18 min' }
+      ]
+    }
+  ]);
+
+  const videos = [
+    { id: 1, title: 'Understanding Discovery', price: 3.99, tier: 'free', duration: '12 min' },
+    { id: 2, title: 'Deposition Deep Dive', price: 4.99, tier: 'premium', duration: '25 min' },
+    { id: 3, title: 'Mediation Mastery', price: 4.99, tier: 'premium', duration: '30 min' },
+    { id: 4, title: 'Trial Preparation Guide', price: 4.99, tier: 'premium', duration: '28 min' },
+    { id: 5, title: 'Medical Bills 101', price: 1.99, tier: 'basic', duration: '8 min' }
+  ];
+
+  // ============================================
+  // AUTHENTICATION FUNCTIONS
+  // ============================================
+  const handleRegister = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    
+    Alert.alert('Success', 'Verification email sent! Please check your inbox.');
+    setCurrentScreen('login');
+  };
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
+    
+    setUser({
+      id: 1,
+      email: email,
+      type: userType,
+      subscription: 'free',
+      coins: 150,
+      streak: 3
+    });
+    setCoins(150);
+    setLoginStreak(3);
+    setIsLoggedIn(true);
+    setCurrentScreen('dashboard');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser(null);
+    setCurrentScreen('landing');
+  };
+
+  // ============================================
+  // GAMIFICATION FUNCTIONS
+  // ============================================
+  const calculateDailyBonus = (streak) => {
+    const bonuses = [5, 7, 10, 12, 15, 20, 30];
+    return bonuses[Math.min(streak - 1, 6)];
+  };
+
+  const claimDailyBonus = () => {
+    const bonus = calculateDailyBonus(loginStreak + 1);
+    setCoins(coins + bonus);
+    setLoginStreak(loginStreak + 1);
+    Alert.alert('Daily Bonus!', `You earned ${bonus} coins! ${loginStreak + 1} day streak! 🎉`);
+  };
+
+  const convertCoinsToCredits = () => {
+    const credits = Math.floor(coins / 500);
+    const maxCredits = 7;
+    const actualCredits = Math.min(credits, maxCredits);
+    
+    Alert.alert(
+      'Convert Coins',
+      `Convert ${actualCredits * 500} coins to $${actualCredits} in credits?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Convert', onPress: () => {
+          setCoins(coins - (actualCredits * 500));
+          Alert.alert('Success!', `$${actualCredits} added to your account credits!`);
+        }}
+      ]
+    );
+  };
+
+  // ============================================
+  // PIRATE MAP FUNCTIONS
+  // ============================================
+  const handleFileUpload = (subStageId) => {
+    const subStage = selectedStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub) {
+      Alert.alert(
+        '🏥 Medical Hub',
+        `This document is managed in your Medical Hub. Would you like to go there now?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Go to Medical Hub', 
+            onPress: () => {
+              setStageModalVisible(false);
+              setCurrentScreen('medical');
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      '📁 Upload Document',
+      `Select files to upload for "${subStage.name}"\n\nAccepted formats: ${subStage.acceptedFormats}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Take Photo', onPress: () => simulateUpload(subStageId, 'photo') },
+        { text: 'Choose Files', onPress: () => simulateUpload(subStageId, 'file') }
+      ]
+    );
+  };
+
+  const simulateUpload = (subStageId, uploadType) => {
+    setRoadmapStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === selectedStage.id) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId) {
+              const fileName = uploadType === 'photo' 
+                ? `photo_${Date.now()}.jpg` 
+                : `document_${Date.now()}.pdf`;
+              
+              const newFiles = [...(subStage.uploadedFiles || []), fileName];
+              Alert.alert('✅ Upload Successful!', `${fileName} has been uploaded successfully.`);
+              
+              return { ...subStage, uploaded: true, uploadedFiles: newFiles };
+            }
+            return subStage;
+          });
+
+          setSelectedStage({ ...stage, subStages: updatedSubStages });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
+  const viewUploadedFiles = (subStage) => {
+    if (!subStage.uploaded || subStage.uploadedFiles.length === 0) {
+      Alert.alert('No Files', 'No files have been uploaded yet.');
+      return;
+    }
+    const fileList = subStage.uploadedFiles.map((file, index) => `${index + 1}. ${file}`).join('\n');
+    Alert.alert('📁 Uploaded Files', fileList, [{ text: 'OK' }]);
+  };
+
+  const markSubStageComplete = (subStageId) => {
+    const subStage = selectedStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub) {
+      Alert.alert(
+        'Medical Hub Required',
+        'Please complete this step in the Medical Hub first.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Go to Medical Hub', onPress: () => {
+            setStageModalVisible(false);
+            setCurrentScreen('medical');
+          }}
+        ]
+      );
+      return;
+    }
+
+    if (!subStage.uploaded) {
+      Alert.alert('Upload Required', 'Please upload the required documents before marking this step as complete.');
+      return;
+    }
+
+    setRoadmapStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === selectedStage.id) {
+          const updatedSubStages = stage.subStages.map(sub => {
+            if (sub.id === subStageId && !sub.completed) {
+              setCoins(coins + sub.coins);
+              Alert.alert('🎉 Step Complete!', `You earned ${sub.coins} doubloons!`);
+              return { ...sub, completed: true };
+            }
+            return sub;
+          });
+
+          const allComplete = updatedSubStages.every(sub => sub.completed);
+          if (allComplete && !stage.completed) {
+            setCoins(coins + stage.coins);
+            Alert.alert('💰 Treasure Found!', `${stage.name} complete! +${stage.coins} bonus doubloons!`);
+            return { ...stage, subStages: updatedSubStages, completed: true };
+          }
+
+          setSelectedStage({ ...stage, subStages: updatedSubStages });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
+  const completeEntireStage = () => {
+    if (selectedStage.id === 1) {
+      const missingUploads = selectedStage.subStages.filter(sub => !sub.uploaded && !sub.linkToMedicalHub);
+      if (missingUploads.length > 0) {
+        Alert.alert('Uploads Required', `Please upload documents for:\n${missingUploads.map(s => s.name).join('\n')}`);
+        return;
+      }
+    }
+
+    Alert.alert(
+      'Claim Treasure?',
+      `Mark "${selectedStage.name}" as complete and earn ${selectedStage.coins} doubloons?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Claim Treasure',
+          onPress: () => {
+            setRoadmapStages(prevStages =>
+              prevStages.map(stage => {
+                if (stage.id === selectedStage.id && !stage.completed) {
+                  const updatedSubStages = stage.subStages.map(sub => ({ ...sub, completed: true }));
+                  const subStageCoins = stage.subStages.reduce((sum, sub) => sum + sub.coins, 0);
+                  setCoins(coins + stage.coins + subStageCoins);
+                  Alert.alert('💰 Treasure Claimed!', `You earned ${stage.coins + subStageCoins} total doubloons!`);
+                  return { ...stage, subStages: updatedSubStages, completed: true };
+                }
+                return stage;
+              })
+            );
+            setStageModalVisible(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const watchVideo = (video) => {
+    Alert.alert(
+      `${video.title}`,
+      `Duration: ${video.duration}\nPrice: $${video.price}\n\nPurchase this video tutorial?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Purchase', onPress: () => Alert.alert('Success!', 'Video added to your library!') }
+      ]
+    );
+  };
+
+  const openStageModal = (stage) => {
+    setSelectedStage(stage);
+    setStageModalVisible(true);
+  };
+
+  const closeStageModal = () => {
+    setStageModalVisible(false);
+    setTimeout(() => setSelectedStage(null), 300);
+  };
+
+  // ============================================
+  // PIRATE MAP RENDER FUNCTIONS
+  // ============================================
+  const renderTreasure = (stage) => {
+    const isCompleted = stage.completed;
+    return (
+      <View key={stage.id} style={[styles.treasureMarker, { top: stage.position.top, left: stage.position.left }]}>
+        <TouchableOpacity
+          style={styles.treasureChest}
+          onPress={() => openStageModal(stage)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.xMark}>✗</Text>
+          {isCompleted && (
+            <View style={styles.treasureGlow}>
+              <Text style={styles.treasureGlowText}>✓</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.locationLabel}>{stage.label}</Text>
+      </View>
+    );
+  };
+
+  const renderStageModal = () => {
+    if (!selectedStage) return null;
+
+    const completedSubStages = selectedStage.subStages.filter(s => s.completed).length;
+    const totalSubStages = selectedStage.subStages.length;
+    const progress = totalSubStages > 0 ? Math.round((completedSubStages / totalSubStages) * 100) : 0;
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={stageModalVisible}
+        onRequestClose={closeStageModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitleContainer}>
+                <Text style={styles.modalTitle}>{selectedStage.name}</Text>
+                <Text style={styles.modalSubtitle}>"{selectedStage.label}"</Text>
+              </View>
+              <TouchableOpacity onPress={closeStageModal} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalDescription}>{selectedStage.description}</Text>
+
+              {totalSubStages > 0 && (
+                <View style={styles.progressSection}>
+                  <Text style={styles.progressLabel}>Progress: {completedSubStages}/{totalSubStages} steps</Text>
+                  <View style={styles.progressBarContainer}>
+                    <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.coinsSection}>
+                <Text style={styles.coinsSectionTitle}>💰 Treasure Reward</Text>
+                <Text style={styles.coinsAmount}>{selectedStage.coins} Doubloons</Text>
+              </View>
+
+              {selectedStage.subStages.length > 0 && (
+                <View style={styles.subStagesSection}>
+                  <Text style={styles.sectionTitle}>📜 Quest Steps</Text>
+                  {selectedStage.subStages.map(subStage => (
+                    <View key={subStage.id} style={styles.subStageCard}>
+                      <View style={styles.subStageHeader}>
+                        <Text style={styles.subStageRowIcon}>{subStage.icon}</Text>
+                        <View style={styles.subStageInfo}>
+                          <Text style={styles.subStageRowName}>{subStage.name}</Text>
+                          <Text style={styles.subStageDescription}>{subStage.description}</Text>
+                          <Text style={styles.subStageRowCoins}>+{subStage.coins} doubloons</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.uploadSection}>
+                        {subStage.linkToMedicalHub ? (
+                          <TouchableOpacity
+                            style={styles.medicalHubButton}
+                            onPress={() => handleFileUpload(subStage.id)}
+                          >
+                            <Text style={styles.medicalHubIcon}>🏥</Text>
+                            <Text style={styles.medicalHubText}>Manage in Medical Hub</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <>
+                            <TouchableOpacity
+                              style={styles.uploadButton}
+                              onPress={() => handleFileUpload(subStage.id)}
+                            >
+                              <Text style={styles.uploadIcon}>📤</Text>
+                              <Text style={styles.uploadButtonText}>
+                                {subStage.uploaded ? 'Upload More' : 'Upload Documents'}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {subStage.uploaded && (
+                              <TouchableOpacity
+                                style={styles.viewFilesButton}
+                                onPress={() => viewUploadedFiles(subStage)}
+                              >
+                                <Text style={styles.viewFilesText}>
+                                  View Files ({subStage.uploadedFiles.length})
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+                          </>
+                        )}
+                      </View>
+
+                      <View style={styles.completeSection}>
+                        {subStage.completed ? (
+                          <View style={styles.checkmarkLarge}>
+                            <Text style={styles.checkmarkText}>✓ Completed</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[
+                              styles.miniCompleteButton,
+                              (!subStage.uploaded && !subStage.linkToMedicalHub) && styles.disabledButton
+                            ]}
+                            onPress={() => markSubStageComplete(subStage.id)}
+                          >
+                            <Text style={styles.miniCompleteButtonText}>Mark Complete</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {selectedStage.videos.length > 0 && (
+                <View style={styles.videosSection}>
+                  <Text style={styles.sectionTitle}>🎬 Captain's Tutorials</Text>
+                  {selectedStage.videos.map(video => (
+                    <TouchableOpacity
+                      key={video.id}
+                      style={styles.videoCard}
+                      onPress={() => watchVideo(video)}
+                    >
+                      <View style={styles.videoLeft}>
+                        <Text style={styles.videoPlayIcon}>▶️</Text>
+                        <View style={styles.videoInfo}>
+                          <Text style={styles.videoTitle}>{video.title}</Text>
+                          <Text style={styles.videoDuration}>{video.duration}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.videoPrice}>${video.price}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {!selectedStage.completed && (
+                <TouchableOpacity
+                  style={styles.completeStageButton}
+                  onPress={completeEntireStage}
+                >
+                  <Text style={styles.completeStageButtonText}>
+                    💰 Claim All Treasure
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {selectedStage.completed && (
+                <View style={styles.completedBanner}>
+                  <Text style={styles.completedBannerText}>🏆 Treasure Claimed!</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  // ============================================
+  // SCREEN COMPONENTS
+  // ============================================
+
+  // LANDING SCREEN
+  const LandingScreen = () => (
+    <View style={styles.container}>
+      <View style={styles.heroSection}>
+        <Text style={styles.logo}>⚖️ Case Compass</Text>
+        <Text style={styles.tagline}>Navigate Your Legal Journey with Confidence</Text>
+        <Text style={styles.subtitle}>Georgia Civil Litigation Education</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={styles.primaryButton}
+          onPress={() => setCurrentScreen('register')}
+        >
+          <Text style={styles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.secondaryButton}
+          onPress={() => setCurrentScreen('login')}
+        >
+          <Text style={styles.secondaryButtonText}>Sign In</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.featuresContainer}>
+        <Text style={styles.featureTitle}>What You'll Get:</Text>
+        <Text style={styles.featureItem}>🗺️ Interactive pirate treasure map</Text>
+        <Text style={styles.featureItem}>🎮 Earn doubloons as you progress</Text>
+        <Text style={styles.featureItem}>🎓 Expert video tutorials</Text>
+        <Text style={styles.featureItem}>🏥 Secure medical records storage</Text>
+        <Text style={styles.featureItem}>⚡ Daily login rewards</Text>
+      </View>
+    </View>
+  );
+
+  // REGISTRATION SCREEN
+  const RegisterScreen = () => (
+    <ScrollView style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Create Your Account</Text>
+        
+        <Text style={styles.label}>I am a:</Text>
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'individual' && styles.toggleButtonActive]}
+            onPress={() => setUserType('individual')}
+          >
+            <Text style={[styles.toggleText, userType === 'individual' && styles.toggleTextActive]}>
+              Individual
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'lawfirm' && styles.toggleButtonActive]}
+            onPress={() => setUserType('lawfirm')}
+          >
+            <Text style={[styles.toggleText, userType === 'lawfirm' && styles.toggleTextActive]}>
+              Law Firm
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'medicalprovider' && styles.toggleButtonActive]}
+            onPress={() => setUserType('medicalprovider')}
+          >
+            <Text style={[styles.toggleText, userType === 'medicalprovider' && styles.toggleTextActive]}>
+              Medical Provider
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Email Address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+
+        {userType === 'individual' && (
+          <TextInput
+            style={styles.input}
+            placeholder="Law Firm or Provider Code (Optional)"
+            value={firmCode}
+            onChangeText={setFirmCode}
+          />
+        )}
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Create Account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setCurrentScreen('login')}>
+          <Text style={styles.linkText}>Already have an account? Sign In</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.disclaimer}>
+          By creating an account, you agree to our Terms of Service and Privacy Policy. 
+          This app provides educational information, not legal advice.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
+  // LOGIN SCREEN
+  const LoginScreen = () => (
+    <View style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Welcome Back</Text>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Email Address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Sign In</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setCurrentScreen('register')}>
+          <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // DASHBOARD SCREEN
+  const DashboardScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.dashboardHeader}>
+        <Text style={styles.welcomeText}>Welcome back!</Text>
+        <Text style={styles.emailText}>{user?.email}</Text>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>🪙 {coins}</Text>
+            <Text style={styles.statLabel}>Doubloons</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>🔥 {loginStreak}</Text>
+            <Text style={styles.statLabel}>Day Streak</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.bonusButton} onPress={claimDailyBonus}>
+          <Text style={styles.bonusButtonText}>Claim Daily Bonus!</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.menuContainer}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => setCurrentScreen('roadmap')}
+        >
+          <Text style={styles.menuIcon}>🗺️</Text>
+          <Text style={styles.menuText}>Treasure Map</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => setCurrentScreen('videos')}
+        >
+          <Text style={styles.menuIcon}>🎬</Text>
+          <Text style={styles.menuText}>Video Library</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => setCurrentScreen('medical')}
+        >
+          <Text style={styles.menuIcon}>🏥</Text>
+          <Text style={styles.menuText}>Medical Hub</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={convertCoinsToCredits}
+        >
+          <Text style={styles.menuIcon}>💰</Text>
+          <Text style={styles.menuText}>Convert Coins</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleLogout}
+        >
+          <Text style={styles.menuIcon}>🚪</Text>
+          <Text style={styles.menuText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // PIRATE MAP ROADMAP SCREEN
+  const RoadmapScreen = () => (
+    <SafeAreaView style={styles.pirateContainer}>
+      <View style={styles.pirateHeader}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.pirateHeaderTitle}>⚔️ Litigation Treasure Map</Text>
+        <View style={styles.coinsDisplay}>
+          <Text style={styles.coinsIcon}>🪙</Text>
+          <Text style={styles.coinsText}>{coins}</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.mapContainer}>
+          <View style={styles.parchment}>
+            <View style={styles.mapBorder}>
+              {/* Title Cartouche */}
+              <View style={styles.titleCartouche}>
+                <Text style={styles.mapTitle}>LITIGATION MAP</Text>
+                <Text style={styles.mapSubtitle}>Chart Your Course to Justice</Text>
+              </View>
+
+              {/* Compass Rose */}
+              <View style={styles.compassRose}>
+                <Text style={styles.compassN}>N</Text>
+                <Text style={styles.compassCenter}>✦</Text>
+                <Text style={styles.compassS}>S</Text>
+                <Text style={styles.compassE}>E</Text>
+                <Text style={styles.compassW}>W</Text>
+              </View>
+
+              {/* Decorative Ships */}
+              <Text style={[styles.ship, { top: '25%', right: '8%' }]}>⛵</Text>
+              <Text style={[styles.ship, { top: '60%', right: '5%' }]}>⛵</Text>
+              <Text style={[styles.ship, { bottom: '15%', left: '10%' }]}>🚢</Text>
+
+              {/* Sea Monsters */}
+              <Text style={[styles.seaCreature, { top: '40%', right: '12%' }]}>🐙</Text>
+              <Text style={[styles.seaCreature, { bottom: '25%', right: '15%' }]}>🦑</Text>
+
+              {/* Islands */}
+              <View style={[styles.island, { top: '22%', left: '12%' }]} />
+              <View style={[styles.island, { top: '35%', left: '67%' }]} />
+              <View style={[styles.island, { top: '48%', left: '23%' }]} />
+              <View style={[styles.island, { top: '58%', left: '70%' }]} />
+              <View style={[styles.island, { top: '70%', left: '16%' }]} />
+              <View style={[styles.island, { top: '80%', left: '56%' }]} />
+              <View style={[styles.island, { top: '88%', left: '28%' }]} />
+              <View style={[styles.island, { top: '94%', left: '73%' }]} />
+
+              {/* Dotted Path */}
+              <View style={styles.dottedPath} />
+
+              {/* Treasure Markers */}
+              {roadmapStages.map(stage => renderTreasure(stage))}
+
+              {/* Scale Bar */}
+              <View style={styles.scaleBar}>
+                <Text style={styles.scaleText}>Scale of Justice</Text>
+                <View style={styles.scaleLine} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {renderStageModal()}
+    </SafeAreaView>
+  );
+
+  // VIDEOS SCREEN
+  const VideosScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Video Library</Text>
+      </View>
+
+      <ScrollView style={styles.videosContainer}>
+        {videos.map(video => (
+          <View key={video.id} style={styles.videoCard}>
+            <View style={styles.videoThumbnail}>
+              <Text style={styles.videoIcon}>▶️</Text>
+            </View>
+            <View style={styles.videoInfo}>
+              <Text style={styles.videoTitle}>{video.title}</Text>
+              <Text style={styles.videoDuration}>{video.duration}</Text>
+              <View style={styles.videoFooter}>
+                <Text style={styles.videoPrice}>${video.price}</Text>
+                <TouchableOpacity style={styles.watchButton}>
+                  <Text style={styles.watchButtonText}>Watch</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // MEDICAL HUB SCREEN
+  const MedicalScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Medical Hub</Text>
+      </View>
+
+      <View style={styles.secureNotice}>
+        <Text style={styles.secureIcon}>🔒</Text>
+        <Text style={styles.secureText}>Your medical records are encrypted and secure</Text>
+      </View>
+
+      <View style={styles.medicalContainer}>
+        <TouchableOpacity style={styles.uploadButton}>
+          <Text style={styles.uploadButtonText}>Upload Medical Records</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.uploadButton}>
+          <Text style={styles.uploadButtonText}>Upload Medical Bills</Text>
+        </TouchableOpacity>
+
+        <View style={styles.placeholderBox}>
+          <Text style={styles.placeholderText}>
+            Your medical documents will appear here
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  // ============================================
+  // MAIN RENDER - SCREEN ROUTER
+  // ============================================
+  return (
+    <SafeAreaView style={styles.appContainer}>
+      <StatusBar barStyle="light-content" />
+      {currentScreen === 'landing' && <LandingScreen />}
+      {currentScreen === 'register' && <RegisterScreen />}
+      {currentScreen === 'login' && <LoginScreen />}
+      {currentScreen === 'dashboard' && <DashboardScreen />}
+      {currentScreen === 'roadmap' && <RoadmapScreen />}
+      {currentScreen === 'videos' && <VideosScreen />}
+      {currentScreen === 'medical' && <MedicalScreen />}
+    </SafeAreaView>
+  );
+};
+
+// ============================================
+// STYLES
+// ============================================
+const styles = StyleSheet.create({
+  appContainer: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+  },
+  // Landing Screen
+  heroSection: {
+    backgroundColor: '#3498db',
+    padding: 40,
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  tagline: {
+    fontSize: 18,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#ecf0f1',
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    padding: 20,
+  },
+  primaryButton: {
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  secondaryButtonText: {
+    color: '#3498db',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  featuresContainer: {
+    padding: 20,
+  },
+  featureTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+  },
+  featureItem: {
+    fontSize: 16,
+    color: '#34495e',
+    marginBottom: 10,
+  },
+  // Form Screens
+  formContainer: {
+    padding: 20,
+  },
+  formTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 10,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  toggleButton: {
+    flex: 1,
+    padding: 12,
+    borderWidth: 2,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+    marginHorizontal: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  toggleButtonActive: {
+    borderColor: '#3498db',
+    backgroundColor: '#3498db',
+  },
+  toggleText: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  toggleTextActive: {
+    color: '#fff',
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#3498db',
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  disclaimer: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 18,
+  },
+  // Dashboard
+  dashboardHeader: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  emailText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+  },
+  bonusButton: {
+    backgroundColor: '#e74c3c',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  bonusButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  menuContainer: {
+    padding: 10,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  menuIcon: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  menuText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  // Header
+  header: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#3498db',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  // Videos
+  videosContainer: {
+    padding: 15,
+  },
+  videoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 15,
+    overflow: 'hidden',
+  },
+  videoThumbnail: {
+    width: 120,
+    backgroundColor: '#ecf0f1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoIcon: {
+    fontSize: 40,
+  },
+  videoInfo: {
+    flex: 1,
+    padding: 15,
+  },
+  videoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  videoDuration: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginBottom: 10,
+  },
+  videoFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  videoPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#27ae60',
+  },
+  watchButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  watchButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  // Medical Hub
+  secureNotice: {
+    backgroundColor: '#d5f4e6',
+    padding: 15,
+    margin: 20,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secureIcon: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  secureText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#27ae60',
+  },
+  medicalContainer: {
+    padding: 20,
+  },
+  uploadButton: {
+    backgroundColor: '#3498db',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  placeholderBox: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 12,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#95a5a6',
+    textAlign: 'center',
+  },
+  // PIRATE MAP STYLES
+  pirateContainer: {
+    flex: 1,
+    backgroundColor: '#2c1810',
+  },
+  pirateHeader: {
+    backgroundColor: '#3d2817',
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#8b6914',
+  },
+  pirateHeaderTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#d4a574',
+    flex: 1,
+    textAlign: 'center',
+  },
+  coinsDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4a3520',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+  },
+  coinsIcon: {
+    fontSize: 16,
+    marginRight: 5,
+  },
+  coinsText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#d4a574',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  mapContainer: {
+    padding: 15,
+  },
+  parchment: {
+    backgroundColor: '#d4a574',
+    borderRadius: 8,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  mapBorder: {
+    borderWidth: 3,
+    borderColor: '#654321',
+    backgroundColor: '#e8c9a0',
+    borderRadius: 4,
+    minHeight: height * 1.3,
+    position: 'relative',
+    padding: 20,
+  },
+  titleCartouche: {
+    position: 'absolute',
+    top: 20,
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    width: 200,
+    backgroundColor: '#f5deb3',
+    borderWidth: 2,
+    borderColor: '#654321',
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3d2817',
+    letterSpacing: 2,
+  },
+  mapSubtitle: {
+    fontSize: 10,
+    color: '#654321',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  compassRose: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compassCenter: {
+    fontSize: 40,
+    color: '#654321',
+  },
+  compassN: {
+    position: 'absolute',
+    top: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8b0000',
+  },
+  compassS: {
+    position: 'absolute',
+    bottom: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  compassE: {
+    position: 'absolute',
+    right: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  compassW: {
+    position: 'absolute',
+    left: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  ship: {
+    position: 'absolute',
+    fontSize: 28,
+    opacity: 0.7,
+  },
+  seaCreature: {
+    position: 'absolute',
+    fontSize: 24,
+    opacity: 0.5,
+  },
+  island: {
+    position: 'absolute',
+    width: 60,
+    height: 50,
+    backgroundColor: '#b8956a',
+    borderRadius: 30,
+    opacity: 0.6,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+  },
+  dottedPath: {
+    position: 'absolute',
+    top: '20%',
+    left: '15%',
+    right: '15%',
+    bottom: '10%',
+    borderWidth: 2,
+    borderColor: '#8b4513',
+    borderStyle: 'dashed',
+    opacity: 0.4,
+    borderRadius: 10,
+  },
+  treasureMarker: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  treasureChest: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#8b0000',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3d0000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  xMark: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  treasureGlow: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffd700',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  treasureGlowText: {
+    color: '#8b0000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  locationLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#3d2817',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    textShadowColor: '#fff',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  scaleBar: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    alignItems: 'center',
+  },
+  scaleText: {
+    fontSize: 10,
+    color: '#654321',
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  scaleLine: {
+    width: 60,
+    height: 3,
+    backgroundColor: '#654321',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#f5deb3',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: height * 0.85,
+    padding: 20,
+    borderTopWidth: 3,
+    borderColor: '#654321',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#8b6914',
+  },
+  modalTitleContainer: {
+    flex: 1,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3d2817',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#654321',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  closeButton: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#d4a574',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#654321',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#3d2817',
+    fontWeight: 'bold',
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: '#3d2817',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  progressSection: {
+    marginBottom: 20,
+  },
+  progressLabel: {
+    fontSize: 14,
+    color: '#654321',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  progressBarContainer: {
+    height: 12,
+    backgroundColor: '#d4a574',
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#654321',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#8b6914',
+    borderRadius: 6,
+  },
+  coinsSection: {
+    backgroundColor: '#ffefd5',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+    alignItems: 'center',
+  },
+  coinsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3d2817',
+    marginBottom: 5,
+  },
+  coinsAmount: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#8b6914',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3d2817',
+    marginBottom: 12,
+    marginTop: 5,
+  },
+  subStagesSection: {
+    marginBottom: 20,
+  },
+  subStageCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+  },
+  subStageHeader: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  subStageRowIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  subStageInfo: {
+    flex: 1,
+  },
+  subStageRowName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3d2817',
+    marginBottom: 4,
+  },
+  subStageDescription: {
+    fontSize: 13,
+    color: '#654321',
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  subStageRowCoins: {
+    fontSize: 13,
+    color: '#8b6914',
+    fontWeight: '600',
+  },
+  uploadSection: {
+    marginBottom: 10,
+  },
+  uploadIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  viewFilesButton: {
+    backgroundColor: '#d4a574',
+    padding: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#654321',
+  },
+  viewFilesText: {
+    color: '#3d2817',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  medicalHubButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e8f8f5',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#1abc9c',
+  },
+  medicalHubIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  medicalHubText: {
+    color: '#16a085',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  completeSection: {
+    marginTop: 5,
+  },
+  miniCompleteButton: {
+    backgroundColor: '#8b6914',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#654321',
+  },
+  disabledButton: {
+    backgroundColor: '#a89b8c',
+  },
+  miniCompleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  checkmarkLarge: {
+    backgroundColor: '#d5f4e6',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#27ae60',
+  },
+  checkmarkText: {
+    color: '#27ae60',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  videosSection: {
+    marginBottom: 20,
+  },
+  videoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  videoPlayIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  completeStageButton: {
+    backgroundColor: '#8b6914',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#654321',
+  },
+  completeStageButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  completedBanner: {
+    backgroundColor: '#d5f4e6',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#27ae60',
+  },
+  completedBannerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#27ae60',
+  },
+});
+
+export default CaseCompassApp;
