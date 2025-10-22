@@ -8,16 +8,30 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Expandable Sub-Stages Implementation
+- Added expandable sub-stages system to litigation roadmap
+- Pre-Litigation stage now contains 9 detailed sub-tasks:
+  - 🚔 Police Report (10 coins)
+  - 📹 Body Cam Footage (10 coins)
+  - 🎥 Dash Cam Footage (10 coins)
+  - 📸 Pictures (5 coins)
+  - 💳 Health Insurance Card (5 coins)
+  - 🏢 Auto Insurance Company (5 coins)
+  - 🔢 Auto Insurance Policy Number (5 coins)
+  - 💵 Medical Bills (15 coins)
+  - 📋 Medical Records (35 coins)
+- Implemented expandable/collapsible stages (tap to expand Pre-Litigation)
+- Added progress tracking across all stages and sub-stages
+- Sub-stages award individual coins; completing all awards bonus coins
+- Enhanced reward system: completing all Pre-Litigation sub-stages (100 coins) + bonus (100 coins)
+- Maintained pirate map theme with aged parchment aesthetic
+- Avatar marker shows current progress position
+- Visual hierarchy with connecting lines for sub-stages
+
 ### October 22, 2025 - Pirate Map Feature
 - Implemented interactive pirate map-themed litigation roadmap
 - Added avatar selection system with 4 video game-style characters (Warrior, Mage, Archer, Knight)
-- Redesigned RoadmapScreen with treasure map aesthetics:
-  - Aged parchment background
-  - Stages positioned as map locations/islands
-  - Visual paths connecting litigation stages
-  - User's avatar marker displayed at current progress
-  - Decorative elements (anchor, parrot, gem)
-  - Map legend for user guidance
+- Redesigned RoadmapScreen with treasure map aesthetics
 - Created AvatarSelector component for character selection
 - Enhanced user engagement with gamified visual design
 
