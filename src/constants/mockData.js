@@ -27,3 +27,34 @@ export const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30];
 
 export const MAX_MONTHLY_CREDITS = 7;
 export const COINS_PER_CREDIT = 500;
+
+export const AVATARS = [
+  { 
+    id: 1, 
+    name: 'Warrior', 
+    emoji: '⚔️', 
+    description: 'Bold and fearless fighter',
+    color: '#e74c3c'
+  },
+  { 
+    id: 2, 
+    name: 'Mage', 
+    emoji: '🔮', 
+    description: 'Wise spellcaster',
+    color: '#9b59b6'
+  },
+  { 
+    id: 3, 
+    name: 'Archer', 
+    emoji: '🏹', 
+    description: 'Precise and focused ranger',
+    color: '#16a085'
+  },
+  { 
+    id: 4, 
+    name: 'Knight', 
+    emoji: '🛡️', 
+    description: 'Honorable protector',
+    color: '#f39c12'
+  }
+];
