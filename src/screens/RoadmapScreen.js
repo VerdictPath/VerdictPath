@@ -174,27 +174,34 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
   const renderTreasure = (stage, index) => {
     const isCurrent = currentStageIndex === index && !stage.completed;
     return (
-      <TouchableOpacity
+      <View
         key={stage.id}
         style={[
-          styles.treasureChest,
-          { top: stage.position.top, left: stage.position.left },
-          isCurrent && !stage.completed && styles.treasureChestCurrent
+          styles.treasureContainer,
+          { top: stage.position.top, left: stage.position.left }
         ]}
-        onPress={() => openStageModal(stage)}
-        activeOpacity={0.7}
       >
-        {isCurrent && selectedAvatar && !stage.completed ? (
-          <Text style={styles.avatarIcon}>{selectedAvatar.emoji}</Text>
-        ) : (
-          <Text style={styles.treasureIcon}>{stage.completed ? '🏆' : '💰'}</Text>
-        )}
-        {stage.completed && (
-          <View style={styles.completeBadge}>
-            <Text style={styles.completeBadgeText}>✓</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.treasureChest,
+            isCurrent && !stage.completed && styles.treasureChestCurrent
+          ]}
+          onPress={() => openStageModal(stage)}
+          activeOpacity={0.7}
+        >
+          {isCurrent && selectedAvatar && !stage.completed ? (
+            <Text style={styles.avatarIcon}>{selectedAvatar.emoji}</Text>
+          ) : (
+            <Text style={styles.treasureIcon}>{stage.completed ? '🏆' : '💰'}</Text>
+          )}
+          {stage.completed && (
+            <View style={styles.completeBadge}>
+              <Text style={styles.completeBadgeText}>✓</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.stageName}>{stage.name}</Text>
+      </View>
     );
   };
 
@@ -496,8 +503,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     opacity: 0.3,
   },
-  treasureChest: {
+  treasureContainer: {
     position: 'absolute',
+    alignItems: 'center',
+    width: 80,
+  },
+  treasureChest: {
     width: 60,
     height: 60,
     justifyContent: 'center',
@@ -511,6 +522,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 5,
     elevation: 8,
+  },
+  stageName: {
+    fontSize: 9,
+    color: '#2c3e50',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   treasureChestCurrent: {
     borderWidth: 4,
