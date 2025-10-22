@@ -5,7 +5,7 @@ import { AVATARS } from '../constants/mockData';
 const AvatarSelector = ({ selectedAvatar, onSelectAvatar }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Choose Your Hero</Text>
+      <Text style={styles.title}>Choose Your Pirate</Text>
       <View style={styles.avatarGrid}>
         {AVATARS.map((avatar) => (
           <TouchableOpacity

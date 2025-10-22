@@ -75,7 +75,7 @@ React Native mobile application using Expo framework
 
 ### October 22, 2025 - Pirate Map Feature
 - Implemented interactive pirate map-themed litigation roadmap
-- Added avatar selection system with 4 video game-style characters (Warrior, Mage, Archer, Knight)
+- Added avatar selection system with 4 pirate-themed characters (Captain, Navigator, Gunner, First Mate)
 - Redesigned RoadmapScreen with treasure map aesthetics
 - Created AvatarSelector component for character selection
 - Enhanced user engagement with gamified visual design
@@ -139,11 +139,11 @@ React Native mobile application using Expo framework
    - Tiered subscription plans (Free, Basic, Premium)
    - Size-based pricing for organizations
    - Dynamic pricing based on user type and size
-3. **Avatar Selection**: Choose from 4 video game-style characters
-   - Warrior ⚔️ (Bold and fearless)
-   - Mage 🔮 (Wise spellcaster)
-   - Archer 🏹 (Precise ranger)
-   - Knight 🛡️ (Honorable protector)
+3. **Avatar Selection**: Choose from 4 pirate-themed characters
+   - Captain 🏴‍☠️ (Fearless leader of the crew)
+   - Navigator 🧭 (Expert chart reader)
+   - Gunner ⚓ (Master of the cannons)
+   - First Mate 🦜 (Trusted parrot companion)
 4. **Gamification**: 
    - Coin system for completing milestones
    - Daily login streaks with bonuses

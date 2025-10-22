@@ -168,30 +168,30 @@ export const COINS_PER_CREDIT = 500;
 export const AVATARS = [
   { 
     id: 1, 
-    name: 'Warrior', 
-    emoji: '⚔️', 
-    description: 'Bold and fearless fighter',
+    name: 'Captain', 
+    emoji: '🏴‍☠️', 
+    description: 'Fearless leader of the crew',
     color: '#e74c3c'
   },
   { 
     id: 2, 
-    name: 'Mage', 
-    emoji: '🔮', 
-    description: 'Wise spellcaster',
-    color: '#9b59b6'
+    name: 'Navigator', 
+    emoji: '🧭', 
+    description: 'Expert chart reader',
+    color: '#3498db'
   },
   { 
     id: 3, 
-    name: 'Archer', 
-    emoji: '🏹', 
-    description: 'Precise and focused ranger',
+    name: 'Gunner', 
+    emoji: '⚓', 
+    description: 'Master of the cannons',
     color: '#16a085'
   },
   { 
     id: 4, 
-    name: 'Knight', 
-    emoji: '🛡️', 
-    description: 'Honorable protector',
+    name: 'First Mate', 
+    emoji: '🦜', 
+    description: 'Trusted parrot companion',
     color: '#f39c12'
   }
 ];
