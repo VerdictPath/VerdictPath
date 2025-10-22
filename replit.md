@@ -82,7 +82,7 @@ React Native mobile application using Expo framework
   - Discovery Begins: 5 steps (Interrogatories, Request for Production of Documents, Request for Admissions, Entry Upon Land for Inspection, Experts)
   - Depositions: 4 steps (Prep, Your Deposition, Opposing Party, Expert Deposition)
   - Mediation: 3 steps (Prep, Session, Negotiation)
-  - Trial Prep: 3 steps (Witnesses, Exhibits, Strategy)
+  - Trial Prep: 5 steps (Prepare your Testimony, Confirm Exhibits and Evidence with your Attorney, Arrange to miss work, Arrange Transportation, Discuss Trial Strategy)
   - Trial/Settlement: 3 steps (Opening, Evidence, Closing)
   - Case Resolved: 2 steps (Judgment, Closure)
 - **Video Tutorials**: 12+ educational videos integrated into stages

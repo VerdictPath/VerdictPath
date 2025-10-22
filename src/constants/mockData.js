@@ -105,9 +105,11 @@ export const LITIGATION_STAGES = [
     expanded: false,
     position: { top: '75%', left: '60%' },
     subStages: [
-      { id: 'tp-1', name: 'Witness Preparation', coins: 30, completed: false, icon: '👨‍⚖️', description: 'Prepare witnesses to testify' },
-      { id: 'tp-2', name: 'Exhibit Organization', coins: 25, completed: false, icon: '🗂️', description: 'Organize trial exhibits' },
-      { id: 'tp-3', name: 'Trial Strategy', coins: 45, completed: false, icon: '🎯', description: 'Develop courtroom strategy' }
+      { id: 'tp-1', name: 'Prepare your Testimony', coins: 25, completed: false, icon: '📖', description: 'Prepare what you will say on the stand' },
+      { id: 'tp-2', name: 'Confirm Exhibits and Evidence with your Attorney', coins: 20, completed: false, icon: '🗂️', description: 'Review all exhibits and evidence with your lawyer' },
+      { id: 'tp-3', name: 'Arrange to miss work', coins: 15, completed: false, icon: '📅', description: 'Schedule time off for trial dates' },
+      { id: 'tp-4', name: 'Arrange Transportation', coins: 15, completed: false, icon: '🚗', description: 'Plan how to get to the courthouse' },
+      { id: 'tp-5', name: 'Discuss Trial Strategy', coins: 25, completed: false, icon: '🎯', description: 'Review courtroom strategy with your attorney' }
     ],
     videos: [
       { id: 'v9', title: 'Trial Preparation Guide', price: 5.99, duration: '35 min', tier: 'premium' },
