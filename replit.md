@@ -8,19 +8,23 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
-### October 22, 2025 - Document Upload Functionality
+### October 22, 2025 - Document Upload and Data Entry Functionality
 - **File Upload System**: Added document upload functionality to Pre-Litigation stage
-- **Upload Requirements**: All Pre-Litigation sub-stages now require document uploads
-  - Police Report, Body Cam, Dash Cam, Pictures (7 upload-enabled tasks)
+- **Upload-Based Tasks**: 5 tasks require file uploads
+  - Police Report, Body Cam, Dash Cam, Pictures, Health Insurance Card
   - Medical Bills and Medical Records link to Medical Hub
-- **Upload Validation**: Tasks cannot be completed without uploading required documents
-- **Multi-File Support**: Users can upload multiple files per task
-- **File Type Filters**: Each task specifies accepted formats (PDF, JPG, PNG, MP4, etc.)
-- **Upload Options**: "Take Photo" or "Choose Files" for each task
+- **Data Entry Tasks**: 2 tasks use simple text input instead of uploads
+  - Auto Insurance Company (text entry for company name)
+  - Auto Insurance Policy Number (text entry for policy number)
+- **No Upload Validation**: "Mark Complete" button always available regardless of upload/entry status
+- **Multi-File Support**: Users can upload multiple files per upload-based task
+- **File Type Filters**: Each upload task specifies accepted formats (PDF, JPG, PNG, MP4, etc.)
+- **Upload Options**: "Take Photo" or "Choose Files" for upload tasks
 - **View Uploaded Files**: Users can review uploaded file lists
+- **Data Entry UI**: Purple "✏️ Enter Information" button for text-based tasks
 - **Medical Hub Integration**: Medical documents redirect to Medical Hub screen
 - **Upload Status**: Visual indicators show upload status (📤 Upload Files / Upload More)
-- **Disabled Completion**: "Mark Complete" button disabled until files uploaded
+- **Data Entry Display**: Shows saved information with "Edit Information" option
 
 ### October 22, 2025 - Interactive Treasure Map with Modals
 - Transformed roadmap into fully interactive pirate treasure map
