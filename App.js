@@ -26,6 +26,7 @@ const CaseCompassApp = () => {
   const [firmCode, setFirmCode] = useState('');
 
   const [litigationStages, setLitigationStages] = useState(LITIGATION_STAGES);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   const handleRegister = () => {
     if (!email || !password) {
@@ -162,6 +163,8 @@ const CaseCompassApp = () => {
           litigationStages={litigationStages}
           onCompleteStage={handleCompleteStage}
           onNavigate={handleNavigate}
+          selectedAvatar={selectedAvatar}
+          onSelectAvatar={setSelectedAvatar}
         />
       )}
       
