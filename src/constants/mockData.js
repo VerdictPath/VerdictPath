@@ -125,9 +125,22 @@ export const LITIGATION_STAGES = [
     expanded: false,
     position: { top: '74%', left: '35%' },
     subStages: [
-      { id: 'trial-1', name: 'Opening Statements', coins: 30, completed: false, icon: '🗣️', description: 'Present opening arguments' },
-      { id: 'trial-2', name: 'Presentation of Evidence', coins: 40, completed: false, icon: '📊', description: 'Present evidence and witnesses' },
-      { id: 'trial-3', name: 'Closing Arguments', coins: 30, completed: false, icon: '⚡', description: 'Deliver closing statements' }
+      { id: 'trial-1', name: 'PreTrial motions', coins: 10, completed: false, icon: '📋', description: 'File pretrial motions with the court' },
+      { id: 'trial-2', name: 'Jury selection / voir dire', coins: 10, completed: false, icon: '👥', description: 'Select jury through voir dire process' },
+      { id: 'trial-3', name: 'Opening statements', coins: 15, completed: false, icon: '🗣️', description: 'Present opening arguments to the jury' },
+      { id: 'trial-4', name: "Plaintiff's witness testimony (direct and cross examination)", coins: 15, completed: false, icon: '👨‍⚖️', description: 'Plaintiff presents witness testimony' },
+      { id: 'trial-5', name: "Plaintiff's evidence (pictures, documents, records, affidavits)", coins: 15, completed: false, icon: '📊', description: 'Plaintiff introduces evidence' },
+      { id: 'trial-6', name: 'Plaintiff rests', coins: 5, completed: false, icon: '✅', description: 'Plaintiff concludes their case' },
+      { id: 'trial-7', name: 'Motions', coins: 5, completed: false, icon: '📄', description: 'Motions after plaintiff rests' },
+      { id: 'trial-8', name: "Defense's witness testimony (direct and cross examination)", coins: 15, completed: false, icon: '👨‍💼', description: 'Defense presents witness testimony' },
+      { id: 'trial-9', name: "Defense's evidence (pictures, documents, records, affidavits)", coins: 15, completed: false, icon: '📑', description: 'Defense introduces evidence' },
+      { id: 'trial-10', name: 'Defense rests', coins: 5, completed: false, icon: '✅', description: 'Defense concludes their case' },
+      { id: 'trial-11', name: 'Motions', coins: 5, completed: false, icon: '📄', description: 'Motions after defense rests' },
+      { id: 'trial-12', name: 'Closing arguments', coins: 15, completed: false, icon: '⚡', description: 'Deliver closing statements to the jury' },
+      { id: 'trial-13', name: 'Jury instructions (from judge)', coins: 10, completed: false, icon: '⚖️', description: 'Judge instructs the jury on the law' },
+      { id: 'trial-14', name: 'Jury deliberations', coins: 10, completed: false, icon: '💭', description: 'Jury discusses the case privately' },
+      { id: 'trial-15', name: 'Jury questions', coins: 5, completed: false, icon: '❓', description: 'Jury asks questions to the judge' },
+      { id: 'trial-16', name: 'Verdict', coins: 20, completed: false, icon: '🏆', description: 'Jury delivers their verdict' }
     ],
     videos: [
       { id: 'v11', title: 'Trial Tactics', price: 6.99, duration: '40 min', tier: 'premium' }

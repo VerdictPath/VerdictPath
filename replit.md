@@ -8,6 +8,27 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Detailed Trial Stage Substeps
+- **Trial Stage Expansion**: Updated Trial stage with comprehensive 16-step process
+  - PreTrial motions
+  - Jury selection / voir dire
+  - Opening statements
+  - Plaintiff's witness testimony (direct and cross examination)
+  - Plaintiff's evidence (pictures, documents, records, affidavits)
+  - Plaintiff rests
+  - Motions
+  - Defense's witness testimony (direct and cross examination)
+  - Defense's evidence (pictures, documents, records, affidavits)
+  - Defense rests
+  - Motions
+  - Closing arguments
+  - Jury instructions (from judge)
+  - Jury deliberations
+  - Jury questions
+  - Verdict
+- **Coin Distribution**: Each substep awards coins (5-20 coins per step, total 175 coins possible)
+- **Educational Value**: Provides detailed breakdown of trial procedures for user education
+
 ### October 22, 2025 - Seamless Logo Integration
 - **Landing Screen Logo**: Updated Verdict Path stacked logo with seamless background integration
   - Logo background color matches app background (#f5f5f5) for clean, professional appearance
