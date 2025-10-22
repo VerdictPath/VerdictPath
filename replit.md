@@ -79,7 +79,7 @@ React Native mobile application using Expo framework
 - **All 8 Stages Enhanced** with sub-stages and videos:
   - Pre-Litigation: 9 steps (Police Report, Footage, Insurance, Medical Records)
   - Complaint Filed: 3 steps (Draft, File, Serve)
-  - Discovery: 3 steps (Interrogatories, Documents, Admissions)
+  - Discovery Begins: 5 steps (Interrogatories, Request for Production of Documents, Request for Admissions, Entry Upon Land for Inspection, Experts)
   - Depositions: 3 steps (Prep, Your Deposition, Opposing Party)
   - Mediation: 3 steps (Prep, Session, Negotiation)
   - Trial Prep: 3 steps (Witnesses, Exhibits, Strategy)

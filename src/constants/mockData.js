@@ -49,9 +49,11 @@ export const LITIGATION_STAGES = [
     expanded: false,
     position: { top: '40%', left: '25%' },
     subStages: [
-      { id: 'disc-1', name: 'Interrogatories', coins: 15, completed: false, icon: '❓', description: 'Written questions for the other party' },
-      { id: 'disc-2', name: 'Document Requests', coins: 15, completed: false, icon: '📄', description: 'Request relevant documents' },
-      { id: 'disc-3', name: 'Admissions', coins: 20, completed: false, icon: '✅', description: 'Facts to be admitted or denied' }
+      { id: 'disc-1', name: 'Interrogatories', coins: 10, completed: false, icon: '❓', description: 'Written questions for the other party' },
+      { id: 'disc-2', name: 'Request for Production of Documents', coins: 10, completed: false, icon: '📄', description: 'Request relevant documents from the opposing party' },
+      { id: 'disc-3', name: 'Request for Admissions', coins: 10, completed: false, icon: '✅', description: 'Facts to be admitted or denied by the opposing party' },
+      { id: 'disc-4', name: 'Entry Upon Land for Inspection', coins: 10, completed: false, icon: '🏘️', description: 'Request to inspect property or land related to the case' },
+      { id: 'disc-5', name: 'Experts', coins: 10, completed: false, icon: '👨‍⚕️', description: 'Identify and disclose expert witnesses' }
     ],
     videos: [
       { id: 'v4', title: 'Understanding Discovery', price: 3.99, duration: '22 min', tier: 'free' },
