@@ -271,7 +271,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
           const x2 = parsePosition(path.to.position.left, 'width') + 40;
           const y2 = parsePosition(path.to.position.top, 'height') + 30;
 
-          // Calculate control points for a wavy path
+          // Calculate control points for a snake-like winding path
           const dx = x2 - x1;
           const dy = y2 - y1;
           const distance = Math.sqrt(dx * dx + dy * dy);
@@ -280,20 +280,31 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
           const perpX = -dy / distance;
           const perpY = dx / distance;
           
-          // Wave amplitude based on distance
-          const waveAmplitude = Math.min(distance * 0.3, 50);
+          // Stronger wave amplitude for more dramatic curves
+          const waveAmplitude = Math.min(distance * 0.5, 80);
           
-          // Control points for two curves creating a wave
-          const cp1x = x1 + dx * 0.33 + perpX * waveAmplitude;
-          const cp1y = y1 + dy * 0.33 + perpY * waveAmplitude;
-          const cp2x = x1 + dx * 0.67 - perpX * waveAmplitude;
-          const cp2y = y1 + dy * 0.67 - perpY * waveAmplitude;
+          // Create a more complex S-curve with multiple control points
+          // Point 1: First curve bends one way
+          const cp1x = x1 + dx * 0.25 + perpX * waveAmplitude;
+          const cp1y = y1 + dy * 0.25 + perpY * waveAmplitude;
+          
+          // Midpoint for the S-curve
+          const midX = x1 + dx * 0.5;
+          const midY = y1 + dy * 0.5;
+          
+          // Point 2: Curve back the other way
+          const cp2x = x1 + dx * 0.5 - perpX * waveAmplitude * 0.8;
+          const cp2y = y1 + dy * 0.5 - perpY * waveAmplitude * 0.8;
+          
+          // Point 3: Continue the wave
+          const cp3x = x1 + dx * 0.75 + perpX * waveAmplitude * 0.6;
+          const cp3y = y1 + dy * 0.75 + perpY * waveAmplitude * 0.6;
 
-          // Create the full wavy path
-          const wavyPath = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+          // Create snake-like winding path with multiple cubic Bezier curves
+          const wavyPath = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${midX} ${midY} S ${cp3x} ${cp3y}, ${x2} ${y2}`;
           
-          // Calculate path length for dash animation
-          const pathLength = distance * 1.3; // Approximate length with curve factor
+          // Calculate path length for dash animation (longer due to curves)
+          const pathLength = distance * 1.7; // Approximate length with more curves
 
           const animatedDashoffset = path.animValue.interpolate({
             inputRange: [0, 1],
