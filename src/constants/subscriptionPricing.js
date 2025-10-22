@@ -169,12 +169,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Small Practice', 
         subtitle: 'Under 100 patients',
         features: [
-          'Up to 100 active patients',
-          'Basic patient case tracking',
-          'Medical Hub access',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (10GB)',
-          'Email support'
+          'Basic package for your patients',
+          'Document storage for your patients',
+          'Basic analytics dashboard'
         ] 
       },
       medium: { 
@@ -182,12 +179,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Medium Practice', 
         subtitle: '101-500 patients',
         features: [
-          'Up to 500 active patients',
-          'Basic patient case tracking',
-          'Medical Hub access',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (50GB)',
-          'Priority email support'
+          'Basic package for your patients',
+          'Document storage for your patients',
+          'Basic analytics dashboard'
         ] 
       },
       large: { 
@@ -195,12 +189,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Large Practice', 
         subtitle: '501-1,000 patients',
         features: [
-          'Up to 1,000 active patients',
-          'Basic patient case tracking',
-          'Medical Hub access',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (100GB)',
-          'Phone support'
+          'Basic package for your patients',
+          'Document storage for your patients',
+          'Basic analytics dashboard'
         ] 
       },
       enterprise: { 
@@ -208,12 +199,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Enterprise', 
         subtitle: '1,000+ patients',
         features: [
-          'Unlimited active patients',
-          'Basic patient case tracking',
-          'Medical Hub access',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (unlimited)',
-          '24/7 support'
+          'Basic package for your patients',
+          'Document storage for your patients',
+          'Basic analytics dashboard'
         ] 
       }
     },
@@ -223,14 +211,11 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Premium - Small Practice', 
         subtitle: 'Under 100 patients',
         features: [
-          'Up to 100 active patients',
-          'Premium patient case tracking',
-          'Advanced Medical Hub features',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (10GB)',
-          'Priority support',
-          'Custom medical reports',
-          'Analytics dashboard'
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'HIPAA-compliant storage',
+          'Upload medical bills and records to patient account'
         ] 
       },
       medium: { 
@@ -238,14 +223,11 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Premium - Medium Practice', 
         subtitle: '101-500 patients',
         features: [
-          'Up to 500 active patients',
-          'Premium patient case tracking',
-          'Advanced Medical Hub features',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (50GB)',
-          'Priority support',
-          'Custom medical reports',
-          'Advanced analytics'
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'HIPAA-compliant storage',
+          'Upload medical bills and records to patient account'
         ] 
       },
       large: { 
@@ -253,14 +235,11 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Premium - Large Practice', 
         subtitle: '501-1,000 patients',
         features: [
-          'Up to 1,000 active patients',
-          'Premium patient case tracking',
-          'Advanced Medical Hub features',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (100GB)',
-          'Dedicated support',
-          'Custom workflows',
-          'Quality metrics'
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'HIPAA-compliant storage',
+          'Upload medical bills and records to patient account'
         ] 
       },
       enterprise: { 
@@ -268,14 +247,11 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Premium - Enterprise', 
         subtitle: '1,000+ patients',
         features: [
-          'Unlimited active patients',
-          'Premium patient case tracking',
-          'Advanced Medical Hub features',
-          'Upload medical bills & records',
-          'HIPAA-compliant storage (unlimited)',
-          'White-glove support',
-          'Custom integrations',
-          'Research database access'
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'HIPAA-compliant storage',
+          'Upload medical bills and records to patient account'
         ] 
       }
     }

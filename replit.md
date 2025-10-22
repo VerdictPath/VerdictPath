@@ -27,11 +27,9 @@ React Native mobile application using Expo framework
 - **Law Firm Features** (uniform across all sizes):
   - Basic Package: Basic package for your clients, Document storage for your clients, Basic analytics dashboard
   - Premium Package: Everything in Basic, Custom branding, Medical Hub, Premium analytics
-- **Medical Provider Features**:
-  - Patient limits based on practice size (100, 500, 1,000, unlimited)
-  - Basic or Premium patient case tracking
-  - Medical Hub access for uploading bills and records
-  - HIPAA-compliant storage (10GB-unlimited based on size)
+- **Medical Provider Features** (uniform across all sizes):
+  - Basic Package: Basic package for your patients, Document storage for your patients, Basic analytics dashboard
+  - Premium Package: Everything in Basic, Custom branding, Medical Hub, HIPAA-compliant storage, Upload medical bills and records to patient account
 - **Registration Flow**: Landing → Register (user type) → Subscription Selection → Login → Dashboard
 - **Stage Names on Map**: Small text labels below each treasure chest for better navigation
 
