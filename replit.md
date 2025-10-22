@@ -8,6 +8,20 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Document Upload Functionality
+- **File Upload System**: Added document upload functionality to Pre-Litigation stage
+- **Upload Requirements**: All Pre-Litigation sub-stages now require document uploads
+  - Police Report, Body Cam, Dash Cam, Pictures (7 upload-enabled tasks)
+  - Medical Bills and Medical Records link to Medical Hub
+- **Upload Validation**: Tasks cannot be completed without uploading required documents
+- **Multi-File Support**: Users can upload multiple files per task
+- **File Type Filters**: Each task specifies accepted formats (PDF, JPG, PNG, MP4, etc.)
+- **Upload Options**: "Take Photo" or "Choose Files" for each task
+- **View Uploaded Files**: Users can review uploaded file lists
+- **Medical Hub Integration**: Medical documents redirect to Medical Hub screen
+- **Upload Status**: Visual indicators show upload status (📤 Upload Files / Upload More)
+- **Disabled Completion**: "Mark Complete" button disabled until files uploaded
+
 ### October 22, 2025 - Interactive Treasure Map with Modals
 - Transformed roadmap into fully interactive pirate treasure map
 - **Treasure Chest Interface**: Each stage represented as positioned treasure chest (💰/🏆)

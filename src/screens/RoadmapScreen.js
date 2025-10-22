@@ -33,7 +33,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
             text: 'Go to Medical Hub', 
             onPress: () => {
               closeModal();
-              onNavigate('medicalhub');
+              onNavigate('medical');
             }
           }
         ]
@@ -102,7 +102,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
             text: 'Go to Medical Hub', 
             onPress: () => {
               closeModal();
-              onNavigate('medicalhub');
+              onNavigate('medical');
             }
           }
         ]
