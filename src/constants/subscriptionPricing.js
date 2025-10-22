@@ -70,11 +70,8 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: 'Under 100 clients',
         features: [
           'Up to 100 active clients',
-          'Client case management',
           'Basic analytics dashboard',
-          'Email support',
-          'Document storage (10GB)',
-          'Standard templates'
+          'Document storage (10GB)'
         ] 
       },
       medium: { 
@@ -83,9 +80,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '101-500 clients',
         features: [
           'Up to 500 active clients',
-          'Advanced client management',
           'Team collaboration tools',
-          'Priority email support',
           'Enhanced analytics',
           'Document storage (50GB)'
         ] 
@@ -96,9 +91,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '501-1,000 clients',
         features: [
           'Up to 1,000 active clients',
-          'Enterprise features',
           'Advanced reporting',
-          'Phone support',
           'Custom workflows',
           'Document storage (100GB)'
         ] 
@@ -111,7 +104,6 @@ export const SUBSCRIPTION_TIERS = {
           'Unlimited active clients',
           'Custom integrations',
           'Dedicated account manager',
-          '24/7 phone support',
           'API access',
           'Unlimited document storage'
         ] 
@@ -124,8 +116,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: 'Under 100 clients',
         features: [
           'Everything in Basic',
-          'White-label option',
-          'Advanced automation',
+          'Medical Hub access',
           'Priority support',
           'Custom branding',
           'Client portal access'
@@ -137,6 +128,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '101-500 clients',
         features: [
           'Everything in Basic',
+          'Medical Hub access',
           'AI-powered insights',
           'Custom integrations',
           'Dedicated support team',
@@ -150,6 +142,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '501-1,000 clients',
         features: [
           'Everything in Basic',
+          'Medical Hub access',
           'Advanced security & compliance',
           'Compliance tools',
           'Dedicated account manager',
@@ -163,6 +156,7 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '1,000+ clients',
         features: [
           'Everything in Basic',
+          'Medical Hub access',
           'Custom development',
           'White-glove onboarding',
           'Unlimited training',
