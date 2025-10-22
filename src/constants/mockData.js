@@ -63,15 +63,16 @@ export const LITIGATION_STAGES = [
   {
     id: 4,
     name: 'Depositions',
-    coins: 75,
+    coins: 100,
     completed: false,
     description: 'Sworn testimony is recorded under oath',
     expanded: false,
     position: { top: '50%', left: '70%' },
     subStages: [
       { id: 'dep-1', name: 'Deposition Preparation', coins: 25, completed: false, icon: '📖', description: 'Prepare for your testimony' },
-      { id: 'dep-2', name: 'Your Deposition', coins: 30, completed: false, icon: '🎤', description: 'Give sworn testimony' },
-      { id: 'dep-3', name: 'Opposing Party Deposition', coins: 20, completed: false, icon: '👥', description: 'Attend opponent depositions' }
+      { id: 'dep-2', name: 'Your Deposition', coins: 25, completed: false, icon: '🎤', description: 'Give sworn testimony' },
+      { id: 'dep-3', name: 'Opposing Party Deposition', coins: 25, completed: false, icon: '👥', description: 'Attend opponent depositions' },
+      { id: 'dep-4', name: 'Expert Deposition', coins: 25, completed: false, icon: '👨‍⚕️', description: 'Expert witness sworn testimony' }
     ],
     videos: [
       { id: 'v6', title: 'Deposition Deep Dive', price: 4.99, duration: '30 min', tier: 'premium' },
