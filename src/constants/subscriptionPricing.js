@@ -13,9 +13,6 @@ const lawFirmBasePrices = {
 // Premium multiplier for law firms (35% more than basic)
 const premiumMultiplier = 1.35;
 
-// Medical provider discount (30% less than law firm pricing)
-const medicalProviderDiscount = 0.70;
-
 export const SUBSCRIPTION_TIERS = {
   individual: {
     free: { 
@@ -184,111 +181,111 @@ export const SUBSCRIPTION_TIERS = {
       ] 
     },
     basic: {
-      small: { 
-        price: Math.round(lawFirmBasePrices.small * medicalProviderDiscount), 
-        name: 'Basic - Small Practice', 
-        subtitle: 'Under 100 patients',
-        features: [
-          'Up to 100 active patients',
-          'Patient case tracking',
-          'Basic medical reports',
-          'Email support',
-          'HIPAA-compliant storage (10GB)',
-          'Standard medical forms'
-        ] 
-      },
-      medium: { 
-        price: Math.round(lawFirmBasePrices.medium * medicalProviderDiscount), 
-        name: 'Basic - Medium Practice', 
-        subtitle: '101-500 patients',
-        features: [
-          'Up to 500 active patients',
-          'Advanced patient tracking',
-          'Analytics dashboard',
-          'Priority support',
-          'Insurance coordination',
-          'Document storage (50GB)'
-        ] 
-      },
-      large: { 
-        price: Math.round(lawFirmBasePrices.large * medicalProviderDiscount), 
-        name: 'Basic - Large Practice', 
-        subtitle: '501-1,000 patients',
-        features: [
-          'Up to 1,000 active patients',
-          'Team coordination tools',
-          'Custom medical reports',
-          'Phone support',
-          'Billing integration',
-          'Document storage (100GB)'
-        ] 
-      },
-      enterprise: { 
-        price: Math.round(lawFirmBasePrices.enterprise * medicalProviderDiscount), 
-        name: 'Basic - Enterprise', 
-        subtitle: '1,000+ patients',
-        features: [
-          'Unlimited active patients',
-          'Custom features',
-          'Dedicated support team',
-          'Multi-location support',
-          'API access',
-          'Unlimited storage'
-        ] 
+      price: 99,
+      name: 'Basic',
+      sizeFeatures: {
+        small: {
+          subtitle: 'Under 100 patients',
+          features: [
+            'Up to 100 active patients',
+            'Basic patient case tracking',
+            'Medical Hub access',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (10GB)',
+            'Email support'
+          ]
+        },
+        medium: {
+          subtitle: '101-500 patients',
+          features: [
+            'Up to 500 active patients',
+            'Basic patient case tracking',
+            'Medical Hub access',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (50GB)',
+            'Priority email support'
+          ]
+        },
+        large: {
+          subtitle: '501-1,000 patients',
+          features: [
+            'Up to 1,000 active patients',
+            'Basic patient case tracking',
+            'Medical Hub access',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (100GB)',
+            'Phone support'
+          ]
+        },
+        enterprise: {
+          subtitle: '1,000+ patients',
+          features: [
+            'Unlimited active patients',
+            'Basic patient case tracking',
+            'Medical Hub access',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (unlimited)',
+            '24/7 support'
+          ]
+        }
       }
     },
     premium: {
-      small: { 
-        price: Math.round(lawFirmBasePrices.small * premiumMultiplier * medicalProviderDiscount), 
-        name: 'Premium - Small Practice', 
-        subtitle: 'Under 100 patients',
-        features: [
-          'Everything in Basic',
-          'Advanced HIPAA tools',
-          'Secure messaging',
-          'Telehealth support',
-          'Advanced security',
-          'Patient portal'
-        ] 
-      },
-      medium: { 
-        price: Math.round(lawFirmBasePrices.medium * premiumMultiplier * medicalProviderDiscount), 
-        name: 'Premium - Medium Practice', 
-        subtitle: '101-500 patients',
-        features: [
-          'Everything in Basic',
-          'EHR integration support',
-          'Training sessions',
-          'Care coordination tools',
-          'Analytics suite',
-          'Quality metrics'
-        ] 
-      },
-      large: { 
-        price: Math.round(lawFirmBasePrices.large * premiumMultiplier * medicalProviderDiscount), 
-        name: 'Premium - Large Practice', 
-        subtitle: '501-1,000 patients',
-        features: [
-          'Everything in Basic',
-          'Custom clinical workflows',
-          'Dedicated manager',
-          'Quality reporting',
-          'Population health tools',
-          'Research database access'
-        ] 
-      },
-      enterprise: { 
-        price: Math.round(lawFirmBasePrices.enterprise * premiumMultiplier * medicalProviderDiscount), 
-        name: 'Premium - Enterprise', 
-        subtitle: '1,000+ patients',
-        features: [
-          'Everything in Basic',
-          'Enterprise support',
-          'Custom development',
-          'Strategic consulting',
-          'White-glove service',
-          'Unlimited customization'
-        ] 
+      price: 149,
+      name: 'Premium',
+      sizeFeatures: {
+        small: {
+          subtitle: 'Under 100 patients',
+          features: [
+            'Up to 100 active patients',
+            'Premium patient case tracking',
+            'Advanced Medical Hub features',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (10GB)',
+            'Priority support',
+            'Custom medical reports',
+            'Analytics dashboard'
+          ]
+        },
+        medium: {
+          subtitle: '101-500 patients',
+          features: [
+            'Up to 500 active patients',
+            'Premium patient case tracking',
+            'Advanced Medical Hub features',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (50GB)',
+            'Priority support',
+            'Custom medical reports',
+            'Advanced analytics'
+          ]
+        },
+        large: {
+          subtitle: '501-1,000 patients',
+          features: [
+            'Up to 1,000 active patients',
+            'Premium patient case tracking',
+            'Advanced Medical Hub features',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (100GB)',
+            'Dedicated support',
+            'Custom workflows',
+            'Quality metrics'
+          ]
+        },
+        enterprise: {
+          subtitle: '1,000+ patients',
+          features: [
+            'Unlimited active patients',
+            'Premium patient case tracking',
+            'Advanced Medical Hub features',
+            'Upload medical bills & records',
+            'HIPAA-compliant storage (unlimited)',
+            'White-glove support',
+            'Custom integrations',
+            'Research database access'
+          ]
+        }
       }
     }
   }

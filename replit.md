@@ -19,7 +19,12 @@ React Native mobile application using Expo framework
 - **Dynamic Pricing**:
   - Individuals: $0 (Free), $4.99 (Basic), $11.99 (Premium)
   - Law Firms: Size-based pricing from $100-$2,500 (Basic), $135-$3,375 (Premium)
-  - Medical Providers: 30% discount from law firm pricing
+  - Medical Providers: Uniform pricing at $99 (Basic), $149 (Premium) for all sizes
+- **Medical Provider Features**:
+  - Patient limits based on practice size (100, 500, 1,000, unlimited)
+  - Basic or Premium patient case tracking
+  - Medical Hub access for uploading bills and records
+  - HIPAA-compliant storage (10GB-unlimited based on size)
 - **Registration Flow**: Landing → Register (user type) → Subscription Selection → Login → Dashboard
 - **Stage Names on Map**: Small text labels below each treasure chest for better navigation
 
