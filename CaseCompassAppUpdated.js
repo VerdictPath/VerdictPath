@@ -767,23 +767,28 @@ const CaseCompassApp = () => {
 
             {/* Treasure chests */}
             {roadmapStages.map(stage => (
-              <TouchableOpacity
+              <View
                 key={stage.id}
-                style={[styles.treasureChest, { 
+                style={[styles.treasureContainer, { 
                   top: stage.position.top, 
                   left: stage.position.left 
                 }]}
-                onPress={() => openStageModal(stage)}
               >
-                <Text style={styles.treasureIcon}>
-                  {stage.completed ? '🏆' : '💰'}
-                </Text>
-                {stage.completed && (
-                  <View style={styles.completeBadge}>
-                    <Text style={styles.completeBadgeText}>✓</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.treasureChest}
+                  onPress={() => openStageModal(stage)}
+                >
+                  <Text style={styles.treasureIcon}>
+                    {stage.completed ? '🏆' : '💰'}
+                  </Text>
+                  {stage.completed && (
+                    <View style={styles.completeBadge}>
+                      <Text style={styles.completeBadgeText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.stageName}>{stage.name}</Text>
+              </View>
             ))}
 
             {/* Map legend */}
@@ -861,8 +866,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
     opacity: 0.6,
   },
-  treasureChest: {
+  treasureContainer: {
     position: 'absolute',
+    alignItems: 'center',
+    width: 80,
+  },
+  treasureChest: {
     width: 60,
     height: 60,
     justifyContent: 'center',
@@ -874,6 +883,16 @@ const styles = StyleSheet.create({
   },
   treasureIcon: {
     fontSize: 35,
+  },
+  stageName: {
+    fontSize: 9,
+    color: '#2c3e50',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   completeBadge: {
     position: 'absolute',
