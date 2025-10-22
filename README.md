@@ -1,4 +1,4 @@
-# Case Compass - React Native Mobile App
+# Verdict Path - React Native Mobile App
 
 A legal case management and education platform focused on Georgia Civil Litigation.
 

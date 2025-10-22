@@ -6,7 +6,7 @@ const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.heroSection}>
-        <Text style={styles.logo}>⚖️ Case Compass</Text>
+        <Text style={styles.logo}>⚖️ Verdict Path</Text>
         <Text style={styles.tagline}>Navigate Your Legal Journey with Confidence</Text>
         <Text style={styles.subtitle}>Georgia Civil Litigation Education</Text>
       </View>

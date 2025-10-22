@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Case Compass",
-    "slug": "case-compass",
+    "name": "Verdict Path",
+    "slug": "verdict-path",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -14,13 +14,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.casecompass.app"
+      "bundleIdentifier": "com.verdictpath.app"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#3498db"
       },
-      "package": "com.casecompass.app"
+      "package": "com.verdictpath.app"
     },
     "web": {
       "bundler": "metro"

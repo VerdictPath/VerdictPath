@@ -55,7 +55,7 @@ const CaseCompassApp = () => {
     
     if (tier === 'free') {
       Alert.alert(
-        '🎉 Welcome to Case Compass!',
+        '🎉 Welcome to Verdict Path!',
         'Your free account has been created. A verification email has been sent to your inbox.',
         [{ text: 'OK', onPress: () => setCurrentScreen('login') }]
       );

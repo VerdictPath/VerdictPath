@@ -1,7 +1,7 @@
-# Case Compass - React Native Mobile App
+# Verdict Path - React Native Mobile App
 
 ## Overview
-Case Compass is a legal case management and education platform focused on Georgia Civil Litigation. It provides users with an interactive case roadmap, gamification features, video tutorials, and secure medical document storage.
+Verdict Path is a legal case management and education platform focused on Georgia Civil Litigation. It provides users with an interactive case roadmap, gamification features, video tutorials, and secure medical document storage.
 
 ## Project Type
 React Native mobile application using Expo framework
