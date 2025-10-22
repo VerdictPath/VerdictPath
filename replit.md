@@ -26,7 +26,7 @@ React Native mobile application using Expo framework
     - Enterprise: $1,750 (Basic), $2,363 (Premium)
 - **Law Firm Features** (uniform across all sizes):
   - Basic Package: Basic package for your clients, Document storage for your clients, Basic analytics dashboard
-  - Premium Package: Everything in Basic, Custom branding, Medical Hub, Premium analytics
+  - Premium Package: Everything in Basic, Custom branding, Medical Hub, Premium analytics, HIPAA-Compliant Storage, Download medical bills and records from patient and medical providers accounts
 - **Medical Provider Features** (uniform across all sizes):
   - Basic Package: Basic package for your patients, Document storage for your patients, Basic analytics dashboard
   - Premium Package: Everything in Basic, Custom branding, Medical Hub, HIPAA-compliant storage, Upload medical bills and records to patient account
