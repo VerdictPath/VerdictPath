@@ -151,6 +151,20 @@ const CaseCompassApp = () => {
     );
   };
 
+  const handlePurchaseVideo = (video) => {
+    Alert.alert(
+      `${video.title}`,
+      `Duration: ${video.duration}\nPrice: $${video.price}\n\nPurchase this tutorial video?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Purchase', 
+          onPress: () => Alert.alert('Success!', 'Video added to your library! You can watch it anytime in the Videos section.')
+        }
+      ]
+    );
+  };
+
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
   };
@@ -210,8 +224,8 @@ const CaseCompassApp = () => {
           onNavigate={handleNavigate}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
-          onToggleStage={handleToggleStage}
           onCompleteSubStage={handleCompleteSubStage}
+          onPurchaseVideo={handlePurchaseVideo}
         />
       )}
       
