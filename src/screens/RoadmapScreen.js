@@ -280,31 +280,31 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
           const perpX = -dy / distance;
           const perpY = dx / distance;
           
-          // Stronger wave amplitude for more dramatic curves
-          const waveAmplitude = Math.min(distance * 0.5, 80);
+          // Even stronger wave amplitude for more dramatic curves
+          const waveAmplitude = Math.min(distance * 0.6, 100);
           
           // Create a more complex S-curve with multiple control points
           // Point 1: First curve bends one way
-          const cp1x = x1 + dx * 0.25 + perpX * waveAmplitude;
-          const cp1y = y1 + dy * 0.25 + perpY * waveAmplitude;
+          const cp1x = x1 + dx * 0.2 + perpX * waveAmplitude;
+          const cp1y = y1 + dy * 0.2 + perpY * waveAmplitude;
           
           // Midpoint for the S-curve
           const midX = x1 + dx * 0.5;
           const midY = y1 + dy * 0.5;
           
-          // Point 2: Curve back the other way
-          const cp2x = x1 + dx * 0.5 - perpX * waveAmplitude * 0.8;
-          const cp2y = y1 + dy * 0.5 - perpY * waveAmplitude * 0.8;
+          // Point 2: Curve back the other way (stronger)
+          const cp2x = x1 + dx * 0.5 - perpX * waveAmplitude * 0.9;
+          const cp2y = y1 + dy * 0.5 - perpY * waveAmplitude * 0.9;
           
           // Point 3: Continue the wave
-          const cp3x = x1 + dx * 0.75 + perpX * waveAmplitude * 0.6;
-          const cp3y = y1 + dy * 0.75 + perpY * waveAmplitude * 0.6;
+          const cp3x = x1 + dx * 0.8 + perpX * waveAmplitude * 0.7;
+          const cp3y = y1 + dy * 0.8 + perpY * waveAmplitude * 0.7;
 
           // Create snake-like winding path with multiple cubic Bezier curves
           const wavyPath = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${midX} ${midY} S ${cp3x} ${cp3y}, ${x2} ${y2}`;
           
           // Calculate path length for dash animation (longer due to curves)
-          const pathLength = distance * 1.7; // Approximate length with more curves
+          const pathLength = distance * 1.8; // Approximate length with more curves
 
           const animatedDashoffset = path.animValue.interpolate({
             inputRange: [0, 1],
@@ -317,7 +317,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
               d={wavyPath}
               stroke="#27ae60"
               strokeWidth="4"
-              strokeDasharray={`${pathLength}`}
+              strokeDasharray="10, 5"
               strokeDashoffset={animatedDashoffset}
               strokeLinecap="round"
               fill="none"
