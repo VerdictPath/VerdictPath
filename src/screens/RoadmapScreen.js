@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
+import Svg, { Line } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
+
+const AnimatedLine = Animated.createAnimatedComponent(Line);
 
 const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
+  const [animatingPaths, setAnimatingPaths] = useState([]);
+  const animationValues = useRef({});
+  const [dataEntryModalVisible, setDataEntryModalVisible] = useState(false);
+  const [dataEntryValue, setDataEntryValue] = useState('');
+  const [dataEntrySubStage, setDataEntrySubStage] = useState(null);
 
   const openStageModal = (stage) => {
     setSelectedStage(stage);
@@ -89,24 +97,46 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
   };
 
   const handleDataEntry = (subStageId, subStageName, currentValue) => {
-    Alert.prompt(
-      `✏️ ${subStageName}`,
-      'Please enter the information:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Save', 
-          onPress: (text) => {
-            if (text && text.trim()) {
-              onDataEntry(selectedStage.id, subStageId, text.trim());
-              Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+    if (Platform.OS === 'web') {
+      setDataEntrySubStage({ id: subStageId, name: subStageName });
+      setDataEntryValue(currentValue || '');
+      setDataEntryModalVisible(true);
+    } else {
+      Alert.prompt(
+        `✏️ ${subStageName}`,
+        'Please enter the information:',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Save', 
+            onPress: (text) => {
+              if (text && text.trim()) {
+                onDataEntry(selectedStage.id, subStageId, text.trim());
+                Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+              }
             }
           }
-        }
-      ],
-      'plain-text',
-      currentValue || ''
-    );
+        ],
+        'plain-text',
+        currentValue || ''
+      );
+    }
+  };
+
+  const handleDataEntrySave = () => {
+    if (dataEntryValue && dataEntryValue.trim() && dataEntrySubStage) {
+      onDataEntry(selectedStage.id, dataEntrySubStage.id, dataEntryValue.trim());
+      setDataEntryModalVisible(false);
+      setDataEntryValue('');
+      setDataEntrySubStage(null);
+      Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+    }
+  };
+
+  const handleDataEntryCancel = () => {
+    setDataEntryModalVisible(false);
+    setDataEntryValue('');
+    setDataEntrySubStage(null);
   };
 
   const handleSubStageComplete = (subStageId, subStageCoins) => {
@@ -187,6 +217,87 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
   };
 
   const currentStageIndex = getCurrentStageIndex();
+
+  useEffect(() => {
+    litigationStages.forEach((stage, index) => {
+      if (stage.completed && index < litigationStages.length - 1) {
+        const pathKey = `${stage.id}-${litigationStages[index + 1].id}`;
+        
+        if (!animatingPaths.find(p => p.key === pathKey)) {
+          const nextStage = litigationStages[index + 1];
+          
+          if (!animationValues.current[pathKey]) {
+            animationValues.current[pathKey] = new Animated.Value(0);
+          }
+          
+          setAnimatingPaths(prev => [...prev, {
+            key: pathKey,
+            from: stage,
+            to: nextStage,
+            animValue: animationValues.current[pathKey]
+          }]);
+          
+          Animated.timing(animationValues.current[pathKey], {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: false
+          }).start();
+        }
+      }
+    });
+  }, [litigationStages]);
+
+  const parsePosition = (posStr, dimension) => {
+    const value = parseFloat(posStr);
+    const mapDimension = dimension === 'width' ? width - 40 : (height * 1.1) - 40;
+    return (value / 100) * mapDimension;
+  };
+
+  const renderAnimatedPaths = () => {
+    if (!animatingPaths || animatingPaths.length === 0) return null;
+
+    const mapWidth = width - 40;
+    const mapHeight = (height * 1.1) - 40;
+
+    return (
+      <Svg 
+        style={StyleSheet.absoluteFill} 
+        width={mapWidth} 
+        height={mapHeight}
+      >
+        {animatingPaths.map(path => {
+          const x1 = parsePosition(path.from.position.left, 'width') + 40;
+          const y1 = parsePosition(path.from.position.top, 'height') + 30;
+          const x2 = parsePosition(path.to.position.left, 'width') + 40;
+          const y2 = parsePosition(path.to.position.top, 'height') + 30;
+
+          const animatedX2 = path.animValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [x1, x2]
+          });
+
+          const animatedY2 = path.animValue.interpolate({
+            inputRange: [0, 1],
+            outputRange: [y1, y2]
+          });
+
+          return (
+            <AnimatedLine
+              key={path.key}
+              x1={x1}
+              y1={y1}
+              x2={animatedX2}
+              y2={animatedY2}
+              stroke="#27ae60"
+              strokeWidth="4"
+              strokeDasharray="10, 5"
+              strokeLinecap="round"
+            />
+          );
+        })}
+      </Svg>
+    );
+  };
 
   const renderTreasure = (stage, index) => {
     const isCurrent = currentStageIndex === index && !stage.completed;
@@ -439,6 +550,8 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
 
             <View style={styles.treasurePath} />
 
+            {renderAnimatedPaths()}
+
             {litigationStages.map((stage, index) => renderTreasure(stage, index))}
 
             <View style={styles.legend}>
@@ -452,6 +565,46 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
       )}
 
       {renderStageModal()}
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={dataEntryModalVisible}
+        onRequestClose={handleDataEntryCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.dataEntryModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>✏️ {dataEntrySubStage?.name}</Text>
+              <TouchableOpacity onPress={handleDataEntryCancel} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.dataEntryInstruction}>Please enter the information:</Text>
+            <TextInput
+              style={styles.dataEntryInput}
+              value={dataEntryValue}
+              onChangeText={setDataEntryValue}
+              placeholder="Type here..."
+              autoFocus={true}
+            />
+            <View style={styles.dataEntryButtons}>
+              <TouchableOpacity
+                style={[styles.dataEntryButton, styles.dataEntryCancelButton]}
+                onPress={handleDataEntryCancel}
+              >
+                <Text style={styles.dataEntryCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dataEntryButton, styles.dataEntrySaveButton]}
+                onPress={handleDataEntrySave}
+              >
+                <Text style={styles.dataEntrySaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -935,6 +1088,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#27ae60',
+  },
+  dataEntryModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 25,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  dataEntryInstruction: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 15,
+  },
+  dataEntryInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  dataEntryButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  dataEntryButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  dataEntryCancelButton: {
+    backgroundColor: '#ecf0f1',
+  },
+  dataEntrySaveButton: {
+    backgroundColor: '#27ae60',
+  },
+  dataEntryCancelText: {
+    color: '#34495e',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dataEntrySaveText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

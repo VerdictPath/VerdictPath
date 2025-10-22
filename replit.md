@@ -60,6 +60,14 @@ React Native mobile application using Expo framework
 - **Upload Status**: Visual indicators show upload status (📤 Upload Files / Upload More)
 - **Data Entry Display**: Shows saved information with "Edit Information" option
 
+### October 22, 2025 - Animated Path Lines on Treasure Map
+- **Animated Progress Lines**: Green dotted lines travel from completed stages to next stages
+  - 1.5-second smooth animation from start to end position
+  - Green (#27ae60) dotted lines with 4px width
+  - Lines persist after animation completes
+  - Multiple lines shown for consecutively completed stages
+- **Implementation**: Using react-native-svg with Animated API for smooth path drawing
+
 ### October 22, 2025 - Interactive Treasure Map with Modals
 - Transformed roadmap into fully interactive pirate treasure map
 - **Treasure Chest Interface**: Each stage represented as positioned treasure chest (💰/🏆)
