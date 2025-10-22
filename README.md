@@ -5,7 +5,12 @@ A legal case management and education platform focused on Georgia Civil Litigati
 ## Features
 
 - **User Authentication**: Register and login with support for three user types (Individual, Law Firm, Medical Provider)
-- **Case Roadmap**: Interactive 8-stage litigation journey with milestone tracking
+- **Avatar Selection**: Choose from 4 video game-style characters (Warrior, Mage, Archer, Knight) to represent your journey
+- **Interactive Pirate Map**: Visual treasure map showing your 8-stage litigation journey
+  - Stages displayed as islands/locations on an aged parchment map
+  - Your avatar marker shows current progress
+  - Visual paths connecting stages
+  - Decorative pirate-themed elements
 - **Gamification**: Earn coins by completing milestones, daily login streaks with bonuses
 - **Video Library**: Educational tutorials for civil litigation
 - **Medical Hub**: HIPAA-compliant document storage placeholder
@@ -32,7 +37,8 @@ A legal case management and education platform focused on Georgia Civil Litigati
 │   │   ├── RoadmapScreen.js
 │   │   ├── VideosScreen.js
 │   │   └── MedicalHubScreen.js
-│   ├── components/             # Reusable components (future)
+│   ├── components/             # Reusable components
+│   │   └── AvatarSelector.js   # Character selection interface
 │   ├── utils/                  # Utility functions
 │   │   └── gamification.js     # Coin/credit calculations
 │   ├── constants/              # App constants and mock data
