@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 
 const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.heroSection}>
-        <Text style={styles.logo}>⚖️ Verdict Path</Text>
-        <Text style={styles.tagline}>Navigate Your Legal Journey with Confidence</Text>
-        <Text style={styles.subtitle}>Georgia Civil Litigation Education</Text>
+        <Image 
+          source={require('../../attached_assets/verdict-path-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.buttonContainer}>
@@ -42,26 +44,13 @@ const LandingScreen = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   heroSection: {
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 40,
     paddingHorizontal: 20,
   },
   logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 10,
-  },
-  tagline: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#34495e',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
+    width: 300,
+    height: 300,
+    marginBottom: 20,
   },
   buttonContainer: {
     paddingHorizontal: 20,
