@@ -1,16 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 
 const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.heroSection}>
-        <Image 
-          source={require('../../attached_assets/verdict-path-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Text style={styles.logo}>Navigate Your Legal Journey With Confidence</Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -44,13 +40,16 @@ const LandingScreen = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   heroSection: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 60,
     paddingHorizontal: 20,
   },
   logo: {
-    width: 300,
-    height: 300,
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    textAlign: 'center',
     marginBottom: 20,
+    lineHeight: 40,
   },
   buttonContainer: {
     paddingHorizontal: 20,
