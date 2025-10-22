@@ -27,10 +27,6 @@ const SubscriptionSelectionScreen = ({
       return SUBSCRIPTION_TIERS[userType][tier].price;
     }
     
-    if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-      return SUBSCRIPTION_TIERS[userType][tier].price;
-    }
-    
     return SUBSCRIPTION_TIERS[userType][tier][size].price;
   };
 
@@ -41,10 +37,6 @@ const SubscriptionSelectionScreen = ({
     
     if (userType === USER_TYPES.INDIVIDUAL) {
       return SUBSCRIPTION_TIERS[userType][tier].features;
-    }
-    
-    if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-      return SUBSCRIPTION_TIERS[userType][tier].sizeFeatures[size].features;
     }
     
     return SUBSCRIPTION_TIERS[userType][tier][size].features;
@@ -59,20 +51,12 @@ const SubscriptionSelectionScreen = ({
       return SUBSCRIPTION_TIERS[userType][tier].name;
     }
     
-    if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-      return SUBSCRIPTION_TIERS[userType][tier].name;
-    }
-    
     return SUBSCRIPTION_TIERS[userType][tier][size].name;
   };
 
   const getSubtitle = (tier, size) => {
     if (tier === TIER_LEVELS.FREE || userType === USER_TYPES.INDIVIDUAL) {
       return null;
-    }
-    
-    if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-      return SUBSCRIPTION_TIERS[userType][tier].sizeFeatures[size].subtitle;
     }
     
     return SUBSCRIPTION_TIERS[userType][tier][size].subtitle;
