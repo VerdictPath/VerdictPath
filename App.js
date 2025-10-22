@@ -7,6 +7,7 @@ import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import SubscriptionSelectionScreen from './src/screens/SubscriptionSelectionScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import RoadmapScreen from './src/screens/RoadmapScreen';
 import VideosScreen from './src/screens/VideosScreen';
@@ -25,6 +26,9 @@ const CaseCompassApp = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firmCode, setFirmCode] = useState('');
 
+  const [subscriptionTier, setSubscriptionTier] = useState('free');
+  const [firmSize, setFirmSize] = useState('small');
+
   const [litigationStages, setLitigationStages] = useState(LITIGATION_STAGES);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
 
@@ -38,8 +42,26 @@ const CaseCompassApp = () => {
       return;
     }
     
-    Alert.alert('Success', 'Verification email sent! Please check your inbox.');
-    setCurrentScreen('login');
+    setCurrentScreen('subscription');
+  };
+
+  const handleSelectSubscription = (tier, size) => {
+    setSubscriptionTier(tier);
+    setFirmSize(size);
+    
+    if (tier === 'free') {
+      Alert.alert(
+        '🎉 Welcome to Case Compass!',
+        'Your free account has been created. A verification email has been sent to your inbox.',
+        [{ text: 'OK', onPress: () => setCurrentScreen('login') }]
+      );
+    } else {
+      Alert.alert(
+        'Payment Required',
+        'In a production app, you would now proceed to payment. For this demo, your account has been created with a free trial.',
+        [{ text: 'OK', onPress: () => setCurrentScreen('login') }]
+      );
+    }
   };
 
   const handleLogin = () => {
@@ -52,7 +74,8 @@ const CaseCompassApp = () => {
       id: 1,
       email: email,
       type: userType,
-      subscription: 'free',
+      subscription: subscriptionTier,
+      firmSize: firmSize,
       coins: 150,
       streak: 3
     });
@@ -232,6 +255,14 @@ const CaseCompassApp = () => {
           firmCode={firmCode}
           setFirmCode={setFirmCode}
           onRegister={handleRegister}
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentScreen === 'subscription' && (
+        <SubscriptionSelectionScreen
+          userType={userType}
+          onSelectSubscription={handleSelectSubscription}
           onNavigate={handleNavigate}
         />
       )}

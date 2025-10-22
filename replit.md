@@ -8,6 +8,21 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Tiered Subscription System
+- **Subscription Selection Screen**: New screen in registration flow showing pricing tiers
+- **User-Type Based Pricing**: Different pricing for Individual, Law Firm, and Medical Provider
+- **Organization Size Selection**: Law Firms and Medical Providers select size (Small, Medium, Large, Enterprise)
+- **Three Subscription Tiers**:
+  - Free: Limited features, 30-day trial for organizations
+  - Basic: Full features, client/patient management
+  - Premium: Advanced features, priority support, custom integrations
+- **Dynamic Pricing**:
+  - Individuals: $0 (Free), $4.99 (Basic), $11.99 (Premium)
+  - Law Firms: Size-based pricing from $100-$2,500 (Basic), $135-$3,375 (Premium)
+  - Medical Providers: 30% discount from law firm pricing
+- **Registration Flow**: Landing → Register (user type) → Subscription Selection → Login → Dashboard
+- **Stage Names on Map**: Small text labels below each treasure chest for better navigation
+
 ### October 22, 2025 - Document Upload and Data Entry Functionality
 - **File Upload System**: Added document upload functionality to Pre-Litigation stage
 - **Upload-Based Tasks**: 5 tasks require file uploads
@@ -89,6 +104,7 @@ React Native mobile application using Expo framework
 │   │   ├── LandingScreen.js
 │   │   ├── LoginScreen.js
 │   │   ├── RegisterScreen.js
+│   │   ├── SubscriptionSelectionScreen.js
 │   │   ├── DashboardScreen.js
 │   │   ├── RoadmapScreen.js
 │   │   ├── VideosScreen.js
@@ -98,7 +114,8 @@ React Native mobile application using Expo framework
 │   ├── utils/                  # Utility functions
 │   │   └── gamification.js
 │   ├── constants/              # Constants and mock data
-│   │   └── mockData.js
+│   │   ├── mockData.js
+│   │   └── subscriptionPricing.js
 │   └── styles/                 # Shared styles
 │       └── commonStyles.js
 ├── app.json                    # Expo configuration
@@ -108,7 +125,11 @@ React Native mobile application using Expo framework
 
 ## Key Features
 1. **User Authentication**: Register, login, logout (mock implementation)
-2. **User Types**: Individual, Law Firm, Medical Provider
+2. **User Types & Subscriptions**: 
+   - Individual, Law Firm, Medical Provider
+   - Tiered subscription plans (Free, Basic, Premium)
+   - Size-based pricing for organizations
+   - Dynamic pricing based on user type and size
 3. **Avatar Selection**: Choose from 4 video game-style characters
    - Warrior ⚔️ (Bold and fearless)
    - Mage 🔮 (Wise spellcaster)
