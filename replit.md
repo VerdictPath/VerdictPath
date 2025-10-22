@@ -8,6 +8,13 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Seamless Logo Integration
+- **Landing Screen Logo**: Updated Verdict Path stacked logo with seamless background integration
+  - Logo background color matches app background (#f5f5f5) for clean, professional appearance
+  - Removed white and beige background artifacts using Python/Pillow image processing
+  - Logo displays: Green winding path icon, gold compass, "VERDICT PATH" branding, and taglines
+  - Optimized at 350x350 pixels with proper aspect ratio
+
 ### October 22, 2025 - Tiered Subscription System
 - **Subscription Selection Screen**: New screen in registration flow showing pricing tiers
 - **User-Type Based Pricing**: Different pricing for Individual, Law Firm, and Medical Provider

@@ -7,7 +7,7 @@ const LandingScreen = ({ onNavigate }) => {
     <View style={commonStyles.container}>
       <View style={styles.heroSection}>
         <Image 
-          source={require('../../attached_assets/verdict-path-logo-with-tagline.png')}
+          source={require('../../attached_assets/verdict-path-logo-seamless.png')}
           style={styles.logo}
           resizeMode="contain"
         />
