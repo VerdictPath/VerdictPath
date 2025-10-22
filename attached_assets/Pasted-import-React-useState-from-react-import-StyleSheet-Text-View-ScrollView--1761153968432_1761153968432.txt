@@ -1,0 +1,579 @@
+import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  ScrollView, 
+  TouchableOpacity,
+  SafeAreaView,
+  Alert
+} from 'react-native';
+
+// ============================================
+// CASE COMPASS - REVISED ROADMAP WITH PRE-LITIGATION STAGES
+// ============================================
+
+const CaseCompassRoadmap = () => {
+  // ============================================
+  // REVISED LITIGATION STAGES WITH SUB-STAGES
+  // ============================================
+  const [roadmapData, setRoadmapData] = useState([
+    {
+      id: 1,
+      name: 'Pre-Litigation',
+      coins: 100,
+      completed: false,
+      description: 'Gather all necessary documentation before filing',
+      expanded: false,
+      subStages: [
+        { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Obtain official police accident report' },
+        { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Request body camera footage if available' },
+        { id: 'pre-3', name: 'Dash Cam Footage', coins: 10, completed: false, icon: '🎥', description: 'Collect dash camera recordings' },
+        { id: 'pre-4', name: 'Pictures', coins: 5, completed: false, icon: '📸', description: 'Document accident scene, vehicle damage, and injuries' },
+        { id: 'pre-5', name: 'Health Insurance Card', coins: 5, completed: false, icon: '💳', description: 'Copy of health insurance information' },
+        { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Identify your auto insurance provider' },
+        { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Record your policy number and details' },
+        { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Collect all medical treatment bills' },
+        { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Obtain complete medical records and reports' }
+      ]
+    },
+    {
+      id: 2,
+      name: 'Complaint Filed',
+      coins: 25,
+      completed: false,
+      description: 'Lawsuit officially filed with the court',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 3,
+      name: 'Discovery Begins',
+      coins: 50,
+      completed: false,
+      description: 'Information exchange phase starts',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 4,
+      name: 'Depositions',
+      coins: 75,
+      completed: false,
+      description: 'Sworn testimony recorded',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 5,
+      name: 'Mediation',
+      coins: 50,
+      completed: false,
+      description: 'Attempt to settle with mediator',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 6,
+      name: 'Trial Prep',
+      coins: 100,
+      completed: false,
+      description: 'Preparing for court trial',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 7,
+      name: 'Trial/Settlement',
+      coins: 100,
+      completed: false,
+      description: 'Case resolution',
+      expanded: false,
+      subStages: []
+    },
+    {
+      id: 8,
+      name: 'Case Resolved',
+      coins: 200,
+      completed: false,
+      description: 'Final resolution achieved',
+      expanded: false,
+      subStages: []
+    }
+  ]);
+
+  const [totalCoins, setTotalCoins] = useState(0);
+
+  // ============================================
+  // TOGGLE STAGE EXPANSION
+  // ============================================
+  const toggleStageExpansion = (stageId) => {
+    setRoadmapData(prevData =>
+      prevData.map(stage =>
+        stage.id === stageId
+          ? { ...stage, expanded: !stage.expanded }
+          : stage
+      )
+    );
+  };
+
+  // ============================================
+  // MARK SUB-STAGE COMPLETE
+  // ============================================
+  const markSubStageComplete = (stageId, subStageId) => {
+    setRoadmapData(prevData =>
+      prevData.map(stage => {
+        if (stage.id === stageId) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId && !subStage.completed) {
+              setTotalCoins(prevCoins => prevCoins + subStage.coins);
+              Alert.alert(
+                '🎉 Congratulations!',
+                `You earned ${subStage.coins} coins for completing "${subStage.name}"!`
+              );
+              return { ...subStage, completed: true };
+            }
+            return subStage;
+          });
+
+          // Check if all sub-stages are completed
+          const allSubStagesComplete = updatedSubStages.every(sub => sub.completed);
+          
+          if (allSubStagesComplete && !stage.completed && updatedSubStages.length > 0) {
+            setTotalCoins(prevCoins => prevCoins + stage.coins);
+            Alert.alert(
+              '🏆 Stage Complete!',
+              `You completed "${stage.name}" and earned ${stage.coins} bonus coins!`
+            );
+            return { ...stage, subStages: updatedSubStages, completed: true };
+          }
+
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
+  // ============================================
+  // MARK MAIN STAGE COMPLETE (for stages without sub-stages)
+  // ============================================
+  const markStageComplete = (stageId) => {
+    setRoadmapData(prevData =>
+      prevData.map(stage => {
+        if (stage.id === stageId && !stage.completed) {
+          setTotalCoins(prevCoins => prevCoins + stage.coins);
+          Alert.alert(
+            '🎉 Congratulations!',
+            `You completed "${stage.name}" and earned ${stage.coins} coins!`
+          );
+          return { ...stage, completed: true };
+        }
+        return stage;
+      })
+    );
+  };
+
+  // ============================================
+  // CALCULATE PROGRESS
+  // ============================================
+  const calculateProgress = () => {
+    let completedStages = 0;
+    let totalStages = 0;
+
+    roadmapData.forEach(stage => {
+      if (stage.subStages.length > 0) {
+        totalStages += stage.subStages.length;
+        completedStages += stage.subStages.filter(sub => sub.completed).length;
+      } else {
+        totalStages += 1;
+        if (stage.completed) completedStages += 1;
+      }
+    });
+
+    return totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+  };
+
+  // ============================================
+  // RENDER ROADMAP
+  // ============================================
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Case Roadmap</Text>
+        <Text style={styles.headerSubtitle}>Track your litigation journey</Text>
+        
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${calculateProgress()}%` }]} />
+          </View>
+          <Text style={styles.progressText}>{calculateProgress()}% Complete</Text>
+        </View>
+
+        <View style={styles.coinsDisplay}>
+          <Text style={styles.coinsIcon}>🪙</Text>
+          <Text style={styles.coinsText}>{totalCoins} Coins Earned</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.roadmapContainer}>
+          {roadmapData.map((stage, index) => (
+            <View key={stage.id} style={styles.stageWrapper}>
+              {/* Main Stage */}
+              <View style={styles.stageItem}>
+                <View style={styles.stageLeftSection}>
+                  <View style={[
+                    styles.stageCircle,
+                    stage.completed && styles.stageCircleCompleted
+                  ]}>
+                    <Text style={styles.stageNumber}>{stage.id}</Text>
+                  </View>
+                  {index < roadmapData.length - 1 && (
+                    <View style={styles.connectingLine} />
+                  )}
+                </View>
+
+                <View style={styles.stageContent}>
+                  <TouchableOpacity
+                    onPress={() => stage.subStages.length > 0 && toggleStageExpansion(stage.id)}
+                    activeOpacity={stage.subStages.length > 0 ? 0.7 : 1}
+                  >
+                    <View style={styles.stageHeader}>
+                      <Text style={styles.stageName}>{stage.name}</Text>
+                      {stage.subStages.length > 0 && (
+                        <Text style={styles.expandIcon}>
+                          {stage.expanded ? '▼' : '▶'}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={styles.stageDescription}>{stage.description}</Text>
+                    <Text style={styles.stageCoins}>
+                      🪙 {stage.coins} coins {stage.subStages.length > 0 ? '(bonus)' : ''}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Mark Complete Button for stages without sub-stages */}
+                  {stage.subStages.length === 0 && !stage.completed && (
+                    <TouchableOpacity
+                      style={styles.markCompleteButton}
+                      onPress={() => markStageComplete(stage.id)}
+                    >
+                      <Text style={styles.markCompleteText}>Mark Complete</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {stage.completed && (
+                    <View style={styles.completedBadge}>
+                      <Text style={styles.completedText}>✓ Completed</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Sub-Stages */}
+              {stage.expanded && stage.subStages.length > 0 && (
+                <View style={styles.subStagesContainer}>
+                  {stage.subStages.map((subStage, subIndex) => (
+                    <View key={subStage.id} style={styles.subStageItem}>
+                      <View style={styles.subStageLeftSection}>
+                        <View style={[
+                          styles.subStageCircle,
+                          subStage.completed && styles.subStageCircleCompleted
+                        ]}>
+                          <Text style={styles.subStageIcon}>{subStage.icon}</Text>
+                        </View>
+                        {subIndex < stage.subStages.length - 1 && (
+                          <View style={styles.subConnectingLine} />
+                        )}
+                      </View>
+
+                      <View style={styles.subStageContent}>
+                        <Text style={styles.subStageName}>{subStage.name}</Text>
+                        <Text style={styles.subStageDescription}>{subStage.description}</Text>
+                        <Text style={styles.subStageCoins}>🪙 {subStage.coins} coins</Text>
+
+                        {!subStage.completed ? (
+                          <TouchableOpacity
+                            style={styles.subMarkCompleteButton}
+                            onPress={() => markSubStageComplete(stage.id, subStage.id)}
+                          >
+                            <Text style={styles.subMarkCompleteText}>Mark Complete</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={styles.subCompletedBadge}>
+                            <Text style={styles.subCompletedText}>✓ Done</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+// ============================================
+// STYLES
+// ============================================
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f6fa',
+  },
+  header: {
+    backgroundColor: '#3498db',
+    padding: 20,
+    paddingTop: 40,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#ecf0f1',
+    marginBottom: 20,
+  },
+  progressContainer: {
+    marginBottom: 15,
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: '#2980b9',
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#2ecc71',
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  coinsDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2980b9',
+    padding: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  coinsIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  coinsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  roadmapContainer: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  stageWrapper: {
+    marginBottom: 20,
+  },
+  stageItem: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  stageLeftSection: {
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  stageCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#95a5a6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  stageCircleCompleted: {
+    backgroundColor: '#27ae60',
+  },
+  stageNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  connectingLine: {
+    width: 3,
+    flex: 1,
+    backgroundColor: '#bdc3c7',
+    marginVertical: 5,
+  },
+  stageContent: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  stageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  stageName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+    flex: 1,
+  },
+  expandIcon: {
+    fontSize: 16,
+    color: '#3498db',
+    fontWeight: 'bold',
+  },
+  stageDescription: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 10,
+    lineHeight: 20,
+  },
+  stageCoins: {
+    fontSize: 14,
+    color: '#f39c12',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  markCompleteButton: {
+    backgroundColor: '#3498db',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  markCompleteText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  completedBadge: {
+    backgroundColor: '#d5f4e6',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completedText: {
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // Sub-Stages Styles
+  subStagesContainer: {
+    marginLeft: 32,
+    marginTop: 10,
+    paddingLeft: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: '#e8f4f8',
+  },
+  subStageItem: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  subStageLeftSection: {
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  subStageCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ecf0f1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  subStageCircleCompleted: {
+    backgroundColor: '#81c784',
+  },
+  subStageIcon: {
+    fontSize: 18,
+  },
+  subConnectingLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#dfe6e9',
+    marginVertical: 3,
+  },
+  subStageContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    padding: 14,
+    borderRadius: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3498db',
+  },
+  subStageName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  subStageDescription: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  subStageCoins: {
+    fontSize: 13,
+    color: '#f39c12',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  subMarkCompleteButton: {
+    backgroundColor: '#3498db',
+    padding: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  subMarkCompleteText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  subCompletedBadge: {
+    backgroundColor: '#d5f4e6',
+    padding: 6,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  subCompletedText: {
+    color: '#27ae60',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+});
+
+export default CaseCompassRoadmap;

@@ -100,10 +100,55 @@ const CaseCompassApp = () => {
   const handleCompleteStage = (stageId, stageCoins) => {
     setLitigationStages(prevStages => 
       prevStages.map(s => 
-        s.id === stageId ? { ...s, completed: true } : s
+        s.id === stageId && !s.completed ? { ...s, completed: true } : s
       )
     );
-    setCoins(coins + stageCoins);
+    setCoins(prevCoins => prevCoins + stageCoins);
+    Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+  };
+
+  const handleToggleStage = (stageId) => {
+    setLitigationStages(prevStages =>
+      prevStages.map(stage =>
+        stage.id === stageId
+          ? { ...stage, expanded: !stage.expanded }
+          : stage
+      )
+    );
+  };
+
+  const handleCompleteSubStage = (stageId, subStageId, subStageCoins) => {
+    setLitigationStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === stageId) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId && !subStage.completed) {
+              setCoins(prevCoins => prevCoins + subStageCoins);
+              Alert.alert(
+                '🎉 Congratulations!',
+                `You earned ${subStageCoins} coins for completing "${subStage.name}"!`
+              );
+              return { ...subStage, completed: true };
+            }
+            return subStage;
+          });
+
+          const allSubStagesComplete = updatedSubStages.every(sub => sub.completed);
+          
+          if (allSubStagesComplete && !stage.completed && updatedSubStages.length > 0) {
+            setCoins(prevCoins => prevCoins + stage.coins);
+            Alert.alert(
+              '🏆 Stage Complete!',
+              `You completed "${stage.name}" and earned ${stage.coins} bonus coins!`
+            );
+            return { ...stage, subStages: updatedSubStages, completed: true };
+          }
+
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
   };
 
   const handleNavigate = (screen) => {
@@ -165,6 +210,8 @@ const CaseCompassApp = () => {
           onNavigate={handleNavigate}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
+          onToggleStage={handleToggleStage}
+          onCompleteSubStage={handleCompleteSubStage}
         />
       )}
       

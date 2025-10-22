@@ -1,12 +1,30 @@
 export const LITIGATION_STAGES = [
-  { id: 1, name: 'Pre-Litigation', coins: 10, completed: false, description: 'Initial consultation and case evaluation' },
-  { id: 2, name: 'Complaint Filed', coins: 25, completed: false, description: 'Lawsuit officially filed with the court' },
-  { id: 3, name: 'Discovery Begins', coins: 50, completed: false, description: 'Information exchange phase starts' },
-  { id: 4, name: 'Depositions', coins: 75, completed: false, description: 'Sworn testimony recorded' },
-  { id: 5, name: 'Mediation', coins: 50, completed: false, description: 'Attempt to settle with mediator' },
-  { id: 6, name: 'Trial Prep', coins: 100, completed: false, description: 'Preparing for court trial' },
-  { id: 7, name: 'Trial/Settlement', coins: 100, completed: false, description: 'Case resolution' },
-  { id: 8, name: 'Case Resolved', coins: 200, completed: false, description: 'Final resolution achieved' }
+  {
+    id: 1,
+    name: 'Pre-Litigation',
+    coins: 100,
+    completed: false,
+    description: 'Gather all necessary documentation before filing',
+    expanded: false,
+    subStages: [
+      { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Obtain official police accident report' },
+      { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Request body camera footage if available' },
+      { id: 'pre-3', name: 'Dash Cam Footage', coins: 10, completed: false, icon: '🎥', description: 'Collect dash camera recordings' },
+      { id: 'pre-4', name: 'Pictures', coins: 5, completed: false, icon: '📸', description: 'Document accident scene, vehicle damage, and injuries' },
+      { id: 'pre-5', name: 'Health Insurance Card', coins: 5, completed: false, icon: '💳', description: 'Copy of health insurance information' },
+      { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Identify your auto insurance provider' },
+      { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Record your policy number and details' },
+      { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Collect all medical treatment bills' },
+      { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Obtain complete medical records and reports' }
+    ]
+  },
+  { id: 2, name: 'Complaint Filed', coins: 25, completed: false, description: 'Lawsuit officially filed with the court', expanded: false, subStages: [] },
+  { id: 3, name: 'Discovery Begins', coins: 50, completed: false, description: 'Information exchange phase starts', expanded: false, subStages: [] },
+  { id: 4, name: 'Depositions', coins: 75, completed: false, description: 'Sworn testimony recorded', expanded: false, subStages: [] },
+  { id: 5, name: 'Mediation', coins: 50, completed: false, description: 'Attempt to settle with mediator', expanded: false, subStages: [] },
+  { id: 6, name: 'Trial Prep', coins: 100, completed: false, description: 'Preparing for court trial', expanded: false, subStages: [] },
+  { id: 7, name: 'Trial/Settlement', coins: 100, completed: false, description: 'Case resolution', expanded: false, subStages: [] },
+  { id: 8, name: 'Case Resolved', coins: 200, completed: false, description: 'Final resolution achieved', expanded: false, subStages: [] }
 ];
 
 export const VIDEOS = [
