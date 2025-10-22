@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
-import Svg, { Line } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
-const AnimatedLine = Animated.createAnimatedComponent(Line);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -271,27 +271,45 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
           const x2 = parsePosition(path.to.position.left, 'width') + 40;
           const y2 = parsePosition(path.to.position.top, 'height') + 30;
 
-          const animatedX2 = path.animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: [x1, x2]
-          });
+          // Calculate control points for a wavy path
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Create perpendicular offset for wave effect
+          const perpX = -dy / distance;
+          const perpY = dx / distance;
+          
+          // Wave amplitude based on distance
+          const waveAmplitude = Math.min(distance * 0.3, 50);
+          
+          // Control points for two curves creating a wave
+          const cp1x = x1 + dx * 0.33 + perpX * waveAmplitude;
+          const cp1y = y1 + dy * 0.33 + perpY * waveAmplitude;
+          const cp2x = x1 + dx * 0.67 - perpX * waveAmplitude;
+          const cp2y = y1 + dy * 0.67 - perpY * waveAmplitude;
 
-          const animatedY2 = path.animValue.interpolate({
+          // Create the full wavy path
+          const wavyPath = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+          
+          // Calculate path length for dash animation
+          const pathLength = distance * 1.3; // Approximate length with curve factor
+
+          const animatedDashoffset = path.animValue.interpolate({
             inputRange: [0, 1],
-            outputRange: [y1, y2]
+            outputRange: [pathLength, 0]
           });
 
           return (
-            <AnimatedLine
+            <AnimatedPath
               key={path.key}
-              x1={x1}
-              y1={y1}
-              x2={animatedX2}
-              y2={animatedY2}
+              d={wavyPath}
               stroke="#27ae60"
               strokeWidth="4"
-              strokeDasharray="10, 5"
+              strokeDasharray={`${pathLength}`}
+              strokeDashoffset={animatedDashoffset}
               strokeLinecap="round"
+              fill="none"
             />
           );
         })}
