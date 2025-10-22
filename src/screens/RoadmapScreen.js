@@ -5,7 +5,7 @@ import AvatarSelector from '../components/AvatarSelector';
 
 const { width, height } = Dimensions.get('window');
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onUpdateSubStage }) => {
+const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
 
@@ -88,6 +88,27 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
     );
   };
 
+  const handleDataEntry = (subStageId, subStageName, currentValue) => {
+    Alert.prompt(
+      `✏️ ${subStageName}`,
+      'Please enter the information:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Save', 
+          onPress: (text) => {
+            if (text && text.trim()) {
+              onDataEntry(selectedStage.id, subStageId, text.trim());
+              Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+            }
+          }
+        }
+      ],
+      'plain-text',
+      currentValue || ''
+    );
+  };
+
   const handleSubStageComplete = (subStageId, subStageCoins) => {
     const currentStage = litigationStages.find(s => s.id === selectedStage.id);
     const subStage = currentStage.subStages.find(s => s.id === subStageId);
@@ -110,36 +131,12 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
       return;
     }
 
-    if (!subStage.uploaded) {
-      Alert.alert(
-        'Upload Required',
-        'Please upload the required documents before marking this step as complete.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
     onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
   };
 
   const completeEntireStage = () => {
     const currentStage = litigationStages.find(s => s.id === selectedStage.id);
     
-    if (currentStage.id === 1) {
-      const missingUploads = currentStage.subStages.filter(
-        sub => !sub.uploaded && !sub.linkToMedicalHub
-      );
-      
-      if (missingUploads.length > 0) {
-        Alert.alert(
-          'Uploads Required',
-          `Please upload documents for:\n${missingUploads.map(s => s.name).join('\n')}`,
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-    }
-
     if (!currentStage.subStages || currentStage.subStages.length === 0) {
       onCompleteStage(currentStage.id, currentStage.coins);
       closeModal();
@@ -257,7 +254,25 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                         </View>
                       </View>
 
-                      {subStage.acceptedFormats && (
+                      {subStage.isDataEntry ? (
+                        <View style={styles.uploadSection}>
+                          <TouchableOpacity
+                            style={styles.dataEntryButton}
+                            onPress={() => handleDataEntry(subStage.id, subStage.name, subStage.enteredData)}
+                          >
+                            <Text style={styles.dataEntryIcon}>✏️</Text>
+                            <Text style={styles.dataEntryButtonText}>
+                              {subStage.enteredData ? 'Edit Information' : 'Enter Information'}
+                            </Text>
+                          </TouchableOpacity>
+                          {subStage.enteredData && (
+                            <View style={styles.dataEntryDisplay}>
+                              <Text style={styles.dataEntryLabel}>Saved:</Text>
+                              <Text style={styles.dataEntryValue} numberOfLines={1}>{subStage.enteredData}</Text>
+                            </View>
+                          )}
+                        </View>
+                      ) : subStage.acceptedFormats ? (
                         <View style={styles.uploadSection}>
                           {subStage.linkToMedicalHub ? (
                             <TouchableOpacity
@@ -292,7 +307,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                             </>
                           )}
                         </View>
-                      )}
+                      ) : null}
 
                       <View style={styles.completeSection}>
                         {subStage.completed ? (
@@ -303,8 +318,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                           <TouchableOpacity
                             style={[
                               styles.miniCompleteButton,
-                              selectedAvatar && { backgroundColor: selectedAvatar.color },
-                              (!subStage.uploaded && !subStage.linkToMedicalHub && subStage.acceptedFormats) && styles.disabledButton
+                              selectedAvatar && { backgroundColor: selectedAvatar.color }
                             ]}
                             onPress={() => handleSubStageComplete(subStage.id, subStage.coins)}
                           >
@@ -740,6 +754,44 @@ const styles = StyleSheet.create({
   medicalHubText: {
     color: '#2e7d32',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  dataEntryButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#9b59b6',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dataEntryIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  dataEntryButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  dataEntryDisplay: {
+    backgroundColor: '#f3e5f5',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#9b59b6',
+    flex: 1,
+  },
+  dataEntryLabel: {
+    fontSize: 10,
+    color: '#7f8c8d',
+    marginBottom: 2,
+  },
+  dataEntryValue: {
+    fontSize: 12,
+    color: '#2c3e50',
     fontWeight: '600',
   },
   completeSection: {

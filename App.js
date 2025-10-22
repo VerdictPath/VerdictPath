@@ -187,6 +187,26 @@ const CaseCompassApp = () => {
     );
   };
 
+  const handleDataEntry = (stageId, subStageId, data) => {
+    setLitigationStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === stageId) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId) {
+              return { 
+                ...subStage, 
+                enteredData: data 
+              };
+            }
+            return subStage;
+          });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
   };
@@ -249,6 +269,7 @@ const CaseCompassApp = () => {
           onCompleteSubStage={handleCompleteSubStage}
           onPurchaseVideo={handlePurchaseVideo}
           onUploadFile={handleUploadFile}
+          onDataEntry={handleDataEntry}
         />
       )}
       
