@@ -768,13 +768,14 @@ const styles = StyleSheet.create({
   },
   legend: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
+    top: 20,
+    right: 20,
     backgroundColor: '#f4e4c1',
-    padding: 15,
+    padding: 12,
     borderRadius: 10,
     borderWidth: 2,
     borderColor: '#8b4513',
+    maxWidth: 180,
   },
   legendTitle: {
     fontSize: 14,
