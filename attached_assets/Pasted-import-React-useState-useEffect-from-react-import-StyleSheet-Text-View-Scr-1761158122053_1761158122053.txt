@@ -1,0 +1,2000 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  ScrollView, 
+  TouchableOpacity,
+  TextInput,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+  Modal,
+  Dimensions
+} from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+// ============================================
+// CASE COMPASS - COMPLETE APP WITH SUBSCRIPTION TIERS
+// ============================================
+
+const CaseCompassApp = () => {
+  // ============================================
+  // STATE MANAGEMENT
+  // ============================================
+  const [currentScreen, setCurrentScreen] = useState('landing');
+  const [userType, setUserType] = useState('individual');
+  const [subscriptionTier, setSubscriptionTier] = useState('free');
+  const [firmSize, setFirmSize] = useState('small'); // small, medium, large, enterprise
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [coins, setCoins] = useState(0);
+  const [loginStreak, setLoginStreak] = useState(0);
+
+  // Form states
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [firmCode, setFirmCode] = useState('');
+
+  // Payment states
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [billingName, setBillingName] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingZip, setBillingZip] = useState('');
+
+  // Modal states
+  const [selectedStage, setSelectedStage] = useState(null);
+  const [stageModalVisible, setStageModalVisible] = useState(false);
+  const [subscriptionModalVisible, setSubscriptionModalVisible] = useState(false);
+
+  // ============================================
+  // SUBSCRIPTION PRICING TIERS
+  // ============================================
+  // Law Firm Base Prices (based on number of clients)
+  const lawFirmBasePrices = {
+    small: 100,    // Under 100 clients
+    medium: 500,   // 101-500 clients
+    large: 1200,   // 501-1,000 clients
+    enterprise: 2500  // 1,000+ clients
+  };
+
+  // Premium multiplier for law firms (35% more than basic)
+  const premiumMultiplier = 1.35;
+
+  // Medical provider discount (30% less than law firm pricing)
+  const medicalProviderDiscount = 0.70;
+
+  const pricingTiers = {
+    individual: {
+      free: { price: 0, name: 'Free', features: ['Basic roadmap', 'Limited videos', '100 coin limit'] },
+      basic: { price: 4.99, name: 'Basic', features: ['Full roadmap', 'Standard videos', 'Unlimited coins', 'Email support'] },
+      premium: { price: 11.99, name: 'Premium', features: ['Everything in Basic', 'Premium videos', 'Priority support', 'Document templates'] }
+    },
+    lawfirm: {
+      free: { price: 0, name: 'Free Trial', features: ['Limited features', '30-day trial', 'Up to 10 clients'] },
+      basic: {
+        small: { 
+          price: lawFirmBasePrices.small, 
+          name: 'Basic - Small Firm (Under 100 clients)', 
+          features: ['Up to 100 clients', 'Client management', 'Basic analytics', 'Email support', 'Document storage'] 
+        },
+        medium: { 
+          price: lawFirmBasePrices.medium, 
+          name: 'Basic - Medium Firm (101-500 clients)', 
+          features: ['Up to 500 clients', 'Advanced client management', 'Team collaboration', 'Priority email support', 'Enhanced analytics'] 
+        },
+        large: { 
+          price: lawFirmBasePrices.large, 
+          name: 'Basic - Large Firm (501-1,000 clients)', 
+          features: ['Up to 1,000 clients', 'Enterprise features', 'Advanced reporting', 'Phone support', 'Custom workflows'] 
+        },
+        enterprise: { 
+          price: lawFirmBasePrices.enterprise, 
+          name: 'Basic - Enterprise (1,000+ clients)', 
+          features: ['Unlimited clients', 'Custom integrations', 'Dedicated account manager', '24/7 phone support', 'API access'] 
+        }
+      },
+      premium: {
+        small: { 
+          price: Math.round(lawFirmBasePrices.small * premiumMultiplier), 
+          name: 'Premium - Small Firm (Under 100 clients)', 
+          features: ['Everything in Basic', 'White-label option', 'Advanced automation', 'Priority support', 'Custom branding'] 
+        },
+        medium: { 
+          price: Math.round(lawFirmBasePrices.medium * premiumMultiplier), 
+          name: 'Premium - Medium Firm (101-500 clients)', 
+          features: ['Everything in Basic', 'AI-powered insights', 'Custom integrations', 'Dedicated support team', 'Training sessions'] 
+        },
+        large: { 
+          price: Math.round(lawFirmBasePrices.large * premiumMultiplier), 
+          name: 'Premium - Large Firm (501-1,000 clients)', 
+          features: ['Everything in Basic', 'Advanced security features', 'Compliance tools', 'Dedicated account manager', 'Quarterly business reviews'] 
+        },
+        enterprise: { 
+          price: Math.round(lawFirmBasePrices.enterprise * premiumMultiplier), 
+          name: 'Premium - Enterprise (1,000+ clients)', 
+          features: ['Everything in Basic', 'Custom development', 'White-glove onboarding', 'Unlimited training', 'SLA guarantees'] 
+        }
+      }
+    },
+    medicalprovider: {
+      free: { price: 0, name: 'Free Trial', features: ['Limited features', '30-day trial', 'Up to 10 patients'] },
+      basic: {
+        small: { 
+          price: Math.round(lawFirmBasePrices.small * medicalProviderDiscount), 
+          name: 'Basic - Small Practice (Under 100 patients)', 
+          features: ['Up to 100 patients', 'Patient tracking', 'Basic reports', 'Email support', 'HIPAA-compliant storage'] 
+        },
+        medium: { 
+          price: Math.round(lawFirmBasePrices.medium * medicalProviderDiscount), 
+          name: 'Basic - Medium Practice (101-500 patients)', 
+          features: ['Up to 500 patients', 'Advanced tracking', 'Analytics dashboard', 'Priority support', 'Insurance coordination'] 
+        },
+        large: { 
+          price: Math.round(lawFirmBasePrices.large * medicalProviderDiscount), 
+          name: 'Basic - Large Practice (501-1,000 patients)', 
+          features: ['Up to 1,000 patients', 'Team coordination', 'Custom reports', 'Phone support', 'Billing integration'] 
+        },
+        enterprise: { 
+          price: Math.round(lawFirmBasePrices.enterprise * medicalProviderDiscount), 
+          name: 'Basic - Enterprise (1,000+ patients)', 
+          features: ['Unlimited patients', 'Custom features', 'Dedicated support', 'Multi-location support', 'API access'] 
+        }
+      },
+      premium: {
+        small: { 
+          price: Math.round(lawFirmBasePrices.small * premiumMultiplier * medicalProviderDiscount), 
+          name: 'Premium - Small Practice (Under 100 patients)', 
+          features: ['Everything in Basic', 'HIPAA compliance tools', 'Secure messaging', 'Telehealth support', 'Advanced security'] 
+        },
+        medium: { 
+          price: Math.round(lawFirmBasePrices.medium * premiumMultiplier * medicalProviderDiscount), 
+          name: 'Premium - Medium Practice (101-500 patients)', 
+          features: ['Everything in Basic', 'Integration support', 'Training sessions', 'Care coordination tools', 'Analytics suite'] 
+        },
+        large: { 
+          price: Math.round(lawFirmBasePrices.large * premiumMultiplier * medicalProviderDiscount), 
+          name: 'Premium - Large Practice (501-1,000 patients)', 
+          features: ['Everything in Basic', 'Custom workflows', 'Dedicated manager', 'Quality reporting', 'Population health tools'] 
+        },
+        enterprise: { 
+          price: Math.round(lawFirmBasePrices.enterprise * premiumMultiplier * medicalProviderDiscount), 
+          name: 'Premium - Enterprise (1,000+ patients)', 
+          features: ['Everything in Basic', 'Enterprise support', 'Custom development', 'Strategic consulting', 'White-glove service'] 
+        }
+      }
+    }
+  };
+
+  // Helper function to get current subscription price
+  const getCurrentSubscriptionPrice = () => {
+    if (subscriptionTier === 'free') return 0;
+    
+    if (userType === 'individual') {
+      return pricingTiers.individual[subscriptionTier].price;
+    } else {
+      return pricingTiers[userType][subscriptionTier][firmSize].price;
+    }
+  };
+
+  // Helper function to get current subscription name
+  const getCurrentSubscriptionName = () => {
+    if (subscriptionTier === 'free') return 'Free';
+    
+    if (userType === 'individual') {
+      return pricingTiers.individual[subscriptionTier].name;
+    } else {
+      return pricingTiers[userType][subscriptionTier][firmSize].name;
+    }
+  };
+
+  // ============================================
+  // ROADMAP DATA (same as before)
+  // ============================================
+  const [roadmapStages, setRoadmapStages] = useState([
+    {
+      id: 1,
+      name: 'Pre-Litigation',
+      coins: 100,
+      completed: false,
+      description: 'Gather all necessary documentation before filing your case',
+      position: { top: '20%', left: '15%' },
+      label: 'Dead Man\'s Cove',
+      subStages: [
+        { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Upload the official police accident report', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Upload body camera footage if available', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-3', name: 'Dash Cam Footage', coins: 10, completed: false, icon: '🎥', description: 'Upload dash camera recordings', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-4', name: 'Pictures', coins: 5, completed: false, icon: '📸', description: 'Upload photos of accident scene, vehicle damage, and injuries', acceptedFormats: 'JPG, PNG, HEIC', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-5', name: 'Health Insurance Card', coins: 5, completed: false, icon: '💳', description: 'Upload copy of health insurance card (front and back)', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Upload auto insurance provider information', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Upload your auto insurance policy documents', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+        { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Upload all medical treatment bills', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true },
+        { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Upload complete medical records and reports', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true }
+      ],
+      videos: [
+        { id: 'v1', title: 'Pre-Litigation Essentials', price: 2.99, duration: '15 min' },
+        { id: 'v2', title: 'Document Collection Guide', price: 3.99, duration: '20 min' }
+      ]
+    },
+    {
+      id: 2,
+      name: 'Complaint Filed',
+      coins: 25,
+      completed: false,
+      description: 'Your lawsuit is officially filed with the court',
+      position: { top: '32%', left: '68%' },
+      label: 'Skull Island',
+      subStages: [
+        { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Create initial complaint document' },
+        { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit to court system' },
+        { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Legally notify defendant' }
+      ],
+      videos: [{ id: 'v3', title: 'Filing Your Complaint', price: 4.99, duration: '18 min' }]
+    },
+    // Additional stages abbreviated for length...
+    {
+      id: 3,
+      name: 'Discovery Begins',
+      coins: 50,
+      completed: false,
+      description: 'Exchange information with the opposing party',
+      position: { top: '45%', left: '25%' },
+      label: 'Serpent\'s Bay',
+      subStages: [],
+      videos: []
+    },
+    {
+      id: 4,
+      name: 'Depositions',
+      coins: 75,
+      completed: false,
+      description: 'Sworn testimony is recorded under oath',
+      position: { top: '55%', left: '72%' },
+      label: 'Blackbeard\'s Port',
+      subStages: [],
+      videos: []
+    },
+    {
+      id: 5,
+      name: 'Mediation',
+      coins: 50,
+      completed: false,
+      description: 'Attempt to settle the case with a neutral mediator',
+      position: { top: '68%', left: '18%' },
+      label: 'Parley Point',
+      subStages: [],
+      videos: []
+    },
+    {
+      id: 6,
+      name: 'Trial Prep',
+      coins: 100,
+      completed: false,
+      description: 'Prepare your case for trial presentation',
+      position: { top: '78%', left: '58%' },
+      label: 'Justice Harbor',
+      subStages: [],
+      videos: []
+    },
+    {
+      id: 7,
+      name: 'Trial/Settlement',
+      coins: 100,
+      completed: false,
+      description: 'Present your case in court or reach final settlement',
+      position: { top: '86%', left: '30%' },
+      label: 'Victory Shores',
+      subStages: [],
+      videos: []
+    },
+    {
+      id: 8,
+      name: 'Case Resolved',
+      coins: 200,
+      completed: false,
+      description: 'Your case reaches final resolution - congratulations!',
+      position: { top: '92%', left: '75%' },
+      label: 'Treasure Isle',
+      subStages: [],
+      videos: []
+    }
+  ]);
+
+  // ============================================
+  // AUTHENTICATION & SUBSCRIPTION FUNCTIONS
+  // ============================================
+  const handleRegister = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+    
+    // If user selected basic or premium, proceed to payment
+    if (subscriptionTier !== 'free') {
+      setCurrentScreen('payment');
+    } else {
+      // Free tier - complete registration
+      completeRegistration();
+    }
+  };
+
+  const completeRegistration = () => {
+    Alert.alert('Success', 'Account created successfully!');
+    setCurrentScreen('login');
+  };
+
+  const handlePayment = () => {
+    // Validate payment information
+    if (!cardNumber || !expiryDate || !cvv || !billingName || !billingAddress || !billingZip) {
+      Alert.alert('Error', 'Please complete all payment fields');
+      return;
+    }
+
+    if (cardNumber.length !== 16) {
+      Alert.alert('Error', 'Please enter a valid 16-digit card number');
+      return;
+    }
+
+    // Simulate secure payment processing
+    Alert.alert(
+      'Payment Processing',
+      'Securely processing your payment...',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setTimeout(() => {
+              Alert.alert(
+                'Success!',
+                `Your ${getCurrentSubscriptionName()} subscription has been activated!\n\nYou will be billed $${getCurrentSubscriptionPrice()}/month.`,
+                [
+                  {
+                    text: 'Continue',
+                    onPress: completeRegistration
+                  }
+                ]
+              );
+            }, 1500);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
+      return;
+    }
+    
+    setUser({
+      id: 1,
+      email: email,
+      type: userType,
+      subscription: subscriptionTier,
+      firmSize: firmSize,
+      coins: 150,
+      streak: 3,
+      subscriptionActive: true,
+      nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      paymentInfo: subscriptionTier !== 'free' ? {
+        lastFour: cardNumber.slice(-4),
+        expiryDate: expiryDate,
+        billingName: billingName
+      } : null
+    });
+    setCoins(150);
+    setLoginStreak(3);
+    setIsLoggedIn(true);
+    setCurrentScreen('dashboard');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUser(null);
+    setCurrentScreen('landing');
+  };
+
+  const handleUnsubscribe = () => {
+    Alert.alert(
+      'Unsubscribe',
+      `Are you sure you want to cancel your ${getCurrentSubscriptionName()} subscription?\n\nYour subscription will remain active until ${user.nextBillingDate}, and you will not be charged again.`,
+      [
+        { text: 'Keep Subscription', style: 'cancel' },
+        {
+          text: 'Unsubscribe',
+          style: 'destructive',
+          onPress: () => {
+            setUser({
+              ...user,
+              subscriptionActive: false
+            });
+            Alert.alert(
+              'Subscription Cancelled',
+              `Your subscription has been cancelled. You can continue using ${getCurrentSubscriptionName()} features until ${user.nextBillingDate}.`
+            );
+            setSubscriptionModalVisible(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleUpdatePayment = () => {
+    Alert.alert(
+      'Update Payment Method',
+      'You will be redirected to update your payment information securely.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Continue',
+          onPress: () => {
+            setCurrentScreen('payment');
+          }
+        }
+      ]
+    );
+  };
+
+  // ============================================
+  // GAMIFICATION FUNCTIONS (same as before)
+  // ============================================
+  const calculateDailyBonus = (streak) => {
+    const bonuses = [5, 7, 10, 12, 15, 20, 30];
+    return bonuses[Math.min(streak - 1, 6)];
+  };
+
+  const claimDailyBonus = () => {
+    const bonus = calculateDailyBonus(loginStreak + 1);
+    setCoins(coins + bonus);
+    setLoginStreak(loginStreak + 1);
+    Alert.alert('Daily Bonus!', `You earned ${bonus} coins! ${loginStreak + 1} day streak! 🎉`);
+  };
+
+  // ============================================
+  // PIRATE MAP FUNCTIONS (abbreviated)
+  // ============================================
+  const handleFileUpload = (subStageId) => {
+    const subStage = selectedStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub) {
+      Alert.alert(
+        '🏥 Medical Hub',
+        `This document is managed in your Medical Hub. Would you like to go there now?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Go to Medical Hub', 
+            onPress: () => {
+              setStageModalVisible(false);
+              setCurrentScreen('medical');
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      '📁 Upload Document',
+      `Select files to upload for "${subStage.name}"\n\nAccepted formats: ${subStage.acceptedFormats}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Take Photo', onPress: () => simulateUpload(subStageId, 'photo') },
+        { text: 'Choose Files', onPress: () => simulateUpload(subStageId, 'file') }
+      ]
+    );
+  };
+
+  const simulateUpload = (subStageId, uploadType) => {
+    setRoadmapStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === selectedStage.id) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId) {
+              const fileName = uploadType === 'photo' ? `photo_${Date.now()}.jpg` : `document_${Date.now()}.pdf`;
+              const newFiles = [...(subStage.uploadedFiles || []), fileName];
+              Alert.alert('✅ Upload Successful!', `${fileName} has been uploaded successfully.`);
+              return { ...subStage, uploaded: true, uploadedFiles: newFiles };
+            }
+            return subStage;
+          });
+          setSelectedStage({ ...stage, subStages: updatedSubStages });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
+  const markSubStageComplete = (subStageId) => {
+    const subStage = selectedStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub || !subStage.uploaded) {
+      Alert.alert('Upload Required', 'Please upload the required documents before marking this step as complete.');
+      return;
+    }
+
+    setRoadmapStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === selectedStage.id) {
+          const updatedSubStages = stage.subStages.map(sub => {
+            if (sub.id === subStageId && !sub.completed) {
+              setCoins(coins + sub.coins);
+              Alert.alert('🎉 Step Complete!', `You earned ${sub.coins} doubloons!`);
+              return { ...sub, completed: true };
+            }
+            return sub;
+          });
+
+          const allComplete = updatedSubStages.every(sub => sub.completed);
+          if (allComplete && !stage.completed) {
+            setCoins(coins + stage.coins);
+            Alert.alert('💰 Treasure Found!', `${stage.name} complete! +${stage.coins} bonus doubloons!`);
+            return { ...stage, subStages: updatedSubStages, completed: true };
+          }
+
+          setSelectedStage({ ...stage, subStages: updatedSubStages });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
+  const openStageModal = (stage) => {
+    setSelectedStage(stage);
+    setStageModalVisible(true);
+  };
+
+  const closeStageModal = () => {
+    setStageModalVisible(false);
+    setTimeout(() => setSelectedStage(null), 300);
+  };
+
+  const renderTreasure = (stage) => {
+    return (
+      <View key={stage.id} style={[styles.treasureMarker, { top: stage.position.top, left: stage.position.left }]}>
+        <TouchableOpacity style={styles.treasureChest} onPress={() => openStageModal(stage)} activeOpacity={0.8}>
+          <Text style={styles.xMark}>✗</Text>
+          {stage.completed && (
+            <View style={styles.treasureGlow}>
+              <Text style={styles.treasureGlowText}>✓</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.locationLabel}>{stage.label}</Text>
+      </View>
+    );
+  };
+
+  // ============================================
+  // SCREEN COMPONENTS
+  // ============================================
+
+  // LANDING SCREEN
+  const LandingScreen = () => (
+    <View style={styles.container}>
+      <View style={styles.heroSection}>
+        <Text style={styles.logo}>⚖️ Case Compass</Text>
+        <Text style={styles.tagline}>Navigate Your Legal Journey with Confidence</Text>
+        <Text style={styles.subtitle}>Georgia Civil Litigation Education</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => setCurrentScreen('register')}>
+          <Text style={styles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => setCurrentScreen('login')}>
+          <Text style={styles.secondaryButtonText}>Sign In</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.featuresContainer}>
+        <Text style={styles.featureTitle}>What You'll Get:</Text>
+        <Text style={styles.featureItem}>🗺️ Interactive pirate treasure map</Text>
+        <Text style={styles.featureItem}>🎮 Earn doubloons as you progress</Text>
+        <Text style={styles.featureItem}>🎓 Expert video tutorials</Text>
+        <Text style={styles.featureItem}>🏥 Secure medical records storage</Text>
+        <Text style={styles.featureItem}>⚡ Daily login rewards</Text>
+      </View>
+    </View>
+  );
+
+  // REGISTRATION SCREEN
+  const RegisterScreen = () => (
+    <ScrollView style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Create Your Account</Text>
+        
+        {/* Pricing Overview */}
+        <View style={styles.pricingOverview}>
+          <Text style={styles.pricingOverviewTitle}>💡 Pricing Overview</Text>
+          <Text style={styles.pricingOverviewText}>
+            <Text style={styles.boldText}>Individuals:</Text> $4.99 Basic • $11.99 Premium
+          </Text>
+          <Text style={styles.pricingOverviewText}>
+            <Text style={styles.boldText}>Law Firms:</Text> Based on client count
+          </Text>
+          <Text style={styles.pricingOverviewDetail}>
+            Basic: $100-$2,500/mo • Premium: +35% more
+          </Text>
+          <Text style={styles.pricingOverviewText}>
+            <Text style={styles.boldText}>Medical Providers:</Text> 30% less than law firms
+          </Text>
+          <Text style={styles.pricingOverviewDetail}>
+            Basic: $70-$1,750/mo • Premium: +35% more
+          </Text>
+        </View>
+        
+        {/* User Type Selection */}
+        <Text style={styles.label}>I am a:</Text>
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'individual' && styles.toggleButtonActive]}
+            onPress={() => setUserType('individual')}
+          >
+            <Text style={[styles.toggleText, userType === 'individual' && styles.toggleTextActive]}>
+              Individual
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'lawfirm' && styles.toggleButtonActive]}
+            onPress={() => setUserType('lawfirm')}
+          >
+            <Text style={[styles.toggleText, userType === 'lawfirm' && styles.toggleTextActive]}>
+              Law Firm
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'medicalprovider' && styles.toggleButtonActive]}
+            onPress={() => setUserType('medicalprovider')}
+          >
+            <Text style={[styles.toggleText, userType === 'medicalprovider' && styles.toggleTextActive]}>
+              Medical Provider
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Subscription Tier Selection */}
+        <Text style={styles.label}>Choose Your Plan:</Text>
+        <View style={styles.tierContainer}>
+          {/* Free Tier */}
+          <TouchableOpacity
+            style={[styles.tierCard, subscriptionTier === 'free' && styles.tierCardActive]}
+            onPress={() => setSubscriptionTier('free')}
+          >
+            <Text style={styles.tierName}>Free</Text>
+            <Text style={styles.tierPrice}>$0/month</Text>
+            <Text style={styles.tierFeature}>• Basic roadmap</Text>
+            <Text style={styles.tierFeature}>• Limited videos</Text>
+            {subscriptionTier === 'free' && <Text style={styles.selectedBadge}>✓ Selected</Text>}
+          </TouchableOpacity>
+
+          {/* Basic Tier */}
+          <TouchableOpacity
+            style={[styles.tierCard, subscriptionTier === 'basic' && styles.tierCardActive]}
+            onPress={() => setSubscriptionTier('basic')}
+          >
+            <Text style={styles.tierName}>Basic</Text>
+            <Text style={styles.tierPrice}>
+              {userType === 'individual' 
+                ? '$4.99/month'
+                : 'Starting at $70/month'}
+            </Text>
+            <Text style={styles.tierFeature}>• Full roadmap</Text>
+            <Text style={styles.tierFeature}>• Standard videos</Text>
+            <Text style={styles.tierFeature}>• Email support</Text>
+            {subscriptionTier === 'basic' && <Text style={styles.selectedBadge}>✓ Selected</Text>}
+          </TouchableOpacity>
+
+          {/* Premium Tier */}
+          <TouchableOpacity
+            style={[styles.tierCard, subscriptionTier === 'premium' && styles.tierCardActive]}
+            onPress={() => setSubscriptionTier('premium')}
+          >
+            <Text style={styles.tierName}>Premium</Text>
+            <Text style={styles.tierPrice}>
+              {userType === 'individual' 
+                ? '$11.99/month'
+                : 'Starting at $95/month'}
+            </Text>
+            <Text style={styles.tierFeature}>• Everything in Basic</Text>
+            <Text style={styles.tierFeature}>• Premium videos</Text>
+            <Text style={styles.tierFeature}>• Priority support</Text>
+            {subscriptionTier === 'premium' && <Text style={styles.selectedBadge}>✓ Selected</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Firm Size Selection (for law firms and medical providers) */}
+        {(userType === 'lawfirm' || userType === 'medicalprovider') && subscriptionTier !== 'free' && (
+          <>
+            <Text style={styles.label}>
+              {userType === 'lawfirm' ? 'Number of Clients:' : 'Number of Patients:'}
+            </Text>
+            <View style={styles.firmSizeContainer}>
+              <TouchableOpacity
+                style={[styles.firmSizeButton, firmSize === 'small' && styles.firmSizeButtonActive]}
+                onPress={() => setFirmSize('small')}
+              >
+                <Text style={[styles.firmSizeText, firmSize === 'small' && styles.firmSizeTextActive]}>
+                  {userType === 'lawfirm' ? 'Under 100 clients' : 'Under 100 patients'}
+                </Text>
+                <Text style={[styles.firmSizePriceText, firmSize === 'small' && styles.firmSizeTextActive]}>
+                  ${userType === 'lawfirm' 
+                    ? (subscriptionTier === 'basic' ? lawFirmBasePrices.small : Math.round(lawFirmBasePrices.small * premiumMultiplier))
+                    : (subscriptionTier === 'basic' 
+                        ? Math.round(lawFirmBasePrices.small * medicalProviderDiscount)
+                        : Math.round(lawFirmBasePrices.small * premiumMultiplier * medicalProviderDiscount))
+                  }/mo
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.firmSizeButton, firmSize === 'medium' && styles.firmSizeButtonActive]}
+                onPress={() => setFirmSize('medium')}
+              >
+                <Text style={[styles.firmSizeText, firmSize === 'medium' && styles.firmSizeTextActive]}>
+                  {userType === 'lawfirm' ? '101-500 clients' : '101-500 patients'}
+                </Text>
+                <Text style={[styles.firmSizePriceText, firmSize === 'medium' && styles.firmSizeTextActive]}>
+                  ${userType === 'lawfirm' 
+                    ? (subscriptionTier === 'basic' ? lawFirmBasePrices.medium : Math.round(lawFirmBasePrices.medium * premiumMultiplier))
+                    : (subscriptionTier === 'basic' 
+                        ? Math.round(lawFirmBasePrices.medium * medicalProviderDiscount)
+                        : Math.round(lawFirmBasePrices.medium * premiumMultiplier * medicalProviderDiscount))
+                  }/mo
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.firmSizeButton, firmSize === 'large' && styles.firmSizeButtonActive]}
+                onPress={() => setFirmSize('large')}
+              >
+                <Text style={[styles.firmSizeText, firmSize === 'large' && styles.firmSizeTextActive]}>
+                  {userType === 'lawfirm' ? '501-1,000 clients' : '501-1,000 patients'}
+                </Text>
+                <Text style={[styles.firmSizePriceText, firmSize === 'large' && styles.firmSizeTextActive]}>
+                  ${userType === 'lawfirm' 
+                    ? (subscriptionTier === 'basic' ? lawFirmBasePrices.large : Math.round(lawFirmBasePrices.large * premiumMultiplier))
+                    : (subscriptionTier === 'basic' 
+                        ? Math.round(lawFirmBasePrices.large * medicalProviderDiscount)
+                        : Math.round(lawFirmBasePrices.large * premiumMultiplier * medicalProviderDiscount))
+                  }/mo
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.firmSizeButton, firmSize === 'enterprise' && styles.firmSizeButtonActive]}
+                onPress={() => setFirmSize('enterprise')}
+              >
+                <Text style={[styles.firmSizeText, firmSize === 'enterprise' && styles.firmSizeTextActive]}>
+                  {userType === 'lawfirm' ? '1,000+ clients' : '1,000+ patients'}
+                </Text>
+                <Text style={[styles.firmSizePriceText, firmSize === 'enterprise' && styles.firmSizeTextActive]}>
+                  ${userType === 'lawfirm' 
+                    ? (subscriptionTier === 'basic' ? lawFirmBasePrices.enterprise : Math.round(lawFirmBasePrices.enterprise * premiumMultiplier))
+                    : (subscriptionTier === 'basic' 
+                        ? Math.round(lawFirmBasePrices.enterprise * medicalProviderDiscount)
+                        : Math.round(lawFirmBasePrices.enterprise * premiumMultiplier * medicalProviderDiscount))
+                  }/mo
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.pricingNotice}>
+              <Text style={styles.pricingNoticeText}>
+                💰 Your selected plan: {getCurrentSubscriptionName()}
+              </Text>
+              <Text style={styles.pricingNoticePrice}>
+                ${getCurrentSubscriptionPrice()}/month
+              </Text>
+            </View>
+          </>
+        )}
+
+        {/* Account Information */}
+        <TextInput
+          style={styles.input}
+          placeholder="Email Address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
+
+        {userType === 'individual' && (
+          <TextInput
+            style={styles.input}
+            placeholder="Law Firm or Provider Code (Optional)"
+            value={firmCode}
+            onChangeText={setFirmCode}
+          />
+        )}
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleRegister}>
+          <Text style={styles.buttonText}>
+            {subscriptionTier === 'free' ? 'Create Account' : 'Continue to Payment'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setCurrentScreen('login')}>
+          <Text style={styles.linkText}>Already have an account? Sign In</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.disclaimer}>
+          By creating an account, you agree to our Terms of Service and Privacy Policy. 
+          This app provides educational information, not legal advice.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
+  // PAYMENT SCREEN
+  const PaymentScreen = () => (
+    <ScrollView style={styles.container}>
+      <View style={styles.formContainer}>
+        <TouchableOpacity onPress={() => setCurrentScreen('register')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        
+        <Text style={styles.formTitle}>Secure Payment</Text>
+        
+        <View style={styles.subscriptionSummary}>
+          <Text style={styles.summaryTitle}>Subscription Summary</Text>
+          <Text style={styles.summaryItem}>Plan: {getCurrentSubscriptionName()}</Text>
+          <Text style={styles.summaryItem}>User Type: {userType === 'individual' ? 'Individual' : userType === 'lawfirm' ? 'Law Firm' : 'Medical Provider'}</Text>
+          <Text style={styles.summaryTotal}>Monthly Total: ${getCurrentSubscriptionPrice()}</Text>
+          <Text style={styles.summaryNote}>
+            🔒 Your payment information is encrypted and secure. You will be billed automatically each month.
+          </Text>
+        </View>
+
+        <Text style={styles.label}>Card Number</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="1234 5678 9012 3456"
+          value={cardNumber}
+          onChangeText={setCardNumber}
+          keyboardType="numeric"
+          maxLength={16}
+        />
+
+        <View style={styles.row}>
+          <View style={styles.halfWidth}>
+            <Text style={styles.label}>Expiry Date</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="MM/YY"
+              value={expiryDate}
+              onChangeText={setExpiryDate}
+              maxLength={5}
+            />
+          </View>
+          
+          <View style={styles.halfWidth}>
+            <Text style={styles.label}>CVV</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="123"
+              value={cvv}
+              onChangeText={setCvv}
+              keyboardType="numeric"
+              maxLength={4}
+              secureTextEntry
+            />
+          </View>
+        </View>
+
+        <Text style={styles.label}>Cardholder Name</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="John Doe"
+          value={billingName}
+          onChangeText={setBillingName}
+        />
+
+        <Text style={styles.label}>Billing Address</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="123 Main Street, City, State"
+          value={billingAddress}
+          onChangeText={setBillingAddress}
+        />
+
+        <Text style={styles.label}>ZIP Code</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="12345"
+          value={billingZip}
+          onChangeText={setBillingZip}
+          keyboardType="numeric"
+          maxLength={5}
+        />
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handlePayment}>
+          <Text style={styles.buttonText}>Complete Subscription - ${getCurrentSubscriptionPrice()}/mo</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.disclaimer}>
+          Your subscription will automatically renew each month. You can cancel anytime from your account settings.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
+  // LOGIN SCREEN
+  const LoginScreen = () => (
+    <View style={styles.container}>
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Welcome Back</Text>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Email Address"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TouchableOpacity style={styles.primaryButton} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Sign In</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setCurrentScreen('register')}>
+          <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // DASHBOARD SCREEN
+  const DashboardScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.dashboardHeader}>
+        <Text style={styles.welcomeText}>Welcome back!</Text>
+        <Text style={styles.emailText}>{user?.email}</Text>
+        
+        {/* Subscription Badge */}
+        <View style={styles.subscriptionBadge}>
+          <Text style={styles.subscriptionBadgeText}>
+            {getCurrentSubscriptionName()} {user?.subscriptionActive === false && '(Cancelled)'}
+          </Text>
+        </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>🪙 {coins}</Text>
+            <Text style={styles.statLabel}>Doubloons</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>🔥 {loginStreak}</Text>
+            <Text style={styles.statLabel}>Day Streak</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.bonusButton} onPress={claimDailyBonus}>
+          <Text style={styles.bonusButtonText}>Claim Daily Bonus!</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.menuContainer}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentScreen('roadmap')}>
+          <Text style={styles.menuIcon}>🗺️</Text>
+          <Text style={styles.menuText}>Treasure Map</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentScreen('videos')}>
+          <Text style={styles.menuIcon}>🎬</Text>
+          <Text style={styles.menuText}>Video Library</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentScreen('medical')}>
+          <Text style={styles.menuIcon}>🏥</Text>
+          <Text style={styles.menuText}>Medical Hub</Text>
+        </TouchableOpacity>
+
+        {user?.subscription !== 'free' && (
+          <TouchableOpacity style={styles.menuItem} onPress={() => setSubscriptionModalVisible(true)}>
+            <Text style={styles.menuIcon}>💳</Text>
+            <Text style={styles.menuText}>Manage Subscription</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <Text style={styles.menuIcon}>🚪</Text>
+          <Text style={styles.menuText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // SUBSCRIPTION MANAGEMENT MODAL
+  const SubscriptionModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={subscriptionModalVisible}
+      onRequestClose={() => setSubscriptionModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.subscriptionModalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Manage Subscription</Text>
+            <TouchableOpacity onPress={() => setSubscriptionModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView>
+            <View style={styles.subscriptionDetails}>
+              <Text style={styles.detailLabel}>Current Plan:</Text>
+              <Text style={styles.detailValue}>{getCurrentSubscriptionName()}</Text>
+              
+              <Text style={styles.detailLabel}>Monthly Cost:</Text>
+              <Text style={styles.detailValue}>${getCurrentSubscriptionPrice()}</Text>
+              
+              {user?.paymentInfo && (
+                <>
+                  <Text style={styles.detailLabel}>Payment Method:</Text>
+                  <Text style={styles.detailValue}>•••• •••• •••• {user.paymentInfo.lastFour}</Text>
+                  
+                  <Text style={styles.detailLabel}>Next Billing Date:</Text>
+                  <Text style={styles.detailValue}>{user.nextBillingDate}</Text>
+                </>
+              )}
+              
+              <Text style={styles.detailLabel}>Status:</Text>
+              <Text style={[styles.detailValue, user?.subscriptionActive === false && styles.cancelledText]}>
+                {user?.subscriptionActive === false ? 'Cancelled (Active until ' + user.nextBillingDate + ')' : 'Active'}
+              </Text>
+            </View>
+
+            {user?.subscriptionActive !== false && (
+              <>
+                <TouchableOpacity style={styles.updatePaymentButton} onPress={handleUpdatePayment}>
+                  <Text style={styles.updatePaymentText}>Update Payment Method</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.unsubscribeButton} onPress={handleUnsubscribe}>
+                  <Text style={styles.unsubscribeText}>Cancel Subscription</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {user?.subscriptionActive === false && (
+              <View style={styles.reactivateNotice}>
+                <Text style={styles.reactivateText}>
+                  Want to continue? Your subscription will automatically end on {user.nextBillingDate}. 
+                  Resubscribe anytime to continue using premium features.
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // PIRATE MAP ROADMAP SCREEN (abbreviated)
+  const RoadmapScreen = () => (
+    <SafeAreaView style={styles.pirateContainer}>
+      <View style={styles.pirateHeader}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.pirateHeaderTitle}>⚔️ Litigation Treasure Map</Text>
+        <View style={styles.coinsDisplay}>
+          <Text style={styles.coinsIcon}>🪙</Text>
+          <Text style={styles.coinsText}>{coins}</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.mapContainer}>
+          <View style={styles.parchment}>
+            <View style={styles.mapBorder}>
+              <View style={styles.titleCartouche}>
+                <Text style={styles.mapTitle}>LITIGATION MAP</Text>
+                <Text style={styles.mapSubtitle}>Chart Your Course to Justice</Text>
+              </View>
+
+              <View style={styles.compassRose}>
+                <Text style={styles.compassN}>N</Text>
+                <Text style={styles.compassCenter}>✦</Text>
+                <Text style={styles.compassS}>S</Text>
+                <Text style={styles.compassE}>E</Text>
+                <Text style={styles.compassW}>W</Text>
+              </View>
+
+              <Text style={[styles.ship, { top: '25%', right: '8%' }]}>⛵</Text>
+              <Text style={[styles.ship, { top: '60%', right: '5%' }]}>⛵</Text>
+              <Text style={[styles.seaCreature, { top: '40%', right: '12%' }]}>🐙</Text>
+
+              {roadmapStages.map((_, idx) => (
+                <View key={idx} style={[styles.island, { 
+                  top: `${22 + idx * 10}%`, 
+                  left: `${12 + (idx % 2) * 55}%` 
+                }]} />
+              ))}
+
+              <View style={styles.dottedPath} />
+
+              {roadmapStages.map(stage => renderTreasure(stage))}
+
+              <View style={styles.scaleBar}>
+                <Text style={styles.scaleText}>Scale of Justice</Text>
+                <View style={styles.scaleLine} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // MEDICAL HUB SCREEN
+  const MedicalScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Medical Hub</Text>
+      </View>
+
+      <View style={styles.secureNotice}>
+        <Text style={styles.secureIcon}>🔒</Text>
+        <Text style={styles.secureText}>Your medical records are encrypted and secure</Text>
+      </View>
+
+      <View style={styles.medicalContainer}>
+        <TouchableOpacity style={styles.uploadButton}>
+          <Text style={styles.uploadButtonText}>Upload Medical Records</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.uploadButton}>
+          <Text style={styles.uploadButtonText}>Upload Medical Bills</Text>
+        </TouchableOpacity>
+
+        <View style={styles.placeholderBox}>
+          <Text style={styles.placeholderText}>Your medical documents will appear here</Text>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
+  // VIDEOS SCREEN
+  const VideosScreen = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setCurrentScreen('dashboard')}>
+          <Text style={styles.backButton}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Video Library</Text>
+      </View>
+      <View style={styles.placeholderBox}>
+        <Text style={styles.placeholderText}>Video library coming soon!</Text>
+      </View>
+    </SafeAreaView>
+  );
+
+  // ============================================
+  // MAIN RENDER - SCREEN ROUTER
+  // ============================================
+  return (
+    <SafeAreaView style={styles.appContainer}>
+      <StatusBar barStyle="light-content" />
+      {currentScreen === 'landing' && <LandingScreen />}
+      {currentScreen === 'register' && <RegisterScreen />}
+      {currentScreen === 'payment' && <PaymentScreen />}
+      {currentScreen === 'login' && <LoginScreen />}
+      {currentScreen === 'dashboard' && <DashboardScreen />}
+      {currentScreen === 'roadmap' && <RoadmapScreen />}
+      {currentScreen === 'videos' && <VideosScreen />}
+      {currentScreen === 'medical' && <MedicalScreen />}
+      <SubscriptionModal />
+    </SafeAreaView>
+  );
+};
+
+// ============================================
+// STYLES (abbreviated - key new styles shown)
+// ============================================
+const styles = StyleSheet.create({
+  appContainer: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+  },
+  // Tier Selection
+  tierContainer: {
+    marginBottom: 20,
+  },
+  tierCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  tierCardActive: {
+    borderColor: '#3498db',
+    backgroundColor: '#e3f2fd',
+  },
+  tierName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  tierPrice: {
+    fontSize: 16,
+    color: '#27ae60',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  tierFeature: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginBottom: 3,
+  },
+  selectedBadge: {
+    fontSize: 14,
+    color: '#3498db',
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  // Firm Size Selection
+  firmSizeContainer: {
+    marginBottom: 20,
+  },
+  firmSizeButton: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  firmSizeButtonActive: {
+    borderColor: '#3498db',
+    backgroundColor: '#e3f2fd',
+  },
+  firmSizeText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  firmSizePriceText: {
+    fontSize: 16,
+    color: '#27ae60',
+    fontWeight: 'bold',
+  },
+  firmSizeTextActive: {
+    color: '#3498db',
+  },
+  pricingNotice: {
+    backgroundColor: '#fff9e6',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#f39c12',
+  },
+  pricingNoticeText: {
+    fontSize: 14,
+    color: '#654321',
+    marginBottom: 5,
+  },
+  pricingNoticePrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f39c12',
+  },
+  // Payment Screen
+  subscriptionSummary: {
+    backgroundColor: '#e3f2fd',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 10,
+  },
+  summaryItem: {
+    fontSize: 14,
+    color: '#34495e',
+    marginBottom: 5,
+  },
+  summaryTotal: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  summaryNote: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontStyle: 'italic',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfWidth: {
+    width: '48%',
+  },
+  // Subscription Badge
+  subscriptionBadge: {
+    backgroundColor: '#3498db',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    alignSelf: 'flex-start',
+    marginBottom: 15,
+  },
+  subscriptionBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  // Subscription Modal
+  subscriptionModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: height * 0.85,
+    padding: 20,
+  },
+  subscriptionDetails: {
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginTop: 10,
+    marginBottom: 3,
+  },
+  detailValue: {
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '600',
+  },
+  cancelledText: {
+    color: '#e74c3c',
+  },
+  updatePaymentButton: {
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  updatePaymentText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  unsubscribeButton: {
+    backgroundColor: '#e74c3c',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  unsubscribeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  reactivateNotice: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+  },
+  reactivateText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
+  // Standard styles (abbreviated)
+  heroSection: {
+    backgroundColor: '#3498db',
+    padding: 40,
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  tagline: {
+    fontSize: 18,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#ecf0f1',
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    padding: 20,
+  },
+  primaryButton: {
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  secondaryButtonText: {
+    color: '#3498db',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  featuresContainer: {
+    padding: 20,
+  },
+  featureTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+  },
+  featureItem: {
+    fontSize: 16,
+    color: '#34495e',
+    marginBottom: 10,
+  },
+  formContainer: {
+    padding: 20,
+  },
+  formTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 20,
+  },
+  pricingOverview: {
+    backgroundColor: '#e3f2fd',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  pricingOverviewTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  pricingOverviewText: {
+    fontSize: 14,
+    color: '#34495e',
+    marginBottom: 4,
+  },
+  pricingOverviewDetail: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginBottom: 8,
+    marginLeft: 10,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 10,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  toggleButton: {
+    flex: 1,
+    padding: 12,
+    borderWidth: 2,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+    marginHorizontal: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  toggleButtonActive: {
+    borderColor: '#3498db',
+    backgroundColor: '#3498db',
+  },
+  toggleText: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    fontWeight: '600',
+  },
+  toggleTextActive: {
+    color: '#fff',
+  },
+  input: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#3498db',
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  disclaimer: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 18,
+  },
+  dashboardHeader: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  emailText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 10,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+  },
+  bonusButton: {
+    backgroundColor: '#e74c3c',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  bonusButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  menuContainer: {
+    padding: 10,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  menuIcon: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  menuText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  header: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  backButton: {
+    fontSize: 16,
+    color: '#3498db',
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  // Pirate Map (abbreviated key styles)
+  pirateContainer: {
+    flex: 1,
+    backgroundColor: '#2c1810',
+  },
+  pirateHeader: {
+    backgroundColor: '#3d2817',
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#8b6914',
+  },
+  pirateHeaderTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#d4a574',
+    flex: 1,
+    textAlign: 'center',
+  },
+  coinsDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4a3520',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+  },
+  coinsIcon: {
+    fontSize: 16,
+    marginRight: 5,
+  },
+  coinsText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#d4a574',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  mapContainer: {
+    padding: 15,
+  },
+  parchment: {
+    backgroundColor: '#d4a574',
+    borderRadius: 8,
+    padding: 8,
+  },
+  mapBorder: {
+    borderWidth: 3,
+    borderColor: '#654321',
+    backgroundColor: '#e8c9a0',
+    borderRadius: 4,
+    minHeight: height * 1.3,
+    position: 'relative',
+    padding: 20,
+  },
+  titleCartouche: {
+    position: 'absolute',
+    top: 20,
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    width: 200,
+    backgroundColor: '#f5deb3',
+    borderWidth: 2,
+    borderColor: '#654321',
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3d2817',
+    letterSpacing: 2,
+  },
+  mapSubtitle: {
+    fontSize: 10,
+    color: '#654321',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  compassRose: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compassCenter: {
+    fontSize: 40,
+    color: '#654321',
+  },
+  compassN: {
+    position: 'absolute',
+    top: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#8b0000',
+  },
+  compassS: {
+    position: 'absolute',
+    bottom: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  compassE: {
+    position: 'absolute',
+    right: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  compassW: {
+    position: 'absolute',
+    left: 0,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#654321',
+  },
+  ship: {
+    position: 'absolute',
+    fontSize: 28,
+    opacity: 0.7,
+  },
+  seaCreature: {
+    position: 'absolute',
+    fontSize: 24,
+    opacity: 0.5,
+  },
+  island: {
+    position: 'absolute',
+    width: 60,
+    height: 50,
+    backgroundColor: '#b8956a',
+    borderRadius: 30,
+    opacity: 0.6,
+    borderWidth: 1,
+    borderColor: '#8b7355',
+  },
+  dottedPath: {
+    position: 'absolute',
+    top: '20%',
+    left: '15%',
+    right: '15%',
+    bottom: '10%',
+    borderWidth: 2,
+    borderColor: '#8b4513',
+    borderStyle: 'dashed',
+    opacity: 0.4,
+    borderRadius: 10,
+  },
+  treasureMarker: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  treasureChest: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#8b0000',
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3d0000',
+  },
+  xMark: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  treasureGlow: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#ffd700',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  treasureGlowText: {
+    color: '#8b0000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  locationLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#3d2817',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  scaleBar: {
+    position: 'absolute',
+    bottom: 30,
+    right: 30,
+    alignItems: 'center',
+  },
+  scaleText: {
+    fontSize: 10,
+    color: '#654321',
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  scaleLine: {
+    width: 60,
+    height: 3,
+    backgroundColor: '#654321',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'flex-end',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 15,
+    paddingBottom: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#8b6914',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3d2817',
+  },
+  closeButton: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: '#d4a574',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#654321',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#3d2817',
+    fontWeight: 'bold',
+  },
+  secureNotice: {
+    backgroundColor: '#d5f4e6',
+    padding: 15,
+    margin: 20,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secureIcon: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  secureText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#27ae60',
+  },
+  medicalContainer: {
+    padding: 20,
+  },
+  uploadButton: {
+    backgroundColor: '#3498db',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  placeholderBox: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 12,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#95a5a6',
+    textAlign: 'center',
+  },
+});
+
+export default CaseCompassApp;
