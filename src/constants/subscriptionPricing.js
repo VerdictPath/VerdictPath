@@ -69,11 +69,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Small Firm', 
         subtitle: 'Under 100 clients',
         features: [
-          'Basic analytics dashboard',
-          'Team collaboration tools',
-          'Document storage',
-          'Custom workflows',
-          'API access'
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
         ] 
       },
       medium: { 
@@ -81,11 +79,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Medium Firm', 
         subtitle: '101-500 clients',
         features: [
-          'Basic analytics dashboard',
-          'Team collaboration tools',
-          'Document storage',
-          'Custom workflows',
-          'API access'
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
         ] 
       },
       large: { 
@@ -93,11 +89,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Large Firm', 
         subtitle: '501-1,000 clients',
         features: [
-          'Basic analytics dashboard',
-          'Team collaboration tools',
-          'Document storage',
-          'Custom workflows',
-          'API access'
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
         ] 
       },
       enterprise: { 
@@ -105,11 +99,9 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Enterprise', 
         subtitle: '1,000+ clients',
         features: [
-          'Basic analytics dashboard',
-          'Team collaboration tools',
-          'Document storage',
-          'Custom workflows',
-          'API access'
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
         ] 
       }
     },
@@ -120,14 +112,9 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: 'Under 100 clients',
         features: [
           'Everything in Basic',
-          'Medical Hub access',
-          'AI-powered insights',
-          'Custom integrations',
-          'Dedicated support team',
-          'Advanced security & compliance',
           'Custom branding',
-          'Client portal access',
-          'Priority support'
+          'Medical Hub',
+          'Premium analytics'
         ] 
       },
       medium: { 
@@ -136,14 +123,9 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '101-500 clients',
         features: [
           'Everything in Basic',
-          'Medical Hub access',
-          'AI-powered insights',
-          'Custom integrations',
-          'Dedicated support team',
-          'Advanced security & compliance',
           'Custom branding',
-          'Client portal access',
-          'Priority support'
+          'Medical Hub',
+          'Premium analytics'
         ] 
       },
       large: { 
@@ -152,14 +134,9 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '501-1,000 clients',
         features: [
           'Everything in Basic',
-          'Medical Hub access',
-          'AI-powered insights',
-          'Custom integrations',
-          'Dedicated support team',
-          'Advanced security & compliance',
           'Custom branding',
-          'Client portal access',
-          'Priority support'
+          'Medical Hub',
+          'Premium analytics'
         ] 
       },
       enterprise: { 
@@ -168,14 +145,9 @@ export const SUBSCRIPTION_TIERS = {
         subtitle: '1,000+ clients',
         features: [
           'Everything in Basic',
-          'Medical Hub access',
-          'AI-powered insights',
-          'Custom integrations',
-          'Dedicated support team',
-          'Advanced security & compliance',
           'Custom branding',
-          'Client portal access',
-          'Priority support'
+          'Medical Hub',
+          'Premium analytics'
         ] 
       }
     }
