@@ -165,6 +165,28 @@ const CaseCompassApp = () => {
     );
   };
 
+  const handleUploadFile = (stageId, subStageId, fileName) => {
+    setLitigationStages(prevStages =>
+      prevStages.map(stage => {
+        if (stage.id === stageId) {
+          const updatedSubStages = stage.subStages.map(subStage => {
+            if (subStage.id === subStageId) {
+              const newFiles = [...(subStage.uploadedFiles || []), fileName];
+              return { 
+                ...subStage, 
+                uploaded: true, 
+                uploadedFiles: newFiles 
+              };
+            }
+            return subStage;
+          });
+          return { ...stage, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+  };
+
   const handleNavigate = (screen) => {
     setCurrentScreen(screen);
   };
@@ -226,6 +248,7 @@ const CaseCompassApp = () => {
           onSelectAvatar={setSelectedAvatar}
           onCompleteSubStage={handleCompleteSubStage}
           onPurchaseVideo={handlePurchaseVideo}
+          onUploadFile={handleUploadFile}
         />
       )}
       

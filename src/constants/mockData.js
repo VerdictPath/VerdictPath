@@ -8,15 +8,15 @@ export const LITIGATION_STAGES = [
     expanded: false,
     position: { top: '15%', left: '10%' },
     subStages: [
-      { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Obtain official police accident report' },
-      { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Request body camera footage if available' },
-      { id: 'pre-3', name: 'Dash Cam Footage', coins: 10, completed: false, icon: '🎥', description: 'Collect dash camera recordings' },
-      { id: 'pre-4', name: 'Pictures', coins: 5, completed: false, icon: '📸', description: 'Document accident scene, vehicle damage, and injuries' },
-      { id: 'pre-5', name: 'Health Insurance Card', coins: 5, completed: false, icon: '💳', description: 'Copy of health insurance information' },
-      { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Identify your auto insurance provider' },
-      { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Record your policy number and details' },
-      { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Collect all medical treatment bills' },
-      { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Obtain complete medical records and reports' }
+      { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Upload the official police accident report', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Upload body camera footage if available', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-3', name: 'Dash Cam Footage', coins: 10, completed: false, icon: '🎥', description: 'Upload dash camera recordings', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-4', name: 'Pictures', coins: 5, completed: false, icon: '📸', description: 'Upload photos of accident scene, vehicle damage, and injuries', acceptedFormats: 'JPG, PNG, HEIC', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-5', name: 'Health Insurance Card', coins: 5, completed: false, icon: '💳', description: 'Upload copy of health insurance card (front and back)', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Upload auto insurance provider information', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Upload your auto insurance policy documents', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Upload all medical treatment bills', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true },
+      { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Upload complete medical records and reports', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true }
     ],
     videos: [
       { id: 'v1', title: 'Pre-Litigation Essentials', price: 2.99, duration: '15 min', tier: 'basic' },

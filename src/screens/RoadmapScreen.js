@@ -5,7 +5,7 @@ import AvatarSelector from '../components/AvatarSelector';
 
 const { width, height } = Dimensions.get('window');
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo }) => {
+const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onUpdateSubStage }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
 
@@ -19,29 +19,145 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
     setTimeout(() => setSelectedStage(null), 300);
   };
 
+  const handleFileUpload = (subStageId) => {
+    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
+    const subStage = currentStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub) {
+      Alert.alert(
+        '🏥 Medical Hub',
+        `This document is managed in your Medical Hub. Would you like to go there now?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Go to Medical Hub', 
+            onPress: () => {
+              closeModal();
+              onNavigate('medicalhub');
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      '📁 Upload Document',
+      `Select files to upload for "${subStage.name}"\n\nAccepted formats: ${subStage.acceptedFormats}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Take Photo', 
+          onPress: () => simulateUpload(selectedStage.id, subStageId, 'photo')
+        },
+        { 
+          text: 'Choose Files', 
+          onPress: () => simulateUpload(selectedStage.id, subStageId, 'file')
+        }
+      ]
+    );
+  };
+
+  const simulateUpload = (stageId, subStageId, uploadType) => {
+    const fileName = uploadType === 'photo' 
+      ? `photo_${Date.now()}.jpg` 
+      : `document_${Date.now()}.pdf`;
+    
+    onUploadFile(stageId, subStageId, fileName);
+    
+    Alert.alert(
+      '✅ Upload Successful!',
+      `${fileName} has been uploaded successfully.`
+    );
+  };
+
+  const viewUploadedFiles = (subStage) => {
+    if (!subStage.uploaded || !subStage.uploadedFiles || subStage.uploadedFiles.length === 0) {
+      Alert.alert('No Files', 'No files have been uploaded yet.');
+      return;
+    }
+
+    const fileList = subStage.uploadedFiles.map((file, index) => 
+      `${index + 1}. ${file}`
+    ).join('\n');
+
+    Alert.alert(
+      '📁 Uploaded Files',
+      fileList,
+      [{ text: 'OK' }]
+    );
+  };
+
   const handleSubStageComplete = (subStageId, subStageCoins) => {
+    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
+    const subStage = currentStage.subStages.find(s => s.id === subStageId);
+    
+    if (subStage.linkToMedicalHub) {
+      Alert.alert(
+        'Medical Hub Required',
+        'Please complete this step in the Medical Hub first.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Go to Medical Hub', 
+            onPress: () => {
+              closeModal();
+              onNavigate('medicalhub');
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    if (!subStage.uploaded) {
+      Alert.alert(
+        'Upload Required',
+        'Please upload the required documents before marking this step as complete.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
   };
 
   const completeEntireStage = () => {
-    if (!selectedStage.subStages || selectedStage.subStages.length === 0) {
-      onCompleteStage(selectedStage.id, selectedStage.coins);
+    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
+    
+    if (currentStage.id === 1) {
+      const missingUploads = currentStage.subStages.filter(
+        sub => !sub.uploaded && !sub.linkToMedicalHub
+      );
+      
+      if (missingUploads.length > 0) {
+        Alert.alert(
+          'Uploads Required',
+          `Please upload documents for:\n${missingUploads.map(s => s.name).join('\n')}`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
+    if (!currentStage.subStages || currentStage.subStages.length === 0) {
+      onCompleteStage(currentStage.id, currentStage.coins);
       closeModal();
     } else {
-      const incompleteSubs = selectedStage.subStages.filter(sub => !sub.completed);
+      const incompleteSubs = currentStage.subStages.filter(sub => !sub.completed);
       const subStageCoins = incompleteSubs.reduce((sum, sub) => sum + sub.coins, 0);
-      const totalCoins = subStageCoins + selectedStage.coins;
+      const totalCoins = subStageCoins + currentStage.coins;
 
       Alert.alert(
         'Complete Stage?',
-        `Mark "${selectedStage.name}" as complete?\n\nYou'll earn:\n• ${subStageCoins} coins from ${incompleteSubs.length} steps\n• ${selectedStage.coins} bonus coins\n\nTotal: ${totalCoins} coins`,
+        `Mark "${currentStage.name}" as complete?\n\nYou'll earn:\n• ${subStageCoins} coins from ${incompleteSubs.length} steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Complete All',
             onPress: () => {
               incompleteSubs.forEach(sub => {
-                onCompleteSubStage(selectedStage.id, sub.id, sub.coins);
+                onCompleteSubStage(currentStage.id, sub.id, sub.coins);
               });
               closeModal();
             }
@@ -131,26 +247,71 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
                 <View style={styles.subStagesSection}>
                   <Text style={styles.sectionTitle}>📋 Steps in this Stage</Text>
                   {currentStage.subStages.map(subStage => (
-                    <View key={subStage.id} style={styles.subStageRow}>
-                      <View style={styles.subStageLeft}>
+                    <View key={subStage.id} style={styles.subStageCard}>
+                      <View style={styles.subStageHeader}>
                         <Text style={styles.subStageRowIcon}>{subStage.icon}</Text>
                         <View style={styles.subStageInfo}>
                           <Text style={styles.subStageRowName}>{subStage.name}</Text>
+                          <Text style={styles.subStageDescription}>{subStage.description}</Text>
                           <Text style={styles.subStageRowCoins}>+{subStage.coins} coins</Text>
                         </View>
                       </View>
-                      {subStage.completed ? (
-                        <View style={styles.checkmark}>
-                          <Text style={styles.checkmarkText}>✓</Text>
+
+                      {subStage.acceptedFormats && (
+                        <View style={styles.uploadSection}>
+                          {subStage.linkToMedicalHub ? (
+                            <TouchableOpacity
+                              style={styles.medicalHubButton}
+                              onPress={() => handleFileUpload(subStage.id)}
+                            >
+                              <Text style={styles.medicalHubIcon}>🏥</Text>
+                              <Text style={styles.medicalHubText}>Manage in Medical Hub</Text>
+                            </TouchableOpacity>
+                          ) : (
+                            <>
+                              <TouchableOpacity
+                                style={styles.uploadButton}
+                                onPress={() => handleFileUpload(subStage.id)}
+                              >
+                                <Text style={styles.uploadIcon}>📤</Text>
+                                <Text style={styles.uploadButtonText}>
+                                  {subStage.uploaded ? 'Upload More' : 'Upload Files'}
+                                </Text>
+                              </TouchableOpacity>
+
+                              {subStage.uploaded && (
+                                <TouchableOpacity
+                                  style={styles.viewFilesButton}
+                                  onPress={() => viewUploadedFiles(subStage)}
+                                >
+                                  <Text style={styles.viewFilesText}>
+                                    View Files ({subStage.uploadedFiles?.length || 0})
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
+                            </>
+                          )}
                         </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={[styles.miniCompleteButton, selectedAvatar && { backgroundColor: selectedAvatar.color }]}
-                          onPress={() => handleSubStageComplete(subStage.id, subStage.coins)}
-                        >
-                          <Text style={styles.miniCompleteButtonText}>Complete</Text>
-                        </TouchableOpacity>
                       )}
+
+                      <View style={styles.completeSection}>
+                        {subStage.completed ? (
+                          <View style={styles.checkmarkLarge}>
+                            <Text style={styles.checkmarkText}>✓ Completed</Text>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[
+                              styles.miniCompleteButton,
+                              selectedAvatar && { backgroundColor: selectedAvatar.color },
+                              (!subStage.uploaded && !subStage.linkToMedicalHub && subStage.acceptedFormats) && styles.disabledButton
+                            ]}
+                            onPress={() => handleSubStageComplete(subStage.id, subStage.coins)}
+                          >
+                            <Text style={styles.miniCompleteButtonText}>Mark Complete</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -488,21 +649,17 @@ const styles = StyleSheet.create({
   subStagesSection: {
     marginBottom: 20,
   },
-  subStageRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  subStageCard: {
     backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#3498db',
   },
-  subStageLeft: {
+  subStageHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    marginBottom: 12,
   },
   subStageRowIcon: {
     fontSize: 24,
@@ -512,38 +669,108 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subStageRowName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#2c3e50',
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  subStageDescription: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginBottom: 6,
+    lineHeight: 18,
   },
   subStageRowCoins: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#f39c12',
     fontWeight: '600',
   },
-  miniCompleteButton: {
-    backgroundColor: '#3498db',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+  uploadSection: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    gap: 8,
   },
-  miniCompleteButtonText: {
+  uploadButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#3498db',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  uploadButtonText: {
     color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  viewFilesButton: {
+    backgroundColor: '#ecf0f1',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  viewFilesText: {
+    color: '#2c3e50',
     fontSize: 12,
     fontWeight: '600',
   },
-  checkmark: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#27ae60',
+  medicalHubButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#e8f5e9',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#4caf50',
+  },
+  medicalHubIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  medicalHubText: {
+    color: '#2e7d32',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  completeSection: {
+    marginTop: 8,
+  },
+  miniCompleteButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  miniCompleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    backgroundColor: '#bdc3c7',
+    opacity: 0.6,
+  },
+  checkmarkLarge: {
+    backgroundColor: '#d5f4e6',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     alignItems: 'center',
   },
   checkmarkText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#27ae60',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   videosSection: {
