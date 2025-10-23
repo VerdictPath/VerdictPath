@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
+import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,36 +71,26 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     );
   };
 
-  const pickImage = async (stageId, subStageId) => {
+  const pickImageFromCamera = async (stageId, subStageId) => {
     try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.8,
-      });
+      const result = await pickImage();
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadEvidenceFile(result.assets[0], stageId, subStageId);
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      if (error.message === 'Camera permission is required') {
+        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+      } else {
+        Alert.alert('Error', 'Failed to take photo. Please try again.');
+      }
     }
   };
 
-  const pickDocument = async (stageId, subStageId) => {
+  const pickDocumentFromDevice = async (stageId, subStageId) => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf'],
-        copyToCacheDirectory: true,
-      });
+      const result = await pickDocument();
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadEvidenceFile(result.assets[0], stageId, subStageId);
@@ -124,17 +113,10 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       const currentStage = litigationStages.find(s => s.id === stageId);
       const subStage = currentStage.subStages.find(s => s.id === subStageId);
 
-      const formData = new FormData();
-      
-      const fileToUpload = {
-        uri: Platform.OS === 'web' ? file.uri : file.uri,
-        type: file.mimeType || 'application/octet-stream',
-        name: file.name || `upload_${Date.now()}.${file.mimeType?.split('/')[1] || 'jpg'}`
-      };
-
-      formData.append('file', fileToUpload);
-      formData.append('evidenceType', subStage.name);
-      formData.append('title', subStage.name);
+      const formData = createFormDataFromFile(file, 'file', {
+        evidenceType: subStage.name,
+        title: subStage.name
+      });
 
       const response = await fetch(`${API_URL}/uploads/evidence`, {
         method: 'POST',
@@ -165,9 +147,9 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
 
   const simulateUpload = (stageId, subStageId, uploadType) => {
     if (uploadType === 'photo') {
-      pickImage(stageId, subStageId);
+      pickImageFromCamera(stageId, subStageId);
     } else {
-      pickDocument(stageId, subStageId);
+      pickDocumentFromDevice(stageId, subStageId);
     }
   };
 
