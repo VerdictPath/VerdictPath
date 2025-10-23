@@ -6,12 +6,17 @@ export const API_ENDPOINTS = {
   AUTH: {
     REGISTER_CLIENT: '/api/auth/register/client',
     REGISTER_LAWFIRM: '/api/auth/register/lawfirm',
+    REGISTER_MEDICALPROVIDER: '/api/auth/register/medicalprovider',
     LOGIN: '/api/auth/login'
   },
   LAWFIRM: {
     DASHBOARD: '/api/lawfirm/dashboard',
     CLIENT_DETAILS: (clientId) => `/api/lawfirm/client/${clientId}`,
     UPDATE_STAGE: '/api/lawfirm/litigation-stage'
+  },
+  MEDICALPROVIDER: {
+    DASHBOARD: '/api/medicalprovider/dashboard',
+    PATIENT_DETAILS: (patientId) => `/api/medicalprovider/patient/${patientId}`
   }
 };
 

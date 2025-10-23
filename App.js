@@ -15,6 +15,7 @@ import VideosScreen from './src/screens/VideosScreen';
 import MedicalHubScreen from './src/screens/MedicalHubScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
+import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 
 const CaseCompassApp = () => {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -54,16 +55,107 @@ const CaseCompassApp = () => {
     setCurrentScreen('subscription');
   };
 
-  const handleSelectSubscription = (tier, size) => {
+  const handleSelectSubscription = async (tier, size) => {
     setSubscriptionTier(tier);
     setFirmSize(size);
     
     if (tier === 'free') {
-      Alert.alert(
-        '🎉 Welcome to Verdict Path!',
-        'Your free account has been created. A verification email has been sent to your inbox.',
-        [{ text: 'OK', onPress: () => setCurrentScreen('login') }]
-      );
+      try {
+        let response;
+        let userData;
+        
+        if (userType === USER_TYPES.LAW_FIRM) {
+          const firmCode = `FIRM${Date.now()}`;
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
+            method: 'POST',
+            body: JSON.stringify({
+              firmName: email.split('@')[0] + ' Law Firm',
+              firmCode: firmCode,
+              email: email,
+              password: password
+            })
+          });
+          
+          userData = {
+            id: response.lawFirm.id,
+            email: response.lawFirm.email,
+            type: USER_TYPES.LAW_FIRM,
+            firmName: response.lawFirm.firmName,
+            firmCode: response.lawFirm.firmCode,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('lawfirm-dashboard');
+        } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
+          const providerCode = `MED${Date.now()}`;
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
+            method: 'POST',
+            body: JSON.stringify({
+              providerName: email.split('@')[0] + ' Medical Center',
+              providerCode: providerCode,
+              email: email,
+              password: password
+            })
+          });
+          
+          userData = {
+            id: response.medicalProvider.id,
+            email: response.medicalProvider.email,
+            type: USER_TYPES.MEDICAL_PROVIDER,
+            providerName: response.medicalProvider.providerName,
+            providerCode: response.medicalProvider.providerCode,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('medicalprovider-dashboard');
+        } else {
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_CLIENT, {
+            method: 'POST',
+            body: JSON.stringify({
+              firstName: email.split('@')[0],
+              lastName: 'User',
+              email: email,
+              password: password,
+              lawFirmCode: firmCode || null,
+              avatarType: 'captain',
+              subscriptionTier: tier,
+              subscriptionPrice: 0
+            })
+          });
+          
+          userData = {
+            id: response.user.id,
+            email: response.user.email,
+            type: USER_TYPES.INDIVIDUAL,
+            firstName: response.user.firstName,
+            lastName: response.user.lastName,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('dashboard');
+        }
+        
+        setUser(userData);
+        setCoins(0);
+        setLoginStreak(0);
+        setIsLoggedIn(true);
+        
+        Alert.alert(
+          '🎉 Welcome to Verdict Path!',
+          'Your free account has been created successfully!'
+        );
+      } catch (error) {
+        Alert.alert('Error', error.message || 'Failed to create account. Please try again.');
+      }
     } else {
       Alert.alert(
         'Payment Required',
@@ -386,6 +478,14 @@ const CaseCompassApp = () => {
           user={user}
           clientId={selectedClientId}
           onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+      
+      {currentScreen === 'medicalprovider-dashboard' && (
+        <MedicalProviderDashboardScreen
+          user={user}
+          onNavigateToPatient={() => {}}
+          onLogout={handleLogout}
         />
       )}
     </SafeAreaView>

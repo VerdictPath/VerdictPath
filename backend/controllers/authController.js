@@ -107,6 +107,81 @@ exports.registerLawFirm = async (req, res) => {
   }
 };
 
+exports.registerMedicalProvider = async (req, res) => {
+  try {
+    const {
+      providerName,
+      providerCode,
+      email,
+      password,
+      npiNumber,
+      specialty,
+      phoneNumber,
+      address,
+      licenseNumber
+    } = req.body;
+
+    if (!providerName || !providerCode || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Provider name, provider code, email, and password are required' 
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await db.query(
+      `INSERT INTO medical_providers 
+       (provider_name, provider_code, email, password, npi_number, specialty, phone_number, 
+        street, city, state, zip_code, license_number) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+       RETURNING id, provider_name, provider_code, email`,
+      [
+        providerName,
+        providerCode.toUpperCase(),
+        email.toLowerCase(),
+        hashedPassword,
+        npiNumber || null,
+        specialty || null,
+        phoneNumber || null,
+        address?.street || null,
+        address?.city || null,
+        address?.state || null,
+        address?.zipCode || null,
+        licenseNumber || null
+      ]
+    );
+
+    const medicalProvider = result.rows[0];
+
+    const token = jwt.sign(
+      { 
+        id: medicalProvider.id, 
+        email: medicalProvider.email, 
+        userType: 'medical_provider',
+        providerCode: medicalProvider.provider_code
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.status(201).json({
+      message: 'Medical provider registered successfully',
+      token,
+      medicalProvider: {
+        id: medicalProvider.id,
+        providerName: medicalProvider.provider_name,
+        providerCode: medicalProvider.provider_code,
+        email: medicalProvider.email
+      }
+    });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(400).json({ message: 'Provider code or email already exists' });
+    }
+    res.status(500).json({ message: 'Error registering medical provider', error: error.message });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password, userType } = req.body;
@@ -116,6 +191,11 @@ exports.login = async (req, res) => {
     if (userType === 'lawfirm') {
       result = await db.query(
         'SELECT id, firm_name as name, email, password, firm_code FROM law_firms WHERE email = $1',
+        [email.toLowerCase()]
+      );
+    } else if (userType === 'medical_provider') {
+      result = await db.query(
+        'SELECT id, provider_name as name, email, password, provider_code FROM medical_providers WHERE email = $1',
         [email.toLowerCase()]
       );
     } else {
@@ -136,9 +216,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
-    const tokenPayload = userType === 'lawfirm' 
-      ? { id: account.id, email: account.email, userType: 'lawfirm', firmCode: account.firm_code }
-      : { id: account.id, email: account.email, userType: account.user_type };
+    let tokenPayload;
+    if (userType === 'lawfirm') {
+      tokenPayload = { id: account.id, email: account.email, userType: 'lawfirm', firmCode: account.firm_code };
+    } else if (userType === 'medical_provider') {
+      tokenPayload = { id: account.id, email: account.email, userType: 'medical_provider', providerCode: account.provider_code };
+    } else {
+      tokenPayload = { id: account.id, email: account.email, userType: account.user_type };
+    }
     
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30d' });
     
@@ -149,21 +234,32 @@ exports.login = async (req, res) => {
       );
     }
     
-    const responseData = userType === 'lawfirm'
-      ? {
-          id: account.id,
-          firmName: account.name,
-          email: account.email,
-          userType: 'lawfirm',
-          firmCode: account.firm_code
-        }
-      : {
-          id: account.id,
-          firstName: account.first_name,
-          lastName: account.last_name,
-          email: account.email,
-          userType: account.user_type
-        };
+    let responseData;
+    if (userType === 'lawfirm') {
+      responseData = {
+        id: account.id,
+        firmName: account.name,
+        email: account.email,
+        userType: 'lawfirm',
+        firmCode: account.firm_code
+      };
+    } else if (userType === 'medical_provider') {
+      responseData = {
+        id: account.id,
+        providerName: account.name,
+        email: account.email,
+        userType: 'medical_provider',
+        providerCode: account.provider_code
+      };
+    } else {
+      responseData = {
+        id: account.id,
+        firstName: account.first_name,
+        lastName: account.last_name,
+        email: account.email,
+        userType: account.user_type
+      };
+    }
     
     res.json({
       message: 'Login successful',
