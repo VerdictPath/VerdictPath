@@ -596,12 +596,12 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
       {renderStageModal()}
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={dataEntryModalVisible}
         onRequestClose={handleDataEntryCancel}
       >
-        <View style={styles.modalOverlay}>
+        <View style={styles.dataEntryModalOverlay}>
           <View style={styles.dataEntryModalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>✏️ {dataEntrySubStage?.name}</Text>
@@ -1118,6 +1118,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#27ae60',
+  },
+  dataEntryModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
   },
   dataEntryModalContent: {
     backgroundColor: '#fff',
