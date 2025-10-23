@@ -73,6 +73,48 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **PostgreSQL**: Database for backend data storage.
 - **Node.js/Express**: Backend API development.
 
+## Litigation Path Integration (October 23, 2025)
+**Comprehensive backend integration completed for litigation progress tracking across the entire app:**
+
+### Database Layer
+- Created 5 new tables for litigation tracking:
+  - `user_litigation_progress` - Overall progress (current stage, coins, percentage)
+  - `litigation_substage_completions` - Individual substage tracking
+  - `litigation_stage_completions` - Main stage tracking
+  - `litigation_video_progress` - Video purchases and views
+  - `litigation_milestones` - Achievements and milestones
+- Implemented with proper indexes for performance
+- Full data integrity with foreign key constraints
+
+### Backend API
+- **API Endpoints Created:**
+  - `GET /api/litigation/progress` - Get user's complete litigation progress
+  - `POST /api/litigation/substage/complete` - Mark substage as completed (auto-awards coins)
+  - `POST /api/litigation/stage/complete` - Mark main stage as completed (advances user)
+  - `POST /api/litigation/video/progress` - Track video purchases and completion
+  - `GET /api/litigation/client/:clientId/progress` - Law firms can view client progress
+- **Features:**
+  - Automatic progress record creation (upsert pattern)
+  - Coin rewards integration with user account
+  - Progress percentage calculation
+  - Stage advancement logic (handles all 9 stages including completion)
+  - Law firm access control for client data
+- **Security:** All endpoints require authentication, law firm endpoints verify client relationship
+
+### Integration Points
+- Litigation progress ready for:
+  - Dashboard widgets showing current stage and progress bar
+  - Law Firm portal displaying full client litigation roadmap
+  - Medical Provider portal accessing relevant litigation stage info
+  - Document uploads automatically completing associated substages
+  - Real-time progress sync between mobile and web
+
+### Files Created/Modified
+- `backend/scripts/litigation-progress-schema.sql` - Database schema
+- `backend/controllers/litigationController.js` - API controller (fixed per architect review)
+- `backend/routes/litigation.js` - API routes
+- `backend/server.js` - Registered litigation routes
+
 ## Recent Bug Fixes (October 23, 2025)
 - **Fixed authToken undefined error**: Added `authToken` variable derived from `user?.token` in App.js to fix console errors when navigating to RoadmapScreen and MedicalHubScreen
 - **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern

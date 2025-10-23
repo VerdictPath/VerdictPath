@@ -1,28 +1,34 @@
-const db = require('../db');
+const db = require('../config/db');
+
+// Helper function to ensure user progress record exists (upsert pattern)
+const ensureProgressRecord = async (userId) => {
+  const result = await db.query(
+    `INSERT INTO user_litigation_progress (user_id, current_stage_id, current_stage_name)
+     VALUES ($1, 1, 'Pre-Litigation')
+     ON CONFLICT (user_id) DO NOTHING
+     RETURNING *`,
+    [userId]
+  );
+  
+  // If row already existed, fetch it
+  if (result.rows.length === 0) {
+    const existing = await db.query(
+      'SELECT * FROM user_litigation_progress WHERE user_id = $1',
+      [userId]
+    );
+    return existing.rows[0];
+  }
+  
+  return result.rows[0];
+};
 
 // Get user's litigation progress
 const getUserProgress = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get overall progress
-    const progressResult = await db.query(
-      'SELECT * FROM user_litigation_progress WHERE user_id = $1',
-      [userId]
-    );
-
-    let progress = progressResult.rows[0];
-
-    // If no progress exists, create initial record
-    if (!progress) {
-      const createResult = await db.query(
-        `INSERT INTO user_litigation_progress (user_id, current_stage_id, current_stage_name)
-         VALUES ($1, 1, 'Pre-Litigation')
-         RETURNING *`,
-        [userId]
-      );
-      progress = createResult.rows[0];
-    }
+    // Ensure progress record exists
+    const progress = await ensureProgressRecord(userId);
 
     // Get completed substages
     const substagesResult = await db.query(
@@ -72,6 +78,9 @@ const completeSubstage = async (req, res) => {
     if (!stageId || !substageId || !substageName) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Ensure progress record exists before any updates
+    await ensureProgressRecord(userId);
 
     // Check if already completed
     const existing = await db.query(
@@ -129,6 +138,9 @@ const completeStage = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Ensure progress record exists before any updates
+    await ensureProgressRecord(userId);
+
     // Check if already completed
     const existing = await db.query(
       'SELECT id FROM litigation_stage_completions WHERE user_id = $1 AND stage_id = $2',
@@ -154,22 +166,36 @@ const completeStage = async (req, res) => {
       [coinsEarned || 0, userId]
     );
 
-    // Update current stage if moving forward
+    // Update current stage - handle all stages including stage 9 (final stage)
+    const stageNames = [
+      'Pre-Litigation', 'Complaint Filed', 'Discovery', 'Mediation',
+      'Pre-Trial', 'Trial', 'Verdict', 'Appeal', 'Case Resolution'
+    ];
+    
     if (stageId >= 1 && stageId < 9) {
+      // Move to next stage
       const nextStageId = stageId + 1;
-      const stageNames = [
-        'Pre-Litigation', 'Complaint Filed', 'Discovery', 'Mediation',
-        'Pre-Trial', 'Trial', 'Verdict', 'Appeal', 'Case Resolution'
-      ];
-      
       await db.query(
         `UPDATE user_litigation_progress 
          SET current_stage_id = $1,
              current_stage_name = $2,
              total_coins_earned = total_coins_earned + $3,
+             progress_percentage = ($1::DECIMAL / 9 * 100),
              last_activity_at = CURRENT_TIMESTAMP
          WHERE user_id = $4`,
-        [nextStageId, stageNames[nextStageId - 1] || 'Unknown', coinsEarned || 0, userId]
+        [nextStageId, stageNames[nextStageId - 1], coinsEarned || 0, userId]
+      );
+    } else if (stageId === 9) {
+      // Final stage completed - mark as 100% complete
+      await db.query(
+        `UPDATE user_litigation_progress 
+         SET current_stage_id = 9,
+             current_stage_name = 'Case Resolution',
+             total_coins_earned = total_coins_earned + $1,
+             progress_percentage = 100.00,
+             last_activity_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2`,
+        [coinsEarned || 0, userId]
       );
     }
 
