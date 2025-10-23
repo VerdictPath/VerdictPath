@@ -663,7 +663,7 @@ const CaseCompassApp = () => {
       )}
       
       {currentScreen === 'hipaaForms' && (
-        <HIPAAFormsScreen navigation={{ navigate: handleNavigate }} />
+        <HIPAAFormsScreen onNavigate={handleNavigate} />
       )}
       
       {currentScreen === 'lawfirm-dashboard' && (
