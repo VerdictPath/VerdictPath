@@ -41,8 +41,8 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider user types with Free, Basic, and Premium subscription tiers.
 - **Avatar Selection**: Pirate-themed avatars (Captain, Navigator, Gunner, First Mate).
 - **Gamification**: Coin system for stage completion and daily streaks with fraud prevention:
-  - Conversion rate: 10 coins = $1 credit
-  - **Lifetime cap: $5 maximum per user account** (50 coins total)
+  - Conversion rate: 5,000 coins = $1 credit
+  - **Lifetime cap: $5 maximum per user account** (25,000 coins total)
   - Tracks total_coins and coins_spent in database
   - Prevents refunding coins already converted to credits
   - Full audit trail via coin_conversions table

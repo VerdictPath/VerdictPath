@@ -244,7 +244,7 @@ const CaseCompassApp = () => {
     const coinsNeeded = calculateCoinsNeeded(actualCredits);
     
     if (actualCredits === 0) {
-      Alert.alert('Not Enough Coins', 'You need at least 10 coins to convert to credits.\n\n(10 coins = $1)');
+      Alert.alert('Not Enough Coins', 'You need at least 5,000 coins to convert to credits.\n\n(5,000 coins = $1)');
       return;
     }
     

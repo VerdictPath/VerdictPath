@@ -234,7 +234,7 @@ export const USER_TYPES = {
 export const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30];
 
 export const MAX_LIFETIME_CREDITS = 5; // $5 lifetime cap per user account
-export const COINS_PER_CREDIT = 10; // 10 coins = $1
+export const COINS_PER_CREDIT = 5000; // 5,000 coins = $1
 
 export const AVATARS = [
   { 

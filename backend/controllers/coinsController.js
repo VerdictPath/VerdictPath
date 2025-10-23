@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 
-const COINS_PER_CREDIT = 10;
+const COINS_PER_CREDIT = 5000; // 5,000 coins = $1
 const MAX_LIFETIME_CREDITS = 5; // $5 lifetime cap per user account
 
 const updateCoins = async (req, res) => {
