@@ -276,7 +276,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onLogout }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.mahogany} />
-        <Text style={styles.loadingText}>Loading your treasure map...</Text>
+        <Text style={styles.loadingText}>Loading the Portal</Text>
       </View>
     );
   }
