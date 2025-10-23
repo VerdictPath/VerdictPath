@@ -91,6 +91,8 @@ const CaseCompassApp = () => {
           setCurrentScreen('lawfirm-dashboard');
         } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
           const providerCode = `MED${Date.now()}`;
+          console.log('Registering medical provider:', { providerCode, email });
+          
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
             method: 'POST',
             body: JSON.stringify({
@@ -100,6 +102,12 @@ const CaseCompassApp = () => {
               password: password
             })
           });
+          
+          console.log('Medical provider registration response:', response);
+          
+          if (!response || !response.medicalProvider) {
+            throw new Error('Invalid response from server. Please try again.');
+          }
           
           userData = {
             id: response.medicalProvider.id,
@@ -154,7 +162,9 @@ const CaseCompassApp = () => {
           'Your free account has been created successfully!'
         );
       } catch (error) {
-        Alert.alert('Error', error.message || 'Failed to create account. Please try again.');
+        console.error('Registration Error Details:', error);
+        const errorMsg = error.message || error.toString() || 'Failed to create account. Please try again.';
+        Alert.alert('Registration Error', errorMsg);
       }
     } else {
       Alert.alert(
