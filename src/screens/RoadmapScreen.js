@@ -268,13 +268,23 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
 
   const completeSubstageOnBackend = async (subStageId, subStageCoins) => {
     try {
+      const currentStage = litigationStages.find(s => s.id === selectedStage.id);
+      const subStage = currentStage.subStages.find(s => s.id === subStageId);
+
       const response = await fetch(`${API_URL}/litigation/substage/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ substageId: subStageId }),
+        body: JSON.stringify({ 
+          stageId: currentStage.id,
+          stageName: currentStage.name,
+          substageId: subStageId,
+          substageName: subStage.name,
+          substageType: subStage.isDataEntry ? 'data_entry' : 'upload',
+          coinsEarned: subStageCoins
+        }),
       });
 
       const data = await response.json();
