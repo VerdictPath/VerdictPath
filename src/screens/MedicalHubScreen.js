@@ -146,76 +146,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     );
   };
 
-  const handleMarkCompleteWithoutUpload = (documentType) => {
-    const isMedicalBills = documentType === 'medicalBills';
-    const taskName = isMedicalBills ? 'Medical Bills' : 'Medical Records';
-    const coins = isMedicalBills ? 15 : 35;
-
-    alert(
-      '✅ Mark Complete',
-      `Mark "${taskName}" task as complete without uploading documents?\n\nYou'll earn ${coins} coins and this will update your litigation progress.\n\nUse this if you've already submitted these documents through another channel.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark Complete',
-          onPress: () => completeTaskOnBackend(documentType)
-        }
-      ]
-    );
-  };
-
-  const completeTaskOnBackend = async (documentType) => {
-    if (!authToken) {
-      alert('Error', 'You must be logged in to complete tasks.');
-      return;
-    }
-
-    const isMedicalBills = documentType === 'medicalBills';
-    const substageId = isMedicalBills ? 'pre-8' : 'pre-9';
-    const substageName = isMedicalBills ? 'Medical Bills' : 'Medical Records';
-    const coins = isMedicalBills ? 15 : 35;
-
-    setUploading(true);
-
-    try {
-      const response = await fetch(`${API_URL}/litigation/substage/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          stageId: 1,
-          stageName: 'Pre-Litigation',
-          substageId: substageId,
-          substageName: substageName,
-          substageType: 'upload',
-          coinsEarned: coins
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(
-          '✅ Task Completed!',
-          `You earned ${coins} coins! Your litigation progress has been updated.`
-        );
-      } else {
-        if (data.error && data.error.includes('already completed')) {
-          alert('Already Completed', 'This task has already been completed.');
-        } else {
-          alert('Error', data.error || 'Failed to complete task.');
-        }
-      }
-    } catch (error) {
-      console.error('Error completing task:', error);
-      alert('Error', 'Failed to complete task. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   return (
     <ScrollView style={commonStyles.container}>
       <View style={commonStyles.header}>
@@ -236,10 +166,9 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           <TouchableOpacity 
             style={commonStyles.primaryButton}
             onPress={handleUploadMedicalBills}
-            disabled={uploading}
           >
             <Text style={commonStyles.buttonText}>
-              {uploading ? '⏳ Processing...' : (medicalHubUploads.medicalBills.length > 0 ? '📤 Upload More Bills' : '📤 Upload Medical Bills')}
+              {medicalHubUploads.medicalBills.length > 0 ? '📤 Upload More Bills' : '📤 Upload Medical Bills'}
             </Text>
           </TouchableOpacity>
           {medicalHubUploads.medicalBills.length > 0 && (
@@ -252,18 +181,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
               </Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
-            style={styles.markCompleteButton}
-            onPress={() => handleMarkCompleteWithoutUpload('medicalBills')}
-            disabled={uploading}
-          >
-            <Text style={styles.markCompleteButtonText}>
-              ✅ Mark Complete Without Upload
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.helperText}>
-            Use this if you've already submitted medical bills through another channel
-          </Text>
         </View>
 
         <View style={styles.documentSection}>
@@ -271,10 +188,9 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           <TouchableOpacity 
             style={commonStyles.primaryButton}
             onPress={handleUploadMedicalRecords}
-            disabled={uploading}
           >
             <Text style={commonStyles.buttonText}>
-              {uploading ? '⏳ Processing...' : (medicalHubUploads.medicalRecords.length > 0 ? '📤 Upload More Records' : '📤 Upload Medical Records')}
+              {medicalHubUploads.medicalRecords.length > 0 ? '📤 Upload More Records' : '📤 Upload Medical Records'}
             </Text>
           </TouchableOpacity>
           {medicalHubUploads.medicalRecords.length > 0 && (
@@ -287,18 +203,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
               </Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
-            style={styles.markCompleteButton}
-            onPress={() => handleMarkCompleteWithoutUpload('medicalRecords')}
-            disabled={uploading}
-          >
-            <Text style={styles.markCompleteButtonText}>
-              ✅ Mark Complete Without Upload
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.helperText}>
-            Use this if you've already submitted medical records through another channel
-          </Text>
         </View>
 
         <TouchableOpacity 
@@ -360,27 +264,6 @@ const styles = StyleSheet.create({
     color: '#34495e',
     fontSize: 16,
     fontWeight: '600',
-  },
-  markCompleteButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 15,
-    borderWidth: 2,
-    borderColor: '#229954',
-  },
-  markCompleteButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  helperText: {
-    fontSize: 13,
-    color: '#7f8c8d',
-    fontStyle: 'italic',
-    marginTop: 8,
-    textAlign: 'center',
   },
 });
 
