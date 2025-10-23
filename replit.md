@@ -20,13 +20,14 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular organization with `src/screens/`, `src/components/`, etc.
+- **Deployment**: Single-server architecture - backend serves both API and Expo web build on port 5000
 - **Gamification Logic**: Implements a coin system for milestones and daily streaks, with coin-to-credit conversion.
 - **Document Management**: Robust upload functionality for medical documents with multi-file support and specific file type filters.
 - **State Management**: Centralized in `App.js`.
 - **Styling**: Uses shared and screen-specific styles.
 - **Image Processing**: Python/Pillow for logo background integration.
 - **SVG Animation**: `react-native-svg` for cubic Bezier curve path animations.
-- **Backend**: Node.js/Express with PostgreSQL database for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
+- **Backend**: Node.js/Express (port 5000) with PostgreSQL database for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
 - **HIPAA Security (Phase 1 & 2 Complete)**:
   - AES-256-GCM encryption for all Protected Health Information (PHI) at rest
   - Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions

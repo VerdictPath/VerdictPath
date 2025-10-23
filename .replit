@@ -23,10 +23,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 5001
-externalPort = 3001
-
-[[ports]]
 localPort = 33057
 externalPort = 3003
 
@@ -39,8 +35,8 @@ localPort = 40371
 externalPort = 3002
 
 [[ports]]
-localPort = 45541
-externalPort = 5000
+localPort = 44051
+externalPort = 5173
 
 [agent]
 expertMode = true
@@ -55,32 +51,16 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Expo Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Backend Server"
+args = "Server"
 
 [[workflows.workflow]]
-name = "Expo Server"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx expo start --clear --web --port 5000"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow]]
-name = "Backend Server"
+name = "Server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd backend && node server.js"
-waitForPort = 3000
+waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"

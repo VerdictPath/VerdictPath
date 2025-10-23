@@ -9,7 +9,7 @@ const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 5000; // Replit only exposes port 5000
 
 app.use(cors());
 app.use(express.json());
@@ -19,28 +19,19 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve Expo web app static files
+app.use(express.static(path.join(__dirname, 'public/app')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 
+// Serve mobile app at root
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'VerdictPath Law Firm Portal API',
-    version: '2.0.0',
-    hipaa: {
-      phase1: 'Encryption, Audit Logging, Account Security',
-      phase2: 'RBAC, Patient Consent Management'
-    },
-    endpoints: {
-      auth: '/api/auth',
-      lawfirm: '/api/lawfirm',
-      medicalprovider: '/api/medicalprovider',
-      consent: '/api/consent'
-    }
-  });
+  res.sendFile(path.join(__dirname, 'public/app/index.html'));
 });
 
 app.get('/portal', (req, res) => {
@@ -54,7 +45,7 @@ app.post('/portal/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const response = await fetch('http://localhost:3000/api/auth/login', {
+    const response = await fetch(`http://localhost:${PORT}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, userType: 'lawfirm' })
@@ -86,7 +77,7 @@ app.get('/portal/dashboard', async (req, res) => {
       return res.redirect('/portal');
     }
     
-    const response = await fetch('http://localhost:3000/api/lawfirm/dashboard', {
+    const response = await fetch(`http://localhost:${PORT}/api/lawfirm/dashboard`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -108,7 +99,7 @@ app.get('/portal/client/:clientId', async (req, res) => {
       return res.redirect('/portal');
     }
     
-    const response = await fetch(`http://localhost:3000/api/lawfirm/client/${req.params.clientId}`, {
+    const response = await fetch(`http://localhost:${PORT}/api/lawfirm/client/${req.params.clientId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
