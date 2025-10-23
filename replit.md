@@ -8,6 +8,24 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 
 ## Recent Changes
 
+### October 23, 2025 - Working "Start Free Trial" Button with Multi-Portal Support
+- **Registration Flow Integration**: "Start Free Trial" button now creates real accounts via backend API
+  - Individual users → Client dashboard with gamification features
+  - Law Firms → Law Firm dashboard (view clients and documents)
+  - Medical Providers → Medical Provider dashboard (view patients)
+  - Auto-generated unique codes for organizations (FIRM + timestamp, MED + timestamp)
+- **Medical Provider Support**: Added complete backend support
+  - medical_providers table in PostgreSQL database
+  - medical_provider_patients junction table
+  - Registration endpoint: /api/auth/register/medicalprovider
+  - Login support for medical_provider userType
+  - Mobile dashboard screen (placeholder for patient list)
+- **Backend API Integration**: Mobile app now calls real backend APIs
+  - JWT tokens stored in user state
+  - Proper authentication for all user types
+  - Automatic routing to correct dashboard after registration
+- **Testing**: You can now register as any user type and see their respective portals
+
 ### October 23, 2025 - Law Firm Client Portal System
 - **Complete Backend Implementation**: Built comprehensive Node.js/Express backend API
   - PostgreSQL database with 8 tables: users, law_firms, medical_records, medical_billing, evidence, litigation_stages, litigation_stage_history, law_firm_clients
