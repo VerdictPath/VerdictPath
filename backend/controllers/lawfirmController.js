@@ -361,3 +361,82 @@ exports.getLitigationHistory = async (req, res) => {
     res.status(500).json({ message: 'Error fetching litigation history', error: error.message });
   }
 };
+
+exports.getClientDocuments = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const lawFirmId = req.user.id;
+    const documentAccessService = require('../services/documentAccessService');
+    
+    const result = await documentAccessService.listClientDocuments(lawFirmId, clientId);
+    
+    // HIPAA: Log law firm accessing client documents
+    await auditLogger.log({
+      actorId: lawFirmId,
+      actorType: 'lawfirm',
+      action: 'VIEW_CLIENT_DOCUMENTS',
+      entityType: 'User',
+      entityId: clientId,
+      targetUserId: clientId,
+      status: 'SUCCESS',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      metadata: {
+        documentCounts: {
+          medical_records: result.documents.medical_records.length,
+          medical_billing: result.documents.medical_billing.length,
+          evidence: result.documents.evidence.length
+        }
+      }
+    });
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching client documents', error: error.message });
+  }
+};
+
+exports.getDocumentNotifications = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { status } = req.query; // optional filter: 'unread' or 'read'
+    const documentAccessService = require('../services/documentAccessService');
+    
+    const notifications = await documentAccessService.getLawFirmNotifications(lawFirmId, status);
+    
+    res.json({ notifications });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
+  }
+};
+
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const lawFirmId = req.user.id;
+    const documentAccessService = require('../services/documentAccessService');
+    
+    const notification = await documentAccessService.markNotificationAsRead(notificationId, lawFirmId);
+    
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+    
+    res.json({ message: 'Notification marked as read', notification });
+  } catch (error) {
+    res.status(500).json({ message: 'Error marking notification as read', error: error.message });
+  }
+};
+
+exports.getUnreadNotificationCount = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const documentAccessService = require('../services/documentAccessService');
+    
+    const count = await documentAccessService.getUnreadNotificationCount(lawFirmId);
+    
+    res.json({ unreadCount: count });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching notification count', error: error.message });
+  }
+};

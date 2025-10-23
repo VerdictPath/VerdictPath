@@ -5,6 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= client.displayName %> - Client Details</title>
   <link rel="stylesheet" href="/css/portal.css">
+  <style>
+    .download-btn {
+      background: var(--mahogany);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 13px;
+      display: inline-block;
+      margin-top: 8px;
+      cursor: pointer;
+      border: none;
+    }
+    .download-btn:hover {
+      background: #8B0000;
+    }
+    .document-item {
+      position: relative;
+      padding: 15px;
+      border-bottom: 1px solid #ddd;
+    }
+    .document-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+    }
+    .document-info {
+      flex: 1;
+    }
+    .consent-warning {
+      background: #FFF4E6;
+      border-left: 4px solid var(--mahogany);
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -60,78 +97,197 @@
     </div>
     
     <!-- Medical Records Section -->
-    <div class="section">
-      <h2 class="section-title">Medical Records (<%= medicalRecords.total %>)</h2>
-      <% if (medicalRecords.total === 0) { %>
-        <p class="empty-state">No medical records uploaded yet.</p>
-      <% } else { %>
-        <ul class="document-list">
-          <% medicalRecords.records.forEach(record => { %>
-            <li class="document-item">
-              <div class="document-title"><%= record.record_type.replace(/_/g, ' ').toUpperCase() %></div>
-              <div class="document-meta">
-                <% if (record.facility_name) { %>Facility: <%= record.facility_name %> | <% } %>
-                <% if (record.date_of_service) { %>Date: <%= new Date(record.date_of_service).toLocaleDateString() %> | <% } %>
-                Uploaded: <%= new Date(record.uploaded_at).toLocaleDateString() %>
-              </div>
-              <% if (record.description) { %>
-                <div style="margin-top: 5px; color: var(--navy); font-size: 14px;"><%= record.description %></div>
-              <% } %>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
+    <div class="section" id="medical-records-section">
+      <h2 class="section-title">Medical Records</h2>
+      <div id="medical-records-container">
+        <p style="color: #666;">Loading documents...</p>
+      </div>
     </div>
     
     <!-- Medical Billing Section -->
-    <div class="section">
-      <h2 class="section-title">Medical Billing (<%= medicalBilling.total %>)</h2>
-      <div style="margin-bottom: 15px;">
-        <strong>Total Amount Billed:</strong> $<%= medicalBilling.totalAmountBilled.toFixed(2) %> | 
-        <strong>Total Amount Due:</strong> $<%= medicalBilling.totalAmountDue.toFixed(2) %>
+    <div class="section" id="medical-billing-section">
+      <h2 class="section-title">Medical Billing</h2>
+      <div id="medical-billing-container">
+        <p style="color: #666;">Loading documents...</p>
       </div>
-      <% if (medicalBilling.total === 0) { %>
-        <p class="empty-state">No medical bills uploaded yet.</p>
-      <% } else { %>
-        <ul class="document-list">
-          <% medicalBilling.bills.forEach(bill => { %>
-            <li class="document-item">
-              <div class="document-title"><%= bill.billing_type.replace(/_/g, ' ').toUpperCase() %></div>
-              <div class="document-meta">
-                <% if (bill.facility_name) { %>Facility: <%= bill.facility_name %> | <% } %>
-                <% if (bill.bill_number) { %>Bill #: <%= bill.bill_number %> | <% } %>
-                Amount: $<%= parseFloat(bill.total_amount).toFixed(2) %>
-                <% if (bill.bill_date) { %> | Date: <%= new Date(bill.bill_date).toLocaleDateString() %><% } %>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
     </div>
     
     <!-- Evidence Documents Section -->
-    <div class="section">
-      <h2 class="section-title">Evidence Documents (<%= evidenceDocuments.total %>)</h2>
-      <% if (evidenceDocuments.total === 0) { %>
-        <p class="empty-state">No evidence documents uploaded yet.</p>
-      <% } else { %>
-        <ul class="document-list">
-          <% evidenceDocuments.documents.forEach(doc => { %>
-            <li class="document-item">
-              <div class="document-title"><%= doc.title %></div>
-              <div class="document-meta">
-                Type: <%= doc.evidence_type.replace(/_/g, ' ').toUpperCase() %>
-                <% if (doc.date_of_incident) { %> | Incident Date: <%= new Date(doc.date_of_incident).toLocaleDateString() %><% } %>
-                | Uploaded: <%= new Date(doc.uploaded_at).toLocaleDateString() %>
-              </div>
-              <% if (doc.description) { %>
-                <div style="margin-top: 5px; color: var(--navy); font-size: 14px;"><%= doc.description %></div>
-              <% } %>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
+    <div class="section" id="evidence-section">
+      <h2 class="section-title">Evidence Documents</h2>
+      <div id="evidence-container">
+        <p style="color: #666;">Loading documents...</p>
+      </div>
     </div>
   </div>
+
+  <script>
+    const clientId = '<%= client.id %>';
+    const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
+
+    async function loadDocuments() {
+      try {
+        const response = await fetch(`/api/lawfirm/client/${clientId}/documents`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load documents');
+        }
+
+        const data = await response.json();
+        
+        renderMedicalRecords(data.documents.medical_records, data.consents.medical_records);
+        renderMedicalBilling(data.documents.medical_billing, data.consents.medical_billing);
+        renderEvidence(data.documents.evidence, data.consents.evidence);
+      } catch (error) {
+        console.error('Error loading documents:', error);
+        document.getElementById('medical-records-container').innerHTML = '<p style="color: red;">Error loading documents</p>';
+      }
+    }
+
+    function renderMedicalRecords(records, hasConsent) {
+      const container = document.getElementById('medical-records-container');
+      
+      if (!hasConsent) {
+        container.innerHTML = '<div class="consent-warning">⚠️ No HIPAA consent on file for Medical Records. Cannot display documents.</div>';
+        return;
+      }
+
+      if (records.length === 0) {
+        container.innerHTML = '<p class="empty-state">No medical records uploaded yet.</p>';
+        return;
+      }
+
+      let html = `<p style="margin-bottom: 15px; color: var(--navy);"><strong>${records.length} Medical Record(s)</strong></p><ul class="document-list">`;
+      
+      records.forEach(record => {
+        html += `
+          <li class="document-item">
+            <div class="document-header">
+              <div class="document-info">
+                <div class="document-title">${record.record_type || 'Medical Record'}</div>
+                <div class="document-meta">
+                  ${record.facility_name ? `Facility: ${record.facility_name} | ` : ''}
+                  ${record.date_of_service ? `Date: ${new Date(record.date_of_service).toLocaleDateString()} | ` : ''}
+                  Uploaded: ${new Date(record.uploaded_at).toLocaleDateString()}
+                </div>
+                ${record.file_name ? `<div style="margin-top: 5px; font-size: 13px; color: #666;">📄 ${record.file_name} (${formatFileSize(record.file_size)})</div>` : ''}
+              </div>
+              <div>
+                <a href="/api/uploads/download/medical-record/${record.id}" class="download-btn" target="_blank">📥 Download</a>
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    function renderMedicalBilling(bills, hasConsent) {
+      const container = document.getElementById('medical-billing-container');
+      
+      if (!hasConsent) {
+        container.innerHTML = '<div class="consent-warning">⚠️ No HIPAA consent on file for Medical Billing. Cannot display documents.</div>';
+        return;
+      }
+
+      if (bills.length === 0) {
+        container.innerHTML = '<p class="empty-state">No medical bills uploaded yet.</p>';
+        return;
+      }
+
+      const totalBilled = bills.reduce((sum, bill) => sum + parseFloat(bill.total_amount || 0), 0);
+      const totalDue = bills.reduce((sum, bill) => sum + parseFloat(bill.amount_due || 0), 0);
+
+      let html = `
+        <div style="margin-bottom: 15px; color: var(--navy);">
+          <strong>Total Amount Billed:</strong> $${totalBilled.toFixed(2)} | 
+          <strong>Total Amount Due:</strong> $${totalDue.toFixed(2)}
+        </div>
+        <p style="margin-bottom: 15px; color: var(--navy);"><strong>${bills.length} Bill(s)</strong></p>
+        <ul class="document-list">
+      `;
+      
+      bills.forEach(bill => {
+        html += `
+          <li class="document-item">
+            <div class="document-header">
+              <div class="document-info">
+                <div class="document-title">${bill.billing_type || 'Medical Bill'}</div>
+                <div class="document-meta">
+                  ${bill.facility_name ? `Facility: ${bill.facility_name} | ` : ''}
+                  Amount: $${parseFloat(bill.total_amount).toFixed(2)}
+                  ${bill.bill_date ? ` | Date: ${new Date(bill.bill_date).toLocaleDateString()}` : ''}
+                </div>
+                ${bill.file_name ? `<div style="margin-top: 5px; font-size: 13px; color: #666;">📄 ${bill.file_name} (${formatFileSize(bill.file_size)})</div>` : ''}
+              </div>
+              <div>
+                <a href="/api/uploads/download/medical-bill/${bill.id}" class="download-btn" target="_blank">📥 Download</a>
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    function renderEvidence(docs, hasConsent) {
+      const container = document.getElementById('evidence-container');
+      
+      if (!hasConsent) {
+        container.innerHTML = '<div class="consent-warning">⚠️ No HIPAA consent on file for Evidence. Cannot display documents.</div>';
+        return;
+      }
+
+      if (docs.length === 0) {
+        container.innerHTML = '<p class="empty-state">No evidence documents uploaded yet.</p>';
+        return;
+      }
+
+      let html = `<p style="margin-bottom: 15px; color: var(--navy);"><strong>${docs.length} Evidence Document(s)</strong></p><ul class="document-list">`;
+      
+      docs.forEach(doc => {
+        html += `
+          <li class="document-item">
+            <div class="document-header">
+              <div class="document-info">
+                <div class="document-title">${doc.title}</div>
+                <div class="document-meta">
+                  Type: ${doc.evidence_type || 'Document'}
+                  ${doc.date_of_incident ? ` | Incident Date: ${new Date(doc.date_of_incident).toLocaleDateString()}` : ''}
+                  | Uploaded: ${new Date(doc.uploaded_at).toLocaleDateString()}
+                </div>
+                ${doc.description ? `<div style="margin-top: 5px; color: var(--navy); font-size: 14px;">${doc.description}</div>` : ''}
+                ${doc.file_name ? `<div style="margin-top: 5px; font-size: 13px; color: #666;">📄 ${doc.file_name} (${formatFileSize(doc.file_size)})</div>` : ''}
+              </div>
+              <div>
+                <a href="/api/uploads/download/evidence/${doc.id}" class="download-btn" target="_blank">📥 Download</a>
+              </div>
+            </div>
+          </li>
+        `;
+      });
+      
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Load documents on page load
+    loadDocuments();
+  </script>
 </body>
 </html>

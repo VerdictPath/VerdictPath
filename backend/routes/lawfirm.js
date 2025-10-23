@@ -42,4 +42,36 @@ router.get('/client/:clientId/litigation/history',
   lawfirmController.getLitigationHistory
 );
 
+// Client documents - requires VIEW_CLIENT_PHI permission AND patient consent
+router.get('/client/:clientId/documents',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getClientDocuments
+);
+
+// Document notifications - requires VIEW_CLIENT_PHI permission
+router.get('/notifications/documents',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getDocumentNotifications
+);
+
+// Mark notification as read - requires VIEW_CLIENT_PHI permission
+router.patch('/notifications/:notificationId/read',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.markNotificationAsRead
+);
+
+// Unread notification count - requires VIEW_CLIENT_PHI permission
+router.get('/notifications/unread-count',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getUnreadNotificationCount
+);
+
 module.exports = router;

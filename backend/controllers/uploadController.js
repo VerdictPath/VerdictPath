@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const auditLogger = require('../services/auditLogger');
+const documentAccessService = require('../services/documentAccessService');
 const path = require('path');
 const fs = require('fs');
 
@@ -49,6 +50,23 @@ const uploadMedicalRecord = async (req, res) => {
       },
       ipAddress: req.ip
     });
+
+    // Create notification for connected law firm
+    const lawFirmQuery = await pool.query(
+      `SELECT connected_law_firm_id FROM users WHERE id = $1`,
+      [userId]
+    );
+    
+    if (lawFirmQuery.rows[0]?.connected_law_firm_id) {
+      await documentAccessService.createDocumentNotification(
+        userId,
+        lawFirmQuery.rows[0].connected_law_firm_id,
+        'medical_records',
+        result.rows[0].id,
+        userId,
+        'client'
+      );
+    }
 
     res.json({
       success: true,
@@ -119,6 +137,23 @@ const uploadMedicalBill = async (req, res) => {
       ipAddress: req.ip
     });
 
+    // Create notification for connected law firm
+    const lawFirmQuery = await pool.query(
+      `SELECT connected_law_firm_id FROM users WHERE id = $1`,
+      [userId]
+    );
+    
+    if (lawFirmQuery.rows[0]?.connected_law_firm_id) {
+      await documentAccessService.createDocumentNotification(
+        userId,
+        lawFirmQuery.rows[0].connected_law_firm_id,
+        'medical_billing',
+        result.rows[0].id,
+        userId,
+        'client'
+      );
+    }
+
     res.json({
       success: true,
       message: 'Medical bill uploaded successfully',
@@ -183,6 +218,23 @@ const uploadEvidence = async (req, res) => {
       ipAddress: req.ip
     });
 
+    // Create notification for connected law firm
+    const lawFirmQuery = await pool.query(
+      `SELECT connected_law_firm_id FROM users WHERE id = $1`,
+      [userId]
+    );
+    
+    if (lawFirmQuery.rows[0]?.connected_law_firm_id) {
+      await documentAccessService.createDocumentNotification(
+        userId,
+        lawFirmQuery.rows[0].connected_law_firm_id,
+        'evidence',
+        result.rows[0].id,
+        userId,
+        'client'
+      );
+    }
+
     res.json({
       success: true,
       message: 'Evidence uploaded successfully',
@@ -198,38 +250,92 @@ const uploadEvidence = async (req, res) => {
 const downloadFile = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
     const { fileId, type } = req.params; // type: medical-record, medical-bill, or evidence
 
-    let query;
-    let tableName;
+    let documentType;
     
-    // Determine which table to query based on type
+    // Map URL type to database type
     switch(type) {
       case 'medical-record':
-        tableName = 'medical_records';
+        documentType = 'medical_records';
         break;
       case 'medical-bill':
-        tableName = 'medical_billing';
+        documentType = 'medical_billing';
         break;
       case 'evidence':
-        tableName = 'evidence';
+        documentType = 'evidence';
         break;
       default:
         return res.status(400).json({ error: 'Invalid file type' });
     }
 
-    // Check if user owns this file
-    const result = await pool.query(
-      `SELECT * FROM ${tableName} WHERE id = $1 AND user_id = $2`,
+    let document;
+    let patientId;
+    let accessReason;
+
+    // If user is the owner, allow direct access
+    const ownerCheck = await pool.query(
+      `SELECT * FROM ${documentType} WHERE id = $1 AND user_id = $2`,
       [fileId, userId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'File not found or access denied' });
+    if (ownerCheck.rows.length > 0) {
+      document = ownerCheck.rows[0];
+      patientId = userId;
+      accessReason = 'OWNER_ACCESS';
+    } 
+    // If user is law firm, check consent and authorization
+    else if (userType === 'lawfirm') {
+      const documentAccessService = require('../services/documentAccessService');
+      
+      // Get law firm ID
+      const lawFirmResult = await pool.query(
+        `SELECT id FROM law_firms WHERE email = $1`,
+        [req.user.email]
+      );
+
+      if (lawFirmResult.rows.length === 0) {
+        return res.status(403).json({ error: 'Law firm not found' });
+      }
+
+      const lawFirmId = lawFirmResult.rows[0].id;
+      
+      // Get patient ID from document
+      const docResult = await pool.query(
+        `SELECT user_id FROM ${documentType} WHERE id = $1`,
+        [fileId]
+      );
+
+      if (docResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Document not found' });
+      }
+
+      patientId = docResult.rows[0].user_id;
+
+      // Check authorization through consent
+      const authResult = await documentAccessService.authorizeLawFirmDocumentAccess(
+        lawFirmId,
+        patientId,
+        documentType,
+        fileId
+      );
+
+      if (!authResult.authorized) {
+        return res.status(403).json({ 
+          error: 'Access denied',
+          reason: authResult.reason
+        });
+      }
+
+      document = authResult.document;
+      accessReason = `LAW_FIRM_ACCESS_${authResult.consentType}`;
+    }
+    else {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    const document = result.rows[0];
-    // Build correct file path using path.resolve to avoid issues with leading slashes
+    // Build correct file path
     const filePath = path.resolve(__dirname, '..', 'uploads', document.document_url);
 
     // Check if file exists
@@ -241,13 +347,17 @@ const downloadFile = async (req, res) => {
     await auditLogger.log({
       userId,
       action: 'DOWNLOAD_FILE',
-      resourceType: tableName,
+      resourceType: documentType,
       resourceId: fileId,
       details: {
         fileName: document.file_name,
-        fileType: type
+        fileType: type,
+        accessReason: accessReason,
+        patientId: patientId,
+        accessedBy: userType
       },
-      ipAddress: req.ip
+      ipAddress: req.ip,
+      targetUserId: patientId
     });
 
     // Set appropriate headers and send file
