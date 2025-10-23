@@ -189,11 +189,36 @@ export const LITIGATION_STAGES = [
 ];
 
 export const VIDEOS = [
-  { id: 1, title: 'Understanding Discovery', price: 3.99, tier: 'free', duration: '12 min' },
-  { id: 2, title: 'Deposition Deep Dive', price: 4.99, tier: 'premium', duration: '25 min' },
-  { id: 3, title: 'Mediation Mastery', price: 4.99, tier: 'premium', duration: '30 min' },
-  { id: 4, title: 'Trial Preparation Guide', price: 4.99, tier: 'premium', duration: '28 min' },
-  { id: 5, title: 'Medical Bills 101', price: 1.99, tier: 'basic', duration: '8 min' }
+  // Pre-Litigation Videos
+  { id: 'v1', title: 'Pre-Litigation Essentials', price: 2.99, tier: 'basic', duration: '15 min', category: 'Pre-Litigation' },
+  { id: 'v2', title: 'Document Collection Guide', price: 3.99, tier: 'basic', duration: '20 min', category: 'Pre-Litigation' },
+  
+  // Complaint Filed Videos
+  { id: 'v3', title: 'Filing Your Complaint', price: 4.99, tier: 'premium', duration: '18 min', category: 'Complaint Filed' },
+  
+  // Discovery Begins Videos
+  { id: 'v4', title: 'Understanding Discovery', price: 3.99, tier: 'free', duration: '22 min', category: 'Discovery Begins' },
+  { id: 'v5', title: 'Discovery Response Strategies', price: 4.99, tier: 'premium', duration: '25 min', category: 'Discovery Begins' },
+  
+  // Depositions Videos
+  { id: 'v6', title: 'Deposition Deep Dive', price: 4.99, tier: 'premium', duration: '30 min', category: 'Depositions' },
+  { id: 'v7', title: 'How to Testify Effectively', price: 5.99, tier: 'premium', duration: '28 min', category: 'Depositions' },
+  
+  // Mediation Videos
+  { id: 'v8', title: 'Mediation Mastery', price: 4.99, tier: 'premium', duration: '24 min', category: 'Mediation' },
+  
+  // Trial Prep Videos
+  { id: 'v9', title: 'Trial Preparation Guide', price: 5.99, tier: 'premium', duration: '35 min', category: 'Trial Prep' },
+  { id: 'v10', title: 'Courtroom Procedures', price: 4.99, tier: 'premium', duration: '28 min', category: 'Trial Prep' },
+  
+  // Trial Videos
+  { id: 'v11', title: 'Trial Tactics', price: 6.99, tier: 'premium', duration: '40 min', category: 'Trial' },
+  
+  // Settlement Videos
+  { id: 'v12', title: 'Settlement Strategies', price: 4.99, tier: 'premium', duration: '26 min', category: 'Settlement' },
+  
+  // Case Resolved Videos
+  { id: 'v13', title: 'Post-Trial Procedures', price: 3.99, tier: 'basic', duration: '18 min', category: 'Case Resolved' }
 ];
 
 export const USER_TYPES = {

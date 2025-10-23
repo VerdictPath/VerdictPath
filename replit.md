@@ -8,6 +8,21 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Comprehensive Video Library
+- **Video Library Expansion**: Updated video library to include all 13 tutorial videos from all litigation stages
+  - Pre-Litigation: Pre-Litigation Essentials, Document Collection Guide
+  - Complaint Filed: Filing Your Complaint
+  - Discovery Begins: Understanding Discovery, Discovery Response Strategies
+  - Depositions: Deposition Deep Dive, How to Testify Effectively
+  - Mediation: Mediation Mastery
+  - Trial Prep: Trial Preparation Guide, Courtroom Procedures
+  - Trial: Trial Tactics
+  - Settlement: Settlement Strategies
+  - Case Resolved: Post-Trial Procedures
+- **Video Organization**: Each video tagged with category for easy browsing
+- **Pricing Tiers**: Videos range from free to premium ($2.99-$6.99)
+- **Total Duration**: Over 5 hours of educational legal content
+
 ### October 22, 2025 - Detailed Settlement Stage Substeps
 - **Settlement Stage Expansion**: Updated Settlement stage with comprehensive 10-step disbursement process
   - Negotiations
