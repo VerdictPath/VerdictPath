@@ -1,181 +1,63 @@
 # Verdict Path - React Native Mobile App
 
 ## Overview
-Verdict Path is a legal case management and education platform for Georgia Civil Litigation. It provides an interactive case roadmap, gamification features, educational video tutorials, and secure medical document storage. The project aims to offer an engaging and informative tool for navigating legal processes, supporting individual users, law firms, and medical providers with tiered subscription options.
+Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
 
 ## System Architecture
-The application is a React Native mobile application built with the Expo framework, featuring a "pirate treasure map" theme.
+The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme.
 
 ### UI/UX Decisions
-The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color palette. Key elements include:
-- An interactive litigation roadmap visualized as a treasure map with animated paths and treasure chests for stages.
-- The Verdict Path logo integrates a compass/ship wheel design with a "Chart Your Course to Justice" tagline, influencing the app's updated color scheme of Tan/Sand, Cream, Mahogany, Warm Gold, Navy, and Warm Gray.
-- Pirate-themed badges and icons are used throughout the landing and dashboard screens for gamification and navigation.
-- Subscription selection screens are tailored by user type (Individual, Law Firm, Medical Provider).
-- The Medical Hub features distinct upload sections and real-time status tracking.
+The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include:
+- An interactive litigation roadmap visualized as a treasure map with animated paths and chests.
+- A Verdict Path logo featuring a compass/ship wheel design and a "Chart Your Course to Justice" tagline, influencing the app's color scheme (Tan/Sand, Cream, Mahogany, Warm Gold, Navy, Warm Gray).
+- Pirate-themed badges and icons for gamification and navigation on landing and dashboard screens.
+- Tailored subscription selection screens for Individual, Law Firm, and Medical Provider user types.
+- A Medical Hub with distinct upload sections and real-time status tracking.
 
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
-- **Project Structure**: Modular organization with `src/screens/`, `src/components/`, etc.
-- **Deployment**: Single-server architecture - backend serves both API and Expo web build on port 5000
-- **Gamification Logic**: Implements a coin system for milestones and daily streaks, with coin-to-credit conversion.
-- **Document Management**: Robust upload functionality for medical documents with multi-file support and specific file type filters.
+- **Project Structure**: Modular, with `src/screens/` and `src/components/`.
+- **Deployment**: Single-server architecture where the backend serves both API and Expo web build on port 5000.
+- **Gamification Logic**: Coin system for milestones and daily streaks, with fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit per user).
+- **Document Management**: Robust multi-file upload with specific file type filters.
 - **State Management**: Centralized in `App.js`.
-- **Styling**: Uses shared and screen-specific styles.
-- **Image Processing**: Python/Pillow for logo background integration.
-- **SVG Animation**: `react-native-svg` for cubic Bezier curve path animations.
-- **Backend**: Node.js/Express (port 5000) with PostgreSQL database for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
-- **HIPAA Security (Phase 1 & 2 Complete)**:
-  - AES-256-GCM encryption for all Protected Health Information (PHI) at rest
-  - Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions
-  - Patient Consent Management system for controlling PHI sharing
-  - Comprehensive audit logging for all PHI access with IP tracking
-  - Account security: lockout after 5 failed login attempts
-  - Dual-layer protection: Permission checks + Consent verification before PHI access
-  - Auto-consent when clients register with law firm codes
+- **Styling**: Shared and screen-specific styles.
+- **SVG Animation**: Utilizes `react-native-svg` for cubic Bezier curve path animations.
+- **Backend**: Node.js/Express (port 5000) with PostgreSQL for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
+- **HIPAA Security**:
+  - AES-256-GCM encryption for PHI at rest.
+  - Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions.
+  - Patient Consent Management for PHI sharing control.
+  - Comprehensive audit logging for PHI access with IP tracking.
+  - Account security measures including lockout after 5 failed login attempts.
+  - Dual-layer protection (Permission checks + Consent verification) before PHI access.
+  - Auto-consent for clients registering with law firm codes.
+- **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey, including 60 substages. This includes:
+  - Database tables (`user_litigation_progress`, `litigation_substage_completions`, etc.).
+  - API endpoints for getting/updating progress, completing stages/substages, and tracking video views.
+  - Automatic coin rewards and progress percentage calculation upon substage completion (including auto-completion via document uploads).
+  - Manual task completion feature for medical records and bills, offering user options to upload or mark complete.
+  - Real-time progress display on the Dashboard, Law Firm client portal, and Medical Provider dashboard.
 
 ### Feature Specifications
-- **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider user types with Free, Basic, and Premium subscription tiers.
-- **Avatar Selection**: Pirate-themed avatars (Captain, Navigator, Gunner, First Mate).
-- **Gamification**: Coin system for stage completion and daily streaks with fraud prevention:
-  - Conversion rate: 5,000 coins = $1 credit
-  - **Lifetime cap: $5 maximum per user account** (25,000 coins total)
-  - Tracks total_coins and coins_spent in database
-  - Prevents refunding coins already converted to credits
-  - Full audit trail via coin_conversions table
-  - Backend API enforces lifetime cap and prevents infinite credit exploit
-- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking and modal-based stage details. Pre-Litigation stage includes 11 substages (most recent: Demand Sent, Demand Rejected). "Answer Filed" substage added to "Complaint Filed" stage.
-- **Video Library**: Integrated educational tutorials covering all litigation stages, with a total of 13 videos over 5 hours of content, ranging from free to premium.
-- **Medical Hub**: HIPAA-compliant document storage and upload system for medical bills and records.
-- **Document Upload & Data Entry**: Tasks for file uploads (e.g., Police Report) and text-based data entry.
-- **Law Firm Client Portal**: Web and mobile access for law firms to manage clients, medical records, billing, evidence, and litigation stages.
-- **HIPAA Compliance**: Production-ready HIPAA compliance implementation:
-  - **Phase 1 (Complete)**: Encryption, audit logging, account security
-  - **Phase 2 (Complete)**: Role-Based Access Control (RBAC) and Patient Consent Management
-  - 6 roles: CLIENT, LAW_FIRM_ADMIN, LAW_FIRM_STAFF, MEDICAL_PROVIDER_ADMIN, MEDICAL_PROVIDER_STAFF, SYSTEM_ADMIN
-  - 23 permissions across 6 categories: PHI Access, Medical Records, Billing, Litigation, Consent, Administration
-  - Consent types: FULL_ACCESS, MEDICAL_RECORDS_ONLY, BILLING_ONLY, LITIGATION_ONLY, CUSTOM
-  - API endpoints: Grant/revoke consent, view consents, check consent status
-  - Meets HIPAA §164.502(a), §164.506, §164.508, §164.524, §164.528
+- **User Authentication & Types**: Supports Individual, Law Firm, Medical Provider (Free, Basic, Premium tiers).
+- **Avatar Selection**: Pirate-themed avatars.
+- **Gamification**: Coin system with a lifetime cap of $5 credit ($25,000 coins).
+- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, including detailed substages and modal descriptions.
+- **Video Library**: Integrated educational tutorials covering litigation stages.
+- **Medical Hub**: HIPAA-compliant document storage and upload system.
+- **Document Upload & Data Entry**: Tasks for file uploads and text-based data entry.
+- **Law Firm Client Portal**: Web and mobile access for client, medical record, billing, evidence, and litigation stage management.
+- **HIPAA Compliance**: Production-ready implementation including encryption, RBAC (6 roles, 23 permissions), and Patient Consent Management (multiple consent types).
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
 - **React Native**: For building mobile applications.
 - **React**: JavaScript library for UIs.
-- **react-dom**: DOM-specific methods for React.
-- **react-native-web**: For running React Native components on the web.
-- **Metro bundler**: JavaScript bundler for React Native.
-- **react-native-svg**: For rendering SVG graphics and path animations.
-- **@react-native-async-storage/async-storage**: For persistent storage in React Native.
+- **react-native-svg**: For rendering SVG graphics and animations.
+- **@react-native-async-storage/async-storage**: For persistent storage.
 - **PostgreSQL**: Database for backend data storage.
 - **Node.js/Express**: Backend API development.
-
-## Litigation Path Integration (October 23, 2025)
-**Comprehensive backend integration completed for litigation progress tracking across the entire app:**
-
-### Database Layer
-- Created 5 new tables for litigation tracking:
-  - `user_litigation_progress` - Overall progress (current stage, coins, percentage)
-  - `litigation_substage_completions` - Individual substage tracking
-  - `litigation_stage_completions` - Main stage tracking
-  - `litigation_video_progress` - Video purchases and views
-  - `litigation_milestones` - Achievements and milestones
-- Implemented with proper indexes for performance
-- Full data integrity with foreign key constraints
-
-### Backend API
-- **API Endpoints Created:**
-  - `GET /api/litigation/progress` - Get user's complete litigation progress
-  - `POST /api/litigation/substage/complete` - Mark substage as completed (auto-awards coins)
-  - `POST /api/litigation/stage/complete` - Mark main stage as completed (advances user)
-  - `POST /api/litigation/video/progress` - Track video purchases and completion
-  - `GET /api/litigation/client/:clientId/progress` - Law firms can view client progress
-- **Features:**
-  - Automatic progress record creation (upsert pattern)
-  - Coin rewards integration with user account
-  - Progress percentage calculation
-  - Stage advancement logic (handles all 9 stages including completion)
-  - Law firm access control for client data
-- **Security:** All endpoints require authentication, law firm endpoints verify client relationship
-
-### Integration Points
-- Litigation progress ready for:
-  - Dashboard widgets showing current stage and progress bar
-  - Law Firm portal displaying full client litigation roadmap
-  - Medical Provider portal accessing relevant litigation stage info
-  - Document uploads automatically completing associated substages
-  - Real-time progress sync between mobile and web
-
-### Files Created/Modified
-- `backend/scripts/litigation-progress-schema.sql` - Database schema
-- `backend/controllers/litigationController.js` - API controller (fixed per architect review)
-- `backend/routes/litigation.js` - API routes
-- `backend/server.js` - Registered litigation routes
-
-## Litigation Path Integration - Complete (October 23, 2025)
-**Comprehensive backend-to-frontend litigation progress tracking system implemented:**
-
-### Dashboard Litigation Progress Widget
-- Real-time progress widget displaying current stage, progress bar, and task completion stats
-- Fetches user litigation progress from backend API on component mount
-- Shows current stage name (e.g., "Pre-Litigation"), stage number (1-9), and percentage complete
-- Displays total substages completed and total coins earned
-- "Continue Your Journey" button for quick navigation to full roadmap
-- Loading states and fallback handling for users without progress data
-
-### Law Firm Client Portal Enhancements
-- Full interactive roadmap visualization showing all 9 litigation stages
-- Each stage displays: completion status (✓ for completed), substage progress (X/Y completed), completion date
-- Visual indicators: completed stages (gold badge), current stage (blue border), pending stages (gray)
-- Progress summary bar at top showing current stage and overall percentage
-- Integrated with existing case details (case number, value, next steps, notes)
-- Backend: Added GET /api/litigation/client/:clientId/progress endpoint with law firm access control
-
-### Medical Provider Portal Integration
-- Patient cards now display litigation progress inline for each patient
-- Shows current litigation stage and progress percentage with visual progress bar
-- Backend: Enhanced getDashboard to fetch litigation progress for all consented patients
-- Enables medical providers to track patient case status without leaving dashboard
-
-### Auto-Complete Substages on Document Upload
-- Document uploads automatically complete associated litigation substages
-- Mapping system:
-  - Medical Record uploads → auto-complete "Medical Records" substage (pre-9, 35 coins)
-  - Medical Bill uploads → auto-complete "Medical Bills" substage (pre-8, 15 coins)
-  - Evidence uploads → auto-complete based on type (Police Report → pre-1, Photos → pre-4, etc.)
-- **Full progress recalculation** after each substage completion:
-  - Determines current stage by checking completed substages across all 9 stages
-  - Calculates accurate progress percentage (completed/60 total substages)
-  - Updates current_stage_id, current_stage_name, progress_percentage in user_litigation_progress
-  - Awards coins and increments totals atomically
-- Dashboard, Law Firm portal, and Medical Provider portal receive real-time updated progress
-
-### Backend API Enhancements
-- Complete LITIGATION_STAGES_MAP covering all 60 substages across 9 stages
-- Substage IDs match canonical schema in src/constants/mockData.js
-- Recalculation logic handles stage advancement for all 9 stages (not just Pre-Litigation)
-- Upsert pattern prevents duplicate substage completions
-- Progress calculation scales correctly for users at any litigation stage
-
-### Files Modified
-- `src/screens/DashboardScreen.js` - Added progress widget with API integration
-- `src/screens/LawFirmClientDetailsScreen.js` - Enhanced with full roadmap visualization
-- `src/screens/MedicalProviderDashboardScreen.js` - Added patient litigation progress display
-- `backend/controllers/uploadController.js` - Implemented auto-completion and recalculation logic
-- `backend/controllers/medicalproviderController.js` - Added litigation progress to patient data
-
-## Recent Bug Fixes (October 23, 2025)
-- **Fixed authToken undefined error**: Added `authToken` variable derived from `user?.token` in App.js to fix console errors when navigating to RoadmapScreen and MedicalHubScreen
-- **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern
-- **Fixed API port mismatch**: Corrected LawFirmClientDetailsScreen API URL from localhost:3000 to localhost:5000
-- **Added missing dependency**: Installed @react-native-async-storage/async-storage required by HIPAAFormsScreen
-- **Fixed web file upload functionality**: 
-  - ROOT CAUSE: Alert.alert() from React Native doesn't work on web browsers (react-native-web doesn't support it)
-  - Created web-compatible alert utility (src/utils/alert.js) that uses window.confirm/alert on web and Alert.alert on native
-  - Created cross-platform file upload utility (src/utils/fileUpload.js) with HTML file inputs for web and Expo pickers for mobile
-  - Updated MedicalHubScreen and RoadmapScreen to use web-compatible alert and file upload utilities
-  - Added comprehensive debug logging to file upload functions
-- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied (AppEntry-b193a0ff6bdcca35c6387abcfde609c8.js)
