@@ -16,6 +16,8 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
   const [dataEntryModalVisible, setDataEntryModalVisible] = useState(false);
   const [dataEntryValue, setDataEntryValue] = useState('');
   const [dataEntrySubStage, setDataEntrySubStage] = useState(null);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState(null);
 
   const openStageModal = (stage) => {
     setSelectedStage(stage);
@@ -218,21 +220,37 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     const subStageCoins = completedSubs.reduce((sum, sub) => sum + sub.coins, 0);
     const totalCoins = subStageCoins + currentStage.coins;
 
-    Alert.alert(
-      'Revert Stage?',
-      `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Revert',
-          style: 'destructive',
-          onPress: () => {
-            onUncompleteStage(currentStage.id, currentStage.coins);
-            closeModal();
-          }
+    if (Platform.OS === 'web') {
+      setConfirmModalData({
+        title: 'Revert Stage?',
+        message: `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
+        onConfirm: () => {
+          onUncompleteStage(currentStage.id, currentStage.coins);
+          setConfirmModalVisible(false);
+          closeModal();
+        },
+        onCancel: () => {
+          setConfirmModalVisible(false);
         }
-      ]
-    );
+      });
+      setConfirmModalVisible(true);
+    } else {
+      Alert.alert(
+        'Revert Stage?',
+        `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Revert',
+            style: 'destructive',
+            onPress: () => {
+              onUncompleteStage(currentStage.id, currentStage.coins);
+              closeModal();
+            }
+          }
+        ]
+      );
+    }
   };
 
   const getCurrentStageIndex = () => {
@@ -663,6 +681,34 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
                 onPress={handleDataEntrySave}
               >
                 <Text style={styles.dataEntrySaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={confirmModalVisible}
+        onRequestClose={() => confirmModalData?.onCancel()}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalContent}>
+            <Text style={styles.confirmModalTitle}>{confirmModalData?.title}</Text>
+            <Text style={styles.confirmModalMessage}>{confirmModalData?.message}</Text>
+            <View style={styles.confirmModalButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmCancelButton]}
+                onPress={() => confirmModalData?.onCancel()}
+              >
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, styles.confirmRevertButton]}
+                onPress={() => confirmModalData?.onConfirm()}
+              >
+                <Text style={styles.confirmRevertText}>Revert</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1224,6 +1270,65 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000,
+  },
+  confirmModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 30,
+    width: '90%',
+    maxWidth: 450,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  confirmModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  confirmModalMessage: {
+    fontSize: 15,
+    color: '#34495e',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  confirmModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 15,
+  },
+  confirmButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  confirmCancelButton: {
+    backgroundColor: '#95a5a6',
+  },
+  confirmRevertButton: {
+    backgroundColor: '#e74c3c',
+  },
+  confirmCancelText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  confirmRevertText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
