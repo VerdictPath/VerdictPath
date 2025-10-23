@@ -40,8 +40,12 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider user types with Free, Basic, and Premium subscription tiers.
 - **Avatar Selection**: Pirate-themed avatars (Captain, Navigator, Gunner, First Mate).
-- **Gamification**: Coin system for stage completion and daily streaks.
-- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking and modal-based stage details. "Answer Filed" substage added to "Complaint Filed" stage.
+- **Gamification**: Coin system for stage completion and daily streaks with fraud prevention:
+  - Tracks total_coins and coins_spent in database
+  - Prevents refunding coins already converted to credits
+  - Full audit trail via coin_conversions table
+  - Backend API security prevents infinite credit exploit
+- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking and modal-based stage details. Pre-Litigation stage includes 11 substages (most recent: Demand Sent, Demand Rejected). "Answer Filed" substage added to "Complaint Filed" stage.
 - **Video Library**: Integrated educational tutorials covering all litigation stages, with a total of 13 videos over 5 hours of content, ranging from free to premium.
 - **Medical Hub**: HIPAA-compliant document storage and upload system for medical bills and records.
 - **Document Upload & Data Entry**: Tasks for file uploads (e.g., Police Report) and text-based data entry.

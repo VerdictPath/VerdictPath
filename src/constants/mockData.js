@@ -16,7 +16,9 @@ export const LITIGATION_STAGES = [
       { id: 'pre-6', name: 'Auto Insurance Company', coins: 5, completed: false, icon: '🏢', description: 'Enter your auto insurance provider name', isDataEntry: true, enteredData: '' },
       { id: 'pre-7', name: 'Auto Insurance Policy Number', coins: 5, completed: false, icon: '🔢', description: 'Enter your auto insurance policy number', isDataEntry: true, enteredData: '' },
       { id: 'pre-8', name: 'Medical Bills', coins: 15, completed: false, icon: '💵', description: 'Upload all medical treatment bills', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true },
-      { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Upload complete medical records and reports', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true }
+      { id: 'pre-9', name: 'Medical Records', coins: 35, completed: false, icon: '📋', description: 'Upload complete medical records and reports', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [], linkToMedicalHub: true },
+      { id: 'pre-10', name: 'Demand Sent', coins: 15, completed: false, icon: '📮', description: 'Upload the demand letter sent to the opposing party or insurance company', acceptedFormats: 'PDF, DOC, DOCX', uploaded: false, uploadedFiles: [] },
+      { id: 'pre-11', name: 'Demand Rejected', coins: 10, completed: false, icon: '❌', description: 'Upload the rejection response to your demand letter', acceptedFormats: 'PDF, DOC, DOCX', uploaded: false, uploadedFiles: [] }
     ],
     videos: [
       { id: 'v1', title: 'Pre-Litigation Essentials', price: 2.99, duration: '15 min', tier: 'basic' },
