@@ -8,12 +8,17 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 
 ## Recent Changes
 
-### October 23, 2025 - Professional Home Page Icons
-- **Landing Screen UI Enhancement**: Replaced emoji icons with professional circular icon badges
-  - Blue circular badges (36px diameter) with white symbols
-  - Updated icons: ⚖ (scales for roadmap), ★ (star for coins), ▶ (play for videos), ◆ (diamond for records), ◉ (circle for rewards)
-  - Enhanced layout with proper spacing and alignment
-  - Consistent, polished appearance matching the legal/professional theme
+### October 23, 2025 - Pirate-Themed Home Page Icons
+- **Landing Screen UI Enhancement**: Replaced emoji icons with sophisticated pirate-themed badges
+  - Custom geometric icons matching the treasure map theme without being cartoonish
+  - **Compass** (navy blue with gold accents) - Interactive case roadmap
+  - **Gold Coin** (golden with shine effect) - Earn coins as you progress
+  - **Spyglass** (dark steel with blue lens) - Expert video tutorials
+  - **Treasure Chest** (wooden brown with gold lock) - Secure medical records storage
+  - **Purple Gem** (diamond-cut design) - Daily login rewards
+  - Sophisticated color palette: ocean blues, treasure gold, wood tones, gem purple
+  - 40px circular badges with themed border colors
+  - Professional nautical/treasure aesthetic
 
 ### October 23, 2025 - Answer Filed Stage Added
 - **Complaint Filed Expansion**: Added "Answer Filed (within 30 days)" as 4th substage
