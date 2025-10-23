@@ -13,7 +13,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
   const fetchClientDetails = async () => {
     try {
       const response = await fetch(
-        `${process.env.API_URL || 'http://localhost:3000'}/api/lawfirm/client/${clientId}`,
+        `${process.env.API_URL || 'http://localhost:5000'}/api/lawfirm/client/${clientId}`,
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
