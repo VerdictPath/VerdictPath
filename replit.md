@@ -39,7 +39,7 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
   - Database tables (`user_litigation_progress`, `litigation_substage_completions`, etc.).
   - API endpoints for getting/updating progress, completing stages/substages, and tracking video views.
   - Automatic coin rewards and progress percentage calculation upon substage completion (including auto-completion via document uploads).
-  - Manual task completion feature for medical records and bills, offering user options to upload or mark complete.
+  - Manual task completion feature for ALL pre-litigation tasks - users can mark tasks complete without upload requirements.
   - Real-time progress display on the Dashboard, Law Firm client portal, and Medical Provider dashboard.
 
 ### Feature Specifications

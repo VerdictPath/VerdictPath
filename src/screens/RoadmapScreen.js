@@ -220,49 +220,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       return;
     }
 
-    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
-    const subStage = currentStage.subStages.find(s => s.id === subStageId);
-    
-    // For Medical Hub linked tasks, offer to navigate but allow manual completion
-    if (subStage.linkToMedicalHub) {
-      const isMedicalBills = subStageId === 'pre-8';
-      const isMedicalRecords = subStageId === 'pre-9';
-      
-      let hasUploads = false;
-      let documentType = '';
-      
-      if (isMedicalBills) {
-        hasUploads = medicalHubUploads.medicalBills && medicalHubUploads.medicalBills.length > 0;
-        documentType = 'Medical Bills';
-      } else if (isMedicalRecords) {
-        hasUploads = medicalHubUploads.medicalRecords && medicalHubUploads.medicalRecords.length > 0;
-        documentType = 'Medical Records';
-      }
-      
-      if (!hasUploads) {
-        alert(
-          '📤 No Documents Uploaded',
-          `You can mark this task complete manually, or upload ${documentType} in the Medical Hub.\n\nWhat would you like to do?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Go to Medical Hub', 
-              onPress: () => {
-                closeModal();
-                onNavigate('medical');
-              }
-            },
-            {
-              text: 'Mark Complete Anyway',
-              onPress: () => completeSubstageOnBackend(subStageId, subStageCoins)
-            }
-          ]
-        );
-        return;
-      }
-    }
-
-    // Complete the substage via backend API
+    // Complete the substage via backend API without any upload requirements
     await completeSubstageOnBackend(subStageId, subStageCoins);
   };
 
