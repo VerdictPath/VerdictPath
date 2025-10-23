@@ -271,6 +271,35 @@ const CaseCompassApp = () => {
     Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
   };
 
+  const handleUncompleteStage = (stageId, stageCoins) => {
+    let totalCoinsToRemove = stageCoins;
+    
+    setLitigationStages(prevStages => 
+      prevStages.map(stage => {
+        if (stage.id === stageId && stage.completed) {
+          const updatedSubStages = stage.subStages?.map(subStage => {
+            if (subStage.completed) {
+              totalCoinsToRemove += subStage.coins;
+            }
+            return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+          }) || [];
+          
+          return { ...stage, completed: false, subStages: updatedSubStages };
+        }
+        return stage;
+      })
+    );
+    
+    setCoins(prevCoins => {
+      const newBalance = Math.max(0, prevCoins - totalCoinsToRemove);
+      if (newBalance === 0 && prevCoins < totalCoinsToRemove) {
+        console.warn(`Coin underflow prevented: attempted to remove ${totalCoinsToRemove} coins but only had ${prevCoins}`);
+      }
+      return newBalance;
+    });
+    Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+  };
+
   const handleToggleStage = (stageId) => {
     setLitigationStages(prevStages =>
       prevStages.map(stage =>
@@ -452,6 +481,7 @@ const CaseCompassApp = () => {
         <RoadmapScreen
           litigationStages={litigationStages}
           onCompleteStage={handleCompleteStage}
+          onUncompleteStage={handleUncompleteStage}
           onNavigate={handleNavigate}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}

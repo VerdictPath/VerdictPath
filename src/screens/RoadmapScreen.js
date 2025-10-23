@@ -8,7 +8,7 @@ const { width, height } = Dimensions.get('window');
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
+const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [animatingPaths, setAnimatingPaths] = useState([]);
@@ -209,6 +209,30 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
         ]
       );
     }
+  };
+
+  const uncompleteEntireStage = () => {
+    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
+    
+    const completedSubs = currentStage.subStages?.filter(sub => sub.completed) || [];
+    const subStageCoins = completedSubs.reduce((sum, sub) => sum + sub.coins, 0);
+    const totalCoins = subStageCoins + currentStage.coins;
+
+    Alert.alert(
+      'Revert Stage?',
+      `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Revert',
+          style: 'destructive',
+          onPress: () => {
+            onUncompleteStage(currentStage.id, currentStage.coins);
+            closeModal();
+          }
+        }
+      ]
+    );
   };
 
   const getCurrentStageIndex = () => {
@@ -529,9 +553,19 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
               )}
 
               {currentStage.completed && (
-                <View style={styles.completedBanner}>
-                  <Text style={styles.completedBannerText}>🏆 Stage Completed!</Text>
-                </View>
+                <>
+                  <View style={styles.completedBanner}>
+                    <Text style={styles.completedBannerText}>🏆 Stage Completed!</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.uncompleteStageButton}
+                    onPress={uncompleteEntireStage}
+                  >
+                    <Text style={styles.uncompleteStageButtonText}>
+                      ↩️ Unmark as Complete
+                    </Text>
+                  </TouchableOpacity>
+                </>
               )}
             </ScrollView>
           </View>
@@ -1118,6 +1152,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#27ae60',
+  },
+  uncompleteStageButton: {
+    backgroundColor: '#e74c3c',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  uncompleteStageButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   dataEntryModalOverlay: {
     flex: 1,
