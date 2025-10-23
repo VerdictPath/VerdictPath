@@ -69,5 +69,13 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **react-native-web**: For running React Native components on the web.
 - **Metro bundler**: JavaScript bundler for React Native.
 - **react-native-svg**: For rendering SVG graphics and path animations.
+- **@react-native-async-storage/async-storage**: For persistent storage in React Native.
 - **PostgreSQL**: Database for backend data storage.
 - **Node.js/Express**: Backend API development.
+
+## Recent Bug Fixes (October 23, 2025)
+- **Fixed authToken undefined error**: Added `authToken` variable derived from `user?.token` in App.js to fix console errors when navigating to RoadmapScreen and MedicalHubScreen
+- **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern
+- **Fixed API port mismatch**: Corrected LawFirmClientDetailsScreen API URL from localhost:3000 to localhost:5000
+- **Added missing dependency**: Installed @react-native-async-storage/async-storage required by HIPAAFormsScreen
+- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied
