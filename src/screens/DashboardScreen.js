@@ -97,10 +97,13 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('videos')}
         >
-          <View style={styles.iconBadgeSpyglass}>
-            <View style={styles.iconSpyglass}>
-              <View style={styles.spyglassBody} />
-              <View style={styles.spyglassLens} />
+          <View style={styles.iconBadgeCamera}>
+            <View style={styles.iconCamera}>
+              <View style={styles.cameraBody} />
+              <View style={styles.cameraLens} />
+              <View style={styles.cameraLensInner} />
+              <View style={styles.lightLeft} />
+              <View style={styles.lightRight} />
             </View>
           </View>
           <Text style={styles.menuText}>Video Library</Text>
@@ -110,11 +113,10 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('medical')}
         >
-          <View style={styles.iconBadgeChest}>
-            <View style={styles.iconChest}>
-              <View style={styles.chestBottom} />
-              <View style={styles.chestTop} />
-              <View style={styles.chestLock} />
+          <View style={styles.iconBadgeHospital}>
+            <View style={styles.iconHospital}>
+              <View style={styles.hospitalCrossVertical} />
+              <View style={styles.hospitalCrossHorizontal} />
             </View>
           </View>
           <Text style={styles.menuText}>Medical Hub</Text>
@@ -124,11 +126,13 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={onConvertCoins}
         >
-          <View style={styles.iconBadgeCoin}>
-            <View style={styles.iconCoin}>
-              <View style={styles.coinOuter} />
-              <View style={styles.coinInner} />
-              <View style={styles.coinShine} />
+          <View style={styles.iconBadgeCoinShiny}>
+            <View style={styles.iconCoinShiny}>
+              <View style={styles.coinOuterShiny} />
+              <View style={styles.coinInnerShiny} />
+              <View style={styles.coinShine1} />
+              <View style={styles.coinShine2} />
+              <View style={styles.coinShine3} />
             </View>
           </View>
           <Text style={styles.menuText}>Convert Coins</Text>
@@ -138,12 +142,10 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={onLogout}
         >
-          <View style={styles.iconBadgeAnchor}>
-            <View style={styles.iconAnchor}>
-              <View style={styles.anchorRing} />
-              <View style={styles.anchorShaft} />
-              <View style={styles.anchorArmLeft} />
-              <View style={styles.anchorArmRight} />
+          <View style={styles.iconBadgePower}>
+            <View style={styles.iconPower}>
+              <View style={styles.powerCircle} />
+              <View style={styles.powerLine} />
             </View>
           </View>
           <Text style={styles.menuText}>Logout</Text>
@@ -478,191 +480,210 @@ const styles = StyleSheet.create({
     bottom: 3,
     left: 9,
   },
-  iconBadgeCoin: {
+  iconBadgeCoinShiny: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#8B6914',
+    backgroundColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 2,
-    borderColor: '#D4AF37',
+    borderColor: '#FFD700',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  iconCoin: {
-    width: 22,
-    height: 22,
+  iconCoinShiny: {
+    width: 24,
+    height: 24,
     position: 'relative',
   },
-  coinOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  coinOuterShiny: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#FFD700',
-    borderWidth: 1.5,
-    borderColor: '#B8860B',
+    borderWidth: 2,
+    borderColor: '#FFA500',
   },
-  coinInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#B8860B',
+  coinInnerShiny: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    borderColor: '#DAA520',
     backgroundColor: 'transparent',
     position: 'absolute',
     top: 5,
     left: 5,
   },
-  coinShine: {
-    width: 5,
+  coinShine1: {
+    width: 6,
+    height: 3,
+    backgroundColor: '#FFFACD',
+    borderRadius: 3,
+    position: 'absolute',
+    top: 5,
+    left: 6,
+  },
+  coinShine2: {
+    width: 4,
     height: 2,
     backgroundColor: '#FFFACD',
     borderRadius: 2,
     position: 'absolute',
-    top: 6,
-    left: 6,
+    top: 10,
+    left: 14,
   },
-  iconBadgeSpyglass: {
+  coinShine3: {
+    width: 3,
+    height: 2,
+    backgroundColor: '#FFF8DC',
+    borderRadius: 2,
+    position: 'absolute',
+    top: 15,
+    left: 8,
+  },
+  iconBadgeCamera: {
     width: 48,
     height: 48,
     borderRadius: 24,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
+  iconCamera: {
+    width: 26,
+    height: 20,
+    position: 'relative',
+  },
+  cameraBody: {
+    width: 20,
+    height: 14,
     backgroundColor: '#2c3e50',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    borderWidth: 2,
-    borderColor: '#7f8c8d',
-  },
-  iconSpyglass: {
-    width: 24,
-    height: 10,
-    position: 'relative',
-  },
-  spyglassBody: {
-    width: 22,
-    height: 7,
-    backgroundColor: '#34495e',
-    borderRadius: 3.5,
-    borderWidth: 1,
-    borderColor: '#95a5a6',
-    position: 'absolute',
-    left: 0,
-    top: 1.5,
-  },
-  spyglassLens: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#5dade2',
-    borderWidth: 1,
-    borderColor: '#7f8c8d',
-    position: 'absolute',
-    right: 0,
-    top: 1.5,
-  },
-  iconBadgeChest: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#6b4423',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    borderWidth: 2,
-    borderColor: '#D4AF37',
-  },
-  iconChest: {
-    width: 22,
-    height: 19,
-    position: 'relative',
-  },
-  chestBottom: {
-    width: 22,
-    height: 12,
-    backgroundColor: '#8B4513',
-    borderWidth: 1,
-    borderColor: '#654321',
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: '#34495e',
     position: 'absolute',
     bottom: 0,
+    left: 3,
   },
-  chestTop: {
-    width: 22,
-    height: 7,
-    backgroundColor: '#A0522D',
-    borderWidth: 1,
-    borderColor: '#654321',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+  cameraLens: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#34495e',
+    borderWidth: 1.5,
+    borderColor: '#7f8c8d',
     position: 'absolute',
-    top: 0,
+    bottom: 2,
+    left: 8,
   },
-  chestLock: {
+  cameraLensInner: {
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#FFD700',
-    borderWidth: 1,
-    borderColor: '#B8860B',
+    backgroundColor: '#5dade2',
     position: 'absolute',
-    bottom: 4,
-    left: 8.5,
+    bottom: 4.5,
+    left: 10.5,
   },
-  iconBadgeAnchor: {
+  lightLeft: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4,
+    borderRightWidth: 6,
+    borderBottomWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#f39c12',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  lightRight: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 4,
+    borderBottomWidth: 5,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#f39c12',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+  },
+  iconBadgeHospital: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#34495e',
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 2,
-    borderColor: '#95a5a6',
+    borderColor: '#e74c3c',
   },
-  iconAnchor: {
-    width: 18,
-    height: 22,
+  iconHospital: {
+    width: 20,
+    height: 20,
     position: 'relative',
   },
-  anchorRing: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  hospitalCrossVertical: {
+    width: 6,
+    height: 20,
+    backgroundColor: '#e74c3c',
+    position: 'absolute',
+    left: 7,
+    top: 0,
+  },
+  hospitalCrossHorizontal: {
+    width: 20,
+    height: 6,
+    backgroundColor: '#e74c3c',
+    position: 'absolute',
+    left: 0,
+    top: 7,
+  },
+  iconBadgePower: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#c0392b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
     borderWidth: 2,
+    borderColor: '#e74c3c',
+  },
+  iconPower: {
+    width: 20,
+    height: 20,
+    position: 'relative',
+  },
+  powerCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2.5,
     borderColor: '#ecf0f1',
     backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 0,
-    left: 5,
+    borderTopColor: 'transparent',
   },
-  anchorShaft: {
-    width: 2,
-    height: 12,
+  powerLine: {
+    width: 2.5,
+    height: 11,
     backgroundColor: '#ecf0f1',
     position: 'absolute',
-    top: 6,
-    left: 8,
-  },
-  anchorArmLeft: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 6,
-    borderRightWidth: 8,
-    borderTopColor: 'transparent',
-    borderRightColor: '#ecf0f1',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-  },
-  anchorArmRight: {
-    width: 0,
-    height: 0,
-    borderTopWidth: 6,
-    borderLeftWidth: 8,
-    borderTopColor: 'transparent',
-    borderLeftColor: '#ecf0f1',
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
+    top: 0,
+    left: 8.75,
   },
 });
 

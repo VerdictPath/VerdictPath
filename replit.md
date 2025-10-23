@@ -20,9 +20,14 @@ I want to work with an AI agent that is autonomous and proactive. It should make
   - Sophisticated color palette: ocean blues, treasure gold, wood tones, gem purple, flame orange
   - 40px circular badges on landing page, 48px on dashboard menu, 32px in stats
   - Professional nautical/treasure aesthetic
-- **Dashboard Screen Icons**: Applied same pirate theme to all dashboard elements
+- **Dashboard Screen Icons**: Applied custom geometric icons to all dashboard elements
   - **Stats Icons**: Gold coin (coins), flame (login streak), purple gem (tier)
-  - **Menu Icons**: Compass (roadmap), spyglass (videos), treasure chest (medical hub), gold coin (convert), anchor (logout)
+  - **Menu Icons**: 
+    - Compass (roadmap) - Navy blue with gold accents
+    - Camera with lights (videos) - Black background with gold border, filming lights
+    - Hospital cross (medical hub) - Red cross on white background
+    - Shiny gold coin (convert) - Triple shine effects with glow
+    - Power symbol (logout) - Red background with universal power icon
   - **Bonus Button**: Treasure chest icon for daily bonus claim
   - Consistent design language across entire app
 
