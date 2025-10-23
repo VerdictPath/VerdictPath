@@ -78,4 +78,5 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern
 - **Fixed API port mismatch**: Corrected LawFirmClientDetailsScreen API URL from localhost:3000 to localhost:5000
 - **Added missing dependency**: Installed @react-native-async-storage/async-storage required by HIPAAFormsScreen
-- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied
+- **Fixed web file upload functionality**: Created cross-platform file upload utility (src/utils/fileUpload.js) that uses HTML file inputs on web and native pickers on mobile. Updated MedicalHubScreen and RoadmapScreen to support web file uploads.
+- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied (AppEntry-0681f17ddb8eeec34ca6949f18a3aa07.js)
