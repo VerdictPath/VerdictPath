@@ -37,7 +37,10 @@ export const API_ENDPOINTS = {
 
 export const apiRequest = async (endpoint, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log('API Request:', url, options.method || 'GET');
+    
+    const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -46,14 +49,16 @@ export const apiRequest = async (endpoint, options = {}) => {
     });
 
     const data = await response.json();
+    console.log('API Response:', response.status, data);
 
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      const errorMessage = data.message || data.error || 'API request failed';
+      throw new Error(errorMessage);
     }
 
     return data;
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error:', error.message || error);
     throw error;
   }
 };
