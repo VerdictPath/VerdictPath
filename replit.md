@@ -8,6 +8,9 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 
 ## Recent Changes
 
+### October 23, 2025 - Updated Logo
+- **Logo Update**: Replaced logo with new Verdict Path branding featuring compass/ship wheel design with "Chart Your Course to Justice" tagline
+
 ### October 23, 2025 - Pirate-Themed Icons Throughout App
 - **Landing Screen & Dashboard UI Enhancement**: Replaced emoji icons with sophisticated pirate-themed badges throughout the app
 - **Landing Screen UI Enhancement**: Replaced emoji icons with sophisticated custom badges
