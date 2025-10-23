@@ -116,10 +116,10 @@ router.get('/client/:clientId',
 );
 ```
 
-### 5. Database Schema Updates
+### 5. Database Schema - Core Tables
 **Status: ✅ IMPLEMENTED**
 
-**New Tables:**
+**New Tables Created:**
 
 ```sql
 -- Audit Logs (HIPAA required)
@@ -166,20 +166,30 @@ CREATE TABLE account_security (
 
 **CRITICAL: You must set up the encryption key before the system can encrypt PHI data!**
 
-### Step 1: Add Encryption Key to Environment
+### Step 1: Generate and Add Encryption Key to Environment
 
-The system generated this encryption key for you:
+**SECURITY WARNING: NEVER commit encryption keys to Git or documentation!**
+
+Generate a secure 256-bit encryption key:
 
 ```bash
-ENCRYPTION_KEY=331ea59337ab39b90067c3ab38fdc1094e36c38139ecbd053984516def985551
+# Run this command to generate a new key:
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-**Add this to your Replit Secrets:**
+**Add the generated key to your Replit Secrets:**
 1. Go to the "Secrets" tab (lock icon) in Replit
 2. Click "Add new secret"
 3. Name: `ENCRYPTION_KEY`
-4. Value: `331ea59337ab39b90067c3ab38fdc1094e36c38139ecbd053984516def985551`
+4. Value: Paste the generated 64-character hex string
 5. Click "Add secret"
+
+**IMPORTANT:**
+- Generate a DIFFERENT key for production vs development
+- NEVER share or commit the key
+- Store production keys in AWS KMS, Azure Key Vault, or HashiCorp Vault
+- Rotate keys every 90 days
+- Keep old keys available to decrypt historical data during rotation
 
 ### Step 2: Verify Encryption Works
 
@@ -204,10 +214,10 @@ console.log('Decrypted:', encryption.decrypt(test));
 
 ## ⚠️ REMAINING WORK
 
-### Phase 1 (Core Security) - Still Needed:
+### Phase 1 (Core Security) - CRITICAL REMAINING WORK:
 
-#### 1. Update Database Schema for Encrypted Fields
-**Status: ⏳ PENDING**
+#### 1. Add Encrypted Columns to Existing Tables
+**Status: ⏳ PENDING - REQUIRED TO ACTIVATE ENCRYPTION**
 
 **Changes Needed:**
 - Add encrypted columns to `users` table:
@@ -426,11 +436,27 @@ CREATE TABLE break_glass_events (
 
 ## 🚨 CRITICAL SECURITY NOTES
 
-### Current Vulnerabilities (Pre-Encryption):
-1. ⚠️ **PHI stored in plaintext** - Violates HIPAA Security Rule
-2. ⚠️ **No audit trail** - Cannot detect breaches
-3. ⚠️ **Weak access controls** - No consent management
-4. ⚠️ **No encryption at rest** - Data exposure risk
+### ⚠️ CURRENT STATUS: PHI NOT YET ENCRYPTED!
+
+**The encryption service is built but NOT YET ACTIVE!**
+
+While we've created the encryption infrastructure, **PHI data is still stored in plaintext** until you complete the remaining Phase 1 tasks:
+- ✅ Encryption service created
+- ✅ Audit logging service created
+- ✅ Database tables created
+- ❌ **Database schema NOT updated with encrypted columns**
+- ❌ **Controllers NOT updated to use encryption**
+- ❌ **Existing data NOT encrypted**
+- ❌ **Audit middleware NOT integrated into routes**
+
+**DO NOT consider this system HIPAA-compliant until all Phase 1 tasks are marked complete!**
+
+### Current Vulnerabilities:
+1. 🔴 **PHI stored in plaintext** - Violates HIPAA Security Rule
+2. 🟡 **Audit infrastructure ready but not wired to routes** - Cannot detect breaches yet
+3. 🔴 **Weak access controls** - No consent management
+4. 🔴 **No encryption at rest** - Data exposure risk
+5. 🟢 **Account lockout implemented** - Protects against brute force
 
 ### After Phase 1 Completion:
 1. ✅ PHI encrypted with AES-256-GCM

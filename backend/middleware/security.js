@@ -17,6 +17,7 @@ const checkAccountLockout = async (req, res, next) => {
     }
     
     // Check account security status
+    // HIPAA: Check ALL user types (client, lawfirm, medical_provider)
     const securityQuery = `
       SELECT 
         s.login_attempts,
@@ -24,7 +25,7 @@ const checkAccountLockout = async (req, res, next) => {
         s.user_id,
         s.user_type
       FROM account_security s
-      INNER JOIN users u ON s.user_id = u.id AND s.user_type = 'client'
+      INNER JOIN users u ON s.user_id = u.id
       WHERE u.email = $1
       LIMIT 1
     `;
