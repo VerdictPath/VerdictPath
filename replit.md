@@ -115,6 +115,58 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - `backend/routes/litigation.js` - API routes
 - `backend/server.js` - Registered litigation routes
 
+## Litigation Path Integration - Complete (October 23, 2025)
+**Comprehensive backend-to-frontend litigation progress tracking system implemented:**
+
+### Dashboard Litigation Progress Widget
+- Real-time progress widget displaying current stage, progress bar, and task completion stats
+- Fetches user litigation progress from backend API on component mount
+- Shows current stage name (e.g., "Pre-Litigation"), stage number (1-9), and percentage complete
+- Displays total substages completed and total coins earned
+- "Continue Your Journey" button for quick navigation to full roadmap
+- Loading states and fallback handling for users without progress data
+
+### Law Firm Client Portal Enhancements
+- Full interactive roadmap visualization showing all 9 litigation stages
+- Each stage displays: completion status (✓ for completed), substage progress (X/Y completed), completion date
+- Visual indicators: completed stages (gold badge), current stage (blue border), pending stages (gray)
+- Progress summary bar at top showing current stage and overall percentage
+- Integrated with existing case details (case number, value, next steps, notes)
+- Backend: Added GET /api/litigation/client/:clientId/progress endpoint with law firm access control
+
+### Medical Provider Portal Integration
+- Patient cards now display litigation progress inline for each patient
+- Shows current litigation stage and progress percentage with visual progress bar
+- Backend: Enhanced getDashboard to fetch litigation progress for all consented patients
+- Enables medical providers to track patient case status without leaving dashboard
+
+### Auto-Complete Substages on Document Upload
+- Document uploads automatically complete associated litigation substages
+- Mapping system:
+  - Medical Record uploads → auto-complete "Medical Records" substage (pre-9, 35 coins)
+  - Medical Bill uploads → auto-complete "Medical Bills" substage (pre-8, 15 coins)
+  - Evidence uploads → auto-complete based on type (Police Report → pre-1, Photos → pre-4, etc.)
+- **Full progress recalculation** after each substage completion:
+  - Determines current stage by checking completed substages across all 9 stages
+  - Calculates accurate progress percentage (completed/60 total substages)
+  - Updates current_stage_id, current_stage_name, progress_percentage in user_litigation_progress
+  - Awards coins and increments totals atomically
+- Dashboard, Law Firm portal, and Medical Provider portal receive real-time updated progress
+
+### Backend API Enhancements
+- Complete LITIGATION_STAGES_MAP covering all 60 substages across 9 stages
+- Substage IDs match canonical schema in src/constants/mockData.js
+- Recalculation logic handles stage advancement for all 9 stages (not just Pre-Litigation)
+- Upsert pattern prevents duplicate substage completions
+- Progress calculation scales correctly for users at any litigation stage
+
+### Files Modified
+- `src/screens/DashboardScreen.js` - Added progress widget with API integration
+- `src/screens/LawFirmClientDetailsScreen.js` - Enhanced with full roadmap visualization
+- `src/screens/MedicalProviderDashboardScreen.js` - Added patient litigation progress display
+- `backend/controllers/uploadController.js` - Implemented auto-completion and recalculation logic
+- `backend/controllers/medicalproviderController.js` - Added litigation progress to patient data
+
 ## Recent Bug Fixes (October 23, 2025)
 - **Fixed authToken undefined error**: Added `authToken` variable derived from `user?.token` in App.js to fix console errors when navigating to RoadmapScreen and MedicalHubScreen
 - **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern
