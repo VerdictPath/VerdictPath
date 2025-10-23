@@ -215,19 +215,37 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
   };
 
   const handleSubStageComplete = async (subStageId, subStageCoins) => {
+    console.log('[RoadmapScreen] handleSubStageComplete called:', { subStageId, subStageCoins, hasAuthToken: !!authToken });
+    
     if (!authToken) {
+      console.error('[RoadmapScreen] No auth token - user not logged in');
       alert('Error', 'You must be logged in to complete tasks.');
       return;
     }
 
+    console.log('[RoadmapScreen] Calling completeSubstageOnBackend...');
     // Complete the substage via backend API without any upload requirements
     await completeSubstageOnBackend(subStageId, subStageCoins);
   };
 
   const completeSubstageOnBackend = async (subStageId, subStageCoins) => {
+    console.log('[RoadmapScreen] completeSubstageOnBackend started');
     try {
       const currentStage = litigationStages.find(s => s.id === selectedStage.id);
       const subStage = currentStage.subStages.find(s => s.id === subStageId);
+
+      const requestBody = { 
+        stageId: currentStage.id,
+        stageName: currentStage.name,
+        substageId: subStageId,
+        substageName: subStage.name,
+        substageType: subStage.isDataEntry ? 'data_entry' : 'upload',
+        coinsEarned: subStageCoins
+      };
+
+      console.log('[RoadmapScreen] Making API request to:', `${API_URL}/litigation/substage/complete`);
+      console.log('[RoadmapScreen] Request body:', requestBody);
+      console.log('[RoadmapScreen] Auth token present:', !!authToken);
 
       const response = await fetch(`${API_URL}/litigation/substage/complete`, {
         method: 'POST',
@@ -235,19 +253,15 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ 
-          stageId: currentStage.id,
-          stageName: currentStage.name,
-          substageId: subStageId,
-          substageName: subStage.name,
-          substageType: subStage.isDataEntry ? 'data_entry' : 'upload',
-          coinsEarned: subStageCoins
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[RoadmapScreen] Response status:', response.status);
       const data = await response.json();
+      console.log('[RoadmapScreen] Response data:', data);
 
       if (response.ok) {
+        console.log('[RoadmapScreen] Success! Updating local state...');
         // Update local state
         onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
         
@@ -256,6 +270,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
           `You earned ${subStageCoins} coins! Your progress has been updated.`
         );
       } else {
+        console.error('[RoadmapScreen] API error:', data.error);
         // Handle duplicate completion gracefully
         if (data.error && data.error.includes('already completed')) {
           alert('Already Completed', 'This task has already been completed.');
@@ -264,7 +279,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
         }
       }
     } catch (error) {
-      console.error('Error completing substage:', error);
+      console.error('[RoadmapScreen] Exception in completeSubstageOnBackend:', error);
       alert('Error', 'Failed to complete task. Please try again.');
     }
   };
