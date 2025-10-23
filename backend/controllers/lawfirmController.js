@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const auditLogger = require('../services/auditLogger');
+const encryption = require('../services/encryption');
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -16,7 +18,8 @@ exports.getDashboard = async (req, res) => {
     const lawFirm = lawFirmResult.rows[0];
     
     const clientsResult = await db.query(
-      `SELECT u.id, u.first_name, u.last_name, u.email, lfc.registered_date
+      `SELECT u.id, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted, 
+              u.email, lfc.registered_date
        FROM users u
        JOIN law_firm_clients lfc ON u.id = lfc.client_id
        WHERE lfc.law_firm_id = $1
@@ -24,14 +27,35 @@ exports.getDashboard = async (req, res) => {
       [lawFirmId]
     );
     
-    const clients = clientsResult.rows.map(client => ({
-      id: client.id,
-      displayName: `${client.last_name}, ${client.first_name}`,
-      firstName: client.first_name,
-      lastName: client.last_name,
-      email: client.email,
-      registeredDate: client.registered_date
-    }));
+    const clients = clientsResult.rows.map(client => {
+      // HIPAA: Use encrypted fields if available, fall back to plaintext during migration
+      const firstName = client.first_name_encrypted ? 
+        encryption.decrypt(client.first_name_encrypted) : client.first_name;
+      const lastName = client.last_name_encrypted ? 
+        encryption.decrypt(client.last_name_encrypted) : client.last_name;
+      
+      return {
+        id: client.id,
+        displayName: `${lastName}, ${firstName}`,
+        firstName: firstName,
+        lastName: lastName,
+        email: client.email,
+        registeredDate: client.registered_date
+      };
+    });
+    
+    // HIPAA: Log law firm accessing client list
+    await auditLogger.log({
+      actorId: lawFirmId,
+      actorType: 'lawfirm',
+      action: 'VIEW_CLIENT_LIST',
+      entityType: 'LawFirm',
+      entityId: lawFirmId,
+      status: 'SUCCESS',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      metadata: { clientCount: clients.length }
+    });
     
     res.json({
       firmName: lawFirm.firm_name,
@@ -59,7 +83,7 @@ exports.getClientDetails = async (req, res) => {
     }
     
     const clientResult = await db.query(
-      'SELECT id, first_name, last_name, email FROM users WHERE id = $1',
+      'SELECT id, first_name, last_name, first_name_encrypted, last_name_encrypted, email FROM users WHERE id = $1',
       [clientId]
     );
     
@@ -67,7 +91,20 @@ exports.getClientDetails = async (req, res) => {
       return res.status(404).json({ message: 'Client not found' });
     }
     
-    const client = clientResult.rows[0];
+    const clientRow = clientResult.rows[0];
+    
+    // HIPAA: Decrypt PHI fields
+    const firstName = clientRow.first_name_encrypted ? 
+      encryption.decrypt(clientRow.first_name_encrypted) : clientRow.first_name;
+    const lastName = clientRow.last_name_encrypted ? 
+      encryption.decrypt(clientRow.last_name_encrypted) : clientRow.last_name;
+    
+    const client = {
+      id: clientRow.id,
+      first_name: firstName,
+      last_name: lastName,
+      email: clientRow.email
+    };
     
     const medicalRecordsResult = await db.query(
       `SELECT * FROM medical_records 
@@ -76,12 +113,36 @@ exports.getClientDetails = async (req, res) => {
       [clientId]
     );
     
+    // HIPAA: Decrypt medical record PHI fields
+    const decryptedMedicalRecords = medicalRecordsResult.rows.map(record => ({
+      ...record,
+      description: record.description_encrypted ? 
+        encryption.decrypt(record.description_encrypted) : record.description,
+      facility_name: record.facility_name_encrypted ? 
+        encryption.decrypt(record.facility_name_encrypted) : record.facility_name,
+      provider_name: record.provider_name_encrypted ? 
+        encryption.decrypt(record.provider_name_encrypted) : record.provider_name,
+      diagnosis: record.diagnosis_encrypted ? 
+        encryption.decrypt(record.diagnosis_encrypted) : record.diagnosis
+    }));
+    
     const medicalBillingResult = await db.query(
       `SELECT * FROM medical_billing 
        WHERE user_id = $1 AND accessible_by_law_firm = true 
        ORDER BY bill_date DESC NULLS LAST, uploaded_at DESC`,
       [clientId]
     );
+    
+    // HIPAA: Decrypt billing PHI fields
+    const decryptedBillingRecords = medicalBillingResult.rows.map(bill => ({
+      ...bill,
+      description: bill.description_encrypted ? 
+        encryption.decrypt(bill.description_encrypted) : bill.description,
+      provider_name: bill.provider_name_encrypted ? 
+        encryption.decrypt(bill.provider_name_encrypted) : bill.provider_name,
+      insurance_info: bill.insurance_info_encrypted ? 
+        encryption.decrypt(bill.insurance_info_encrypted) : bill.insurance_info
+    }));
     
     const evidenceResult = await db.query(
       `SELECT * FROM evidence 
@@ -100,6 +161,51 @@ exports.getClientDetails = async (req, res) => {
     const totalDue = medicalBillingResult.rows.reduce((sum, bill) => 
       sum + parseFloat(bill.amount_due || 0), 0);
     
+    // HIPAA: Log law firm accessing client PHI
+    await auditLogger.logPhiAccess({
+      userId: lawFirmId,
+      userType: 'lawfirm',
+      action: 'VIEW_CLIENT_DETAILS',
+      patientId: clientId,
+      recordType: 'ClientDetails',
+      recordId: clientId,
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
+    
+    // Log access to medical records
+    if (medicalRecordsResult.rows.length > 0) {
+      await auditLogger.log({
+        actorId: lawFirmId,
+        actorType: 'lawfirm',
+        action: 'VIEW_MEDICAL_RECORD',
+        entityType: 'MedicalRecord',
+        entityId: null,
+        targetUserId: parseInt(clientId),
+        status: 'SUCCESS',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        metadata: { recordCount: medicalRecordsResult.rows.length }
+      });
+    }
+    
+    // Log access to billing records
+    if (medicalBillingResult.rows.length > 0) {
+      await auditLogger.log({
+        actorId: lawFirmId,
+        actorType: 'lawfirm',
+        action: 'VIEW_BILLING',
+        entityType: 'MedicalBilling',
+        entityId: null,
+        targetUserId: parseInt(clientId),
+        status: 'SUCCESS',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        metadata: { billingCount: medicalBillingResult.rows.length, totalBilled, totalDue }
+      });
+    }
+    
     res.json({
       client: {
         id: client.id,
@@ -109,14 +215,14 @@ exports.getClientDetails = async (req, res) => {
         email: client.email
       },
       medicalRecords: {
-        total: medicalRecordsResult.rows.length,
-        records: medicalRecordsResult.rows
+        total: decryptedMedicalRecords.length,
+        records: decryptedMedicalRecords
       },
       medicalBilling: {
-        total: medicalBillingResult.rows.length,
+        total: decryptedBillingRecords.length,
         totalAmountBilled: totalBilled,
         totalAmountDue: totalDue,
-        bills: medicalBillingResult.rows
+        bills: decryptedBillingRecords
       },
       evidenceDocuments: {
         total: evidenceResult.rows.length,

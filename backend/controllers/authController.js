@@ -2,12 +2,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { JWT_SECRET } = require('../middleware/auth');
+const encryption = require('../services/encryption');
+const auditLogger = require('../services/auditLogger');
+const { handleFailedLogin, handleSuccessfulLogin } = require('../middleware/security');
 
 exports.registerClient = async (req, res) => {
   try {
     const { firstName, lastName, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice } = req.body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // HIPAA: Encrypt PHI fields
+    const encryptedFirstName = encryption.encrypt(firstName);
+    const encryptedLastName = encryption.encrypt(lastName);
+    const emailHash = encryption.hash(email.toLowerCase());
     
     let connectedLawFirmId = null;
     
@@ -23,12 +31,15 @@ exports.registerClient = async (req, res) => {
     }
     
     const userResult = await db.query(
-      `INSERT INTO users (first_name, last_name, email, password, user_type, law_firm_code, 
-       connected_law_firm_id, avatar_type, subscription_tier, subscription_price) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, email, first_name, last_name, user_type`,
-      [firstName, lastName, email.toLowerCase(), hashedPassword, 'client', 
+      `INSERT INTO users (first_name, last_name, email, email_hash, password, user_type, law_firm_code, 
+       connected_law_firm_id, avatar_type, subscription_tier, subscription_price,
+       first_name_encrypted, last_name_encrypted) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+       RETURNING id, email, first_name, last_name, user_type`,
+      [firstName, lastName, email.toLowerCase(), emailHash, hashedPassword, 'client', 
        lawFirmCode ? lawFirmCode.toUpperCase() : null, connectedLawFirmId, 
-       avatarType || 'captain', subscriptionTier || 'free', subscriptionPrice || 0]
+       avatarType || 'captain', subscriptionTier || 'free', subscriptionPrice || 0,
+       encryptedFirstName, encryptedLastName]
     );
     
     const user = userResult.rows[0];
@@ -39,6 +50,16 @@ exports.registerClient = async (req, res) => {
         [connectedLawFirmId, user.id]
       );
     }
+    
+    // HIPAA: Log account creation
+    await auditLogger.logAuth({
+      userId: user.id,
+      email: user.email,
+      action: 'ACCOUNT_CREATED',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
     
     const token = jwt.sign(
       { id: user.id, email: user.email, userType: user.user_type },
@@ -206,6 +227,16 @@ exports.login = async (req, res) => {
     }
     
     if (result.rows.length === 0) {
+      // HIPAA: Log failed login attempt
+      await auditLogger.logAuth({
+        userId: null,
+        email: email,
+        action: 'LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'User not found'
+      });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
@@ -213,6 +244,17 @@ exports.login = async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, account.password);
     
     if (!isValidPassword) {
+      // HIPAA: Log failed login and increment attempts
+      await handleFailedLogin(account.id, userType || account.user_type);
+      await auditLogger.logAuth({
+        userId: account.id,
+        email: email,
+        action: 'LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'Invalid password'
+      });
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
@@ -227,7 +269,20 @@ exports.login = async (req, res) => {
     
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30d' });
     
-    if (userType !== 'lawfirm') {
+    // HIPAA: Handle successful login (reset attempts, update timestamp)
+    await handleSuccessfulLogin(account.id, userType || account.user_type, req.ip || req.connection.remoteAddress);
+    
+    // HIPAA: Log successful login
+    await auditLogger.logAuth({
+      userId: account.id,
+      email: email,
+      action: 'LOGIN',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
+    
+    if (userType !== 'lawfirm' && userType !== 'medical_provider') {
       await db.query(
         'UPDATE users SET last_login_date = CURRENT_DATE WHERE id = $1',
         [account.id]
