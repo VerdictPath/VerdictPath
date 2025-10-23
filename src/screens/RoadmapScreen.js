@@ -417,7 +417,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible && !dataEntryModalVisible}
+        visible={modalVisible && !dataEntryModalVisible && !confirmModalVisible}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
@@ -1273,10 +1273,10 @@ const styles = StyleSheet.create({
   },
   confirmModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10000,
+    zIndex: 99999,
   },
   confirmModalContent: {
     backgroundColor: '#fff',
@@ -1285,10 +1285,11 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 450,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+    zIndex: 100000,
   },
   confirmModalTitle: {
     fontSize: 22,
