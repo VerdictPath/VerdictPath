@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= client.displayName %> - Client Details</title>
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+  <div class="container">
+    <a href="/portal/dashboard" class="back-link">← Back to Dashboard</a>
+    
+    <div class="portal-header">
+      <h1><%= client.displayName %></h1>
+      <p class="subtitle"><%= client.email %></p>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value"><%= medicalRecords.total %></div>
+        <div class="stat-label">Medical Records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= medicalBilling.total %></div>
+        <div class="stat-label">Medical Bills</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">$<%= medicalBilling.totalAmountBilled.toFixed(2) %></div>
+        <div class="stat-label">Total Billed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value"><%= evidenceDocuments.total %></div>
+        <div class="stat-label">Evidence Documents</div>
+      </div>
+    </div>
+    
+    <!-- Litigation Stage Section -->
+    <div class="section">
+      <h2 class="section-title">Litigation Stage</h2>
+      <% if (litigationStage) { %>
+        <div style="margin-bottom: 15px;">
+          <strong>Current Stage:</strong> 
+          <span class="litigation-status"><%= litigationStage.current_stage.replace(/_/g, ' ').toUpperCase() %></span>
+        </div>
+        <% if (litigationStage.case_number) { %>
+          <p><strong>Case Number:</strong> <%= litigationStage.case_number %></p>
+        <% } %>
+        <% if (litigationStage.case_value) { %>
+          <p><strong>Case Value:</strong> $<%= parseFloat(litigationStage.case_value).toFixed(2) %></p>
+        <% } %>
+        <% if (litigationStage.next_step_description) { %>
+          <p><strong>Next Step:</strong> <%= litigationStage.next_step_description %></p>
+        <% } %>
+        <% if (litigationStage.notes) { %>
+          <p><strong>Notes:</strong> <%= litigationStage.notes %></p>
+        <% } %>
+      <% } else { %>
+        <p class="empty-state">No litigation stage information available yet.</p>
+      <% } %>
+    </div>
+    
+    <!-- Medical Records Section -->
+    <div class="section">
+      <h2 class="section-title">Medical Records (<%= medicalRecords.total %>)</h2>
+      <% if (medicalRecords.total === 0) { %>
+        <p class="empty-state">No medical records uploaded yet.</p>
+      <% } else { %>
+        <ul class="document-list">
+          <% medicalRecords.records.forEach(record => { %>
+            <li class="document-item">
+              <div class="document-title"><%= record.record_type.replace(/_/g, ' ').toUpperCase() %></div>
+              <div class="document-meta">
+                <% if (record.facility_name) { %>Facility: <%= record.facility_name %> | <% } %>
+                <% if (record.date_of_service) { %>Date: <%= new Date(record.date_of_service).toLocaleDateString() %> | <% } %>
+                Uploaded: <%= new Date(record.uploaded_at).toLocaleDateString() %>
+              </div>
+              <% if (record.description) { %>
+                <div style="margin-top: 5px; color: var(--navy); font-size: 14px;"><%= record.description %></div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+    
+    <!-- Medical Billing Section -->
+    <div class="section">
+      <h2 class="section-title">Medical Billing (<%= medicalBilling.total %>)</h2>
+      <div style="margin-bottom: 15px;">
+        <strong>Total Amount Billed:</strong> $<%= medicalBilling.totalAmountBilled.toFixed(2) %> | 
+        <strong>Total Amount Due:</strong> $<%= medicalBilling.totalAmountDue.toFixed(2) %>
+      </div>
+      <% if (medicalBilling.total === 0) { %>
+        <p class="empty-state">No medical bills uploaded yet.</p>
+      <% } else { %>
+        <ul class="document-list">
+          <% medicalBilling.bills.forEach(bill => { %>
+            <li class="document-item">
+              <div class="document-title"><%= bill.billing_type.replace(/_/g, ' ').toUpperCase() %></div>
+              <div class="document-meta">
+                <% if (bill.facility_name) { %>Facility: <%= bill.facility_name %> | <% } %>
+                <% if (bill.bill_number) { %>Bill #: <%= bill.bill_number %> | <% } %>
+                Amount: $<%= parseFloat(bill.total_amount).toFixed(2) %>
+                <% if (bill.bill_date) { %> | Date: <%= new Date(bill.bill_date).toLocaleDateString() %><% } %>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+    
+    <!-- Evidence Documents Section -->
+    <div class="section">
+      <h2 class="section-title">Evidence Documents (<%= evidenceDocuments.total %>)</h2>
+      <% if (evidenceDocuments.total === 0) { %>
+        <p class="empty-state">No evidence documents uploaded yet.</p>
+      <% } else { %>
+        <ul class="document-list">
+          <% evidenceDocuments.documents.forEach(doc => { %>
+            <li class="document-item">
+              <div class="document-title"><%= doc.title %></div>
+              <div class="document-meta">
+                Type: <%= doc.evidence_type.replace(/_/g, ' ').toUpperCase() %>
+                <% if (doc.date_of_incident) { %> | Incident Date: <%= new Date(doc.date_of_incident).toLocaleDateString() %><% } %>
+                | Uploaded: <%= new Date(doc.uploaded_at).toLocaleDateString() %>
+              </div>
+              <% if (doc.description) { %>
+                <div style="margin-top: 5px; color: var(--navy); font-size: 14px;"><%= doc.description %></div>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

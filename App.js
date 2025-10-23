@@ -12,6 +12,8 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import RoadmapScreen from './src/screens/RoadmapScreen';
 import VideosScreen from './src/screens/VideosScreen';
 import MedicalHubScreen from './src/screens/MedicalHubScreen';
+import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
+import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 
 const CaseCompassApp = () => {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -35,6 +37,8 @@ const CaseCompassApp = () => {
     medicalBills: [],
     medicalRecords: []
   });
+  
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
   const handleRegister = () => {
     if (!email || !password) {
@@ -74,7 +78,7 @@ const CaseCompassApp = () => {
       return;
     }
     
-    setUser({
+    const userData = {
       id: 1,
       email: email,
       type: userType,
@@ -82,11 +86,18 @@ const CaseCompassApp = () => {
       firmSize: firmSize,
       coins: 150,
       streak: 3
-    });
+    };
+    
+    setUser(userData);
     setCoins(150);
     setLoginStreak(3);
     setIsLoggedIn(true);
-    setCurrentScreen('dashboard');
+    
+    if (userType === USER_TYPES.LAW_FIRM) {
+      setCurrentScreen('lawfirm-dashboard');
+    } else {
+      setCurrentScreen('dashboard');
+    }
   };
 
   const handleLogout = () => {
@@ -245,6 +256,16 @@ const CaseCompassApp = () => {
     setCurrentScreen(screen);
   };
 
+  const handleNavigateToClient = (clientId) => {
+    setSelectedClientId(clientId);
+    setCurrentScreen('lawfirm-client-details');
+  };
+
+  const handleBackToLawFirmDashboard = () => {
+    setSelectedClientId(null);
+    setCurrentScreen('lawfirm-dashboard');
+  };
+
   return (
     <SafeAreaView style={commonStyles.safeArea}>
       <StatusBar barStyle="dark-content" />
@@ -325,6 +346,22 @@ const CaseCompassApp = () => {
           onNavigate={handleNavigate} 
           onUploadMedicalDocument={handleMedicalHubUpload}
           medicalHubUploads={medicalHubUploads}
+        />
+      )}
+      
+      {currentScreen === 'lawfirm-dashboard' && (
+        <LawFirmDashboardScreen
+          user={user}
+          onNavigateToClient={handleNavigateToClient}
+          onLogout={handleLogout}
+        />
+      )}
+      
+      {currentScreen === 'lawfirm-client-details' && (
+        <LawFirmClientDetailsScreen
+          user={user}
+          clientId={selectedClientId}
+          onBack={handleBackToLawFirmDashboard}
         />
       )}
     </SafeAreaView>

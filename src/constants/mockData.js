@@ -225,7 +225,8 @@ export const VIDEOS = [
 export const USER_TYPES = {
   INDIVIDUAL: 'individual',
   LAW_FIRM: 'lawfirm',
-  MEDICAL_PROVIDER: 'medicalprovider'
+  MEDICAL_PROVIDER: 'medicalprovider',
+  CLIENT: 'client'
 };
 
 export const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30];

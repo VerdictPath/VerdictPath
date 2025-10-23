@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+  <div class="login-container">
+    <h2>VerdictPath Law Firm Portal</h2>
+    <p style="text-align: center; color: var(--warm-gray); margin-bottom: 30px;">
+      Access your client dashboard
+    </p>
+    
+    <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+    <% } %>
+    
+    <form action="/portal/login" method="POST" id="loginForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      
+      <input type="hidden" name="userType" value="lawfirm">
+      
+      <button type="submit" class="btn btn-primary">Sign In</button>
+    </form>
+    
+    <p style="text-align: center; margin-top: 20px; color: var(--warm-gray); font-size: 14px;">
+      New firm? <a href="/portal/register" style="color: var(--mahogany);">Register here</a>
+    </p>
+  </div>
+  
+  <script src="/js/portal.js"></script>
+</body>
+</html>

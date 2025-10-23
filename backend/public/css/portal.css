@@ -1,0 +1,306 @@
+/* VerdictPath Law Firm Portal - Tan/Beige Theme */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --sand: #F4E8D8;
+  --cream: #F8F1E7;
+  --light-cream: #FBF7F1;
+  --mahogany: #8B6F47;
+  --dark-mahogany: #6B4423;
+  --navy: #2C3E50;
+  --warm-gray: #A0826D;
+  --dark-warm-gray: #8B7355;
+  --gold: #C9A961;
+  --bright-gold: #D4AF37;
+  --deep-maroon: #8C3B2A;
+  --charcoal: #2B2216;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--sand);
+  color: var(--navy);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.portal-header {
+  background-color: var(--cream);
+  padding: 20px;
+  border-bottom: 3px solid var(--gold);
+  margin-bottom: 30px;
+  border-radius: 8px;
+}
+
+.portal-header h1 {
+  color: var(--mahogany);
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+.portal-header .subtitle {
+  color: var(--warm-gray);
+  font-size: 14px;
+}
+
+.login-container {
+  max-width: 450px;
+  margin: 80px auto;
+  background-color: var(--cream);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--gold);
+}
+
+.login-container h2 {
+  color: var(--mahogany);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--navy);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: var(--light-cream);
+  color: var(--navy);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--mahogany);
+  background-color: white;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--mahogany);
+  color: white;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  background-color: var(--dark-mahogany);
+}
+
+.btn-secondary {
+  background-color: var(--gold);
+  color: var(--navy);
+}
+
+.btn-secondary:hover {
+  background-color: var(--bright-gold);
+}
+
+.alert {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: var(--deep-maroon);
+  border: 1px solid var(--deep-maroon);
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #28a745;
+}
+
+.client-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.client-card {
+  background-color: var(--cream);
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid var(--gold);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.client-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border-color: var(--mahogany);
+}
+
+.client-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--mahogany);
+  margin-bottom: 8px;
+}
+
+.client-email {
+  color: var(--warm-gray);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.client-date {
+  color: var(--dark-warm-gray);
+  font-size: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background-color: var(--cream);
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid var(--gold);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--mahogany);
+}
+
+.stat-label {
+  color: var(--warm-gray);
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.section {
+  background-color: var(--cream);
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border: 2px solid var(--gold);
+}
+
+.section-title {
+  color: var(--mahogany);
+  font-size: 20px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gold);
+}
+
+.document-list {
+  list-style: none;
+}
+
+.document-item {
+  padding: 15px;
+  background-color: var(--light-cream);
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--gold);
+}
+
+.document-item:hover {
+  background-color: var(--sand);
+}
+
+.document-title {
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+.document-meta {
+  font-size: 13px;
+  color: var(--warm-gray);
+}
+
+.litigation-status {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  background-color: var(--gold);
+  color: var(--navy);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--mahogany);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  color: var(--dark-mahogany);
+  text-decoration: underline;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--warm-gray);
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .client-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .login-container {
+    margin: 40px 20px;
+    padding: 30px 20px;
+  }
+}
