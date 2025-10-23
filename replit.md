@@ -26,7 +26,15 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **Styling**: Uses shared and screen-specific styles.
 - **Image Processing**: Python/Pillow for logo background integration.
 - **SVG Animation**: `react-native-svg` for cubic Bezier curve path animations.
-- **Backend**: Node.js/Express with PostgreSQL database for user authentication, client management, litigation tracking, and HIPAA-compliant data handling, including AES-256-GCM encryption for PHI, audit logging, and account security features.
+- **Backend**: Node.js/Express with PostgreSQL database for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
+- **HIPAA Security (Phase 1 & 2 Complete)**:
+  - AES-256-GCM encryption for all Protected Health Information (PHI) at rest
+  - Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions
+  - Patient Consent Management system for controlling PHI sharing
+  - Comprehensive audit logging for all PHI access with IP tracking
+  - Account security: lockout after 5 failed login attempts
+  - Dual-layer protection: Permission checks + Consent verification before PHI access
+  - Auto-consent when clients register with law firm codes
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider user types with Free, Basic, and Premium subscription tiers.
@@ -37,7 +45,14 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **Medical Hub**: HIPAA-compliant document storage and upload system for medical bills and records.
 - **Document Upload & Data Entry**: Tasks for file uploads (e.g., Police Report) and text-based data entry.
 - **Law Firm Client Portal**: Web and mobile access for law firms to manage clients, medical records, billing, evidence, and litigation stages.
-- **HIPAA Compliance**: Comprehensive security features including AES-256-GCM encryption for PHI, detailed audit logging, and account security measures (e.g., lockout after failed login attempts).
+- **HIPAA Compliance**: Production-ready HIPAA compliance implementation:
+  - **Phase 1 (Complete)**: Encryption, audit logging, account security
+  - **Phase 2 (Complete)**: Role-Based Access Control (RBAC) and Patient Consent Management
+  - 6 roles: CLIENT, LAW_FIRM_ADMIN, LAW_FIRM_STAFF, MEDICAL_PROVIDER_ADMIN, MEDICAL_PROVIDER_STAFF, SYSTEM_ADMIN
+  - 23 permissions across 6 categories: PHI Access, Medical Records, Billing, Litigation, Consent, Administration
+  - Consent types: FULL_ACCESS, MEDICAL_RECORDS_ONLY, BILLING_ONLY, LITIGATION_ONLY, CUSTOM
+  - API endpoints: Grant/revoke consent, view consents, check consent status
+  - Meets HIPAA §164.502(a), §164.506, §164.508, §164.524, §164.528
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
