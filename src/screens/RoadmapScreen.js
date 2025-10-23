@@ -598,7 +598,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
         <TouchableOpacity onPress={() => onNavigate('dashboard')}>
           <Text style={commonStyles.backButton}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🏴‍☠️ Pirate's Litigation Map</Text>
+        <Text style={styles.headerTitle}>Litigation Map</Text>
         {selectedAvatar && (
           <TouchableOpacity 
             style={styles.changeAvatarButton}
