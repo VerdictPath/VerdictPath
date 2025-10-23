@@ -214,12 +214,17 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     setDataEntrySubStage(null);
   };
 
-  const handleSubStageComplete = (subStageId, subStageCoins) => {
+  const handleSubStageComplete = async (subStageId, subStageCoins) => {
+    if (!authToken) {
+      alert('Error', 'You must be logged in to complete tasks.');
+      return;
+    }
+
     const currentStage = litigationStages.find(s => s.id === selectedStage.id);
     const subStage = currentStage.subStages.find(s => s.id === subStageId);
     
+    // For Medical Hub linked tasks, offer to navigate but allow manual completion
     if (subStage.linkToMedicalHub) {
-      // Check if documents are uploaded in Medical Hub
       const isMedicalBills = subStageId === 'pre-8';
       const isMedicalRecords = subStageId === 'pre-9';
       
@@ -236,8 +241,8 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       
       if (!hasUploads) {
         alert(
-          '📤 Upload Required',
-          `Please upload ${documentType} in the Medical Hub before marking this step as complete.`,
+          '📤 No Documents Uploaded',
+          `You can mark this task complete manually, or upload ${documentType} in the Medical Hub.\n\nWhat would you like to do?`,
           [
             { text: 'Cancel', style: 'cancel' },
             { 
@@ -246,6 +251,10 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
                 closeModal();
                 onNavigate('medical');
               }
+            },
+            {
+              text: 'Mark Complete Anyway',
+              onPress: () => completeSubstageOnBackend(subStageId, subStageCoins)
             }
           ]
         );
@@ -253,7 +262,43 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       }
     }
 
-    onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
+    // Complete the substage via backend API
+    await completeSubstageOnBackend(subStageId, subStageCoins);
+  };
+
+  const completeSubstageOnBackend = async (subStageId, subStageCoins) => {
+    try {
+      const response = await fetch(`${API_URL}/litigation/substage/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ substageId: subStageId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update local state
+        onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
+        
+        alert(
+          '✅ Task Completed!',
+          `You earned ${subStageCoins} coins! Your progress has been updated.`
+        );
+      } else {
+        // Handle duplicate completion gracefully
+        if (data.error && data.error.includes('already completed')) {
+          alert('Already Completed', 'This task has already been completed.');
+        } else {
+          alert('Error', data.error || 'Failed to complete task.');
+        }
+      }
+    } catch (error) {
+      console.error('Error completing substage:', error);
+      alert('Error', 'Failed to complete task. Please try again.');
+    }
   };
 
   const completeEntireStage = () => {
