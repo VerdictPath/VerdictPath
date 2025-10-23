@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StatusBar, Alert } from 'react-native';
+import { SafeAreaView, StatusBar } from 'react-native';
 import { commonStyles } from './src/styles/commonStyles';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
+import alert from './src/utils/alert';
 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -472,10 +473,7 @@ const CaseCompassApp = () => {
           const updatedSubStages = stage.subStages.map(subStage => {
             if (subStage.id === subStageId && !subStage.completed) {
               setCoins(prevCoins => prevCoins + subStageCoins);
-              Alert.alert(
-                '🎉 Congratulations!',
-                `You earned ${subStageCoins} coins for completing "${subStage.name}"!`
-              );
+              // Note: Success alert is shown in RoadmapScreen after backend completion
               return { ...subStage, completed: true };
             }
             return subStage;
@@ -485,10 +483,7 @@ const CaseCompassApp = () => {
           
           if (allSubStagesComplete && !stage.completed && updatedSubStages.length > 0) {
             setCoins(prevCoins => prevCoins + stage.coins);
-            Alert.alert(
-              '🏆 Stage Complete!',
-              `You completed "${stage.name}" and earned ${stage.coins} bonus coins!`
-            );
+            // Note: Success alert is shown in RoadmapScreen after backend completion
             return { ...stage, subStages: updatedSubStages, completed: true };
           }
 
