@@ -137,23 +137,24 @@ async function migrateMedicalRecords() {
     return;
   }
   
-  // Check which columns exist to encrypt
-  const checkColumns = await db.query(`
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'medical_records'
-    AND column_name IN ('description', 'facility_name', 'provider_name', 'diagnosis')
-  `);
-  const availableColumns = checkColumns.rows.map(r => r.column_name);
+  // Build dynamic query based on which plaintext columns exist
+  const plaintextColumns = columns.filter(c => !c.includes('_encrypted'));
+  const encryptedColumns = columns.filter(c => c.includes('_encrypted'));
+  
+  if (plaintextColumns.length === 0) {
+    console.log('  ℹ️  No plaintext columns to migrate (schema already uses encrypted-only columns)\n');
+    return;
+  }
+  
+  // Build WHERE clause dynamically
+  const whereConditions = plaintextColumns
+    .map(col => `(${col} IS NOT NULL AND ${col}_encrypted IS NULL)`)
+    .join(' OR ');
   
   const query = `
-    SELECT id, description, facility_name, provider_name, diagnosis,
-           description_encrypted, facility_name_encrypted, provider_name_encrypted, diagnosis_encrypted
+    SELECT id, ${plaintextColumns.join(', ')}, ${encryptedColumns.join(', ')}
     FROM medical_records
-    WHERE (description IS NOT NULL AND description_encrypted IS NULL)
-       OR (facility_name IS NOT NULL AND facility_name_encrypted IS NULL)
-       OR (provider_name IS NOT NULL AND provider_name_encrypted IS NULL)
-       OR (diagnosis IS NOT NULL AND diagnosis_encrypted IS NULL)
+    WHERE ${whereConditions}
   `;
   
   const result = await db.query(query);
@@ -171,32 +172,44 @@ async function migrateMedicalRecords() {
   
   for (const record of records) {
     try {
-      const encryptedDescription = record.description ? 
-        encryption.encrypt(record.description) : null;
-      const encryptedFacility = record.facility_name ? 
-        encryption.encrypt(record.facility_name) : null;
-      const encryptedProvider = record.provider_name ? 
-        encryption.encrypt(record.provider_name) : null;
-      const encryptedDiagnosis = record.diagnosis ? 
-        encryption.encrypt(record.diagnosis) : null;
+      // Dynamically encrypt only columns that exist
+      const updates = {};
+      const values = [];
+      let paramCount = 1;
+      
+      if (plaintextColumns.includes('description') && record.description) {
+        updates['description_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.description));
+      }
+      if (plaintextColumns.includes('facility_name') && record.facility_name) {
+        updates['facility_name_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.facility_name));
+      }
+      if (plaintextColumns.includes('provider_name') && record.provider_name) {
+        updates['provider_name_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.provider_name));
+      }
+      if (plaintextColumns.includes('diagnosis') && record.diagnosis) {
+        updates['diagnosis_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.diagnosis));
+      }
+      
+      if (Object.keys(updates).length === 0) {
+        continue; // Nothing to encrypt for this record
+      }
+      
+      const setClause = Object.entries(updates)
+        .map(([col, param]) => `${col} = ${param}`)
+        .join(', ');
       
       const updateQuery = `
         UPDATE medical_records
-        SET 
-          description_encrypted = $1,
-          facility_name_encrypted = $2,
-          provider_name_encrypted = $3,
-          diagnosis_encrypted = $4
-        WHERE id = $5
+        SET ${setClause}
+        WHERE id = $${paramCount}
       `;
       
-      await db.query(updateQuery, [
-        encryptedDescription,
-        encryptedFacility,
-        encryptedProvider,
-        encryptedDiagnosis,
-        record.id
-      ]);
+      values.push(record.id);
+      await db.query(updateQuery, values);
       
       encrypted++;
       
@@ -222,7 +235,7 @@ async function migrateMedicalBilling() {
     WHERE table_name = 'medical_billing'
     AND column_name IN ('description', 'provider_name', 'insurance_info',
                         'description_encrypted', 'provider_name_encrypted', 
-                        'insurance_info_encrypted')
+                        'insurance_info_encrypted', 'billing_details_encrypted')
   `;
   
   const schemaResult = await db.query(schemaQuery);
@@ -234,23 +247,24 @@ async function migrateMedicalBilling() {
     return;
   }
   
-  // Check which columns exist to encrypt
-  const checkColumns = await db.query(`
-    SELECT column_name 
-    FROM information_schema.columns 
-    WHERE table_name = 'medical_billing'
-    AND column_name IN ('description', 'provider_name', 'insurance_info')
-  `);
-  const availableColumns = checkColumns.rows.map(r => r.column_name);
+  // Build dynamic query based on which plaintext columns exist
+  const plaintextColumns = columns.filter(c => !c.includes('_encrypted') && !c.includes('_details'));
+  const encryptedColumns = columns.filter(c => c.includes('_encrypted') || c.includes('_details'));
+  
+  if (plaintextColumns.length === 0) {
+    console.log('  ℹ️  No plaintext columns to migrate (schema already uses encrypted-only columns)\n');
+    return;
+  }
+  
+  // Build WHERE clause dynamically
+  const whereConditions = plaintextColumns
+    .map(col => `(${col} IS NOT NULL AND ${col}_encrypted IS NULL)`)
+    .join(' OR ');
   
   const query = `
-    SELECT id, description, provider_name, insurance_info,
-           description_encrypted, provider_name_encrypted, insurance_info_encrypted,
-           billing_details_encrypted
+    SELECT id, ${plaintextColumns.join(', ')}, ${encryptedColumns.join(', ')}
     FROM medical_billing
-    WHERE (description IS NOT NULL AND description_encrypted IS NULL)
-       OR (provider_name IS NOT NULL AND provider_name_encrypted IS NULL)
-       OR (insurance_info IS NOT NULL AND insurance_info_encrypted IS NULL)
+    WHERE ${whereConditions}
   `;
   
   const result = await db.query(query);
@@ -268,28 +282,40 @@ async function migrateMedicalBilling() {
   
   for (const record of records) {
     try {
-      const encryptedDescription = record.description ? 
-        encryption.encrypt(record.description) : null;
-      const encryptedProvider = record.provider_name ? 
-        encryption.encrypt(record.provider_name) : null;
-      const encryptedInsurance = record.insurance_info ? 
-        encryption.encrypt(record.insurance_info) : null;
+      // Dynamically encrypt only columns that exist
+      const updates = {};
+      const values = [];
+      let paramCount = 1;
+      
+      if (plaintextColumns.includes('description') && record.description) {
+        updates['description_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.description));
+      }
+      if (plaintextColumns.includes('provider_name') && record.provider_name) {
+        updates['provider_name_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.provider_name));
+      }
+      if (plaintextColumns.includes('insurance_info') && record.insurance_info) {
+        updates['insurance_info_encrypted'] = `$${paramCount++}`;
+        values.push(encryption.encrypt(record.insurance_info));
+      }
+      
+      if (Object.keys(updates).length === 0) {
+        continue; // Nothing to encrypt for this record
+      }
+      
+      const setClause = Object.entries(updates)
+        .map(([col, param]) => `${col} = ${param}`)
+        .join(', ');
       
       const updateQuery = `
         UPDATE medical_billing
-        SET 
-          description_encrypted = $1,
-          provider_name_encrypted = $2,
-          insurance_info_encrypted = $3
-        WHERE id = $4
+        SET ${setClause}
+        WHERE id = $${paramCount}
       `;
       
-      await db.query(updateQuery, [
-        encryptedDescription,
-        encryptedProvider,
-        encryptedInsurance,
-        record.id
-      ]);
+      values.push(record.id);
+      await db.query(updateQuery, values);
       
       encrypted++;
       
