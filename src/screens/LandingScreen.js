@@ -53,20 +53,23 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Earn coins as you progress</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeSpyglass}>
-            <View style={styles.iconSpyglass}>
-              <View style={styles.spyglassBody} />
-              <View style={styles.spyglassLens} />
+          <View style={styles.iconBadgeVideoCamera}>
+            <View style={styles.iconVideoCamera}>
+              <View style={styles.videoCameraBody} />
+              <View style={styles.videoCameraLens} />
+              <View style={styles.videoCameraLensOuter} />
+              <View style={styles.videoCameraLensInner} />
+              <View style={styles.videoCameraViewfinder} />
+              <View style={styles.videoCameraMic} />
             </View>
           </View>
           <Text style={styles.featureItem}>Expert video tutorials</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeChest}>
-            <View style={styles.iconChest}>
-              <View style={styles.chestBottom} />
-              <View style={styles.chestTop} />
-              <View style={styles.chestLock} />
+          <View style={styles.iconBadgeHospital}>
+            <View style={styles.iconHospital}>
+              <View style={styles.hospitalCrossVertical} />
+              <View style={styles.hospitalCrossHorizontal} />
             </View>
           </View>
           <Text style={styles.featureItem}>Secure medical records storage</Text>
@@ -223,90 +226,111 @@ const styles = StyleSheet.create({
     top: 5,
     left: 5,
   },
-  iconBadgeSpyglass: {
+  iconBadgeVideoCamera: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 2,
-    borderColor: '#7f8c8d',
+    borderColor: '#34495e',
   },
-  iconSpyglass: {
-    width: 20,
-    height: 8,
+  iconVideoCamera: {
+    width: 22,
+    height: 17,
     position: 'relative',
   },
-  spyglassBody: {
-    width: 18,
-    height: 6,
-    backgroundColor: '#34495e',
-    borderRadius: 3,
+  videoCameraBody: {
+    width: 16,
+    height: 13,
+    backgroundColor: '#2c3e50',
+    borderRadius: 2,
     borderWidth: 1,
-    borderColor: '#95a5a6',
+    borderColor: '#34495e',
     position: 'absolute',
     left: 0,
-    top: 1,
+    top: 2,
   },
-  spyglassLens: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#5dade2',
+  videoCameraLens: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#1a1a1a',
+    position: 'absolute',
+    left: 2,
+    top: 4.5,
+  },
+  videoCameraLensOuter: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#7f8c8d',
+    backgroundColor: 'transparent',
     position: 'absolute',
-    right: 0,
-    top: 1,
+    left: 2,
+    top: 4.5,
   },
-  iconBadgeChest: {
+  videoCameraLensInner: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#3498db',
+    position: 'absolute',
+    left: 4.5,
+    top: 7,
+  },
+  videoCameraViewfinder: {
+    width: 4,
+    height: 3,
+    backgroundColor: '#27ae60',
+    borderRadius: 1,
+    position: 'absolute',
+    right: 7,
+    top: 2.5,
+  },
+  videoCameraMic: {
+    width: 2.5,
+    height: 5,
+    backgroundColor: '#95a5a6',
+    borderRadius: 1.25,
+    position: 'absolute',
+    left: 6.5,
+    bottom: 0,
+  },
+  iconBadgeHospital: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6b4423',
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 2,
-    borderColor: '#D4AF37',
+    borderColor: '#e74c3c',
   },
-  iconChest: {
-    width: 18,
+  iconHospital: {
+    width: 16,
     height: 16,
     position: 'relative',
   },
-  chestBottom: {
-    width: 18,
-    height: 10,
-    backgroundColor: '#8B4513',
-    borderWidth: 1,
-    borderColor: '#654321',
+  hospitalCrossVertical: {
+    width: 5,
+    height: 16,
+    backgroundColor: '#e74c3c',
     position: 'absolute',
-    bottom: 0,
-  },
-  chestTop: {
-    width: 18,
-    height: 6,
-    backgroundColor: '#A0522D',
-    borderWidth: 1,
-    borderColor: '#654321',
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-    position: 'absolute',
+    left: 5.5,
     top: 0,
   },
-  chestLock: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FFD700',
-    borderWidth: 1,
-    borderColor: '#B8860B',
+  hospitalCrossHorizontal: {
+    width: 16,
+    height: 5,
+    backgroundColor: '#e74c3c',
     position: 'absolute',
-    bottom: 3,
-    left: 7,
+    left: 0,
+    top: 5.5,
   },
   iconBadgeGem: {
     width: 40,

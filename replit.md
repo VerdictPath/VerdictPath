@@ -10,12 +10,12 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 
 ### October 23, 2025 - Pirate-Themed Icons Throughout App
 - **Landing Screen & Dashboard UI Enhancement**: Replaced emoji icons with sophisticated pirate-themed badges throughout the app
-- **Landing Screen UI Enhancement**: Replaced emoji icons with sophisticated pirate-themed badges
+- **Landing Screen UI Enhancement**: Replaced emoji icons with sophisticated custom badges
   - Custom geometric icons matching the treasure map theme without being cartoonish
   - **Compass** (navy blue with gold accents) - Interactive case roadmap
   - **Gold Coin** (golden with shine effect) - Earn coins as you progress
-  - **Spyglass** (dark steel with blue lens) - Expert video tutorials
-  - **Treasure Chest** (wooden brown with gold lock) - Secure medical records storage
+  - **Professional Video Camera** (black with lens, green viewfinder, microphone) - Expert video tutorials
+  - **Red Hospital Cross** (red cross on white background) - Secure medical records storage
   - **Purple Gem** (diamond-cut design) - Daily login rewards
   - Sophisticated color palette: ocean blues, treasure gold, wood tones, gem purple, flame orange
   - 40px circular badges on landing page, 48px on dashboard menu, 32px in stats
