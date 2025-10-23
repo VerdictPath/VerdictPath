@@ -106,13 +106,24 @@ exports.getDashboard = async (req, res) => {
       };
     });
     
+    // Calculate litigation stage analytics
+    // TODO: When litigation tracking is implemented, calculate from actual stage data
+    // For now, return placeholder values
+    const analytics = {
+      totalPatients: patients.length,
+      preLitigationCount: 0,  // Patients in Pre-Litigation stage
+      litigationCount: 0,      // Patients in Litigation stages
+      trialCount: 0            // Patients in Trial stage
+    };
+    
     res.json({
       providerName: provider.provider_name,
       providerCode: provider.provider_code,
       email: provider.email,
       patients: patients,
       medicalRecords: medicalRecords,
-      evidence: evidence
+      evidence: evidence,
+      analytics: analytics
     });
   } catch (error) {
     console.error('Error fetching provider dashboard:', error);

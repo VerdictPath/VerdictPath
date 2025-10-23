@@ -31,21 +31,15 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
         setProviderData(data);
         setPatients(data.patients || []);
         
-        // Calculate analytics
-        const totalPatients = data.patients?.length || 0;
-        const activeRecords = data.patients?.filter(p => p.hasRecords)?.length || 0;
-        const totalRecords = data.patients?.reduce((sum, p) => sum + (p.recordCount || 0), 0) || 0;
-        const totalBilling = data.patients?.reduce((sum, p) => sum + (p.totalBilled || 0), 0) || 0;
-        
-        setAnalytics({
-          totalPatients,
-          activeRecords,
-          totalRecords,
-          totalBilling,
-          recentUploads: data.patients?.filter(p => p.recentUpload)?.length || 0,
-          pendingReviews: data.patients?.filter(p => p.needsReview)?.length || 0
+        // Use analytics from backend
+        setAnalytics(data.analytics || {
+          totalPatients: data.patients?.length || 0,
+          preLitigationCount: 0,
+          litigationCount: 0,
+          trialCount: 0
         });
         
+        // Set medical records and evidence
         setMedicalRecords(data.medicalRecords || []);
         setEvidence(data.evidence || []);
       } else {
@@ -57,11 +51,9 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
         setPatients([]);
         setAnalytics({
           totalPatients: 0,
-          activeRecords: 0,
-          totalRecords: 0,
-          totalBilling: 0,
-          recentUploads: 0,
-          pendingReviews: 0
+          preLitigationCount: 0,
+          litigationCount: 0,
+          trialCount: 0
         });
       }
     } catch (error) {
@@ -74,11 +66,9 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
       setPatients([]);
       setAnalytics({
         totalPatients: 0,
-        activeRecords: 0,
-        totalRecords: 0,
-        totalBilling: 0,
-        recentUploads: 0,
-        pendingReviews: 0
+        preLitigationCount: 0,
+        litigationCount: 0,
+        trialCount: 0
       });
     } finally {
       setLoading(false);
@@ -152,32 +142,20 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
           
           <View style={styles.statCard}>
             <Text style={styles.statIcon}>📝</Text>
-            <Text style={styles.statValue}>{analytics?.activeRecords || 0}</Text>
-            <Text style={styles.statLabel}>Active Records</Text>
+            <Text style={styles.statValue}>{analytics?.preLitigationCount || 0}</Text>
+            <Text style={styles.statLabel}>Pre-Litigation</Text>
           </View>
           
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📋</Text>
-            <Text style={styles.statValue}>{analytics?.totalRecords || 0}</Text>
-            <Text style={styles.statLabel}>Total Records</Text>
+            <Text style={styles.statIcon}>⚖️</Text>
+            <Text style={styles.statValue}>{analytics?.litigationCount || 0}</Text>
+            <Text style={styles.statLabel}>Litigation</Text>
           </View>
           
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>💰</Text>
-            <Text style={styles.statValue}>${(analytics?.totalBilling || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total Billing</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⬆️</Text>
-            <Text style={styles.statValue}>{analytics?.recentUploads || 0}</Text>
-            <Text style={styles.statLabel}>Recent Uploads</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⏳</Text>
-            <Text style={styles.statValue}>{analytics?.pendingReviews || 0}</Text>
-            <Text style={styles.statLabel}>Pending Reviews</Text>
+            <Text style={styles.statIcon}>🏛️</Text>
+            <Text style={styles.statValue}>{analytics?.trialCount || 0}</Text>
+            <Text style={styles.statLabel}>Trial</Text>
           </View>
         </View>
       </View>
