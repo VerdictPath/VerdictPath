@@ -11,11 +11,14 @@ const getApiBaseUrl = () => {
     return `${protocol}//${hostname}`;
   }
   
-  // Fallback for local development or native mobile
-  return 'http://localhost:5000';
+  // For React Native mobile apps, use the Replit dev domain
+  // This allows mobile devices to connect to the backend
+  const replitDomain = '3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+  return `https://${replitDomain}`;
 };
 
 export const API_BASE_URL = getApiBaseUrl();
+export const API_URL = `${API_BASE_URL}/api`;
 
 export const API_ENDPOINTS = {
   AUTH: {
