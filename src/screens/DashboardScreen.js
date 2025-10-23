@@ -97,12 +97,14 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('videos')}
         >
-          <View style={styles.iconBadgeVideoCamera}>
-            <View style={styles.iconVideoCamera}>
-              <View style={styles.videoCameraBody} />
-              <View style={styles.videoCameraLens} />
-              <View style={styles.videoCameraViewfinder} />
-              <View style={styles.videoCameraHandle} />
+          <View style={styles.iconBadgeVideoPro}>
+            <View style={styles.iconVideoPro}>
+              <View style={styles.videoProBody} />
+              <View style={styles.videoProLens} />
+              <View style={styles.videoProLensOuter} />
+              <View style={styles.videoProLensInner} />
+              <View style={styles.videoProViewfinder} />
+              <View style={styles.videoProMic} />
             </View>
           </View>
           <Text style={styles.menuText}>Video Library</Text>
@@ -125,14 +127,11 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={onConvertCoins}
         >
-          <View style={styles.iconBadgeMoneyBag}>
-            <View style={styles.iconMoneyBag}>
-              <View style={styles.moneyBagBody} />
-              <View style={styles.moneyBagTie} />
-              <View style={styles.moneyBagDollar} />
-              <View style={styles.moneyBagDollarTop} />
-              <View style={styles.moneyBagDollarMiddle} />
-              <View style={styles.moneyBagDollarBottom} />
+          <View style={styles.iconBadgeTreasureChest}>
+            <View style={styles.iconTreasureChest}>
+              <View style={styles.treasureChestBottom} />
+              <View style={styles.treasureChestTop} />
+              <View style={styles.treasureChestLock} />
             </View>
           </View>
           <Text style={styles.menuText}>Convert Coins</Text>
@@ -480,135 +479,126 @@ const styles = StyleSheet.create({
     bottom: 3,
     left: 9,
   },
-  iconBadgeMoneyBag: {
+  iconBadgeTreasureChest: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#2d5016',
+    backgroundColor: '#6b4423',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 2,
-    borderColor: '#3e7c17',
+    borderColor: '#D4AF37',
   },
-  iconMoneyBag: {
-    width: 20,
-    height: 24,
+  iconTreasureChest: {
+    width: 22,
+    height: 19,
     position: 'relative',
   },
-  moneyBagBody: {
-    width: 20,
-    height: 18,
-    backgroundColor: '#4a7c2d',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#3a6023',
+  treasureChestBottom: {
+    width: 22,
+    height: 12,
+    backgroundColor: '#8B4513',
+    borderWidth: 1,
+    borderColor: '#654321',
     position: 'absolute',
     bottom: 0,
   },
-  moneyBagTie: {
-    width: 8,
-    height: 6,
-    backgroundColor: '#8B4513',
-    borderRadius: 1,
+  treasureChestTop: {
+    width: 22,
+    height: 7,
+    backgroundColor: '#A0522D',
+    borderWidth: 1,
+    borderColor: '#654321',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
     position: 'absolute',
     top: 0,
-    left: 6,
   },
-  moneyBagDollar: {
-    width: 1.5,
-    height: 10,
-    backgroundColor: '#FFD700',
-    position: 'absolute',
-    bottom: 5,
-    left: 9.25,
-  },
-  moneyBagDollarTop: {
+  treasureChestLock: {
     width: 5,
-    height: 1.5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#FFD700',
-    borderRadius: 0.5,
+    borderWidth: 1,
+    borderColor: '#B8860B',
     position: 'absolute',
-    bottom: 11,
-    left: 7.5,
+    bottom: 4,
+    left: 8.5,
   },
-  moneyBagDollarMiddle: {
-    width: 4,
-    height: 1.5,
-    backgroundColor: '#FFD700',
-    borderRadius: 0.5,
-    position: 'absolute',
-    bottom: 9,
-    left: 8,
-  },
-  moneyBagDollarBottom: {
-    width: 5,
-    height: 1.5,
-    backgroundColor: '#FFD700',
-    borderRadius: 0.5,
-    position: 'absolute',
-    bottom: 7,
-    left: 7.5,
-  },
-  iconBadgeVideoCamera: {
+  iconBadgeVideoPro: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 2,
     borderColor: '#34495e',
   },
-  iconVideoCamera: {
+  iconVideoPro: {
     width: 26,
-    height: 18,
+    height: 20,
     position: 'relative',
   },
-  videoCameraBody: {
-    width: 18,
-    height: 14,
-    backgroundColor: '#34495e',
-    borderRadius: 2,
+  videoProBody: {
+    width: 20,
+    height: 16,
+    backgroundColor: '#2c3e50',
+    borderRadius: 3,
     borderWidth: 1.5,
-    borderColor: '#7f8c8d',
+    borderColor: '#34495e',
     position: 'absolute',
     left: 0,
     top: 2,
   },
-  videoCameraLens: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  videoProLens: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#1a1a1a',
-    borderWidth: 1.5,
-    borderColor: '#95a5a6',
     position: 'absolute',
     left: 2,
     top: 5,
   },
-  videoCameraViewfinder: {
+  videoProLensOuter: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#7f8c8d',
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    left: 2,
+    top: 5,
+  },
+  videoProLensInner: {
     width: 4,
-    height: 6,
-    backgroundColor: '#5dade2',
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#3498db',
+    position: 'absolute',
+    left: 5,
+    top: 8,
+  },
+  videoProViewfinder: {
+    width: 5,
+    height: 4,
+    backgroundColor: '#27ae60',
     borderRadius: 1,
     position: 'absolute',
-    left: 12,
-    top: 6,
+    right: 8,
+    top: 3,
   },
-  videoCameraHandle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderTopWidth: 7,
-    borderBottomWidth: 7,
-    borderLeftColor: '#34495e',
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
+  videoProMic: {
+    width: 3,
+    height: 6,
+    backgroundColor: '#95a5a6',
+    borderRadius: 1.5,
     position: 'absolute',
-    right: 0,
-    top: 2,
+    left: 8,
+    bottom: 0,
   },
   iconBadgeHospital: {
     width: 48,

@@ -24,9 +24,9 @@ I want to work with an AI agent that is autonomous and proactive. It should make
   - **Stats Icons**: Gold coin (coins), flame (login streak), purple gem (tier)
   - **Menu Icons**: 
     - Compass (roadmap) - Navy blue with gold accents
-    - Video camera (videos) - Dark gray camera with lens and viewfinder
+    - Professional video camera (videos) - Black background, detailed lens with blue reflection, green viewfinder, microphone
     - Hospital cross (medical hub) - Red cross on white background
-    - Money bag (convert) - Green bag with brown tie and gold dollar sign
+    - Treasure chest (convert) - Wooden chest with gold lock matching pirate theme
     - Power symbol (logout) - Red background with universal power icon
   - **Bonus Button**: Treasure chest icon for daily bonus claim
   - Consistent design language across entire app
