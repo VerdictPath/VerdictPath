@@ -114,6 +114,28 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
                 </Text>
               </View>
               <Text style={styles.patientEmail}>{patient.email}</Text>
+              
+              {/* Litigation Progress */}
+              <View style={styles.litigationSection}>
+                <View style={styles.litigationHeader}>
+                  <Text style={styles.litigationLabel}>⚖️ Litigation Stage:</Text>
+                  <Text style={styles.litigationStage}>
+                    {patient.litigationStage || 'Pre-Litigation'}
+                  </Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${patient.litigationProgress || 0}%` }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.progressText}>
+                  {patient.litigationProgress || 0}% Complete
+                </Text>
+              </View>
+
               <View style={styles.patientStats}>
                 <Text style={styles.patientStat}>📋 {patient.recordCount || 0} Records</Text>
                 <Text style={styles.patientStat}>💰 ${patient.totalBilled || 0} Billed</Text>
@@ -677,6 +699,49 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Litigation Progress Styles
+  litigationSection: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  litigationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  litigationLabel: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  litigationStage: {
+    fontSize: 14,
+    color: theme.colors.mahogany,
+    fontWeight: '600',
+  },
+  progressBar: {
+    height: 16,
+    backgroundColor: theme.colors.sand,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    marginBottom: 5,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.warmGold,
+  },
+  progressText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 

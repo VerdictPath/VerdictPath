@@ -4,10 +4,12 @@ import { theme } from '../styles/theme';
 
 const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
   const [clientData, setClientData] = useState(null);
+  const [litigationProgress, setLitigationProgress] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchClientDetails();
+    fetchClientLitigationProgress();
   }, [clientId]);
 
   const fetchClientDetails = async () => {
@@ -29,6 +31,26 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
       console.error('Error fetching client details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClientLitigationProgress = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.API_URL || 'http://localhost:5000'}/api/litigation/client/${clientId}/progress`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLitigationProgress(data);
+      }
+    } catch (error) {
+      console.error('Error fetching client litigation progress:', error);
     }
   };
 
@@ -84,39 +106,115 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
         </View>
       </View>
 
-      {/* Litigation Stage */}
+      {/* Litigation Roadmap */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Litigation Stage</Text>
-        {litigationStage ? (
+        <Text style={styles.sectionTitle}>⚖️ Litigation Roadmap</Text>
+        {litigationProgress ? (
           <View>
-            <View style={styles.litigationStatus}>
-              <Text style={styles.litigationStageText}>
-                {litigationStage.current_stage?.replace(/_/g, ' ').toUpperCase()}
-              </Text>
+            {/* Progress Summary */}
+            <View style={styles.progressSummary}>
+              <View style={styles.progressSummaryRow}>
+                <Text style={styles.progressCurrentStage}>
+                  Current Stage: {litigationProgress.progress?.current_stage_name || 'Pre-Litigation'}
+                </Text>
+                <Text style={styles.progressPercentage}>
+                  {(litigationProgress.progress?.progress_percentage || 0).toFixed(0)}%
+                </Text>
+              </View>
+              <View style={styles.progressBarBackground}>
+                <View 
+                  style={[
+                    styles.progressBarFill, 
+                    { width: `${litigationProgress.progress?.progress_percentage || 0}%` }
+                  ]} 
+                />
+              </View>
+              <View style={styles.progressStatsRow}>
+                <Text style={styles.progressStat}>
+                  📋 {litigationProgress.progress?.total_substages_completed || 0} Tasks Completed
+                </Text>
+                <Text style={styles.progressStat}>
+                  🪙 {litigationProgress.progress?.total_coins_earned || 0} Coins Earned
+                </Text>
+              </View>
             </View>
-            {litigationStage.case_number && (
-              <Text style={styles.detailText}>
-                <Text style={styles.detailLabel}>Case Number:</Text> {litigationStage.case_number}
-              </Text>
-            )}
-            {litigationStage.case_value && (
-              <Text style={styles.detailText}>
-                <Text style={styles.detailLabel}>Case Value:</Text> ${parseFloat(litigationStage.case_value).toFixed(2)}
-              </Text>
-            )}
-            {litigationStage.next_step_description && (
-              <Text style={styles.detailText}>
-                <Text style={styles.detailLabel}>Next Step:</Text> {litigationStage.next_step_description}
-              </Text>
-            )}
-            {litigationStage.notes && (
-              <Text style={styles.detailText}>
-                <Text style={styles.detailLabel}>Notes:</Text> {litigationStage.notes}
-              </Text>
+
+            {/* Full Roadmap - All 9 Stages */}
+            <View style={styles.roadmapContainer}>
+              {litigationProgress.stages?.map((stage, index) => {
+                const isCompleted = stage.completed_at !== null;
+                const isCurrent = litigationProgress.progress?.current_stage_id === stage.stage_id;
+                
+                return (
+                  <View key={stage.stage_id} style={styles.roadmapStageItem}>
+                    <View style={styles.roadmapStageRow}>
+                      <View style={[
+                        styles.roadmapStageBadge,
+                        isCompleted && styles.roadmapStageBadgeCompleted,
+                        isCurrent && styles.roadmapStageBadgeCurrent
+                      ]}>
+                        <Text style={[
+                          styles.roadmapStageBadgeText,
+                          isCompleted && styles.roadmapStageBadgeTextCompleted
+                        ]}>
+                          {isCompleted ? '✓' : stage.stage_id}
+                        </Text>
+                      </View>
+                      <View style={styles.roadmapStageInfo}>
+                        <Text style={[
+                          styles.roadmapStageName,
+                          isCurrent && styles.roadmapStageNameCurrent
+                        ]}>
+                          {stage.stage_name}
+                          {isCurrent && ' ← Current'}
+                        </Text>
+                        <Text style={styles.roadmapStageProgress}>
+                          {stage.substages_completed}/{stage.total_substages} substages completed
+                        </Text>
+                        {stage.completed_at && (
+                          <Text style={styles.roadmapStageDate}>
+                            Completed: {new Date(stage.completed_at).toLocaleDateString()}
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                    {index < litigationProgress.stages.length - 1 && (
+                      <View style={styles.roadmapConnector} />
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Case Details */}
+            {litigationStage && (
+              <View style={styles.caseDetailsContainer}>
+                <Text style={styles.caseDetailsTitle}>Case Details</Text>
+                {litigationStage.case_number && (
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>Case Number:</Text> {litigationStage.case_number}
+                  </Text>
+                )}
+                {litigationStage.case_value && (
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>Case Value:</Text> ${parseFloat(litigationStage.case_value).toFixed(2)}
+                  </Text>
+                )}
+                {litigationStage.next_step_description && (
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>Next Step:</Text> {litigationStage.next_step_description}
+                  </Text>
+                )}
+                {litigationStage.notes && (
+                  <Text style={styles.detailText}>
+                    <Text style={styles.detailLabel}>Notes:</Text> {litigationStage.notes}
+                  </Text>
+                )}
+              </View>
             )}
           </View>
         ) : (
-          <Text style={styles.emptyText}>No litigation stage information available</Text>
+          <Text style={styles.emptyText}>No litigation progress data available</Text>
         )}
       </View>
 
@@ -358,6 +456,135 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     padding: 20,
+  },
+  // Litigation Roadmap Styles
+  progressSummary: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+  },
+  progressSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  progressCurrentStage: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+    flex: 1,
+  },
+  progressPercentage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.navy,
+  },
+  progressBarBackground: {
+    height: 20,
+    backgroundColor: theme.colors.sand,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    marginBottom: 10,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: theme.colors.warmGold,
+  },
+  progressStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 5,
+  },
+  progressStat: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  roadmapContainer: {
+    marginTop: 10,
+  },
+  roadmapStageItem: {
+    marginBottom: 5,
+  },
+  roadmapStageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  roadmapStageBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.sand,
+    borderWidth: 2,
+    borderColor: theme.colors.textSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  roadmapStageBadgeCompleted: {
+    backgroundColor: theme.colors.warmGold,
+    borderColor: theme.colors.mahogany,
+  },
+  roadmapStageBadgeCurrent: {
+    backgroundColor: theme.colors.cream,
+    borderColor: theme.colors.navy,
+    borderWidth: 3,
+  },
+  roadmapStageBadgeText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.textSecondary,
+  },
+  roadmapStageBadgeTextCompleted: {
+    color: theme.colors.white,
+  },
+  roadmapStageInfo: {
+    flex: 1,
+    paddingTop: 2,
+  },
+  roadmapStageName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.navy,
+    marginBottom: 3,
+  },
+  roadmapStageNameCurrent: {
+    color: theme.colors.mahogany,
+    fontWeight: 'bold',
+  },
+  roadmapStageProgress: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  roadmapStageDate: {
+    fontSize: 12,
+    color: theme.colors.warmGreen,
+    marginTop: 2,
+  },
+  roadmapConnector: {
+    width: 2,
+    height: 15,
+    backgroundColor: theme.colors.secondary,
+    marginLeft: 19,
+    marginVertical: 2,
+  },
+  caseDetailsContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 2,
+    borderTopColor: theme.colors.secondary,
+  },
+  caseDetailsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 10,
   },
 });
 

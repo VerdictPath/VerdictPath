@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import { calculateDailyBonus } from '../utils/gamification';
 import { theme } from '../styles/theme';
+import { API_BASE_URL } from '../config/api';
 
 const DashboardScreen = ({ 
   user, 
@@ -13,6 +14,34 @@ const DashboardScreen = ({
   onNavigate, 
   onLogout 
 }) => {
+  const [litigationProgress, setLitigationProgress] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(true);
+
+  useEffect(() => {
+    if (user?.token) {
+      fetchLitigationProgress();
+    }
+  }, [user?.token]);
+
+  const fetchLitigationProgress = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/litigation/progress`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLitigationProgress(data.progress);
+      }
+    } catch (error) {
+      console.error('Error fetching litigation progress:', error);
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
+
   return (
     <ScrollView style={commonStyles.container}>
       <View style={styles.dashboardHeader}>
@@ -76,6 +105,70 @@ const DashboardScreen = ({
             </Text>
           </View>
         </TouchableOpacity>
+      </View>
+
+      {/* Litigation Progress Widget */}
+      <View style={styles.progressWidget}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressTitle}>⚖️ Your Litigation Journey</Text>
+          <TouchableOpacity onPress={() => onNavigate('roadmap')}>
+            <Text style={styles.viewFullMapLink}>View Full Map →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {loadingProgress ? (
+          <ActivityIndicator size="small" color={theme.colors.mahogany} style={styles.loader} />
+        ) : litigationProgress ? (
+          <View style={styles.progressContent}>
+            <View style={styles.currentStageContainer}>
+              <Text style={styles.currentStageLabel}>Current Stage:</Text>
+              <Text style={styles.currentStageName}>{litigationProgress.current_stage_name || 'Pre-Litigation'}</Text>
+              <Text style={styles.stageNumber}>Stage {litigationProgress.current_stage_id || 1} of 9</Text>
+            </View>
+
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBackground}>
+                <View 
+                  style={[
+                    styles.progressBarFill, 
+                    { width: `${litigationProgress.progress_percentage || 0}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.progressPercentage}>
+                {(litigationProgress.progress_percentage || 0).toFixed(0)}% Complete
+              </Text>
+            </View>
+
+            <View style={styles.progressStats}>
+              <View style={styles.progressStatItem}>
+                <Text style={styles.progressStatValue}>{litigationProgress.total_substages_completed || 0}</Text>
+                <Text style={styles.progressStatLabel}>Tasks Done</Text>
+              </View>
+              <View style={styles.progressStatItem}>
+                <Text style={styles.progressStatValue}>{litigationProgress.total_coins_earned || 0}</Text>
+                <Text style={styles.progressStatLabel}>Coins Earned</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.continueJourneyButton}
+              onPress={() => onNavigate('roadmap')}
+            >
+              <Text style={styles.continueJourneyText}>Continue Your Journey</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.progressContent}>
+            <Text style={styles.noProgressText}>Start your litigation journey by visiting the Case Roadmap!</Text>
+            <TouchableOpacity 
+              style={styles.startJourneyButton}
+              onPress={() => onNavigate('roadmap')}
+            >
+              <Text style={styles.startJourneyText}>Start Journey</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={styles.menuContainer}>
@@ -729,6 +822,128 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.darkBrown,
     position: 'absolute',
     bottom: 0,
+  },
+  // Litigation Progress Widget Styles
+  progressWidget: {
+    backgroundColor: theme.colors.surface,
+    padding: 20,
+    marginBottom: 20,
+    marginHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  progressTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  viewFullMapLink: {
+    fontSize: 14,
+    color: theme.colors.mahogany,
+    fontWeight: '600',
+  },
+  loader: {
+    padding: 20,
+  },
+  progressContent: {
+    paddingTop: 10,
+  },
+  currentStageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  currentStageLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 5,
+  },
+  currentStageName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  stageNumber: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  progressBarContainer: {
+    marginBottom: 20,
+  },
+  progressBarBackground: {
+    height: 24,
+    backgroundColor: theme.colors.cream,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: theme.colors.warmGold,
+    borderRadius: 10,
+  },
+  progressPercentage: {
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  progressStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  progressStatItem: {
+    alignItems: 'center',
+  },
+  progressStatValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 5,
+  },
+  progressStatLabel: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  continueJourneyButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  continueJourneyText: {
+    color: theme.colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  noProgressText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 20,
+  },
+  startJourneyButton: {
+    backgroundColor: theme.colors.mahogany,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  startJourneyText: {
+    color: theme.colors.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

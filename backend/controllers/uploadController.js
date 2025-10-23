@@ -4,6 +4,167 @@ const documentAccessService = require('../services/documentAccessService');
 const path = require('path');
 const fs = require('fs');
 
+// Mapping of document types to litigation substage IDs
+const DOCUMENT_TO_SUBSTAGE_MAP = {
+  // Medical uploads
+  'Medical Record': 'pre-9',
+  'Medical Bill': 'pre-8',
+  
+  // Evidence types that map to specific substages
+  'Police Report': 'pre-1',
+  'Accident Report': 'pre-1',
+  'Body Camera': 'pre-2',
+  'Body Cam Footage': 'pre-2',
+  'Dash Camera': 'pre-3',
+  'Dash Cam Footage': 'pre-3',
+  'Photos': 'pre-4',
+  'Pictures': 'pre-4',
+  'Accident Photos': 'pre-4',
+  'Health Insurance': 'pre-5',
+  'Insurance Card': 'pre-5'
+};
+
+// Helper function to auto-complete substages when documents are uploaded
+const autoCompleteSubstage = async (userId, documentType) => {
+  try {
+    const substageId = DOCUMENT_TO_SUBSTAGE_MAP[documentType];
+    
+    if (!substageId) {
+      // No matching substage for this document type
+      return;
+    }
+    
+    // Call the litigation substage completion API internally
+    const result = await pool.query(
+      `INSERT INTO litigation_substage_completions (user_id, substage_id, completed_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (user_id, substage_id) DO NOTHING
+       RETURNING *`,
+      [userId, substageId]
+    );
+    
+    if (result.rows.length > 0) {
+      console.log(`Auto-completed substage ${substageId} for user ${userId} after uploading ${documentType}`);
+      
+      // Award coins for completing this substage
+      const substageCoins = getSubstageCoins(substageId);
+      
+      if (substageCoins > 0) {
+        await pool.query(
+          `UPDATE users 
+           SET total_coins = total_coins + $1 
+           WHERE id = $2`,
+          [substageCoins, userId]
+        );
+      }
+      
+      // Recalculate litigation progress (current stage, percentage, totals)
+      await recalculateLitigationProgress(userId);
+    }
+  } catch (error) {
+    console.error('Error auto-completing substage:', error);
+    // Don't throw - document upload should succeed even if substage completion fails
+  }
+};
+
+// Complete mapping of all 9 litigation stages and their substages
+// Matches the authoritative schema in src/constants/mockData.js
+const LITIGATION_STAGES_MAP = [
+  { id: 1, name: 'Pre-Litigation', substages: ['pre-1', 'pre-2', 'pre-3', 'pre-4', 'pre-5', 'pre-6', 'pre-7', 'pre-8', 'pre-9', 'pre-10', 'pre-11'] },
+  { id: 2, name: 'Complaint Filed', substages: ['cf-1', 'cf-2', 'cf-3', 'cf-4'] },
+  { id: 3, name: 'Discovery Begins', substages: ['disc-1', 'disc-2', 'disc-3', 'disc-4', 'disc-5'] },
+  { id: 4, name: 'Depositions', substages: ['dep-1', 'dep-2', 'dep-3', 'dep-4'] },
+  { id: 5, name: 'Mediation', substages: ['med-1', 'med-2', 'med-3'] },
+  { id: 6, name: 'Trial Prep', substages: ['tp-1', 'tp-2', 'tp-3', 'tp-4', 'tp-5'] },
+  { id: 7, name: 'Trial', substages: ['trial-1', 'trial-2', 'trial-3', 'trial-4', 'trial-5', 'trial-6', 'trial-7', 'trial-8', 'trial-9', 'trial-10', 'trial-11', 'trial-12', 'trial-13', 'trial-14', 'trial-15', 'trial-16'] },
+  { id: 8, name: 'Settlement', substages: ['settle-1', 'settle-2', 'settle-3', 'settle-4', 'settle-5', 'settle-6', 'settle-7', 'settle-8', 'settle-9', 'settle-10'] },
+  { id: 9, name: 'Case Resolved', substages: ['cr-1', 'cr-2'] }
+];
+// Total substages: 11 + 4 + 5 + 4 + 3 + 5 + 16 + 10 + 2 = 60
+
+// Recalculate litigation progress after substage completion
+const recalculateLitigationProgress = async (userId) => {
+  try {
+    // Get all completed substages for this user
+    const completedSubstages = await pool.query(
+      `SELECT substage_id FROM litigation_substage_completions WHERE user_id = $1`,
+      [userId]
+    );
+    
+    const completedIds = completedSubstages.rows.map(row => row.substage_id);
+    const totalCompleted = completedIds.length;
+    
+    // Determine current stage by checking which stages have all substages completed
+    let currentStageId = 1;
+    let currentStageName = 'Pre-Litigation';
+    
+    for (const stage of LITIGATION_STAGES_MAP) {
+      const stageSubstages = stage.substages;
+      const completedInStage = stageSubstages.filter(id => completedIds.includes(id)).length;
+      
+      if (completedInStage === stageSubstages.length && stage.id < 9) {
+        // All substages in this stage are complete, move to next stage
+        const nextStage = LITIGATION_STAGES_MAP[stage.id]; // Next stage (id is 0-indexed in array)
+        if (nextStage) {
+          currentStageId = nextStage.id;
+          currentStageName = nextStage.name;
+        }
+      } else if (completedInStage > 0) {
+        // Some substages in this stage are complete, this is the current stage
+        currentStageId = stage.id;
+        currentStageName = stage.name;
+        break;
+      }
+    }
+    
+    // Special case: if all stages are complete, we're at Case Resolution
+    const allStagesComplete = LITIGATION_STAGES_MAP.slice(0, 8).every(stage => 
+      stage.substages.every(id => completedIds.includes(id))
+    );
+    if (allStagesComplete) {
+      currentStageId = 9;
+      currentStageName = 'Case Resolution';
+    }
+    
+    // Calculate total substages across all 9 stages
+    const totalSubstages = LITIGATION_STAGES_MAP.reduce((sum, stage) => sum + stage.substages.length, 0);
+    
+    // Calculate overall progress percentage
+    const progressPercentage = Math.min(100, Math.round((totalCompleted / totalSubstages) * 100));
+    
+    // Calculate total coins earned from substages
+    const totalCoinsEarned = completedIds.reduce((sum, id) => sum + getSubstageCoins(id), 0);
+    
+    // Update user_litigation_progress with recalculated values
+    await pool.query(
+      `INSERT INTO user_litigation_progress 
+         (user_id, current_stage_id, current_stage_name, progress_percentage, total_coins_earned, total_substages_completed, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
+       ON CONFLICT (user_id) DO UPDATE 
+       SET current_stage_id = $2,
+           current_stage_name = $3,
+           progress_percentage = $4,
+           total_coins_earned = $5,
+           total_substages_completed = $6,
+           updated_at = NOW()`,
+      [userId, currentStageId, currentStageName, progressPercentage, totalCoinsEarned, totalCompleted]
+    );
+    
+    console.log(`Recalculated litigation progress for user ${userId}: Stage ${currentStageId} (${currentStageName}), ${progressPercentage}% complete, ${totalCompleted}/${totalSubstages} substages`);
+  } catch (error) {
+    console.error('Error recalculating litigation progress:', error);
+  }
+};
+
+// Helper to get coin rewards for each substage
+const getSubstageCoins = (substageId) => {
+  const coinMap = {
+    'pre-1': 10, 'pre-2': 10, 'pre-3': 10, 'pre-4': 5, 'pre-5': 5,
+    'pre-6': 5, 'pre-7': 5, 'pre-8': 15, 'pre-9': 35, 'pre-10': 15, 'pre-11': 10
+  };
+  return coinMap[substageId] || 0;
+};
+
 // Upload medical records
 const uploadMedicalRecord = async (req, res) => {
   try {
@@ -68,10 +229,14 @@ const uploadMedicalRecord = async (req, res) => {
       );
     }
 
+    // Auto-complete the 'Medical Records' substage (pre-9, 35 coins)
+    await autoCompleteSubstage(userId, 'Medical Record');
+
     res.json({
       success: true,
       message: 'Medical record uploaded successfully',
-      document: result.rows[0]
+      document: result.rows[0],
+      substageCompleted: true
     });
   } catch (error) {
     console.error('Error uploading medical record:', error);
@@ -154,10 +319,14 @@ const uploadMedicalBill = async (req, res) => {
       );
     }
 
+    // Auto-complete the 'Medical Bills' substage (pre-8, 15 coins)
+    await autoCompleteSubstage(userId, 'Medical Bill');
+
     res.json({
       success: true,
       message: 'Medical bill uploaded successfully',
-      document: result.rows[0]
+      document: result.rows[0],
+      substageCompleted: true
     });
   } catch (error) {
     console.error('Error uploading medical bill:', error);
@@ -235,10 +404,14 @@ const uploadEvidence = async (req, res) => {
       );
     }
 
+    // Auto-complete substage if evidence type matches (Police Report, Photos, etc.)
+    await autoCompleteSubstage(userId, evidenceType || title || 'Document');
+
     res.json({
       success: true,
       message: 'Evidence uploaded successfully',
-      document: result.rows[0]
+      document: result.rows[0],
+      substageCompleted: true
     });
   } catch (error) {
     console.error('Error uploading evidence:', error);

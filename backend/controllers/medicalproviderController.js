@@ -44,10 +44,26 @@ exports.getDashboard = async (req, res) => {
     );
     
     // Decrypt patient names and format data
-    const patients = patientsResult.rows.map(patient => {
+    const patients = await Promise.all(patientsResult.rows.map(async (patient) => {
       const firstName = encryption.decrypt(patient.first_name_encrypted);
       const lastName = encryption.decrypt(patient.last_name_encrypted);
       const recordCount = parseInt(patient.record_count) || 0;
+      
+      // Get litigation progress for this patient
+      const litigationProgressResult = await db.query(
+        `SELECT current_stage_id, current_stage_name, progress_percentage, total_coins_earned, total_substages_completed
+         FROM user_litigation_progress
+         WHERE user_id = $1`,
+        [patient.id]
+      );
+      
+      const litigationProgress = litigationProgressResult.rows[0] || {
+        current_stage_id: 1,
+        current_stage_name: 'Pre-Litigation',
+        progress_percentage: 0,
+        total_coins_earned: 0,
+        total_substages_completed: 0
+      };
       
       return {
         id: patient.id,
@@ -58,12 +74,16 @@ exports.getDashboard = async (req, res) => {
         registeredDate: patient.registered_date,
         hasConsent: patient.consent_status === 'active',
         medicalRecordCount: recordCount,
+        // Litigation progress
+        litigationStage: litigationProgress.current_stage_name,
+        litigationStageId: litigationProgress.current_stage_id,
+        litigationProgress: Math.round(litigationProgress.progress_percentage || 0),
         // Analytics flags expected by dashboard
         hasRecords: recordCount > 0,
         recentUpload: false, // TODO: Calculate based on uploaded_date
         needsReview: false // TODO: Calculate based on review status
       };
-    });
+    }));
     
     // Get all medical records for consented patients
     const medicalRecordsResult = await db.query(
