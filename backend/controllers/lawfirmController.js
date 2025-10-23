@@ -486,7 +486,8 @@ exports.createClientForm = async (req, res) => {
       lawFirmId,
       medicalProviderId: medicalProviderId || null,
       formData,
-      submittedBy: lawFirmId
+      submittedBy: lawFirmId,
+      submittedByType: 'lawfirm'
     });
     
     res.status(201).json({ message: 'Form created successfully', submission });

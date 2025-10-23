@@ -13,6 +13,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import RoadmapScreen from './src/screens/RoadmapScreen';
 import VideosScreen from './src/screens/VideosScreen';
 import MedicalHubScreen from './src/screens/MedicalHubScreen';
+import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
@@ -657,6 +658,10 @@ const CaseCompassApp = () => {
           medicalHubUploads={medicalHubUploads}
           authToken={authToken}
         />
+      )}
+      
+      {currentScreen === 'hipaaForms' && (
+        <HIPAAFormsScreen navigation={{ navigate: handleNavigate }} />
       )}
       
       {currentScreen === 'lawfirm-dashboard' && (

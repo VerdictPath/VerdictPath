@@ -126,6 +126,20 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
+          onPress={() => onNavigate('hipaaForms')}
+        >
+          <View style={styles.iconBadgeScroll}>
+            <View style={styles.iconScroll}>
+              <View style={styles.scrollBody} />
+              <View style={styles.scrollTop} />
+              <View style={styles.scrollBottom} />
+            </View>
+          </View>
+          <Text style={styles.menuText}>HIPAA Forms</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
           onPress={onConvertCoins}
         >
           <View style={styles.iconBadgeTreasureChest}>
@@ -669,6 +683,52 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 8.75,
+  },
+  iconBadgeScroll: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.tan,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  iconScroll: {
+    width: 24,
+    height: 28,
+    position: 'relative',
+  },
+  scrollBody: {
+    width: 24,
+    height: 28,
+    backgroundColor: theme.colors.cream,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: theme.colors.darkBrown,
+  },
+  scrollTop: {
+    width: 24,
+    height: 4,
+    backgroundColor: theme.colors.lightBrown,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.colors.darkBrown,
+    position: 'absolute',
+    top: 0,
+  },
+  scrollBottom: {
+    width: 24,
+    height: 4,
+    backgroundColor: theme.colors.lightBrown,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    borderWidth: 1,
+    borderColor: theme.colors.darkBrown,
+    position: 'absolute',
+    bottom: 0,
   },
 });
 

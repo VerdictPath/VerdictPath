@@ -53,21 +53,45 @@ class FormsService {
   }
 
   async createFormSubmission(data) {
-    const { templateId, patientId, lawFirmId, medicalProviderId, formData, submittedBy } = data;
+    const { templateId, patientId, lawFirmId, medicalProviderId, formData, submittedBy, submittedByType } = data;
+    
+    if (submittedByType === 'lawfirm') {
+      const relationshipCheck = await db.query(
+        'SELECT * FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+        [submittedBy, patientId]
+      );
+      
+      if (relationshipCheck.rows.length === 0) {
+        throw new Error('Access denied: No relationship with this patient');
+      }
+    } else if (submittedByType === 'medical_provider') {
+      const relationshipCheck = await db.query(
+        'SELECT * FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2',
+        [submittedBy, patientId]
+      );
+      
+      if (relationshipCheck.rows.length === 0) {
+        throw new Error('Access denied: No relationship with this patient');
+      }
+    } else if (submittedByType === 'user') {
+      if (submittedBy !== patientId) {
+        throw new Error('Access denied: Patients can only create forms for themselves');
+      }
+    }
     
     const formDataEncrypted = encrypt(JSON.stringify(formData));
     
     const result = await db.query(
       `INSERT INTO form_submissions 
-       (template_id, patient_id, law_firm_id, medical_provider_id, form_data, form_data_encrypted, status, submitted_by, submitted_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP) 
+       (template_id, patient_id, law_firm_id, medical_provider_id, form_data_encrypted, status, submitted_by, submitted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) 
        RETURNING *`,
-      [templateId, patientId, lawFirmId, medicalProviderId, formData, formDataEncrypted, 'pending_signature', submittedBy]
+      [templateId, patientId, lawFirmId, medicalProviderId, formDataEncrypted, 'pending_signature', submittedBy]
     );
     
     await auditLogger.log({
       actorId: submittedBy,
-      actorType: lawFirmId ? 'lawfirm' : 'user',
+      actorType: submittedByType,
       action: 'CREATE_HIPAA_FORM',
       entityType: 'FormSubmission',
       entityId: result.rows[0].id,
@@ -82,16 +106,48 @@ class FormsService {
     return result.rows[0];
   }
 
-  async updateFormSubmission(submissionId, formData, updatedBy) {
+  async updateFormSubmission(submissionId, formData, updatedBy, updatedByType) {
+    const submission = await db.query(
+      'SELECT * FROM form_submissions WHERE id = $1',
+      [submissionId]
+    );
+    
+    if (!submission.rows[0]) {
+      throw new Error('Form submission not found');
+    }
+    
+    const hasAccess = await this.checkFormAccess(submission.rows[0], updatedBy, updatedByType);
+    
+    if (!hasAccess) {
+      throw new Error('Access denied to update this form');
+    }
+    
+    if (submission.rows[0].status === 'signed') {
+      throw new Error('Cannot update a signed form');
+    }
+    
     const formDataEncrypted = encrypt(JSON.stringify(formData));
     
     const result = await db.query(
       `UPDATE form_submissions 
-       SET form_data = $1, form_data_encrypted = $2, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $3 
+       SET form_data_encrypted = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
        RETURNING *`,
-      [formData, formDataEncrypted, submissionId]
+      [formDataEncrypted, submissionId]
     );
+    
+    await auditLogger.log({
+      actorId: updatedBy,
+      actorType: updatedByType,
+      action: 'UPDATE_HIPAA_FORM',
+      entityType: 'FormSubmission',
+      entityId: submissionId,
+      targetUserId: submission.rows[0].patient_id,
+      status: 'SUCCESS',
+      metadata: {
+        formType: 'hipaa_form'
+      }
+    });
     
     return result.rows[0] || null;
   }
