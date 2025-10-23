@@ -9,6 +9,7 @@ const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
 const coinsRoutes = require('./routes/coins');
 const uploadRoutes = require('./routes/uploads');
+const formsRoutes = require('./routes/forms');
 
 const app = express();
 const PORT = 5000; // Replit only exposes port 5000
@@ -34,6 +35,7 @@ app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/coins', coinsRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/forms', formsRoutes);
 
 // Serve mobile app at root
 app.get('/', (req, res) => {
@@ -115,6 +117,19 @@ app.get('/portal/client/:clientId', async (req, res) => {
     
     const data = await response.json();
     res.render('client-details', data);
+  } catch (error) {
+    res.redirect('/portal/dashboard');
+  }
+});
+
+app.get('/portal/forms', async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return res.redirect('/portal');
+    }
+    
+    res.render('forms', { title: 'HIPAA Forms - Law Firm Portal' });
   } catch (error) {
     res.redirect('/portal/dashboard');
   }

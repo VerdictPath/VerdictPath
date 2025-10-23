@@ -74,4 +74,26 @@ router.get('/notifications/unread-count',
   lawfirmController.getUnreadNotificationCount
 );
 
+// HIPAA Forms Management
+router.get('/forms',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getAllLawFirmForms
+);
+
+router.get('/client/:clientId/forms',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getClientForms
+);
+
+router.post('/client/:clientId/forms',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.createClientForm
+);
+
 module.exports = router;

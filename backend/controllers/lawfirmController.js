@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 const encryption = require('../services/encryption');
+const formsService = require('../services/formsService');
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -438,5 +439,68 @@ exports.getUnreadNotificationCount = async (req, res) => {
     res.json({ unreadCount: count });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching notification count', error: error.message });
+  }
+};
+
+exports.getClientForms = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { clientId } = req.params;
+    
+    const clientCheckResult = await db.query(
+      'SELECT * FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [lawFirmId, clientId]
+    );
+    
+    if (clientCheckResult.rows.length === 0) {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+    
+    const forms = await formsService.getLawFirmForms(lawFirmId);
+    const clientForms = forms.filter(form => form.patient_id === parseInt(clientId));
+    
+    res.json({ forms: clientForms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching client forms', error: error.message });
+  }
+};
+
+exports.createClientForm = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { clientId } = req.params;
+    const { templateId, formData, medicalProviderId } = req.body;
+    
+    const clientCheckResult = await db.query(
+      'SELECT * FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [lawFirmId, clientId]
+    );
+    
+    if (clientCheckResult.rows.length === 0) {
+      return res.status(403).json({ message: 'Access denied.' });
+    }
+    
+    const submission = await formsService.createFormSubmission({
+      templateId,
+      patientId: clientId,
+      lawFirmId,
+      medicalProviderId: medicalProviderId || null,
+      formData,
+      submittedBy: lawFirmId
+    });
+    
+    res.status(201).json({ message: 'Form created successfully', submission });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating form', error: error.message });
+  }
+};
+
+exports.getAllLawFirmForms = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const forms = await formsService.getLawFirmForms(lawFirmId);
+    res.json({ forms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching forms', error: error.message });
   }
 };

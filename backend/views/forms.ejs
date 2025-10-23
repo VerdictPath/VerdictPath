@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HIPAA Forms - Law Firm Portal</title>
+  <link rel="stylesheet" href="/css/portal.css">
+  <style>
+    .form-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .form-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending_signature {
+      background: #FFF4E6;
+      color: var(--mahogany);
+    }
+    .status-signed {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .status-draft {
+      background: #E3F2FD;
+      color: #1976D2;
+    }
+    .create-form-btn {
+      background: var(--mahogany);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .create-form-btn:hover {
+      background: #8B0000;
+    }
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+    .form-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .form-meta {
+      color: #666;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .view-form-btn {
+      background: var(--navy);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .view-form-btn:hover {
+      background: #1a3a5c;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      margin: 50px auto;
+      padding: 30px;
+      max-width: 600px;
+      border-radius: 8px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .close-modal {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #999;
+    }
+    .close-modal:hover {
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .submit-btn {
+      background: var(--mahogany);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .submit-btn:hover {
+      background: #8B0000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/portal/dashboard" class="back-link">← Back to Dashboard</a>
+    
+    <div class="portal-header">
+      <h1>HIPAA Forms</h1>
+    </div>
+    
+    <button class="create-form-btn" onclick="openCreateFormModal()">+ Create New Form</button>
+    
+    <div id="forms-container">
+      <p style="color: #666;">Loading forms...</p>
+    </div>
+  </div>
+
+  <!-- Create Form Modal -->
+  <div id="createFormModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeCreateFormModal()">&times;</span>
+      <h2>Create HIPAA Form</h2>
+      
+      <div class="form-group">
+        <label>Client</label>
+        <select id="clientSelect">
+          <option value="">Select a client...</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Form Template</label>
+        <select id="templateSelect" onchange="loadTemplate()">
+          <option value="">Select a form template...</option>
+        </select>
+      </div>
+      
+      <div id="formFieldsContainer"></div>
+      
+      <button class="submit-btn" onclick="submitForm()">Create Form</button>
+    </div>
+  </div>
+
+  <script>
+    const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
+    let clients = [];
+    let templates = [];
+    let selectedTemplate = null;
+
+    async function loadData() {
+      try {
+        const [formsResponse, clientsResponse, templatesResponse] = await Promise.all([
+          fetch('/api/lawfirm/forms', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('/api/lawfirm/dashboard', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('/api/forms/templates', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        const formsData = await formsResponse.json();
+        const clientsData = await clientsResponse.json();
+        const templatesData = await templatesResponse.json();
+        
+        clients = clientsData.clients;
+        templates = templatesData.templates;
+        
+        renderForms(formsData.forms);
+        populateClientSelect();
+        populateTemplateSelect();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('forms-container').innerHTML = '<p style="color: red;">Error loading forms</p>';
+      }
+    }
+
+    function renderForms(forms) {
+      const container = document.getElementById('forms-container');
+      
+      if (forms.length === 0) {
+        container.innerHTML = '<p class="empty-state">No forms created yet. Click "Create New Form" to get started.</p>';
+        return;
+      }
+
+      let html = '';
+      forms.forEach(form => {
+        const statusClass = 'status-' + form.status.replace(/_/g, '-');
+        const statusLabel = form.status.replace(/_/g, ' ').toUpperCase();
+        
+        html += `
+          <div class="form-card">
+            <div class="form-header">
+              <div>
+                <div class="form-title">${form.template_name}</div>
+                <div class="form-meta">
+                  Patient: ${form.first_name} ${form.last_name} (${form.email})<br>
+                  Created: ${new Date(form.created_at).toLocaleDateString()}<br>
+                  ${form.signed_at ? `Signed: ${new Date(form.signed_at).toLocaleDateString()}<br>` : ''}
+                  Signatures: ${form.signature_count || 0}
+                </div>
+              </div>
+              <div>
+                <span class="form-status ${statusClass}">${statusLabel}</span><br>
+                <a href="/api/forms/submissions/${form.id}" class="view-form-btn" style="margin-top: 10px;">View Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function populateClientSelect() {
+      const select = document.getElementById('clientSelect');
+      clients.forEach(client => {
+        const option = document.createElement('option');
+        option.value = client.id;
+        option.textContent = `${client.displayName} (${client.email})`;
+        select.appendChild(option);
+      });
+    }
+
+    function populateTemplateSelect() {
+      const select = document.getElementById('templateSelect');
+      templates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.id;
+        option.textContent = template.template_name;
+        select.appendChild(option);
+      });
+    }
+
+    function openCreateFormModal() {
+      document.getElementById('createFormModal').style.display = 'block';
+    }
+
+    function closeCreateFormModal() {
+      document.getElementById('createFormModal').style.display = 'none';
+      document.getElementById('formFieldsContainer').innerHTML = '';
+      document.getElementById('clientSelect').value = '';
+      document.getElementById('templateSelect').value = '';
+      selectedTemplate = null;
+    }
+
+    async function loadTemplate() {
+      const templateId = document.getElementById('templateSelect').value;
+      if (!templateId) {
+        document.getElementById('formFieldsContainer').innerHTML = '';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/forms/templates/${templateId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        selectedTemplate = data.template;
+        
+        renderFormFields(selectedTemplate.form_fields);
+      } catch (error) {
+        console.error('Error loading template:', error);
+      }
+    }
+
+    function renderFormFields(formFields) {
+      const container = document.getElementById('formFieldsContainer');
+      let html = '<h3>Form Fields</h3>';
+      
+      formFields.sections.forEach((section, sectionIndex) => {
+        html += `<h4>${section.title}</h4>`;
+        
+        section.fields.forEach((field, fieldIndex) => {
+          const fieldId = `field_${sectionIndex}_${fieldIndex}`;
+          html += `<div class="form-group">`;
+          html += `<label for="${fieldId}">${field.label}${field.required ? ' *' : ''}</label>`;
+          
+          if (field.type === 'select') {
+            html += `<select id="${fieldId}" data-field-name="${field.name}">`;
+            html += `<option value="">Select...</option>`;
+            field.options.forEach(option => {
+              html += `<option value="${option}">${option}</option>`;
+            });
+            html += `</select>`;
+          } else if (field.type === 'textarea') {
+            html += `<textarea id="${fieldId}" data-field-name="${field.name}" rows="4"></textarea>`;
+          } else if (field.type === 'checkbox') {
+            html += `<input type="checkbox" id="${fieldId}" data-field-name="${field.name}"> ${field.label}`;
+          } else {
+            html += `<input type="${field.type}" id="${fieldId}" data-field-name="${field.name}" ${field.maxlength ? 'maxlength="' + field.maxlength + '"' : ''} ${field.placeholder ? 'placeholder="' + field.placeholder + '"' : ''}>`;
+          }
+          
+          html += `</div>`;
+        });
+      });
+      
+      container.innerHTML = html;
+    }
+
+    async function submitForm() {
+      const clientId = document.getElementById('clientSelect').value;
+      const templateId = document.getElementById('templateSelect').value;
+      
+      if (!clientId || !templateId) {
+        alert('Please select a client and form template');
+        return;
+      }
+
+      const formData = {};
+      const inputs = document.querySelectorAll('[data-field-name]');
+      inputs.forEach(input => {
+        const fieldName = input.getAttribute('data-field-name');
+        if (input.type === 'checkbox') {
+          formData[fieldName] = input.checked;
+        } else {
+          formData[fieldName] = input.value;
+        }
+      });
+
+      try {
+        const response = await fetch(`/api/lawfirm/client/${clientId}/forms`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            templateId,
+            formData
+          })
+        });
+
+        if (response.ok) {
+          alert('Form created successfully! The client will be notified to sign.');
+          closeCreateFormModal();
+          loadData();
+        } else {
+          const error = await response.json();
+          alert('Error creating form: ' + error.message);
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        alert('Error creating form. Please try again.');
+      }
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('createFormModal');
+      if (event.target === modal) {
+        closeCreateFormModal();
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
