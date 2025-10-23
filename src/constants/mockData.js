@@ -26,7 +26,7 @@ export const LITIGATION_STAGES = [
   {
     id: 2,
     name: 'Complaint Filed',
-    coins: 25,
+    coins: 32,
     completed: false,
     description: 'Your lawsuit is officially filed with the court',
     expanded: false,
@@ -34,7 +34,8 @@ export const LITIGATION_STAGES = [
     subStages: [
       { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document' },
       { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit complaint to the court' },
-      { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Deliver complaint to the defendant' }
+      { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Deliver complaint to the defendant' },
+      { id: 'cf-4', name: 'Answer Filed (within 30 days)', coins: 7, completed: false, icon: '📄', description: 'Defendant files their answer to the complaint' }
     ],
     videos: [
       { id: 'v3', title: 'Filing Your Complaint', price: 4.99, duration: '18 min', tier: 'premium' }
