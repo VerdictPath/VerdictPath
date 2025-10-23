@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 
 const COINS_PER_CREDIT = 10;
-const MAX_MONTHLY_CREDITS = 100;
+const MAX_LIFETIME_CREDITS = 5; // $5 lifetime cap per user account
 
 const updateCoins = async (req, res) => {
   try {
@@ -140,8 +140,38 @@ const convertCoinsToCredits = async (req, res) => {
         });
       }
 
+      // Check lifetime conversion limit ($5 cap)
+      const lifetimeResult = await client.query(
+        'SELECT COALESCE(SUM(credit_amount), 0) as lifetime_credits FROM coin_conversions WHERE user_id = $1',
+        [userId]
+      );
+      
+      const lifetimeCredits = parseFloat(lifetimeResult.rows[0].lifetime_credits) || 0;
       const creditsToAdd = Math.floor(coinsToConvert / COINS_PER_CREDIT);
-      const cappedCredits = Math.min(creditsToAdd, MAX_MONTHLY_CREDITS);
+      const remainingLifetimeCredits = MAX_LIFETIME_CREDITS - lifetimeCredits;
+      
+      if (lifetimeCredits >= MAX_LIFETIME_CREDITS) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          message: `You've reached the lifetime conversion cap of $${MAX_LIFETIME_CREDITS}`,
+          lifetimeCredits: lifetimeCredits,
+          maxLifetimeCredits: MAX_LIFETIME_CREDITS,
+          remainingCredits: 0
+        });
+      }
+
+      if (creditsToAdd > remainingLifetimeCredits) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          message: `This conversion would exceed your lifetime cap of $${MAX_LIFETIME_CREDITS}. You can only convert $${remainingLifetimeCredits.toFixed(2)} more.`,
+          lifetimeCredits: lifetimeCredits,
+          maxLifetimeCredits: MAX_LIFETIME_CREDITS,
+          remainingCredits: remainingLifetimeCredits,
+          requestedCredits: creditsToAdd
+        });
+      }
+
+      const cappedCredits = Math.min(creditsToAdd, remainingLifetimeCredits);
       const actualCoinsUsed = cappedCredits * COINS_PER_CREDIT;
       const creditAmount = cappedCredits;
 
@@ -184,13 +214,19 @@ const convertCoinsToCredits = async (req, res) => {
 
       await client.query('COMMIT');
 
+      const newLifetimeCredits = lifetimeCredits + creditAmount;
+      const newRemainingCredits = MAX_LIFETIME_CREDITS - newLifetimeCredits;
+
       res.json({ 
         success: true,
         coinsConverted: actualCoinsUsed,
         creditAmount: creditAmount,
         totalCoins: totalCoins,
         coinsSpent: newCoinsSpent,
-        availableCoins: totalCoins - newCoinsSpent
+        availableCoins: totalCoins - newCoinsSpent,
+        lifetimeCredits: newLifetimeCredits,
+        maxLifetimeCredits: MAX_LIFETIME_CREDITS,
+        remainingLifetimeCredits: newRemainingCredits
       });
 
     } catch (error) {
@@ -210,23 +246,35 @@ const getBalance = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(
+    const userResult = await pool.query(
       'SELECT total_coins, coins_spent FROM users WHERE id = $1',
       [userId]
     );
 
-    if (result.rows.length === 0) {
+    if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const totalCoins = result.rows[0].total_coins || 0;
-    const coinsSpent = result.rows[0].coins_spent || 0;
+    const totalCoins = userResult.rows[0].total_coins || 0;
+    const coinsSpent = userResult.rows[0].coins_spent || 0;
     const availableCoins = totalCoins - coinsSpent;
+
+    // Get lifetime conversions
+    const lifetimeResult = await pool.query(
+      'SELECT COALESCE(SUM(credit_amount), 0) as lifetime_credits FROM coin_conversions WHERE user_id = $1',
+      [userId]
+    );
+    
+    const lifetimeCredits = parseFloat(lifetimeResult.rows[0].lifetime_credits) || 0;
+    const remainingLifetimeCredits = Math.max(0, MAX_LIFETIME_CREDITS - lifetimeCredits);
 
     res.json({
       totalCoins,
       coinsSpent,
-      availableCoins
+      availableCoins,
+      lifetimeCredits,
+      maxLifetimeCredits: MAX_LIFETIME_CREDITS,
+      remainingLifetimeCredits
     });
 
   } catch (error) {

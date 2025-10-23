@@ -244,13 +244,13 @@ const CaseCompassApp = () => {
     const coinsNeeded = calculateCoinsNeeded(actualCredits);
     
     if (actualCredits === 0) {
-      Alert.alert('Not Enough Coins', 'You need at least 500 coins to convert to credits.');
+      Alert.alert('Not Enough Coins', 'You need at least 10 coins to convert to credits.\n\n(10 coins = $1)');
       return;
     }
     
     Alert.alert(
-      'Convert Coins',
-      `Convert ${coinsNeeded} coins to $${actualCredits} in credits?`,
+      'Convert Coins to Credits',
+      `Convert ${coinsNeeded} coins to $${actualCredits}?\n\n⚠️ Lifetime cap: $5 per account`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Convert', onPress: async () => {
@@ -267,10 +267,26 @@ const CaseCompassApp = () => {
               });
               
               setCoins(response.totalCoins - response.coinsSpent);
-              Alert.alert('Success!', `$${response.creditAmount} added to your account credits!\n\nCoins converted: ${response.coinsConverted}`);
+              
+              const remainingMsg = response.remainingLifetimeCredits > 0 
+                ? `\n\nRemaining lifetime conversions: $${response.remainingLifetimeCredits.toFixed(2)}` 
+                : '\n\n🎯 You\'ve reached your $5 lifetime cap!';
+              
+              Alert.alert(
+                '✅ Success!', 
+                `$${response.creditAmount} added to your account!\n\nCoins converted: ${response.coinsConverted}${remainingMsg}`
+              );
             } catch (error) {
               console.error('Failed to convert coins:', error);
-              Alert.alert('Error', error.message || 'Failed to convert coins. Please try again.');
+              
+              // Check if it's a lifetime cap error
+              if (error.message && error.message.includes('lifetime cap')) {
+                Alert.alert('💰 Lifetime Cap Reached', error.message);
+              } else if (error.message && error.message.includes('exceed your lifetime cap')) {
+                Alert.alert('⚠️ Conversion Limit', error.message);
+              } else {
+                Alert.alert('Error', error.message || 'Failed to convert coins. Please try again.');
+              }
             }
           } else {
             setCoins(coins - coinsNeeded);

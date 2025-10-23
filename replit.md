@@ -41,10 +41,12 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider user types with Free, Basic, and Premium subscription tiers.
 - **Avatar Selection**: Pirate-themed avatars (Captain, Navigator, Gunner, First Mate).
 - **Gamification**: Coin system for stage completion and daily streaks with fraud prevention:
+  - Conversion rate: 10 coins = $1 credit
+  - **Lifetime cap: $5 maximum per user account** (50 coins total)
   - Tracks total_coins and coins_spent in database
   - Prevents refunding coins already converted to credits
   - Full audit trail via coin_conversions table
-  - Backend API security prevents infinite credit exploit
+  - Backend API enforces lifetime cap and prevents infinite credit exploit
 - **Interactive Pirate Map**: 9-stage litigation journey with progress tracking and modal-based stage details. Pre-Litigation stage includes 11 substages (most recent: Demand Sent, Demand Rejected). "Answer Filed" substage added to "Complaint Filed" stage.
 - **Video Library**: Integrated educational tutorials covering all litigation stages, with a total of 13 videos over 5 hours of content, ranging from free to premium.
 - **Medical Hub**: HIPAA-compliant document storage and upload system for medical bills and records.

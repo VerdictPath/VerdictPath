@@ -1,4 +1,4 @@
-import { DAILY_BONUSES, COINS_PER_CREDIT, MAX_MONTHLY_CREDITS } from '../constants/mockData';
+import { DAILY_BONUSES, COINS_PER_CREDIT, MAX_LIFETIME_CREDITS } from '../constants/mockData';
 
 export const calculateDailyBonus = (streak) => {
   return DAILY_BONUSES[Math.min(streak - 1, DAILY_BONUSES.length - 1)];
@@ -6,7 +6,7 @@ export const calculateDailyBonus = (streak) => {
 
 export const calculateCreditsFromCoins = (coins) => {
   const credits = Math.floor(coins / COINS_PER_CREDIT);
-  return Math.min(credits, MAX_MONTHLY_CREDITS);
+  return Math.min(credits, MAX_LIFETIME_CREDITS);
 };
 
 export const calculateCoinsNeeded = (credits) => {
