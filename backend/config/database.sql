@@ -1,27 +1,8 @@
 -- VerdictPath Law Firm Portal Database Schema
 -- PostgreSQL Implementation
+-- IMPORTANT: Tables are ordered to satisfy foreign key dependencies
 
--- Users table (both clients and regular users)
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  first_name VARCHAR(255) NOT NULL,
-  last_name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  user_type VARCHAR(50) NOT NULL CHECK (user_type IN ('individual', 'client')),
-  law_firm_code VARCHAR(50),
-  connected_law_firm_id INTEGER REFERENCES law_firms(id) ON DELETE SET NULL,
-  avatar_type VARCHAR(50),
-  subscription_tier VARCHAR(50) DEFAULT 'free',
-  subscription_price DECIMAL(10, 2) DEFAULT 0,
-  total_coins INTEGER DEFAULT 0,
-  login_streak INTEGER DEFAULT 0,
-  last_login_date DATE,
-  current_tier VARCHAR(50) DEFAULT 'bronze',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Law Firms table
+-- Step 1: Law Firms table (no dependencies)
 CREATE TABLE IF NOT EXISTS law_firms (
   id SERIAL PRIMARY KEY,
   firm_name VARCHAR(255) NOT NULL,
@@ -37,11 +18,31 @@ CREATE TABLE IF NOT EXISTS law_firms (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Medical Records table
+-- Step 2: Users table (depends on law_firms)
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  user_type VARCHAR(50) NOT NULL CHECK (user_type IN ('individual', 'client', 'lawfirm')),
+  law_firm_code VARCHAR(50),
+  connected_law_firm_id INTEGER REFERENCES law_firms(id) ON DELETE SET NULL,
+  avatar_type VARCHAR(50),
+  subscription_tier VARCHAR(50) DEFAULT 'free',
+  subscription_price DECIMAL(10, 2) DEFAULT 0,
+  total_coins INTEGER DEFAULT 0,
+  login_streak INTEGER DEFAULT 0,
+  last_login_date DATE,
+  current_tier VARCHAR(50) DEFAULT 'bronze',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Step 3: Medical Records table (depends on users)
 CREATE TABLE IF NOT EXISTS medical_records (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  record_type VARCHAR(100) NOT NULL CHECK (record_type IN ('visit_summary', 'lab_results', 'imaging', 'prescription', 'diagnosis', 'treatment_plan', 'other')),
+  record_type VARCHAR(100) NOT NULL,
   facility_name VARCHAR(255),
   provider_name VARCHAR(255),
   date_of_service DATE,
@@ -56,11 +57,11 @@ CREATE TABLE IF NOT EXISTS medical_records (
 
 CREATE INDEX idx_medical_records_user_id ON medical_records(user_id);
 
--- Medical Billing table
+-- Step 4: Medical Billing table (depends on users)
 CREATE TABLE IF NOT EXISTS medical_billing (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  billing_type VARCHAR(100) NOT NULL CHECK (billing_type IN ('invoice', 'statement', 'insurance_eob', 'payment_receipt', 'itemized_bill')),
+  billing_type VARCHAR(100) NOT NULL,
   facility_name VARCHAR(255),
   bill_number VARCHAR(100),
   date_of_service DATE,
@@ -70,8 +71,8 @@ CREATE TABLE IF NOT EXISTS medical_billing (
   amount_paid DECIMAL(10, 2) DEFAULT 0,
   amount_due DECIMAL(10, 2) NOT NULL,
   insurance_claim_number VARCHAR(100),
-  procedure_codes TEXT[], -- Array of CPT codes
-  diagnosis_codes TEXT[], -- Array of ICD-10 codes
+  procedure_codes TEXT[],
+  diagnosis_codes TEXT[],
   description TEXT,
   document_url TEXT,
   file_name VARCHAR(255),
@@ -83,16 +84,16 @@ CREATE TABLE IF NOT EXISTS medical_billing (
 
 CREATE INDEX idx_medical_billing_user_id ON medical_billing(user_id);
 
--- Evidence Documents table
+-- Step 5: Evidence Documents table (depends on users)
 CREATE TABLE IF NOT EXISTS evidence (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  evidence_type VARCHAR(100) NOT NULL CHECK (evidence_type IN ('photo', 'video', 'audio', 'document', 'correspondence', 'witness_statement', 'police_report', 'insurance_document', 'other')),
+  evidence_type VARCHAR(100) NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT,
   date_of_incident DATE,
   location VARCHAR(255),
-  tags TEXT[], -- Array of tags
+  tags TEXT[],
   document_url TEXT,
   file_name VARCHAR(255),
   file_size BIGINT,
@@ -103,22 +104,18 @@ CREATE TABLE IF NOT EXISTS evidence (
 
 CREATE INDEX idx_evidence_user_id ON evidence(user_id);
 
--- Litigation Stages table
+-- Step 6: Litigation Stages table (depends on users and law_firms)
 CREATE TABLE IF NOT EXISTS litigation_stages (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   law_firm_id INTEGER NOT NULL REFERENCES law_firms(id) ON DELETE CASCADE,
   case_number VARCHAR(100),
-  current_stage VARCHAR(100) NOT NULL CHECK (current_stage IN (
-    'initial_consultation', 'client_intake', 'investigation', 'demand_letter',
-    'negotiation', 'pre_litigation', 'complaint_filed', 'discovery',
-    'mediation', 'trial_preparation', 'trial', 'settlement', 'appeal', 'closed'
-  )) DEFAULT 'initial_consultation',
+  current_stage VARCHAR(100) NOT NULL DEFAULT 'initial_consultation',
   next_step_due_date DATE,
   next_step_description TEXT,
   case_value DECIMAL(12, 2),
   settlement_amount DECIMAL(12, 2),
-  status VARCHAR(50) CHECK (status IN ('active', 'pending', 'settled', 'closed')) DEFAULT 'active',
+  status VARCHAR(50) DEFAULT 'active',
   notes TEXT,
   last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -126,7 +123,7 @@ CREATE TABLE IF NOT EXISTS litigation_stages (
 CREATE INDEX idx_litigation_stages_user_id ON litigation_stages(user_id);
 CREATE INDEX idx_litigation_stages_law_firm_id ON litigation_stages(law_firm_id);
 
--- Litigation Stage History table (separate table for history tracking)
+-- Step 7: Litigation Stage History table (depends on litigation_stages)
 CREATE TABLE IF NOT EXISTS litigation_stage_history (
   id SERIAL PRIMARY KEY,
   litigation_stage_id INTEGER NOT NULL REFERENCES litigation_stages(id) ON DELETE CASCADE,
@@ -138,7 +135,7 @@ CREATE TABLE IF NOT EXISTS litigation_stage_history (
 
 CREATE INDEX idx_litigation_stage_history_litigation_stage_id ON litigation_stage_history(litigation_stage_id);
 
--- Law Firm - Client relationship table (many-to-many)
+-- Step 8: Law Firm - Client relationship table (depends on law_firms and users)
 CREATE TABLE IF NOT EXISTS law_firm_clients (
   id SERIAL PRIMARY KEY,
   law_firm_id INTEGER NOT NULL REFERENCES law_firms(id) ON DELETE CASCADE,

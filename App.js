@@ -3,6 +3,7 @@ import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import { commonStyles } from './src/styles/commonStyles';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
+import { apiRequest, API_ENDPOINTS } from './src/config/api';
 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -72,30 +73,53 @@ const CaseCompassApp = () => {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
     
-    const userData = {
-      id: 1,
-      email: email,
-      type: userType,
-      subscription: subscriptionTier,
-      firmSize: firmSize,
-      coins: 150,
-      streak: 3
-    };
-    
-    setUser(userData);
-    setCoins(150);
-    setLoginStreak(3);
-    setIsLoggedIn(true);
-    
     if (userType === USER_TYPES.LAW_FIRM) {
-      setCurrentScreen('lawfirm-dashboard');
+      try {
+        const response = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
+          method: 'POST',
+          body: JSON.stringify({ email, password, userType: 'lawfirm' })
+        });
+        
+        const userData = {
+          id: response.user.id,
+          email: response.user.email,
+          type: USER_TYPES.LAW_FIRM,
+          firmName: response.user.firmName,
+          firmCode: response.user.firmCode,
+          token: response.token,
+          coins: 150,
+          streak: 3
+        };
+        
+        setUser(userData);
+        setCoins(150);
+        setLoginStreak(3);
+        setIsLoggedIn(true);
+        setCurrentScreen('lawfirm-dashboard');
+      } catch (error) {
+        Alert.alert('Error', 'Login failed. Please check your credentials.');
+      }
     } else {
+      const userData = {
+        id: 1,
+        email: email,
+        type: userType,
+        subscription: subscriptionTier,
+        firmSize: firmSize,
+        coins: 150,
+        streak: 3
+      };
+      
+      setUser(userData);
+      setCoins(150);
+      setLoginStreak(3);
+      setIsLoggedIn(true);
       setCurrentScreen('dashboard');
     }
   };
