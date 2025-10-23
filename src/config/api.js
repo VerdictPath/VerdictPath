@@ -1,6 +1,26 @@
 // API Configuration
-// In production, this would use environment variables
-export const API_BASE_URL = 'http://localhost:3000';
+// In Replit, we need to use the domain that the backend is accessible from
+// The backend runs on port 3000, frontend on port 5000
+const getApiBaseUrl = () => {
+  // Check if we're in a browser environment (React Native Web)
+  if (typeof window !== 'undefined' && window.location) {
+    // Use the current hostname but point to backend port 3000
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // In Replit, both frontend and backend are accessible via the same domain
+    // Just use relative paths or the same origin with port 3000
+    if (hostname.includes('replit.dev')) {
+      // Use the same domain, backend is accessible at root
+      return `${protocol}//${hostname}`;
+    }
+  }
+  
+  // Fallback for local development or native mobile
+  return 'http://localhost:3000';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export const API_ENDPOINTS = {
   AUTH: {
