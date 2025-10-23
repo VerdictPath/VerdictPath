@@ -1,8 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { commonStyles } from '../styles/commonStyles';
+import { API_URL } from '../config/api';
 
-const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads }) => {
+const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
+  const [uploading, setUploading] = useState(false);
+
   const handleUploadMedicalBills = () => {
     Alert.alert(
       '📄 Upload Medical Bills',
@@ -39,17 +44,102 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     );
   };
 
+  const pickImage = async (documentType) => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadFile(result.assets[0], documentType);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const pickDocument = async (documentType) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadFile(result.assets[0], documentType);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to select file. Please try again.');
+    }
+  };
+
+  const uploadFile = async (file, documentType) => {
+    if (!authToken) {
+      Alert.alert('Error', 'You must be logged in to upload files.');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      
+      const fileToUpload = {
+        uri: Platform.OS === 'web' ? file.uri : file.uri,
+        type: file.mimeType || 'application/octet-stream',
+        name: file.name || `upload_${Date.now()}.${file.mimeType?.split('/')[1] || 'jpg'}`
+      };
+
+      formData.append('file', fileToUpload);
+      
+      const endpoint = documentType === 'medicalBills' ? 'medical-bill' : 'medical-record';
+      
+      formData.append('recordType', documentType === 'medicalBills' ? 'Medical Bill' : 'Medical Record');
+
+      const response = await fetch(`${API_URL}/uploads/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        onUploadMedicalDocument(documentType, data.document.file_name);
+        Alert.alert(
+          '✅ Upload Successful!',
+          `${data.document.file_name} has been uploaded successfully to your Medical Hub.`
+        );
+      } else {
+        Alert.alert('Upload Failed', data.error || 'Failed to upload file.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', 'An error occurred while uploading the file.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const simulateUpload = (documentType, uploadType) => {
-    const fileName = uploadType === 'photo' 
-      ? `${documentType}_photo_${Date.now()}.jpg` 
-      : `${documentType}_document_${Date.now()}.pdf`;
-    
-    onUploadMedicalDocument(documentType, fileName);
-    
-    Alert.alert(
-      '✅ Upload Successful!',
-      `${fileName} has been uploaded successfully to your Medical Hub.`
-    );
+    if (uploadType === 'photo') {
+      pickImage(documentType);
+    } else {
+      pickDocument(documentType);
+    }
   };
 
   const handleAddProvider = () => {

@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
 import Svg, { Path } from 'react-native-svg';
+import { API_URL } from '../config/api';
 
 const { width, height } = Dimensions.get('window');
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads }) => {
+const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads, authToken }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [animatingPaths, setAnimatingPaths] = useState([]);
@@ -18,6 +21,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
   const [dataEntrySubStage, setDataEntrySubStage] = useState(null);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmModalData, setConfirmModalData] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const openStageModal = (stage) => {
     setSelectedStage(stage);
@@ -68,17 +72,103 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     );
   };
 
+  const pickImage = async (stageId, subStageId) => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadEvidenceFile(result.assets[0], stageId, subStageId);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const pickDocument = async (stageId, subStageId) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadEvidenceFile(result.assets[0], stageId, subStageId);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to select file. Please try again.');
+    }
+  };
+
+  const uploadEvidenceFile = async (file, stageId, subStageId) => {
+    if (!authToken) {
+      Alert.alert('Error', 'You must be logged in to upload files.');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const currentStage = litigationStages.find(s => s.id === stageId);
+      const subStage = currentStage.subStages.find(s => s.id === subStageId);
+
+      const formData = new FormData();
+      
+      const fileToUpload = {
+        uri: Platform.OS === 'web' ? file.uri : file.uri,
+        type: file.mimeType || 'application/octet-stream',
+        name: file.name || `upload_${Date.now()}.${file.mimeType?.split('/')[1] || 'jpg'}`
+      };
+
+      formData.append('file', fileToUpload);
+      formData.append('evidenceType', subStage.name);
+      formData.append('title', subStage.name);
+
+      const response = await fetch(`${API_URL}/uploads/evidence`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        onUploadFile(stageId, subStageId, data.document.file_name);
+        Alert.alert(
+          '✅ Upload Successful!',
+          `${data.document.file_name} has been uploaded successfully.`
+        );
+      } else {
+        Alert.alert('Upload Failed', data.error || 'Failed to upload file.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', 'An error occurred while uploading the file.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const simulateUpload = (stageId, subStageId, uploadType) => {
-    const fileName = uploadType === 'photo' 
-      ? `photo_${Date.now()}.jpg` 
-      : `document_${Date.now()}.pdf`;
-    
-    onUploadFile(stageId, subStageId, fileName);
-    
-    Alert.alert(
-      '✅ Upload Successful!',
-      `${fileName} has been uploaded successfully.`
-    );
+    if (uploadType === 'photo') {
+      pickImage(stageId, subStageId);
+    } else {
+      pickDocument(stageId, subStageId);
+    }
   };
 
   const viewUploadedFiles = (subStage) => {

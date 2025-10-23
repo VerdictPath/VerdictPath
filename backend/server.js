@@ -8,6 +8,7 @@ const lawfirmRoutes = require('./routes/lawfirm');
 const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
 const coinsRoutes = require('./routes/coins');
+const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 const PORT = 5000; // Replit only exposes port 5000
@@ -24,12 +25,15 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 // Serve Expo web app static files
 app.use(express.static(path.join(__dirname, 'public/app')));
+// NOTE: Uploaded files are NOT served as static files for HIPAA compliance
+// They must be accessed through authenticated API endpoints only
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/coins', coinsRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Serve mobile app at root
 app.get('/', (req, res) => {

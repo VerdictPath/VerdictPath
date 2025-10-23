@@ -641,6 +641,7 @@ const CaseCompassApp = () => {
           onPurchaseVideo={handlePurchaseVideo}
           onUploadFile={handleUploadFile}
           onDataEntry={handleDataEntry}
+          authToken={authToken}
           medicalHubUploads={medicalHubUploads}
         />
       )}
@@ -654,6 +655,7 @@ const CaseCompassApp = () => {
           onNavigate={handleNavigate} 
           onUploadMedicalDocument={handleMedicalHubUpload}
           medicalHubUploads={medicalHubUploads}
+          authToken={authToken}
         />
       )}
       
