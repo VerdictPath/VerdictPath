@@ -1,68 +1,69 @@
 import { StyleSheet } from 'react-native';
+import { theme } from './theme';
 
 export const commonStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
   },
   primaryButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: theme.colors.primary,
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
   },
   buttonText: {
-    color: '#fff',
+    color: theme.colors.white,
     fontSize: 18,
     fontWeight: '600',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#3498db',
+    borderColor: theme.colors.primary,
   },
   secondaryButtonText: {
-    color: '#3498db',
+    color: theme.colors.primary,
     fontSize: 18,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.white,
     padding: 15,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.secondary,
     marginBottom: 15,
     fontSize: 16,
   },
   linkText: {
-    color: '#3498db',
+    color: theme.colors.primary,
     textAlign: 'center',
     marginTop: 15,
     fontSize: 16,
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.surface,
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: theme.colors.secondary,
   },
   backButton: {
     fontSize: 18,
-    color: '#3498db',
+    color: theme.colors.primary,
     marginBottom: 10,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: theme.colors.text,
   },
 });

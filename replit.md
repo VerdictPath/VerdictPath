@@ -8,8 +8,18 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 
 ## Recent Changes
 
-### October 23, 2025 - Updated Logo
+### October 23, 2025 - Updated Logo & Color Scheme
 - **Logo Update**: Replaced logo with new Verdict Path branding featuring compass/ship wheel design with "Chart Your Course to Justice" tagline
+- **Color Scheme Overhaul**: Updated entire app to match logo's warm tan/beige aesthetic
+  - **Background**: Tan/Sand (#F4E8D8) - matches logo background
+  - **Surface**: Cream (#F8F1E7) - for cards and containers
+  - **Primary**: Mahogany (#8B6F47) - for buttons and primary actions
+  - **Secondary**: Warm Gold (#C9A961) - for borders and accents
+  - **Text**: Navy (#2C3E50) - for primary text
+  - **Text Secondary**: Warm Gray (#A0826D) - for secondary text
+  - Created centralized theme.js for consistent color management
+  - Updated all screens, buttons, icons, and components to use new palette
+  - Maintains pirate/treasure theme with warmer, more sophisticated earth tones
 
 ### October 23, 2025 - Pirate-Themed Icons Throughout App
 - **Landing Screen & Dashboard UI Enhancement**: Replaced emoji icons with sophisticated pirate-themed badges throughout the app
