@@ -6,6 +6,38 @@ Verdict Path is a legal case management and education platform designed for Geor
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
 
+## Recent Changes
+
+### October 23, 2025 - Professional Home Page Icons
+- **Landing Screen UI Enhancement**: Replaced emoji icons with professional circular icon badges
+  - Blue circular badges (36px diameter) with white symbols
+  - Updated icons: ⚖ (scales for roadmap), ★ (star for coins), ▶ (play for videos), ◆ (diamond for records), ◉ (circle for rewards)
+  - Enhanced layout with proper spacing and alignment
+  - Consistent, polished appearance matching the legal/professional theme
+
+### October 23, 2025 - Answer Filed Stage Added
+- **Complaint Filed Expansion**: Added "Answer Filed (within 30 days)" as 4th substage
+  - Tracks when defendant files their response to the complaint
+  - Awards 7 coins upon completion
+  - Total Complaint Filed stage coins increased to 32
+  - Icon: 📄 (document)
+  - Full substages: Draft Complaint, File with Court, Serve Defendant, Answer Filed
+
+### October 22, 2025 - Comprehensive Video Library
+- **Video Library Expansion**: Updated video library to include all 13 tutorial videos from all litigation stages
+  - Pre-Litigation: Pre-Litigation Essentials, Document Collection Guide
+  - Complaint Filed: Filing Your Complaint
+  - Discovery Begins: Understanding Discovery, Discovery Response Strategies
+  - Depositions: Deposition Deep Dive, How to Testify Effectively
+  - Mediation: Mediation Mastery
+  - Trial Prep: Trial Preparation Guide, Courtroom Procedures
+  - Trial: Trial Tactics
+  - Settlement: Settlement Strategies
+  - Case Resolved: Post-Trial Procedures
+- **Video Organization**: Each video tagged with category for easy browsing
+- **Pricing Tiers**: Videos range from free to premium ($2.99-$6.99)
+- **Total Duration**: Over 5 hours of educational legal content
+
 ## System Architecture
 The application is a React Native mobile application built with the Expo framework.
 
