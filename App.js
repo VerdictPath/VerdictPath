@@ -43,6 +43,8 @@ const CaseCompassApp = () => {
   
   const [selectedClientId, setSelectedClientId] = useState(null);
 
+  const authToken = user?.token || null;
+
   const handleRegister = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
