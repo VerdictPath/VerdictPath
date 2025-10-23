@@ -4,36 +4,57 @@ import * as ImagePicker from 'expo-image-picker';
 
 export const pickDocumentForWeb = () => {
   return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,application/pdf,.doc,.docx';
-    input.multiple = false;
-    
-    input.onchange = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const fileObject = {
-          uri: URL.createObjectURL(file),
-          name: file.name,
-          size: file.size,
-          mimeType: file.type,
-          file: file
-        };
-        resolve({ canceled: false, assets: [fileObject] });
-      } else {
-        resolve({ canceled: true });
+    try {
+      console.log('[FileUpload] Creating file input for web');
+      if (typeof document === 'undefined') {
+        console.error('[FileUpload] document is undefined - not in browser context');
+        reject(new Error('document is not available'));
+        return;
       }
-    };
-    
-    input.oncancel = () => {
-      resolve({ canceled: true });
-    };
-    
-    input.click();
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,application/pdf,.doc,.docx';
+      input.multiple = false;
+      input.style.display = 'none';
+      
+      input.onchange = (event) => {
+        console.log('[FileUpload] File selected:', event.target.files[0]?.name);
+        const file = event.target.files[0];
+        if (file) {
+          const fileObject = {
+            uri: URL.createObjectURL(file),
+            name: file.name,
+            size: file.size,
+            mimeType: file.type,
+            file: file
+          };
+          document.body.removeChild(input);
+          resolve({ canceled: false, assets: [fileObject] });
+        } else {
+          document.body.removeChild(input);
+          resolve({ canceled: true });
+        }
+      };
+      
+      input.oncancel = () => {
+        console.log('[FileUpload] File selection cancelled');
+        document.body.removeChild(input);
+        resolve({ canceled: true });
+      };
+      
+      document.body.appendChild(input);
+      console.log('[FileUpload] Triggering click on input');
+      input.click();
+    } catch (error) {
+      console.error('[FileUpload] Error in pickDocumentForWeb:', error);
+      reject(error);
+    }
   });
 };
 
 export const pickDocument = async (options = {}) => {
+  console.log('[FileUpload] pickDocument called, Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     return await pickDocumentForWeb();
   } else {
@@ -47,36 +68,56 @@ export const pickDocument = async (options = {}) => {
 
 export const pickImageForWeb = () => {
   return new Promise((resolve, reject) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    
-    input.onchange = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        const fileObject = {
-          uri: URL.createObjectURL(file),
-          name: file.name,
-          size: file.size,
-          mimeType: file.type,
-          file: file
-        };
-        resolve({ canceled: false, assets: [fileObject] });
-      } else {
-        resolve({ canceled: true });
+    try {
+      console.log('[FileUpload] Creating image input for web');
+      if (typeof document === 'undefined') {
+        console.error('[FileUpload] document is undefined - not in browser context');
+        reject(new Error('document is not available'));
+        return;
       }
-    };
-    
-    input.oncancel = () => {
-      resolve({ canceled: true });
-    };
-    
-    input.click();
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.style.display = 'none';
+      
+      input.onchange = (event) => {
+        console.log('[FileUpload] Image selected:', event.target.files[0]?.name);
+        const file = event.target.files[0];
+        if (file) {
+          const fileObject = {
+            uri: URL.createObjectURL(file),
+            name: file.name,
+            size: file.size,
+            mimeType: file.type,
+            file: file
+          };
+          document.body.removeChild(input);
+          resolve({ canceled: false, assets: [fileObject] });
+        } else {
+          document.body.removeChild(input);
+          resolve({ canceled: true });
+        }
+      };
+      
+      input.oncancel = () => {
+        console.log('[FileUpload] Image selection cancelled');
+        document.body.removeChild(input);
+        resolve({ canceled: true });
+      };
+      
+      document.body.appendChild(input);
+      console.log('[FileUpload] Triggering click on image input');
+      input.click();
+    } catch (error) {
+      console.error('[FileUpload] Error in pickImageForWeb:', error);
+      reject(error);
+    }
   });
 };
 
 export const pickImage = async (options = {}) => {
+  console.log('[FileUpload] pickImage called, Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     return await pickImageForWeb();
   } else {

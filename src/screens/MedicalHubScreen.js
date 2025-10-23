@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import { API_URL } from '../config/api';
 import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
+import alert from '../utils/alert';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
   const [uploading, setUploading] = useState(false);
 
   const handleUploadMedicalBills = () => {
-    Alert.alert(
+    alert(
       '📄 Upload Medical Bills',
       'Select files to upload for Medical Bills\n\nAccepted formats: PDF, JPG, PNG',
       [
@@ -26,7 +27,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   };
 
   const handleUploadMedicalRecords = () => {
-    Alert.alert(
+    alert(
       '📋 Upload Medical Records',
       'Select files to upload for Medical Records\n\nAccepted formats: PDF, JPG, PNG',
       [
@@ -53,9 +54,9 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     } catch (error) {
       console.error('Error picking image:', error);
       if (error.message === 'Camera permission is required') {
-        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+        alert('Permission Required', 'Camera permission is required to take photos.');
       } else {
-        Alert.alert('Error', 'Failed to take photo. Please try again.');
+        alert('Error', 'Failed to take photo. Please try again.');
       }
     }
   };
@@ -69,13 +70,13 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Error', 'Failed to select file. Please try again.');
+      alert('Error', 'Failed to select file. Please try again.');
     }
   };
 
   const uploadFile = async (file, documentType) => {
     if (!authToken) {
-      Alert.alert('Error', 'You must be logged in to upload files.');
+      alert('Error', 'You must be logged in to upload files.');
       return;
     }
 
@@ -99,16 +100,16 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
       if (response.ok) {
         onUploadMedicalDocument(documentType, data.document.file_name);
-        Alert.alert(
+        alert(
           '✅ Upload Successful!',
           `${data.document.file_name} has been uploaded successfully to your Medical Hub.`
         );
       } else {
-        Alert.alert('Upload Failed', data.error || 'Failed to upload file.');
+        alert('Upload Failed', data.error || 'Failed to upload file.');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Upload Failed', 'An error occurred while uploading the file.');
+      alert('Upload Failed', 'An error occurred while uploading the file.');
     } finally {
       setUploading(false);
     }
@@ -123,14 +124,14 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   };
 
   const handleAddProvider = () => {
-    Alert.alert('Coming Soon', 'Provider management in progress');
+    alert('Coming Soon', 'Provider management in progress');
   };
 
   const viewUploadedDocuments = (documentType) => {
     const documents = medicalHubUploads[documentType];
     
     if (!documents || documents.length === 0) {
-      Alert.alert('No Documents', `No ${documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records'} have been uploaded yet.`);
+      alert('No Documents', `No ${documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records'} have been uploaded yet.`);
       return;
     }
 
@@ -138,7 +139,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       `${index + 1}. ${file}`
     ).join('\n');
 
-    Alert.alert(
+    alert(
       `📁 ${documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records'}`,
       fileList,
       [{ text: 'OK' }]

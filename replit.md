@@ -78,5 +78,10 @@ The UI/UX centers on a "pirate treasure map" theme with a warm tan/beige color p
 - **Fixed HIPAAFormsScreen navigation**: Updated navigation props to use consistent `onNavigate` pattern
 - **Fixed API port mismatch**: Corrected LawFirmClientDetailsScreen API URL from localhost:3000 to localhost:5000
 - **Added missing dependency**: Installed @react-native-async-storage/async-storage required by HIPAAFormsScreen
-- **Fixed web file upload functionality**: Created cross-platform file upload utility (src/utils/fileUpload.js) that uses HTML file inputs on web and native pickers on mobile. Updated MedicalHubScreen and RoadmapScreen to support web file uploads.
-- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied (AppEntry-0681f17ddb8eeec34ca6949f18a3aa07.js)
+- **Fixed web file upload functionality**: 
+  - ROOT CAUSE: Alert.alert() from React Native doesn't work on web browsers (react-native-web doesn't support it)
+  - Created web-compatible alert utility (src/utils/alert.js) that uses window.confirm/alert on web and Alert.alert on native
+  - Created cross-platform file upload utility (src/utils/fileUpload.js) with HTML file inputs for web and Expo pickers for mobile
+  - Updated MedicalHubScreen and RoadmapScreen to use web-compatible alert and file upload utilities
+  - Added comprehensive debug logging to file upload functions
+- **Rebuilt web bundle**: Regenerated Expo web build with all fixes applied (AppEntry-b193a0ff6bdcca35c6387abcfde609c8.js)

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
 import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
+import alert from '../utils/alert';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,7 +38,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     const subStage = currentStage.subStages.find(s => s.id === subStageId);
     
     if (subStage.linkToMedicalHub) {
-      Alert.alert(
+      alert(
         '🏥 Medical Hub',
         `This document is managed in your Medical Hub. Would you like to go there now?`,
         [
@@ -54,7 +55,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       return;
     }
 
-    Alert.alert(
+    alert(
       '📁 Upload Document',
       `Select files to upload for "${subStage.name}"\n\nAccepted formats: ${subStage.acceptedFormats}`,
       [
@@ -81,9 +82,9 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
     } catch (error) {
       console.error('Error picking image:', error);
       if (error.message === 'Camera permission is required') {
-        Alert.alert('Permission Required', 'Camera permission is required to take photos.');
+        alert('Permission Required', 'Camera permission is required to take photos.');
       } else {
-        Alert.alert('Error', 'Failed to take photo. Please try again.');
+        alert('Error', 'Failed to take photo. Please try again.');
       }
     }
   };
@@ -97,13 +98,13 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Error', 'Failed to select file. Please try again.');
+      alert('Error', 'Failed to select file. Please try again.');
     }
   };
 
   const uploadEvidenceFile = async (file, stageId, subStageId) => {
     if (!authToken) {
-      Alert.alert('Error', 'You must be logged in to upload files.');
+      alert('Error', 'You must be logged in to upload files.');
       return;
     }
 
@@ -130,16 +131,16 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
 
       if (response.ok) {
         onUploadFile(stageId, subStageId, data.document.file_name);
-        Alert.alert(
+        alert(
           '✅ Upload Successful!',
           `${data.document.file_name} has been uploaded successfully.`
         );
       } else {
-        Alert.alert('Upload Failed', data.error || 'Failed to upload file.');
+        alert('Upload Failed', data.error || 'Failed to upload file.');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      Alert.alert('Upload Failed', 'An error occurred while uploading the file.');
+      alert('Upload Failed', 'An error occurred while uploading the file.');
     } finally {
       setUploading(false);
     }
@@ -155,7 +156,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
 
   const viewUploadedFiles = (subStage) => {
     if (!subStage.uploaded || !subStage.uploadedFiles || subStage.uploadedFiles.length === 0) {
-      Alert.alert('No Files', 'No files have been uploaded yet.');
+      alert('No Files', 'No files have been uploaded yet.');
       return;
     }
 
@@ -163,7 +164,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       `${index + 1}. ${file}`
     ).join('\n');
 
-    Alert.alert(
+    alert(
       '📁 Uploaded Files',
       fileList,
       [{ text: 'OK' }]
@@ -186,7 +187,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
             onPress: (text) => {
               if (text && text.trim()) {
                 onDataEntry(selectedStage.id, subStageId, text.trim());
-                Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+                alert('✅ Saved!', 'Information has been saved successfully.');
               }
             }
           }
@@ -203,7 +204,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       setDataEntryModalVisible(false);
       setDataEntryValue('');
       setDataEntrySubStage(null);
-      Alert.alert('✅ Saved!', 'Information has been saved successfully.');
+      alert('✅ Saved!', 'Information has been saved successfully.');
     }
   };
 
@@ -234,7 +235,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       }
       
       if (!hasUploads) {
-        Alert.alert(
+        alert(
           '📤 Upload Required',
           `Please upload ${documentType} in the Medical Hub before marking this step as complete.`,
           [
@@ -266,7 +267,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       const subStageCoins = incompleteSubs.reduce((sum, sub) => sum + sub.coins, 0);
       const totalCoins = subStageCoins + currentStage.coins;
 
-      Alert.alert(
+      alert(
         'Complete Stage?',
         `Mark "${currentStage.name}" as complete?\n\nYou'll earn:\n• ${subStageCoins} coins from ${incompleteSubs.length} steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins`,
         [
@@ -307,7 +308,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       });
       setConfirmModalVisible(true);
     } else {
-      Alert.alert(
+      alert(
         'Revert Stage?',
         `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
         [
