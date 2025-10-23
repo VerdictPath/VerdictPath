@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
 const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
+const coinsRoutes = require('./routes/coins');
 
 const app = express();
 const PORT = 5000; // Replit only exposes port 5000
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
+app.use('/api/coins', coinsRoutes);
 
 // Serve mobile app at root
 app.get('/', (req, res) => {

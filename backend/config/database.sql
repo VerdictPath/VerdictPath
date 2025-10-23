@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
   subscription_tier VARCHAR(50) DEFAULT 'free',
   subscription_price DECIMAL(10, 2) DEFAULT 0,
   total_coins INTEGER DEFAULT 0,
+  coins_spent INTEGER DEFAULT 0,
   login_streak INTEGER DEFAULT 0,
   last_login_date DATE,
   current_tier VARCHAR(50) DEFAULT 'bronze',
@@ -146,3 +147,18 @@ CREATE TABLE IF NOT EXISTS law_firm_clients (
 
 CREATE INDEX idx_law_firm_clients_law_firm_id ON law_firm_clients(law_firm_id);
 CREATE INDEX idx_law_firm_clients_client_id ON law_firm_clients(client_id);
+
+-- Step 9: Coin Conversions table (depends on users) - For audit trail and fraud prevention
+CREATE TABLE IF NOT EXISTS coin_conversions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  coins_converted INTEGER NOT NULL,
+  credit_amount DECIMAL(10, 2) NOT NULL,
+  conversion_rate DECIMAL(10, 2) NOT NULL,
+  converted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ip_address VARCHAR(45),
+  notes TEXT
+);
+
+CREATE INDEX idx_coin_conversions_user_id ON coin_conversions(user_id);
+CREATE INDEX idx_coin_conversions_converted_at ON coin_conversions(converted_at);

@@ -239,7 +239,7 @@ const CaseCompassApp = () => {
     Alert.alert('Daily Bonus!', `You earned ${bonus} coins! ${loginStreak + 1} day streak! 🎉`);
   };
 
-  const handleConvertCoinsToCredits = () => {
+  const handleConvertCoinsToCredits = async () => {
     const actualCredits = calculateCreditsFromCoins(coins);
     const coinsNeeded = calculateCoinsNeeded(actualCredits);
     
@@ -253,51 +253,187 @@ const CaseCompassApp = () => {
       `Convert ${coinsNeeded} coins to $${actualCredits} in credits?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Convert', onPress: () => {
-          setCoins(coins - coinsNeeded);
-          Alert.alert('Success!', `$${actualCredits} added to your account credits!`);
+        { text: 'Convert', onPress: async () => {
+          if (user && user.token) {
+            try {
+              const response = await apiRequest(API_ENDPOINTS.COINS.CONVERT, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                  coinsToConvert: coinsNeeded
+                })
+              });
+              
+              setCoins(response.totalCoins - response.coinsSpent);
+              Alert.alert('Success!', `$${response.creditAmount} added to your account credits!\n\nCoins converted: ${response.coinsConverted}`);
+            } catch (error) {
+              console.error('Failed to convert coins:', error);
+              Alert.alert('Error', error.message || 'Failed to convert coins. Please try again.');
+            }
+          } else {
+            setCoins(coins - coinsNeeded);
+            Alert.alert('Success!', `$${actualCredits} added to your account credits!`);
+          }
         }}
       ]
     );
   };
 
-  const handleCompleteStage = (stageId, stageCoins) => {
+  const handleCompleteStage = async (stageId, stageCoins) => {
     setLitigationStages(prevStages => 
       prevStages.map(s => 
         s.id === stageId && !s.completed ? { ...s, completed: true } : s
       )
     );
-    setCoins(prevCoins => prevCoins + stageCoins);
-    Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+    
+    if (user && user.token) {
+      try {
+        const response = await apiRequest(API_ENDPOINTS.COINS.UPDATE, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          },
+          body: JSON.stringify({
+            coinsDelta: stageCoins,
+            source: `stage_completed:${stageId}`
+          })
+        });
+        
+        setCoins(response.totalCoins);
+        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+      } catch (error) {
+        console.error('Failed to update coins:', error);
+        setCoins(prevCoins => prevCoins + stageCoins);
+        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+      }
+    } else {
+      setCoins(prevCoins => prevCoins + stageCoins);
+      Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+    }
   };
 
-  const handleUncompleteStage = (stageId, stageCoins) => {
+  const handleUncompleteStage = async (stageId, stageCoins) => {
+    const currentStage = litigationStages.find(s => s.id === stageId);
+    if (!currentStage || !currentStage.completed) return;
+    
     let totalCoinsToRemove = stageCoins;
-    
-    setLitigationStages(prevStages => 
-      prevStages.map(stage => {
-        if (stage.id === stageId && stage.completed) {
-          const updatedSubStages = stage.subStages?.map(subStage => {
-            if (subStage.completed) {
-              totalCoinsToRemove += subStage.coins;
-            }
-            return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
-          }) || [];
-          
-          return { ...stage, completed: false, subStages: updatedSubStages };
-        }
-        return stage;
-      })
-    );
-    
-    setCoins(prevCoins => {
-      const newBalance = Math.max(0, prevCoins - totalCoinsToRemove);
-      if (newBalance === 0 && prevCoins < totalCoinsToRemove) {
-        console.warn(`Coin underflow prevented: attempted to remove ${totalCoinsToRemove} coins but only had ${prevCoins}`);
-      }
-      return newBalance;
+    const completedSubStages = currentStage.subStages?.filter(s => s.completed) || [];
+    completedSubStages.forEach(subStage => {
+      totalCoinsToRemove += subStage.coins;
     });
-    Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+    
+    if (user && user.token) {
+      try {
+        const response = await apiRequest(API_ENDPOINTS.COINS.UPDATE, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          },
+          body: JSON.stringify({
+            coinsDelta: -totalCoinsToRemove,
+            source: `stage_reverted:${stageId}`
+          })
+        });
+        
+        setLitigationStages(prevStages => 
+          prevStages.map(stage => {
+            if (stage.id === stageId && stage.completed) {
+              const updatedSubStages = stage.subStages?.map(subStage => {
+                return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+              }) || [];
+              
+              return { ...stage, completed: false, subStages: updatedSubStages };
+            }
+            return stage;
+          })
+        );
+        
+        setCoins(response.totalCoins);
+        Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+        
+      } catch (error) {
+        console.error('Failed to revert coins:', error);
+        
+        if (error.message && error.message.includes('Cannot refund all coins')) {
+          try {
+            const errorData = JSON.parse(error.message.match(/\{.*\}/)?.[0] || '{}');
+            const maxRefund = errorData.maxRefund || 0;
+            const coinsSpent = errorData.coinsSpent || 0;
+            
+            Alert.alert(
+              '⚠️ Cannot Fully Revert',
+              `You've already converted ${coinsSpent} coins to credits.\n\nOnly ${maxRefund} coins can be refunded.\n\nTo revert this stage, you'll lose those converted coins permanently.`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Revert Anyway',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setLitigationStages(prevStages => 
+                      prevStages.map(stage => {
+                        if (stage.id === stageId && stage.completed) {
+                          const updatedSubStages = stage.subStages?.map(subStage => {
+                            return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+                          }) || [];
+                          
+                          return { ...stage, completed: false, subStages: updatedSubStages };
+                        }
+                        return stage;
+                      })
+                    );
+                    
+                    setCoins(prevCoins => Math.max(0, prevCoins - maxRefund));
+                    Alert.alert('Stage Reverted', `Stage reverted. ${maxRefund} coins removed.`);
+                  }
+                }
+              ]
+            );
+          } catch (parseError) {
+            Alert.alert('Error', 'Cannot revert this stage - some coins were already converted to credits.');
+          }
+        } else {
+          setLitigationStages(prevStages => 
+            prevStages.map(stage => {
+              if (stage.id === stageId && stage.completed) {
+                const updatedSubStages = stage.subStages?.map(subStage => {
+                  return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+                }) || [];
+                
+                return { ...stage, completed: false, subStages: updatedSubStages };
+              }
+              return stage;
+            })
+          );
+          
+          setCoins(prevCoins => Math.max(0, prevCoins - totalCoinsToRemove));
+          Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+        }
+      }
+    } else {
+      setLitigationStages(prevStages => 
+        prevStages.map(stage => {
+          if (stage.id === stageId && stage.completed) {
+            const updatedSubStages = stage.subStages?.map(subStage => {
+              return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+            }) || [];
+            
+            return { ...stage, completed: false, subStages: updatedSubStages };
+          }
+          return stage;
+        })
+      );
+      
+      setCoins(prevCoins => {
+        const newBalance = Math.max(0, prevCoins - totalCoinsToRemove);
+        if (newBalance === 0 && prevCoins < totalCoinsToRemove) {
+          console.warn(`Coin underflow prevented: attempted to remove ${totalCoinsToRemove} coins but only had ${prevCoins}`);
+        }
+        return newBalance;
+      });
+      Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+    }
   };
 
   const handleToggleStage = (stageId) => {

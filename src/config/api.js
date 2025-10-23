@@ -32,6 +32,12 @@ export const API_ENDPOINTS = {
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',
     PATIENT_DETAILS: (patientId) => `/api/medicalprovider/patient/${patientId}`
+  },
+  COINS: {
+    UPDATE: '/api/coins/update',
+    CONVERT: '/api/coins/convert',
+    BALANCE: '/api/coins/balance',
+    CONVERSION_HISTORY: '/api/coins/conversion-history'
   }
 };
 
