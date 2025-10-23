@@ -17,19 +17,31 @@ class EncryptionService {
     
     // Get encryption key from environment variable
     // In production, this should be managed by a Key Management Service (AWS KMS, HashiCorp Vault)
-    const keyHex = process.env.ENCRYPTION_KEY;
+    const keyString = process.env.ENCRYPTION_KEY;
     
-    if (!keyHex) {
+    if (!keyString) {
       console.error('CRITICAL: ENCRYPTION_KEY not set in environment variables!');
-      console.error('Generate one with: node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))"');
+      console.error('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"');
       throw new Error('ENCRYPTION_KEY environment variable is required for HIPAA compliance');
     }
     
-    if (keyHex.length !== 64) { // 32 bytes = 64 hex characters
-      throw new Error('ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters) for AES-256');
+    // Support both base64 (standard) and hex formats
+    let key;
+    if (keyString.length === 64) {
+      // Hex format (64 characters = 32 bytes)
+      key = Buffer.from(keyString, 'hex');
+    } else if (keyString.length === 44 && keyString.endsWith('=')) {
+      // Base64 format (44 characters including padding = 32 bytes)
+      key = Buffer.from(keyString, 'base64');
+    } else {
+      throw new Error('ENCRYPTION_KEY must be a 32-byte key in either base64 (44 chars) or hex (64 chars) format');
     }
     
-    this.key = Buffer.from(keyHex, 'hex');
+    if (key.length !== 32) {
+      throw new Error('ENCRYPTION_KEY must be exactly 32 bytes for AES-256');
+    }
+    
+    this.key = key;
     this.ivLength = 16; // 128 bits for GCM mode
   }
 
