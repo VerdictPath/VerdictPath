@@ -375,7 +375,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onNavigate, selected
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible}
+        visible={modalVisible && !dataEntryModalVisible}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
