@@ -201,6 +201,15 @@ exports.registerMedicalProvider = async (req, res) => {
 
     const medicalProvider = result.rows[0];
 
+    // HIPAA Phase 2: Assign default MEDICAL_PROVIDER_ADMIN role
+    try {
+      const permissionService = require('../services/permissionService');
+      await permissionService.assignRole(medicalProvider.id, 'MEDICAL_PROVIDER_ADMIN');
+    } catch (roleError) {
+      console.error('Error assigning MEDICAL_PROVIDER_ADMIN role:', roleError);
+      // Don't fail registration if role assignment fails
+    }
+
     const token = jwt.sign(
       { 
         id: medicalProvider.id, 

@@ -26,6 +26,13 @@ exports.isLawFirm = (req, res, next) => {
   next();
 };
 
+exports.isMedicalProvider = (req, res, next) => {
+  if (req.user.userType !== 'medical_provider') {
+    return res.status(403).json({ message: 'Access denied. Medical provider account required.' });
+  }
+  next();
+};
+
 exports.isClient = (req, res, next) => {
   if (req.user.userType === 'lawfirm') {
     return res.status(403).json({ message: 'Access denied. Client account required.' });

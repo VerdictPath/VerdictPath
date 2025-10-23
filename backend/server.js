@@ -5,6 +5,7 @@ const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
+const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
 
 const app = express();
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
+app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 
 app.get('/', (req, res) => {
@@ -35,6 +37,7 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       lawfirm: '/api/lawfirm',
+      medicalprovider: '/api/medicalprovider',
       consent: '/api/consent'
     }
   });
