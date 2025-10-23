@@ -8,6 +8,21 @@ React Native mobile application using Expo framework
 
 ## Recent Changes
 
+### October 22, 2025 - Detailed Settlement Stage Substeps
+- **Settlement Stage Expansion**: Updated Settlement stage with comprehensive 10-step disbursement process
+  - Negotiations
+  - Agreement to settle
+  - Settlement release
+  - Lien affidavit
+  - Settlement statement
+  - Disbursement to attorney
+  - Attorney fees/costs/case expenses disbursed
+  - Medical provider payments
+  - Funding payments
+  - Client disbursement
+- **Coin Distribution**: Each substep awards coins (6-15 coins per step, total 85 coins possible)
+- **Financial Transparency**: Detailed breakdown of settlement disbursement process for user education
+
 ### October 22, 2025 - Detailed Trial Stage Substeps
 - **Trial Stage Expansion**: Updated Trial stage with comprehensive 16-step process
   - PreTrial motions

@@ -155,9 +155,16 @@ export const LITIGATION_STAGES = [
     expanded: false,
     position: { top: '74%', left: '65%' },
     subStages: [
-      { id: 'settle-1', name: 'Settlement Negotiation', coins: 25, completed: false, icon: '💼', description: 'Negotiate settlement terms' },
-      { id: 'settle-2', name: 'Settlement Agreement', coins: 30, completed: false, icon: '📝', description: 'Draft and sign settlement agreement' },
-      { id: 'settle-3', name: 'Settlement Payment', coins: 20, completed: false, icon: '💰', description: 'Receive settlement payment' }
+      { id: 'settle-1', name: 'Negotiations', coins: 10, completed: false, icon: '🤝', description: 'Negotiate settlement terms with opposing party' },
+      { id: 'settle-2', name: 'Agreement to settle', coins: 10, completed: false, icon: '📋', description: 'Reach formal agreement to settle the case' },
+      { id: 'settle-3', name: 'Settlement release', coins: 8, completed: false, icon: '📄', description: 'Sign settlement release documents' },
+      { id: 'settle-4', name: 'Lien affidavit', coins: 7, completed: false, icon: '📑', description: 'Complete lien affidavit documentation' },
+      { id: 'settle-5', name: 'Settlement statement', coins: 8, completed: false, icon: '📊', description: 'Review settlement statement breakdown' },
+      { id: 'settle-6', name: 'Disbursement to attorney', coins: 7, completed: false, icon: '💼', description: 'Settlement funds disbursed to attorney' },
+      { id: 'settle-7', name: 'Attorney fees/costs/case expenses disbursed', coins: 7, completed: false, icon: '💸', description: 'Attorney deducts fees, costs, and expenses' },
+      { id: 'settle-8', name: 'Medical provider payments', coins: 7, completed: false, icon: '🏥', description: 'Payment to medical providers from settlement' },
+      { id: 'settle-9', name: 'Funding payments', coins: 6, completed: false, icon: '💳', description: 'Process funding and financing payments' },
+      { id: 'settle-10', name: 'Client disbursement', coins: 15, completed: false, icon: '💰', description: 'Final payment disbursed to you' }
     ],
     videos: [
       { id: 'v12', title: 'Settlement Strategies', price: 4.99, duration: '26 min', tier: 'premium' }
