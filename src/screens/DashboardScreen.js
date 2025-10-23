@@ -97,13 +97,12 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('videos')}
         >
-          <View style={styles.iconBadgeCamera}>
-            <View style={styles.iconCamera}>
-              <View style={styles.cameraBody} />
-              <View style={styles.cameraLens} />
-              <View style={styles.cameraLensInner} />
-              <View style={styles.lightLeft} />
-              <View style={styles.lightRight} />
+          <View style={styles.iconBadgeVideoCamera}>
+            <View style={styles.iconVideoCamera}>
+              <View style={styles.videoCameraBody} />
+              <View style={styles.videoCameraLens} />
+              <View style={styles.videoCameraViewfinder} />
+              <View style={styles.videoCameraHandle} />
             </View>
           </View>
           <Text style={styles.menuText}>Video Library</Text>
@@ -126,13 +125,14 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={onConvertCoins}
         >
-          <View style={styles.iconBadgeCoinShiny}>
-            <View style={styles.iconCoinShiny}>
-              <View style={styles.coinOuterShiny} />
-              <View style={styles.coinInnerShiny} />
-              <View style={styles.coinShine1} />
-              <View style={styles.coinShine2} />
-              <View style={styles.coinShine3} />
+          <View style={styles.iconBadgeMoneyBag}>
+            <View style={styles.iconMoneyBag}>
+              <View style={styles.moneyBagBody} />
+              <View style={styles.moneyBagTie} />
+              <View style={styles.moneyBagDollar} />
+              <View style={styles.moneyBagDollarTop} />
+              <View style={styles.moneyBagDollarMiddle} />
+              <View style={styles.moneyBagDollarBottom} />
             </View>
           </View>
           <Text style={styles.menuText}>Convert Coins</Text>
@@ -480,145 +480,135 @@ const styles = StyleSheet.create({
     bottom: 3,
     left: 9,
   },
-  iconBadgeCoinShiny: {
+  iconBadgeMoneyBag: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#D4AF37',
+    backgroundColor: '#2d5016',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
     borderWidth: 2,
-    borderColor: '#FFD700',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    elevation: 5,
+    borderColor: '#3e7c17',
   },
-  iconCoinShiny: {
-    width: 24,
-    height: 24,
-    position: 'relative',
-  },
-  coinOuterShiny: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFD700',
-    borderWidth: 2,
-    borderColor: '#FFA500',
-  },
-  coinInnerShiny: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: '#DAA520',
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 5,
-    left: 5,
-  },
-  coinShine1: {
-    width: 6,
-    height: 3,
-    backgroundColor: '#FFFACD',
-    borderRadius: 3,
-    position: 'absolute',
-    top: 5,
-    left: 6,
-  },
-  coinShine2: {
-    width: 4,
-    height: 2,
-    backgroundColor: '#FFFACD',
-    borderRadius: 2,
-    position: 'absolute',
-    top: 10,
-    left: 14,
-  },
-  coinShine3: {
-    width: 3,
-    height: 2,
-    backgroundColor: '#FFF8DC',
-    borderRadius: 2,
-    position: 'absolute',
-    top: 15,
-    left: 8,
-  },
-  iconBadgeCamera: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1a1a1a',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    borderWidth: 2,
-    borderColor: '#FFD700',
-  },
-  iconCamera: {
-    width: 26,
-    height: 20,
-    position: 'relative',
-  },
-  cameraBody: {
+  iconMoneyBag: {
     width: 20,
-    height: 14,
-    backgroundColor: '#2c3e50',
-    borderRadius: 3,
+    height: 24,
+    position: 'relative',
+  },
+  moneyBagBody: {
+    width: 20,
+    height: 18,
+    backgroundColor: '#4a7c2d',
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#34495e',
+    borderColor: '#3a6023',
     position: 'absolute',
     bottom: 0,
-    left: 3,
   },
-  cameraLens: {
-    width: 10,
+  moneyBagTie: {
+    width: 8,
+    height: 6,
+    backgroundColor: '#8B4513',
+    borderRadius: 1,
+    position: 'absolute',
+    top: 0,
+    left: 6,
+  },
+  moneyBagDollar: {
+    width: 1.5,
     height: 10,
-    borderRadius: 5,
+    backgroundColor: '#FFD700',
+    position: 'absolute',
+    bottom: 5,
+    left: 9.25,
+  },
+  moneyBagDollarTop: {
+    width: 5,
+    height: 1.5,
+    backgroundColor: '#FFD700',
+    borderRadius: 0.5,
+    position: 'absolute',
+    bottom: 11,
+    left: 7.5,
+  },
+  moneyBagDollarMiddle: {
+    width: 4,
+    height: 1.5,
+    backgroundColor: '#FFD700',
+    borderRadius: 0.5,
+    position: 'absolute',
+    bottom: 9,
+    left: 8,
+  },
+  moneyBagDollarBottom: {
+    width: 5,
+    height: 1.5,
+    backgroundColor: '#FFD700',
+    borderRadius: 0.5,
+    position: 'absolute',
+    bottom: 7,
+    left: 7.5,
+  },
+  iconBadgeVideoCamera: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#2c3e50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: '#34495e',
+  },
+  iconVideoCamera: {
+    width: 26,
+    height: 18,
+    position: 'relative',
+  },
+  videoCameraBody: {
+    width: 18,
+    height: 14,
     backgroundColor: '#34495e',
+    borderRadius: 2,
     borderWidth: 1.5,
     borderColor: '#7f8c8d',
     position: 'absolute',
-    bottom: 2,
-    left: 8,
-  },
-  cameraLensInner: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#5dade2',
-    position: 'absolute',
-    bottom: 4.5,
-    left: 10.5,
-  },
-  lightLeft: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 4,
-    borderRightWidth: 6,
-    borderBottomWidth: 5,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#f39c12',
-    position: 'absolute',
-    top: 0,
     left: 0,
+    top: 2,
   },
-  lightRight: {
+  videoCameraLens: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1.5,
+    borderColor: '#95a5a6',
+    position: 'absolute',
+    left: 2,
+    top: 5,
+  },
+  videoCameraViewfinder: {
+    width: 4,
+    height: 6,
+    backgroundColor: '#5dade2',
+    borderRadius: 1,
+    position: 'absolute',
+    left: 12,
+    top: 6,
+  },
+  videoCameraHandle: {
     width: 0,
     height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 4,
-    borderBottomWidth: 5,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#f39c12',
+    borderLeftWidth: 8,
+    borderTopWidth: 7,
+    borderBottomWidth: 7,
+    borderLeftColor: '#34495e',
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
     position: 'absolute',
-    top: 0,
     right: 0,
+    top: 2,
   },
   iconBadgeHospital: {
     width: 48,
