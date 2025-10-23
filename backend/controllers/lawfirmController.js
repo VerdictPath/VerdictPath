@@ -44,6 +44,16 @@ exports.getDashboard = async (req, res) => {
       };
     });
     
+    // Calculate litigation stage analytics
+    // TODO: When litigation tracking is implemented, calculate from actual stage data
+    // For now, return placeholder values
+    const analytics = {
+      totalClients: clients.length,
+      preLitigationCount: 0,  // Clients in Pre-Litigation stage
+      litigationCount: 0,      // Clients in Litigation stages
+      trialCount: 0            // Clients in Trial stage
+    };
+    
     // HIPAA: Log law firm accessing client list
     await auditLogger.log({
       actorId: lawFirmId,
@@ -61,7 +71,8 @@ exports.getDashboard = async (req, res) => {
       firmName: lawFirm.firm_name,
       firmCode: lawFirm.firm_code,
       totalClients: clients.length,
-      clients: clients
+      clients: clients,
+      analytics: analytics
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching dashboard', error: error.message });

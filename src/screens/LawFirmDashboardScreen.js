@@ -29,22 +29,15 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onLogout }) => {
         setFirmData(data);
         setClients(data.clients || []);
         
-        // Calculate analytics
-        const totalClients = data.clients?.length || 0;
-        const activeStages = data.clients?.filter(c => c.litigationStage)?.length || 0;
-        const totalRecords = data.clients?.reduce((sum, c) => sum + (c.medicalRecordCount || 0), 0) || 0;
-        const totalBilling = data.clients?.reduce((sum, c) => sum + (c.totalBilled || 0), 0) || 0;
-        
-        setAnalytics({
-          totalClients,
-          activeStages,
-          totalRecords,
-          totalBilling,
-          completedStages: data.clients?.filter(c => c.litigationStage === 'Trial')?.length || 0,
-          pendingConsents: data.clients?.filter(c => !c.hasConsent)?.length || 0
+        // Use analytics from backend
+        setAnalytics(data.analytics || {
+          totalClients: data.clients?.length || 0,
+          preLitigationCount: 0,
+          litigationCount: 0,
+          trialCount: 0
         });
         
-        // Mock medical records and evidence for now
+        // Set medical records and evidence
         setMedicalRecords(data.medicalRecords || []);
         setEvidence(data.evidence || []);
       }
@@ -121,33 +114,21 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onLogout }) => {
           </View>
           
           <View style={styles.statCard}>
+            <Text style={styles.statIcon}>📝</Text>
+            <Text style={styles.statValue}>{analytics?.preLitigationCount || 0}</Text>
+            <Text style={styles.statLabel}>Pre-Litigation</Text>
+          </View>
+          
+          <View style={styles.statCard}>
             <Text style={styles.statIcon}>⚖️</Text>
-            <Text style={styles.statValue}>{analytics?.activeStages || 0}</Text>
-            <Text style={styles.statLabel}>Active Cases</Text>
+            <Text style={styles.statValue}>{analytics?.litigationCount || 0}</Text>
+            <Text style={styles.statLabel}>Litigation</Text>
           </View>
           
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📋</Text>
-            <Text style={styles.statValue}>{analytics?.totalRecords || 0}</Text>
-            <Text style={styles.statLabel}>Medical Records</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>💰</Text>
-            <Text style={styles.statValue}>${(analytics?.totalBilling || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total Billing</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>✅</Text>
-            <Text style={styles.statValue}>{analytics?.completedStages || 0}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⏳</Text>
-            <Text style={styles.statValue}>{analytics?.pendingConsents || 0}</Text>
-            <Text style={styles.statLabel}>Pending Consents</Text>
+            <Text style={styles.statIcon}>🏛️</Text>
+            <Text style={styles.statValue}>{analytics?.trialCount || 0}</Text>
+            <Text style={styles.statLabel}>Trial</Text>
           </View>
         </View>
       </View>
