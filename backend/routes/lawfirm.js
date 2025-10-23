@@ -2,10 +2,44 @@ const express = require('express');
 const router = express.Router();
 const lawfirmController = require('../controllers/lawfirmController');
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
+const { requirePermission } = require('../middleware/permissions');
+const { requireConsent } = require('../middleware/consent');
 
-router.get('/dashboard', authenticateToken, isLawFirm, lawfirmController.getDashboard);
-router.get('/client/:clientId', authenticateToken, isLawFirm, lawfirmController.getClientDetails);
-router.put('/client/:clientId/litigation', authenticateToken, isLawFirm, lawfirmController.updateLitigationStage);
-router.get('/client/:clientId/litigation/history', authenticateToken, isLawFirm, lawfirmController.getLitigationHistory);
+// HIPAA Phase 2: All routes now enforce RBAC permissions and patient consent
+
+// Dashboard - requires VIEW_CLIENT_PHI permission (no consent needed, lists clients)
+router.get('/dashboard',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getDashboard
+);
+
+// Client details - requires VIEW_CLIENT_PHI permission AND patient consent
+router.get('/client/:clientId',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  requireConsent({ patientIdParam: 'clientId', dataType: 'medical_records' }),
+  lawfirmController.getClientDetails
+);
+
+// Update litigation - requires EDIT_LITIGATION permission AND patient consent
+router.put('/client/:clientId/litigation',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('EDIT_LITIGATION'),
+  requireConsent({ patientIdParam: 'clientId', dataType: 'litigation' }),
+  lawfirmController.updateLitigationStage
+);
+
+// Litigation history - requires VIEW_LITIGATION permission AND patient consent
+router.get('/client/:clientId/litigation/history',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_LITIGATION'),
+  requireConsent({ patientIdParam: 'clientId', dataType: 'litigation' }),
+  lawfirmController.getLitigationHistory
+);
 
 module.exports = router;

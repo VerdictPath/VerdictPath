@@ -5,6 +5,7 @@ const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
+const consentRoutes = require('./routes/consent');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,14 +22,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
+app.use('/api/consent', consentRoutes);
 
 app.get('/', (req, res) => {
   res.json({ 
     message: 'VerdictPath Law Firm Portal API',
-    version: '1.0.0',
+    version: '2.0.0',
+    hipaa: {
+      phase1: 'Encryption, Audit Logging, Account Security',
+      phase2: 'RBAC, Patient Consent Management'
+    },
     endpoints: {
       auth: '/api/auth',
-      lawfirm: '/api/lawfirm'
+      lawfirm: '/api/lawfirm',
+      consent: '/api/consent'
     }
   });
 });

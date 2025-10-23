@@ -5,6 +5,7 @@ const { JWT_SECRET } = require('../middleware/auth');
 const encryption = require('../services/encryption');
 const auditLogger = require('../services/auditLogger');
 const { handleFailedLogin, handleSuccessfulLogin } = require('../middleware/security');
+const consentController = require('./consentController');
 
 exports.registerClient = async (req, res) => {
   try {
@@ -49,6 +50,23 @@ exports.registerClient = async (req, res) => {
         'INSERT INTO law_firm_clients (law_firm_id, client_id) VALUES ($1, $2)',
         [connectedLawFirmId, user.id]
       );
+      
+      // HIPAA Phase 2: Auto-grant consent to law firm
+      try {
+        await consentController.autoGrantConsentToFirm(user.id, connectedLawFirmId);
+      } catch (consentError) {
+        console.error('Error auto-granting consent:', consentError);
+        // Don't fail registration if consent grant fails
+      }
+    }
+    
+    // HIPAA: Assign default CLIENT role
+    try {
+      const permissionService = require('../services/permissionService');
+      await permissionService.assignRole(user.id, 'CLIENT');
+    } catch (roleError) {
+      console.error('Error assigning CLIENT role:', roleError);
+      // Don't fail registration if role assignment fails
     }
     
     // HIPAA: Log account creation
@@ -103,6 +121,15 @@ exports.registerLawFirm = async (req, res) => {
     );
     
     const lawFirm = result.rows[0];
+    
+    // HIPAA Phase 2: Assign default LAW_FIRM_ADMIN role
+    try {
+      const permissionService = require('../services/permissionService');
+      await permissionService.assignRole(lawFirm.id, 'LAW_FIRM_ADMIN');
+    } catch (roleError) {
+      console.error('Error assigning LAW_FIRM_ADMIN role:', roleError);
+      // Don't fail registration if role assignment fails
+    }
     
     const token = jwt.sign(
       { id: lawFirm.id, email: lawFirm.email, userType: 'lawfirm', firmCode: lawFirm.firm_code },
