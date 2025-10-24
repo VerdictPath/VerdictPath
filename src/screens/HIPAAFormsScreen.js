@@ -14,7 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-export default function HIPAAFormsScreen({ onNavigate }) {
+export default function HIPAAFormsScreen({ onNavigate, user }) {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState(null);
@@ -196,6 +196,21 @@ export default function HIPAAFormsScreen({ onNavigate }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => {
+            // Navigate back based on user type
+            if (user?.userType === 'lawfirm') {
+              onNavigate('lawfirm-dashboard');
+            } else if (user?.userType === 'medical_provider') {
+              onNavigate('medicalprovider-dashboard');
+            } else {
+              onNavigate('medical');
+            }
+          }}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>HIPAA Forms</Text>
         <Text style={styles.headerSubtitle}>
           Review and sign important legal documents
@@ -301,6 +316,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A4A6F',
     padding: 20,
     paddingTop: 50,
+  },
+  backButton: {
+    marginBottom: 10,
+    padding: 8,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 28,
