@@ -158,6 +158,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         circleColor = '#f39c12'; // Yellow/Amber
       }
       
+      console.log(`Stage ${index} (${stage.name}): isComplete=${isComplete}, isInProgress=${isInProgress}, color=${circleColor}`);
+      
       const circleIcon = isComplete ? '✓' : stage.icon;
 
       circles.push(
