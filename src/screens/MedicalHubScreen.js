@@ -211,6 +211,19 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         >
           <Text style={commonStyles.buttonText}>➕ Add Medical Provider</Text>
         </TouchableOpacity>
+
+        <View style={styles.documentSection}>
+          <Text style={styles.sectionTitle}>📋 HIPAA Forms</Text>
+          <Text style={styles.sectionDescription}>
+            Manage consent forms and authorizations for sharing your medical information
+          </Text>
+          <TouchableOpacity 
+            style={commonStyles.primaryButton}
+            onPress={() => onNavigate('hipaaForms')}
+          >
+            <Text style={commonStyles.buttonText}>📄 View HIPAA Forms</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -250,6 +263,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 15,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 15,
+    lineHeight: 20,
   },
   viewButton: {
     backgroundColor: '#ecf0f1',

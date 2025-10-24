@@ -219,20 +219,6 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={() => onNavigate('hipaaForms')}
-        >
-          <View style={styles.iconBadgeScroll}>
-            <View style={styles.iconScroll}>
-              <View style={styles.scrollBody} />
-              <View style={styles.scrollTop} />
-              <View style={styles.scrollBottom} />
-            </View>
-          </View>
-          <Text style={styles.menuText}>HIPAA Forms</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
           onPress={onConvertCoins}
         >
           <View style={styles.iconBadgeTreasureChest}>
