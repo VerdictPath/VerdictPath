@@ -215,7 +215,9 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
   };
 
   const handleSubStageComplete = async (subStageId, subStageCoins) => {
-    console.log('[RoadmapScreen] handleSubStageComplete called:', { subStageId, subStageCoins, hasAuthToken: !!authToken });
+    // VERSION 2.0 - NO UPLOAD REQUIREMENTS - MANUAL COMPLETION ENABLED
+    console.log('[RoadmapScreen] handleSubStageComplete v2.0 - NO UPLOAD VALIDATION');
+    console.log('[RoadmapScreen] SubstageId:', subStageId, 'Coins:', subStageCoins);
     
     if (!authToken) {
       console.error('[RoadmapScreen] No auth token - user not logged in');
@@ -223,8 +225,7 @@ const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, o
       return;
     }
 
-    console.log('[RoadmapScreen] Calling completeSubstageOnBackend...');
-    // Complete the substage via backend API without any upload requirements
+    // NO VALIDATION - Go directly to backend completion
     await completeSubstageOnBackend(subStageId, subStageCoins);
   };
 
