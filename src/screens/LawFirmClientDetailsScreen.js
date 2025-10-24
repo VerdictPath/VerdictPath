@@ -137,7 +137,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                   Current Stage: {litigationProgress.progress?.current_stage_name || 'Pre-Litigation'}
                 </Text>
                 <Text style={styles.progressPercentage}>
-                  {(litigationProgress.progress?.progress_percentage || 0).toFixed(0)}%
+                  {parseFloat(litigationProgress.progress?.progress_percentage || 0).toFixed(0)}%
                 </Text>
               </View>
               <View style={styles.progressBarBackground}>
