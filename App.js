@@ -19,6 +19,7 @@ import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
+import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 
 const CaseCompassApp = () => {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -45,6 +46,7 @@ const CaseCompassApp = () => {
   
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [clientRoadmapData, setClientRoadmapData] = useState(null);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   const authToken = user?.token || null;
 
@@ -778,9 +780,23 @@ const CaseCompassApp = () => {
       {currentScreen === 'medicalprovider-dashboard' && (
         <MedicalProviderDashboardScreen
           user={user}
-          onNavigateToPatient={() => {}}
+          onNavigateToPatient={(patientId) => {
+            setSelectedPatientId(patientId);
+            setCurrentScreen('medicalprovider-patient-details');
+          }}
           onNavigate={handleNavigate}
           onLogout={handleLogout}
+        />
+      )}
+      
+      {currentScreen === 'medicalprovider-patient-details' && (
+        <MedicalProviderPatientDetailsScreen
+          user={user}
+          patientId={selectedPatientId}
+          onBack={() => {
+            setSelectedPatientId(null);
+            setCurrentScreen('medicalprovider-dashboard');
+          }}
         />
       )}
     </SafeAreaView>

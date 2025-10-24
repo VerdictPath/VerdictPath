@@ -214,6 +214,25 @@ exports.getPatientDetails = async (req, res) => {
       [patientId]
     );
     
+    // Get litigation progress
+    const litigationProgressResult = await db.query(
+      `SELECT id, user_id, current_stage_id, current_stage_name, total_coins_earned,
+              total_substages_completed, progress_percentage, started_at, last_activity_at
+       FROM user_litigation_progress
+       WHERE user_id = $1`,
+      [patientId]
+    );
+    
+    // Get completed substages
+    const completedSubstagesResult = await db.query(
+      `SELECT id, user_id, stage_id, stage_name, substage_id, substage_name,
+              substage_type, coins_earned, completed_at, data_value, file_ids, notes
+       FROM litigation_substage_completions
+       WHERE user_id = $1
+       ORDER BY completed_at DESC`,
+      [patientId]
+    );
+    
     res.json({
       patient: {
         id: patient.id,
@@ -231,6 +250,10 @@ exports.getPatientDetails = async (req, res) => {
         totalAmountBilled: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.amount_billed || 0), 0),
         totalAmountDue: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.amount_due || 0), 0),
         bills: billingResult.rows
+      },
+      litigationProgress: {
+        progress: litigationProgressResult.rows[0] || null,
+        completedSubstages: completedSubstagesResult.rows || []
       }
     });
   } catch (error) {
