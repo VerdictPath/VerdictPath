@@ -14,33 +14,6 @@ const DashboardScreen = ({
   onNavigate, 
   onLogout 
 }) => {
-  const [litigationProgress, setLitigationProgress] = useState(null);
-  const [loadingProgress, setLoadingProgress] = useState(true);
-
-  useEffect(() => {
-    if (user?.token) {
-      fetchLitigationProgress();
-    }
-  }, [user?.token]);
-
-  const fetchLitigationProgress = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/litigation/progress`, {
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLitigationProgress(data.progress);
-      }
-    } catch (error) {
-      console.error('Error fetching litigation progress:', error);
-    } finally {
-      setLoadingProgress(false);
-    }
-  };
 
   return (
     <ScrollView style={commonStyles.container}>
@@ -105,70 +78,6 @@ const DashboardScreen = ({
             </Text>
           </View>
         </TouchableOpacity>
-      </View>
-
-      {/* Litigation Progress Widget */}
-      <View style={styles.progressWidget}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>⚖️ Your Litigation Journey</Text>
-          <TouchableOpacity onPress={() => onNavigate('roadmap')}>
-            <Text style={styles.viewFullMapLink}>View Full Map →</Text>
-          </TouchableOpacity>
-        </View>
-
-        {loadingProgress ? (
-          <ActivityIndicator size="small" color={theme.colors.mahogany} style={styles.loader} />
-        ) : litigationProgress ? (
-          <View style={styles.progressContent}>
-            <View style={styles.currentStageContainer}>
-              <Text style={styles.currentStageLabel}>Current Stage:</Text>
-              <Text style={styles.currentStageName}>{litigationProgress.current_stage_name || 'Pre-Litigation'}</Text>
-              <Text style={styles.stageNumber}>Stage {litigationProgress.current_stage_id || 1} of 9</Text>
-            </View>
-
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarBackground}>
-                <View 
-                  style={[
-                    styles.progressBarFill, 
-                    { width: `${litigationProgress.progress_percentage || 0}%` }
-                  ]} 
-                />
-              </View>
-              <Text style={styles.progressPercentage}>
-                {(litigationProgress.progress_percentage || 0).toFixed(0)}% Complete
-              </Text>
-            </View>
-
-            <View style={styles.progressStats}>
-              <View style={styles.progressStatItem}>
-                <Text style={styles.progressStatValue}>{litigationProgress.total_substages_completed || 0}</Text>
-                <Text style={styles.progressStatLabel}>Tasks Done</Text>
-              </View>
-              <View style={styles.progressStatItem}>
-                <Text style={styles.progressStatValue}>{litigationProgress.total_coins_earned || 0}</Text>
-                <Text style={styles.progressStatLabel}>Coins Earned</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity 
-              style={styles.continueJourneyButton}
-              onPress={() => onNavigate('roadmap')}
-            >
-              <Text style={styles.continueJourneyText}>Continue Your Journey</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.progressContent}>
-            <Text style={styles.noProgressText}>Start your litigation journey by visiting the Case Roadmap!</Text>
-            <TouchableOpacity 
-              style={styles.startJourneyButton}
-              onPress={() => onNavigate('roadmap')}
-            >
-              <Text style={styles.startJourneyText}>Start Journey</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       <View style={styles.menuContainer}>
