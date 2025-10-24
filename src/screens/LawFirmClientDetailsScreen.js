@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '../styles/theme';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [clientData, setClientData] = useState(null);
@@ -14,8 +15,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const fetchClientDetails = async () => {
     try {
+      console.log('[ClientDetails] Fetching client details for clientId:', clientId);
+      console.log('[ClientDetails] Token:', user?.token ? 'Present' : 'Missing');
+      console.log('[ClientDetails] API URL:', `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`);
+      
       const response = await fetch(
-        `${process.env.API_URL || 'http://localhost:5000'}/api/lawfirm/client/${clientId}`,
+        `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`,
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -23,12 +28,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
       
+      console.log('[ClientDetails] Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[ClientDetails] Data received:', data);
         setClientData(data);
+      } else {
+        const errorData = await response.json();
+        console.error('[ClientDetails] Failed response:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error fetching client details:', error);
+      console.error('[ClientDetails] Error fetching client details:', error);
     } finally {
       setLoading(false);
     }
@@ -36,8 +47,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const fetchClientLitigationProgress = async () => {
     try {
+      console.log('[ClientDetails] Fetching litigation progress for clientId:', clientId);
+      
       const response = await fetch(
-        `${process.env.API_URL || 'http://localhost:5000'}/api/litigation/client/${clientId}/progress`,
+        `${API_BASE_URL}/api/litigation/client/${clientId}/progress`,
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -45,12 +58,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
       
+      console.log('[ClientDetails] Litigation progress response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[ClientDetails] Litigation progress data:', data);
         setLitigationProgress(data);
+      } else {
+        const errorData = await response.json();
+        console.error('[ClientDetails] Failed litigation progress response:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error fetching client litigation progress:', error);
+      console.error('[ClientDetails] Error fetching client litigation progress:', error);
     }
   };
 
