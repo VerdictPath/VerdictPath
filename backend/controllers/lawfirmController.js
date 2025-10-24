@@ -20,9 +20,13 @@ exports.getDashboard = async (req, res) => {
     
     const clientsResult = await db.query(
       `SELECT u.id, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted, 
-              u.email, lfc.registered_date
+              u.email, u.current_phase, lfc.registered_date,
+              ulp.current_stage_name,
+              (SELECT COUNT(*) FROM medical_records WHERE user_id = u.id) as medical_record_count,
+              (SELECT COALESCE(SUM(total_amount), 0) FROM medical_billing WHERE user_id = u.id) as total_billed
        FROM users u
        JOIN law_firm_clients lfc ON u.id = lfc.client_id
+       LEFT JOIN user_litigation_progress ulp ON u.id = ulp.user_id
        WHERE lfc.law_firm_id = $1
        ORDER BY u.last_name ASC, u.first_name ASC`,
       [lawFirmId]
@@ -41,7 +45,11 @@ exports.getDashboard = async (req, res) => {
         firstName: firstName,
         lastName: lastName,
         email: client.email,
-        registeredDate: client.registered_date
+        registeredDate: client.registered_date,
+        litigationStage: client.current_stage_name || 'Not Started',
+        currentPhase: client.current_phase || 'pre_litigation',
+        medicalRecordCount: parseInt(client.medical_record_count) || 0,
+        totalBilled: parseFloat(client.total_billed) || 0
       };
     });
     
@@ -124,6 +132,7 @@ exports.getClientDetails = async (req, res) => {
       id: clientRow.id,
       first_name: firstName,
       last_name: lastName,
+      displayName: `${lastName}, ${firstName}`,
       email: clientRow.email
     };
     
