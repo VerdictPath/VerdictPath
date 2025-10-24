@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
 import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
+import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
 
 const { width, height } = Dimensions.get('window');
 
@@ -252,6 +253,12 @@ const RoadmapScreen = ({
       const currentStage = litigationStages.find(s => s.id === selectedStage.id);
       const subStage = currentStage.subStages.find(s => s.id === subStageId);
 
+      // Check for phase transition BEFORE completing
+      const completedSubstageIds = litigationStages.flatMap(stage => 
+        stage.subStages.filter(sub => sub.completed).map(sub => sub.id)
+      );
+      const phaseTransition = checkPhaseTransition(subStageId);
+
       const requestBody = { 
         stageId: currentStage.id,
         stageName: currentStage.name,
@@ -283,10 +290,16 @@ const RoadmapScreen = ({
         // Update local state
         onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
         
-        alert(
-          '✅ Task Completed!',
-          `You earned ${subStageCoins} coins! Your progress has been updated.`
-        );
+        // Show celebration if phase transition occurred
+        if (phaseTransition) {
+          const celebrationMessage = getPhaseCelebrationMessage(phaseTransition);
+          alert('🎉 Major Milestone!', celebrationMessage);
+        } else {
+          alert(
+            '✅ Task Completed!',
+            `You earned ${subStageCoins} coins! Your progress has been updated.`
+          );
+        }
       } else {
         console.error('[RoadmapScreen] API error:', data.error);
         // Handle duplicate completion gracefully
@@ -763,6 +776,22 @@ const RoadmapScreen = ({
         )}
       </View>
 
+      {selectedAvatar && (() => {
+        const completedSubstageIds = litigationStages.flatMap(stage => 
+          stage.subStages.filter(sub => sub.completed).map(sub => sub.id)
+        );
+        const currentPhase = getCurrentPhase(completedSubstageIds);
+        const phaseProgress = getPhaseProgress(completedSubstageIds);
+        
+        return (
+          <View style={[styles.phaseIndicator, { backgroundColor: currentPhase.color }]}>
+            <Text style={styles.phaseIndicatorText}>
+              {formatPhaseDisplay(currentPhase)} • {phaseProgress.completedStages}/{phaseProgress.totalStages} stages completed
+            </Text>
+          </View>
+        );
+      })()}
+
       {!selectedAvatar ? (
         <View style={styles.avatarSelectorContainer}>
           <AvatarSelector 
@@ -882,6 +911,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 3,
     borderBottomColor: '#d4af37',
+  },
+  phaseIndicator: {
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  phaseIndicatorText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   headerTitle: {
     fontSize: 20,
