@@ -110,7 +110,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       const end = stagePositions[i + 1];
       const stage = stages[i];
       
-      const hasProgress = stage.completed || stage.substages.some(sub => sub.completed);
+      const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
       const pathColor = hasProgress ? '#27ae60' : theme.colors.warmGray;
       const strokeDasharray = hasProgress ? "5,5" : "0";
 
@@ -133,7 +133,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
     stages.forEach((stage, index) => {
       const pos = stagePositions[index];
-      const hasProgress = stage.completed || stage.substages.some(sub => sub.completed);
+      const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
       const circleColor = hasProgress ? '#27ae60' : theme.colors.warmGray;
       const circleIcon = hasProgress ? '✓' : stage.icon;
 
@@ -159,9 +159,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         
         {stages.map((stage, index) => {
           const pos = stagePositions[index];
-          const hasProgress = stage.completed || stage.substages.some(sub => sub.completed);
-          const completedCount = stage.substages.filter(sub => sub.completed).length;
-          const totalCount = stage.substages.length;
+          const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
+          const completedCount = stage.substages ? stage.substages.filter(sub => sub.completed).length : 0;
+          const totalCount = stage.substages ? stage.substages.length : 0;
           
           return (
             <View
@@ -215,6 +215,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📋 Stage Details</Text>
           {stages.map((stage, index) => {
+            if (!stage.substages || !Array.isArray(stage.substages)) return null;
+            
             const completedCount = stage.substages.filter(sub => sub.completed).length;
             const hasProgress = completedCount > 0;
             
