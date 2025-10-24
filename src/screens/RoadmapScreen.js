@@ -650,6 +650,10 @@ const RoadmapScreen = ({
                           <View style={styles.checkmarkLarge}>
                             <Text style={styles.checkmarkText}>✓ Completed</Text>
                           </View>
+                        ) : readOnly ? (
+                          <View style={styles.incompleteBadge}>
+                            <Text style={styles.incompleteBadgeText}>Not Completed</Text>
+                          </View>
                         ) : (
                           <TouchableOpacity
                             style={[
@@ -689,7 +693,7 @@ const RoadmapScreen = ({
                 </View>
               )}
 
-              {!currentStage.completed && (
+              {!currentStage.completed && !readOnly && (
                 <TouchableOpacity
                   style={[styles.completeStageButton, selectedAvatar && { backgroundColor: selectedAvatar.color }]}
                   onPress={completeEntireStage}
@@ -1476,6 +1480,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  incompleteBadge: {
+    backgroundColor: '#ecf0f1',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+  },
+  incompleteBadgeText: {
+    color: '#7f8c8d',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
