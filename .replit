@@ -23,20 +23,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 33057
-externalPort = 3003
-
-[[ports]]
-localPort = 37015
-externalPort = 3000
-
-[[ports]]
 localPort = 40371
 externalPort = 3002
-
-[[ports]]
-localPort = 42143
-externalPort = 5000
 
 [[ports]]
 localPort = 42447
@@ -65,10 +53,10 @@ args = "Server"
 name = "Server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd backend && node server.js"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
