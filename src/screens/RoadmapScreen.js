@@ -380,9 +380,12 @@ const RoadmapScreen = ({
   const currentStageIndex = getCurrentStageIndex();
 
   useEffect(() => {
-    // Add paths for completed stages
+    // Add paths for completed stages AND stages in progress
     litigationStages.forEach((stage, index) => {
-      if (stage.completed && index < litigationStages.length - 1) {
+      // Show path if stage is completed OR has at least one substage completed
+      const hasProgress = stage.completed || (stage.subStages && stage.subStages.some(sub => sub.completed));
+      
+      if (hasProgress && index < litigationStages.length - 1) {
         const pathKey = `${stage.id}-${litigationStages[index + 1].id}`;
         
         if (!animatingPaths.find(p => p.key === pathKey)) {
@@ -408,13 +411,14 @@ const RoadmapScreen = ({
       }
     });
 
-    // Remove paths for uncompleted stages
+    // Remove paths for stages without any progress
     setAnimatingPaths(prev => {
       return prev.filter(path => {
         // Find the stage that this path originates from
         const fromStage = litigationStages.find(s => s.id === path.from.id);
-        // Keep the path only if the stage is still completed
-        return fromStage && fromStage.completed;
+        // Keep the path if the stage is completed or has substages completed
+        const hasProgress = fromStage && (fromStage.completed || (fromStage.subStages && fromStage.subStages.some(sub => sub.completed)));
+        return hasProgress;
       });
     });
   }, [litigationStages]);

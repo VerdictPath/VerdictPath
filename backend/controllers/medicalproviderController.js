@@ -32,7 +32,7 @@ exports.getDashboard = async (req, res) => {
         cr.status as consent_status,
         cr.granted_at as registered_date,
         (SELECT COUNT(*) FROM medical_records WHERE user_id = u.id) as record_count,
-        (SELECT COALESCE(SUM(amount_billed), 0) FROM medical_billing WHERE user_id = u.id) as total_billed
+        (SELECT COALESCE(SUM(total_amount), 0) FROM medical_billing WHERE user_id = u.id) as total_billed
        FROM users u
        INNER JOIN consent_records cr ON u.id = cr.patient_id
        WHERE cr.granted_to_type = 'medical_provider'
