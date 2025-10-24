@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
+import { CASE_PHASES, generatePhaseAnalytics } from '../constants/mockData';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -113,61 +114,133 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     </View>
   );
 
-  const renderAnalyticsTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 Firm Analytics</Text>
-        
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>👥</Text>
-            <Text style={styles.statValue}>{analytics?.totalClients || 0}</Text>
-            <Text style={styles.statLabel}>Total Clients</Text>
-          </View>
+  const renderAnalyticsTab = () => {
+    const totalClients = analytics?.totalClients || 0;
+    const preLitigationCount = analytics?.preLitigationCount || 0;
+    const litigationCount = analytics?.litigationCount || 0;
+    const trialCount = analytics?.trialCount || 0;
+
+    const preLitigationPct = totalClients > 0 ? Math.round((preLitigationCount / totalClients) * 100) : 0;
+    const litigationPct = totalClients > 0 ? Math.round((litigationCount / totalClients) * 100) : 0;
+    const trialPct = totalClients > 0 ? Math.round((trialCount / totalClients) * 100) : 0;
+
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 Firm Analytics</Text>
           
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📝</Text>
-            <Text style={styles.statValue}>{analytics?.preLitigationCount || 0}</Text>
-            <Text style={styles.statLabel}>Pre-Litigation</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⚖️</Text>
-            <Text style={styles.statValue}>{analytics?.litigationCount || 0}</Text>
-            <Text style={styles.statLabel}>Litigation</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🏛️</Text>
-            <Text style={styles.statValue}>{analytics?.trialCount || 0}</Text>
-            <Text style={styles.statLabel}>Trial</Text>
-          </View>
-        </View>
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📈 Recent Activity</Text>
-        <View style={styles.activityList}>
-          <View style={styles.activityItem}>
-            <Text style={styles.activityIcon}>🆕</Text>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Welcome to your Law Firm Portal</Text>
-              <Text style={styles.activityTime}>Just now</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statIcon}>👥</Text>
+              <Text style={styles.statValue}>{totalClients}</Text>
+              <Text style={styles.statLabel}>Total Clients</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.PRE_LITIGATION.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.PRE_LITIGATION.icon}</Text>
+              <Text style={styles.statValue}>{preLitigationCount}</Text>
+              <Text style={styles.statLabel}>Pre-Litigation</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.LITIGATION.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.LITIGATION.icon}</Text>
+              <Text style={styles.statValue}>{litigationCount}</Text>
+              <Text style={styles.statLabel}>Litigation</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.TRIAL.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.TRIAL.icon}</Text>
+              <Text style={styles.statValue}>{trialCount}</Text>
+              <Text style={styles.statLabel}>Trial</Text>
             </View>
           </View>
-          {clients.length > 0 && (
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎯 Case Phase Distribution</Text>
+          
+          {/* Pre-Litigation Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.PRE_LITIGATION.icon} {CASE_PHASES.PRE_LITIGATION.name}</Text>
+              <Text style={styles.phaseCount}>{preLitigationCount} clients ({preLitigationPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${preLitigationPct}%`, 
+                    backgroundColor: CASE_PHASES.PRE_LITIGATION.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Litigation Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.LITIGATION.icon} {CASE_PHASES.LITIGATION.name}</Text>
+              <Text style={styles.phaseCount}>{litigationCount} clients ({litigationPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${litigationPct}%`, 
+                    backgroundColor: CASE_PHASES.LITIGATION.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Trial Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.TRIAL.icon} {CASE_PHASES.TRIAL.name}</Text>
+              <Text style={styles.phaseCount}>{trialCount} clients ({trialPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${trialPct}%`, 
+                    backgroundColor: CASE_PHASES.TRIAL.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📈 Recent Activity</Text>
+          <View style={styles.activityList}>
             <View style={styles.activityItem}>
-              <Text style={styles.activityIcon}>👤</Text>
+              <Text style={styles.activityIcon}>🆕</Text>
               <View style={styles.activityContent}>
-                <Text style={styles.activityText}>{clients.length} client(s) registered</Text>
-                <Text style={styles.activityTime}>Today</Text>
+                <Text style={styles.activityText}>Welcome to your Law Firm Portal</Text>
+                <Text style={styles.activityTime}>Just now</Text>
               </View>
             </View>
-          )}
+            {clients.length > 0 && (
+              <View style={styles.activityItem}>
+                <Text style={styles.activityIcon}>👤</Text>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityText}>{clients.length} client(s) registered</Text>
+                  <Text style={styles.activityTime}>Today</Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderMedicalHubTab = () => (
     <View style={styles.tabContent}>
@@ -498,6 +571,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+  },
+  phaseRow: {
+    marginBottom: 20,
+  },
+  phaseInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  phaseName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+  },
+  phaseCount: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  progressBarContainer: {
+    height: 12,
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.warmGray,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 5,
   },
   activityList: {
     gap: 12,
