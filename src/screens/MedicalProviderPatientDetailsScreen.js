@@ -111,8 +111,10 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       const stage = stages[i];
       
       // Determine stage status: complete, in-progress, or not started
-      const isComplete = stage.completed;
-      const hasAnyCompleted = stage.substages && stage.substages.some(sub => sub.completed);
+      const isComplete = stage.completed === true;
+      const hasAnyCompleted = (stage.substages && Array.isArray(stage.substages)) 
+        ? stage.substages.some(sub => sub.completed === true) 
+        : false;
       const isInProgress = !isComplete && hasAnyCompleted;
       
       // Color coding: green for complete, yellow for in-progress, gray for not started
@@ -146,8 +148,10 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       const pos = stagePositions[index];
       
       // Determine stage status: complete, in-progress, or not started
-      const isComplete = stage.completed;
-      const hasAnyCompleted = stage.substages && stage.substages.some(sub => sub.completed);
+      const isComplete = stage.completed === true;
+      const hasAnyCompleted = (stage.substages && Array.isArray(stage.substages)) 
+        ? stage.substages.some(sub => sub.completed === true) 
+        : false;
       const isInProgress = !isComplete && hasAnyCompleted;
       
       // Color coding: green for complete, yellow for in-progress, gray for not started
@@ -158,7 +162,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         circleColor = '#f39c12'; // Yellow/Amber
       }
       
-      console.log(`Stage ${index} (${stage.name}): isComplete=${isComplete}, isInProgress=${isInProgress}, color=${circleColor}`);
+      console.log(`Stage ${index} (${stage.name}): isComplete=${isComplete}, isInProgress=${isInProgress}, hasAnyCompleted=${hasAnyCompleted}, color=${circleColor}`);
       
       const circleIcon = isComplete ? '✓' : stage.icon;
 

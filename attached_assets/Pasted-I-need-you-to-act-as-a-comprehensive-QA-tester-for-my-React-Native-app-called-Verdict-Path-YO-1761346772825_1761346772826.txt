@@ -1,0 +1,187 @@
+I need you to act as a comprehensive QA tester for my React Native app called "Verdict Path". 
+
+**YOUR MISSION:**
+Test the app thoroughly as an individual user going through the complete litigation journey, identify ALL bugs/errors, and fix them automatically.
+
+**THE APP:**
+- React Native litigation case management app
+- Users complete tasks through 3 phases: Pre-Litigation → Litigation → Trial
+- Phase transitions triggered by completing specific tasks:
+  - cf-1 ("File Complaint") → enters Litigation phase
+  - trial-1 ("Pre-Trial Preparation") → enters Trial phase
+- Has gamification (coins, streaks, daily bonuses)
+- Multiple user types: Individual, Law Firm, Medical Provider
+- Analytics dashboards for law firms and medical providers
+
+**TESTING SCENARIO - INDIVIDUAL USER JOURNEY:**
+
+1. **Landing & Registration:**
+   - Open app, should see landing screen
+   - Click "Register"
+   - Select user type: "Individual"
+   - Enter email: test@example.com
+   - Enter password: TestPass123!
+   - Confirm password: TestPass123!
+   - Click Register
+   - TEST: Should navigate to subscription selection
+   - BUGS TO CHECK: Empty field validation, password mismatch, email format
+
+2. **Subscription Selection:**
+   - Select "Free" tier
+   - Click Continue
+   - TEST: Should create account and navigate to dashboard
+   - TEST: Should see welcome alert "Welcome to Verdict Path!"
+   - BUGS TO CHECK: API errors, response handling, missing fields
+
+3. **Dashboard:**
+   - Should see user email/name
+   - Should see coins: 0
+   - Should see login streak: 0
+   - Should see navigation to: Roadmap, Videos, Medical Hub
+   - TEST: Click "Claim Daily Bonus" 
+   - BUGS TO CHECK: Button functionality, coin increment, Alert displays
+
+4. **Roadmap - Pre-Litigation Phase:**
+   - Navigate to Roadmap
+   - Should see phase indicator: "📋 Pre-Litigation" in Blue
+   - Should see 5 tasks in Pre-Litigation stage
+   - Complete task 1: "Initial Consultation"
+   - TEST: Task marks as complete with checkmark
+   - Complete task 2: "Case Evaluation"
+   - Complete task 3: "Gather Evidence"
+   - Complete task 4: "Demand Letter"
+   - Complete task 5: "Negotiation"
+   - BUGS TO CHECK: Task completion, state updates, visual feedback
+
+5. **Phase Transition 1 - Enter Litigation:**
+   - Expand "Litigation" stage
+   - Complete task: "File Complaint" (cf-1)
+   - TEST: Should see alert "🎉 Major Milestone! You have entered the Litigation phase!"
+   - TEST: Phase indicator should change to "⚖️ Litigation" in Amber
+   - TEST: Backend should record phase transition
+   - BUGS TO CHECK: Alert displays, phase updates, API call succeeds, no crashes
+
+6. **Litigation Phase Tasks:**
+   - Complete "Serve Defendant"
+   - Complete "Answer Filed"
+   - Complete "Discovery - Interrogatories"
+   - Complete "Discovery - Document Requests"
+   - Complete "Depositions"
+   - Complete "Pre-Trial Motions"
+   - Complete "Settlement Conference"
+   - BUGS TO CHECK: All tasks complete properly, no state issues
+
+7. **Phase Transition 2 - Enter Trial:**
+   - Expand "Trial" stage
+   - Complete task: "Pre-Trial Preparation" (trial-1)
+   - TEST: Should see alert "🎉 Major Milestone! You have entered the Trial phase!"
+   - TEST: Phase indicator should change to "🏛️ Trial" in Red
+   - TEST: Backend should record phase transition
+   - BUGS TO CHECK: Alert displays, phase updates, API call succeeds
+
+8. **Trial Phase Tasks:**
+   - Complete "Jury Selection"
+   - Complete "Opening Statements"
+   - Complete "Plaintiff Presents Case"
+   - TEST: Each task completes without errors
+   - BUGS TO CHECK: No state corruption, UI updates correctly
+
+9. **Medical Hub:**
+   - Navigate to Medical Hub
+   - Try uploading medical bills
+   - Try uploading medical records
+   - Navigate to HIPAA Forms
+   - TEST: All screens load without crashing
+   - BUGS TO CHECK: Upload functionality, form generation
+
+10. **Logout & Re-login:**
+    - Logout from dashboard
+    - Login again with same credentials
+    - TEST: Phase should persist (should show Trial phase)
+    - TEST: Completed tasks should remain completed
+    - TEST: Coins and streak should be maintained
+    - BUGS TO CHECK: State persistence, authentication
+
+**COMMON BUGS TO CHECK FOR:**
+
+1. **Alert Import Bug (CRITICAL):**
+   - Check if App.js line 3 imports Alert from react-native
+   - If using lowercase 'alert' from custom import, FIX IT
+   - Should be: `import { SafeAreaView, StatusBar, Alert } from 'react-native';`
+
+2. **API Errors:**
+   - Check all API calls have proper error handling
+   - Check response format matches expected structure
+   - Check for network timeout issues
+
+3. **State Management:**
+   - Phase doesn't update after completing trigger tasks
+   - Completed tasks reset after navigation
+   - User data lost after logout/login
+
+4. **UI Bugs:**
+   - Alerts don't display (usually Alert import issue)
+   - Phase indicator doesn't change colors
+   - Tasks don't show checkmarks when completed
+   - Progress bars don't update
+
+5. **Navigation Issues:**
+   - Can't navigate back to dashboard
+   - Stuck on certain screens
+   - Navigation props missing
+
+6. **Data Persistence:**
+   - Phase resets to Pre-Litigation after logout
+   - Completed tasks don't persist
+   - Coins/streaks reset
+
+**AUTOMATED FIXES TO APPLY:**
+
+For every bug found:
+1. Identify the root cause
+2. Provide the exact fix with file name and line numbers
+3. Show before/after code
+4. Apply the fix automatically if possible
+5. Re-test to confirm fix works
+
+**TESTING OUTPUT FORMAT:**
+
+After testing, provide:
+```
+TEST RESULTS SUMMARY
+====================
+
+✅ PASSED TESTS:
+- List each test that passed
+
+❌ FAILED TESTS:
+- List each test that failed
+- Explain what went wrong
+
+🐛 BUGS FOUND:
+Bug #1: [Description]
+  File: [filename]
+  Line: [line number]
+  Issue: [what's wrong]
+  Fix: [code fix]
+  Status: [Fixed/Needs Manual Fix]
+
+Bug #2: ...
+
+🔧 FIXES APPLIED:
+- List all fixes made automatically
+
+⚠️ MANUAL FIXES NEEDED:
+- List fixes that require human intervention
+
+📊 OVERALL STATUS:
+- X tests passed
+- Y tests failed
+- Z bugs found and fixed
+- A bugs need manual fixing
+
+READY FOR PRODUCTION: [YES/NO]
+```
+
+**START TESTING NOW:**
+Begin with step 1 (Landing & Registration) and work through all 10 steps systematically. Test every button, every navigation flow, every API call. Find and fix every bug. Make this app bulletproof.
