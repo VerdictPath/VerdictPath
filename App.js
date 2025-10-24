@@ -725,9 +725,12 @@ const CaseCompassApp = () => {
       
       {currentScreen === 'client-roadmap' && (
         <RoadmapScreen
+          litigationStages={litigationStages}
           onNavigate={handleNavigate}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
+          onCompleteStage={() => {}} // Read-only mode
+          onUncompleteStage={() => {}} // Read-only mode
           onCompleteSubStage={() => {}} // Read-only mode
           onPurchaseVideo={() => {}} // Read-only mode
           onUploadFile={() => {}} // Read-only mode
