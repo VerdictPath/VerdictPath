@@ -595,6 +595,37 @@ const CaseCompassApp = () => {
     }));
   };
 
+  // Merge completed substages from API into LITIGATION_STAGES structure
+  const mergeCompletedSubstages = (completedSubstagesData) => {
+    if (!completedSubstagesData || !completedSubstagesData.completedSubstages) {
+      return JSON.parse(JSON.stringify(LITIGATION_STAGES));
+    }
+
+    // Create a Set of completed backend IDs (format: '1-0', '2-1', etc.)
+    const completedIds = new Set(
+      completedSubstagesData.completedSubstages.map(sub => sub.substage_id)
+    );
+
+    // Deep clone LITIGATION_STAGES to avoid state contamination
+    return JSON.parse(JSON.stringify(LITIGATION_STAGES)).map(stage => {
+      return {
+        ...stage,
+        completed: completedSubstagesData.completedStages?.some(s => s.stage_id === stage.id) || false,
+        subStages: stage.subStages?.map((subStage, index) => {
+          // Backend uses format like '1-0', '1-1', '2-0', '2-1'
+          // Frontend uses format like 'pre-1', 'pre-2', 'cf-1', 'cf-2'
+          // We need to convert frontend index to backend format: `${stageId}-${index}`
+          const backendId = `${stage.id}-${index}`;
+          
+          return {
+            ...subStage,
+            completed: completedIds.has(backendId)
+          };
+        }) || []
+      };
+    });
+  };
+
   const handleNavigate = (screen, data) => {
     if (screen === 'client-roadmap' && data) {
       setSelectedClientId(data.clientId);
@@ -725,7 +756,7 @@ const CaseCompassApp = () => {
       
       {currentScreen === 'client-roadmap' && (
         <RoadmapScreen
-          litigationStages={litigationStages}
+          litigationStages={mergeCompletedSubstages(clientRoadmapData)}
           onNavigate={handleNavigate}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
