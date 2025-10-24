@@ -3,6 +3,12 @@
     "name": "Verdict Path",
     "slug": "verdict-path",
     "version": "1.0.1",
+    "owner": "verdictpath",
+    "extra": {
+      "eas": {
+        "projectId": "71e06a4e-c10f-4b46-92d3-4f091343570c"
+      }
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
