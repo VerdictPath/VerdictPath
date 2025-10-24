@@ -722,10 +722,26 @@ const RoadmapScreen = ({
     );
   };
 
+  const handleBackPress = () => {
+    if (readOnly && user) {
+      // If viewing a client/patient roadmap, go back to client/patient details
+      if (user.userType === 'lawfirm') {
+        onNavigate('lawfirm-client-details');
+      } else if (user.userType === 'medicalprovider') {
+        onNavigate('medicalprovider-patient-details');
+      } else {
+        onNavigate('dashboard');
+      }
+    } else {
+      // Regular user viewing their own roadmap
+      onNavigate('dashboard');
+    }
+  };
+
   return (
     <View style={commonStyles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onNavigate('dashboard')}>
+        <TouchableOpacity onPress={handleBackPress}>
           <Text style={commonStyles.backButton}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Litigation Map</Text>
