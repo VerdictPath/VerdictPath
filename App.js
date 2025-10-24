@@ -1,11 +1,10 @@
-// APP VERSION 1.0.1 - HIPAA Forms moved to Medical Hub
+// APP VERSION 1.0.2 - 3-Phase Analytics System
 import React, { useState } from 'react';
-import { SafeAreaView, StatusBar } from 'react-native';
+import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import { commonStyles } from './src/styles/commonStyles';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
-import alert from './src/utils/alert';
 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
