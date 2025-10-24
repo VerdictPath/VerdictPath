@@ -1,3 +1,4 @@
+// APP VERSION 1.0.1 - HIPAA Forms moved to Medical Hub
 import React, { useState } from 'react';
 import { SafeAreaView, StatusBar } from 'react-native';
 import { commonStyles } from './src/styles/commonStyles';
