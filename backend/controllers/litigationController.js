@@ -1,5 +1,28 @@
 const db = require('../config/db');
 
+// Helper function to check and update phase transitions
+const checkPhaseTransition = async (userId, substageId) => {
+  // Phase transition mapping based on specific substage completions
+  const phaseTransitions = {
+    'cf-1': 'litigation',    // Draft Complaint triggers Litigation phase
+    'trial-1': 'trial'       // PreTrial motions triggers Trial phase
+  };
+  
+  const newPhase = phaseTransitions[substageId];
+  
+  if (newPhase) {
+    // Update user's current phase
+    await db.query(
+      'UPDATE users SET current_phase = $1 WHERE id = $2',
+      [newPhase, userId]
+    );
+    
+    return newPhase;
+  }
+  
+  return null;
+};
+
 // Helper function to ensure user progress record exists (upsert pattern)
 const ensureProgressRecord = async (userId) => {
   const result = await db.query(
@@ -117,10 +140,14 @@ const completeSubstage = async (req, res) => {
       [coinsEarned || 0, userId]
     );
 
+    // Check for phase transition
+    const newPhase = await checkPhaseTransition(userId, substageId);
+
     res.json({
       message: 'Substage completed successfully',
       completion: result.rows[0],
-      coinsEarned: coinsEarned || 0
+      coinsEarned: coinsEarned || 0,
+      phaseTransition: newPhase ? { newPhase } : null
     });
   } catch (error) {
     console.error('Error completing substage:', error);
