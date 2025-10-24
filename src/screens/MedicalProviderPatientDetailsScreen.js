@@ -110,9 +110,20 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       const end = stagePositions[i + 1];
       const stage = stages[i];
       
-      const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
-      const pathColor = hasProgress ? '#27ae60' : theme.colors.warmGray;
-      const strokeDasharray = hasProgress ? "5,5" : "0";
+      // Determine stage status: complete, in-progress, or not started
+      const isComplete = stage.completed;
+      const hasAnyCompleted = stage.substages && stage.substages.some(sub => sub.completed);
+      const isInProgress = !isComplete && hasAnyCompleted;
+      
+      // Color coding: green for complete, yellow for in-progress, gray for not started
+      let pathColor = theme.colors.warmGray;
+      if (isComplete) {
+        pathColor = '#27ae60'; // Green
+      } else if (isInProgress) {
+        pathColor = '#f39c12'; // Yellow/Amber
+      }
+      
+      const strokeDasharray = (isComplete || isInProgress) ? "5,5" : "0";
 
       const controlX1 = start.x + (end.x - start.x) / 3;
       const controlY1 = start.y + (end.y - start.y) / 3 + 30;
@@ -133,9 +144,21 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
     stages.forEach((stage, index) => {
       const pos = stagePositions[index];
-      const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
-      const circleColor = hasProgress ? '#27ae60' : theme.colors.warmGray;
-      const circleIcon = hasProgress ? '✓' : stage.icon;
+      
+      // Determine stage status: complete, in-progress, or not started
+      const isComplete = stage.completed;
+      const hasAnyCompleted = stage.substages && stage.substages.some(sub => sub.completed);
+      const isInProgress = !isComplete && hasAnyCompleted;
+      
+      // Color coding: green for complete, yellow for in-progress, gray for not started
+      let circleColor = theme.colors.warmGray;
+      if (isComplete) {
+        circleColor = '#27ae60'; // Green
+      } else if (isInProgress) {
+        circleColor = '#f39c12'; // Yellow/Amber
+      }
+      
+      const circleIcon = isComplete ? '✓' : stage.icon;
 
       circles.push(
         <Circle
