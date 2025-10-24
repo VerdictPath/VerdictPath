@@ -55,22 +55,29 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       const stageIndex = stagesWithProgress.findIndex(s => s.id === completedSubstage.stage_id);
       if (stageIndex !== -1) {
         const stage = stagesWithProgress[stageIndex];
-        const substageIndex = stage.substages.findIndex(sub => {
-          const substageId = `${stage.id}-${substageIndex}`;
-          return completedSubstage.substage_id === substageId;
-        });
+        
+        // Safety check: ensure substages array exists
+        if (stage.substages && Array.isArray(stage.substages)) {
+          const substageIndex = stage.substages.findIndex(sub => {
+            const substageId = `${stage.id}-${substageIndex}`;
+            return completedSubstage.substage_id === substageId;
+          });
 
-        if (substageIndex !== -1) {
-          stage.substages[substageIndex].completed = true;
-          stage.substages[substageIndex].completedAt = completedSubstage.completed_at;
+          if (substageIndex !== -1) {
+            stage.substages[substageIndex].completed = true;
+            stage.substages[substageIndex].completedAt = completedSubstage.completed_at;
+          }
         }
       }
     });
 
     stagesWithProgress.forEach(stage => {
-      const hasAnyCompleted = stage.substages.some(sub => sub.completed);
-      if (hasAnyCompleted) {
-        stage.completed = stage.substages.every(sub => sub.completed);
+      // Safety check: ensure substages array exists
+      if (stage.substages && Array.isArray(stage.substages)) {
+        const hasAnyCompleted = stage.substages.some(sub => sub.completed);
+        if (hasAnyCompleted) {
+          stage.completed = stage.substages.every(sub => sub.completed);
+        }
       }
     });
 
