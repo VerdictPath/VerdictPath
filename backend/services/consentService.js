@@ -36,34 +36,42 @@ class ConsentService {
         return false;
       }
       
-      const consent = result.rows[0];
-      
       // If no specific data type requested, consent exists
       if (!dataType) {
         return true;
       }
       
-      // Check if consent type covers the requested data
-      if (consent.consent_type === 'FULL_ACCESS') {
-        return true;
-      }
-      
-      if (consent.consent_type === 'MEDICAL_RECORDS_ONLY' && dataType === 'medical_records') {
-        return true;
-      }
-      
-      if (consent.consent_type === 'BILLING_ONLY' && dataType === 'billing') {
-        return true;
-      }
-      
-      if (consent.consent_type === 'LITIGATION_ONLY' && dataType === 'litigation') {
-        return true;
-      }
-      
-      // For CUSTOM consent, check if data type is in allowed list
-      if (consent.consent_type === 'CUSTOM') {
-        const allowedTypes = consent.allowed_data_types || [];
-        return allowedTypes.includes(dataType);
+      // Check ALL consent records - if ANY of them grant access, return true
+      for (const consent of result.rows) {
+        // Check if consent type covers the requested data
+        if (consent.consent_type === 'FULL_ACCESS') {
+          return true;
+        }
+        
+        if (consent.consent_type === 'MEDICAL_RECORDS_ONLY' && dataType === 'medical_records') {
+          return true;
+        }
+        
+        if (consent.consent_type === 'BILLING_ONLY' && dataType === 'billing') {
+          return true;
+        }
+        
+        if (consent.consent_type === 'LITIGATION_ONLY' && dataType === 'litigation') {
+          return true;
+        }
+        
+        // Check if the simple consent_type matches the dataType
+        if (consent.consent_type === dataType) {
+          return true;
+        }
+        
+        // For CUSTOM consent, check if data type is in allowed list
+        if (consent.consent_type === 'CUSTOM') {
+          const allowedTypes = consent.allowed_data_types || [];
+          if (allowedTypes.includes(dataType)) {
+            return true;
+          }
+        }
       }
       
       return false;

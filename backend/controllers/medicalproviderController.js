@@ -87,7 +87,7 @@ exports.getDashboard = async (req, res) => {
     
     // Get all medical records for consented patients
     const medicalRecordsResult = await db.query(
-      `SELECT mr.id, mr.file_name, mr.file_type, mr.uploaded_date, mr.category, mr.user_id,
+      `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_date, mr.category, mr.user_id,
               u.first_name_encrypted, u.last_name_encrypted
        FROM medical_records mr
        INNER JOIN users u ON mr.user_id = u.id
