@@ -87,7 +87,7 @@ exports.getDashboard = async (req, res) => {
     
     // Get all medical records for consented patients
     const medicalRecordsResult = await db.query(
-      `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_date, mr.category, mr.user_id,
+      `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_at, mr.category, mr.user_id,
               u.first_name_encrypted, u.last_name_encrypted
        FROM medical_records mr
        INNER JOIN users u ON mr.user_id = u.id
@@ -95,7 +95,7 @@ exports.getDashboard = async (req, res) => {
        WHERE cr.granted_to_type = 'medical_provider'
          AND cr.granted_to_id = $1
          AND cr.status = 'active'
-       ORDER BY mr.uploaded_date DESC
+       ORDER BY mr.uploaded_at DESC
        LIMIT 50`,
       [providerId]
     );
@@ -109,7 +109,7 @@ exports.getDashboard = async (req, res) => {
         status: 'Available',
         clientName: `${lastName}, ${firstName}`,
         patientName: `${lastName}, ${firstName}`,
-        uploadedDate: record.uploaded_date
+        uploadedDate: record.uploaded_at
       };
     });
     
@@ -122,7 +122,7 @@ exports.getDashboard = async (req, res) => {
         title: record.file_name,
         type: record.category || 'Medical Document',
         patientName: `${lastName}, ${firstName}`,
-        addedDate: record.uploaded_date
+        addedDate: record.uploaded_at
       };
     });
     
