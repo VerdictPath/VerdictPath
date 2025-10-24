@@ -210,16 +210,16 @@ exports.getPatientDetails = async (req, res) => {
     
     // Get medical records
     const medicalRecordsResult = await db.query(
-      `SELECT id, file_name, file_type, file_size, uploaded_date, category
+      `SELECT id, file_name, mime_type, file_size, uploaded_at, record_type
        FROM medical_records
        WHERE user_id = $1
-       ORDER BY uploaded_date DESC`,
+       ORDER BY uploaded_at DESC`,
       [patientId]
     );
     
     // Get medical billing
     const billingResult = await db.query(
-      `SELECT id, amount_billed, amount_due, bill_date, provider_name, service_description
+      `SELECT id, total_amount, amount_due, bill_date, facility_name, description
        FROM medical_billing
        WHERE user_id = $1
        ORDER BY bill_date DESC`,
@@ -259,7 +259,7 @@ exports.getPatientDetails = async (req, res) => {
       },
       medicalBilling: {
         total: billingResult.rows.length,
-        totalAmountBilled: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.amount_billed || 0), 0),
+        totalAmountBilled: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.total_amount || 0), 0),
         totalAmountDue: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.amount_due || 0), 0),
         bills: billingResult.rows
       },
