@@ -1,14 +1,25 @@
 const db = require('../config/db');
 
-// Helper function to check and update phase transitions
-const checkPhaseTransition = async (userId, substageId) => {
-  // Phase transition mapping based on specific substage completions
-  const phaseTransitions = {
-    'cf-1': 'litigation',    // Draft Complaint triggers Litigation phase
-    'trial-1': 'trial'       // PreTrial motions triggers Trial phase
-  };
+// Helper function to check and update phase transitions based on stage completion
+const updatePhaseOnStageCompletion = async (userId, completedStageId) => {
+  // Phase mapping based on completed stage:
+  // Pre-Litigation: Stage 1 (stageId = 1)
+  // Litigation: Stages 2-6 (stageId 2-6)
+  // Trial: Stages 7-9 (stageId 7-9)
   
-  const newPhase = phaseTransitions[substageId];
+  let newPhase = null;
+  
+  if (completedStageId === 1) {
+    // Completing Stage 1 moves user to Litigation phase
+    newPhase = 'litigation';
+  } else if (completedStageId >= 2 && completedStageId <= 6) {
+    // User is in Litigation phase (stays in litigation until stage 6 is complete)
+    if (completedStageId === 6) {
+      // Completing Stage 6 (last litigation stage) moves to Trial phase
+      newPhase = 'trial';
+    }
+  }
+  // Stages 7-9 are already in Trial phase, no transition needed
   
   if (newPhase) {
     // Update user's current phase
@@ -140,14 +151,10 @@ const completeSubstage = async (req, res) => {
       [coinsEarned || 0, userId]
     );
 
-    // Check for phase transition
-    const newPhase = await checkPhaseTransition(userId, substageId);
-
     res.json({
       message: 'Substage completed successfully',
       completion: result.rows[0],
-      coinsEarned: coinsEarned || 0,
-      phaseTransition: newPhase ? { newPhase } : null
+      coinsEarned: coinsEarned || 0
     });
   } catch (error) {
     console.error('Error completing substage:', error);
@@ -226,10 +233,14 @@ const completeStage = async (req, res) => {
       );
     }
 
+    // Check for phase transition based on stage completion
+    const newPhase = await updatePhaseOnStageCompletion(userId, stageId);
+
     res.json({
       message: 'Stage completed successfully',
       completion: result.rows[0],
-      coinsEarned: coinsEarned || 0
+      coinsEarned: coinsEarned || 0,
+      phaseTransition: newPhase ? { newPhase } : null
     });
   } catch (error) {
     console.error('Error completing stage:', error);
