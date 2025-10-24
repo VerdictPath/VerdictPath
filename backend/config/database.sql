@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
   login_streak INTEGER DEFAULT 0,
   last_login_date DATE,
   current_tier VARCHAR(50) DEFAULT 'bronze',
+  current_phase VARCHAR(50) DEFAULT 'pre_litigation' CHECK (current_phase IN ('pre_litigation', 'litigation', 'trial')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
