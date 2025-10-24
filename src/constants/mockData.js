@@ -1,3 +1,34 @@
+// Case Phase Constants
+export const CASE_PHASES = {
+  PRE_LITIGATION: {
+    id: 'pre_litigation',
+    name: 'Pre-Litigation',
+    color: '#3498db', // Blue
+    icon: '📋',
+    description: 'Gathering documentation and preparing your case'
+  },
+  LITIGATION: {
+    id: 'litigation',
+    name: 'Litigation',
+    color: '#f39c12', // Amber
+    icon: '⚖️',
+    description: 'Active lawsuit with court proceedings'
+  },
+  TRIAL: {
+    id: 'trial',
+    name: 'Trial',
+    color: '#e74c3c', // Red
+    icon: '🏛️',
+    description: 'Case proceeding to or in trial'
+  }
+};
+
+// Phase Transition Markers
+export const PHASE_TRANSITION_TASKS = {
+  LITIGATION_START: 'cf-1', // Draft Complaint - starts litigation phase
+  TRIAL_START: 'trial-1' // PreTrial motions - starts trial phase
+};
+
 export const LITIGATION_STAGES = [
   {
     id: 1,
@@ -7,6 +38,7 @@ export const LITIGATION_STAGES = [
     description: 'Gather all necessary documentation before filing your case',
     expanded: false,
     position: { top: '8%', left: '15%' },
+    phase: CASE_PHASES.PRE_LITIGATION.id,
     subStages: [
       { id: 'pre-1', name: 'Police Report', coins: 10, completed: false, icon: '🚔', description: 'Upload the official police accident report', acceptedFormats: 'PDF, JPG, PNG', uploaded: false, uploadedFiles: [] },
       { id: 'pre-2', name: 'Body Cam Footage', coins: 10, completed: false, icon: '📹', description: 'Upload body camera footage if available', acceptedFormats: 'MP4, MOV, AVI', uploaded: false, uploadedFiles: [] },
@@ -33,8 +65,9 @@ export const LITIGATION_STAGES = [
     description: 'Your lawsuit is officially filed with the court',
     expanded: false,
     position: { top: '8%', left: '60%' },
+    phase: CASE_PHASES.LITIGATION.id,
     subStages: [
-      { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document' },
+      { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document', triggersPhaseTransition: 'litigation' },
       { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit complaint to the court' },
       { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Deliver complaint to the defendant' },
       { id: 'cf-4', name: 'Answer Filed (within 30 days)', coins: 7, completed: false, icon: '📄', description: 'Defendant files their answer to the complaint' }
@@ -51,6 +84,7 @@ export const LITIGATION_STAGES = [
     description: 'Exchange information with the opposing party',
     expanded: false,
     position: { top: '25%', left: '35%' },
+    phase: CASE_PHASES.LITIGATION.id,
     subStages: [
       { id: 'disc-1', name: 'Interrogatories', coins: 10, completed: false, icon: '❓', description: 'Written questions for the other party' },
       { id: 'disc-2', name: 'Request for Production of Documents', coins: 10, completed: false, icon: '📄', description: 'Request relevant documents from the opposing party' },
@@ -71,6 +105,7 @@ export const LITIGATION_STAGES = [
     description: 'Sworn testimony is recorded under oath',
     expanded: false,
     position: { top: '42%', left: '65%' },
+    phase: CASE_PHASES.LITIGATION.id,
     subStages: [
       { id: 'dep-1', name: 'Deposition Preparation', coins: 25, completed: false, icon: '📖', description: 'Prepare for your testimony' },
       { id: 'dep-2', name: 'Your Deposition', coins: 25, completed: false, icon: '🎤', description: 'Give sworn testimony' },
@@ -90,6 +125,7 @@ export const LITIGATION_STAGES = [
     description: 'Attempt to settle the case with a neutral mediator',
     expanded: false,
     position: { top: '58%', left: '20%' },
+    phase: CASE_PHASES.LITIGATION.id,
     subStages: [
       { id: 'med-1', name: 'Mediation Prep', coins: 15, completed: false, icon: '📋', description: 'Prepare settlement strategy' },
       { id: 'med-2', name: 'Mediation Session', coins: 25, completed: false, icon: '🤝', description: 'Attend mediation meeting' },
@@ -107,6 +143,7 @@ export const LITIGATION_STAGES = [
     description: 'Prepare your case for trial presentation',
     expanded: false,
     position: { top: '58%', left: '70%' },
+    phase: CASE_PHASES.LITIGATION.id,
     subStages: [
       { id: 'tp-1', name: 'Prepare your Testimony', coins: 25, completed: false, icon: '📖', description: 'Prepare what you will say on the stand' },
       { id: 'tp-2', name: 'Confirm Exhibits and Evidence with your Attorney', coins: 20, completed: false, icon: '🗂️', description: 'Review all exhibits and evidence with your lawyer' },
@@ -127,8 +164,9 @@ export const LITIGATION_STAGES = [
     description: 'Present your case in court',
     expanded: false,
     position: { top: '74%', left: '35%' },
+    phase: CASE_PHASES.TRIAL.id,
     subStages: [
-      { id: 'trial-1', name: 'PreTrial motions', coins: 10, completed: false, icon: '📋', description: 'File pretrial motions with the court' },
+      { id: 'trial-1', name: 'PreTrial motions', coins: 10, completed: false, icon: '📋', description: 'File pretrial motions with the court', triggersPhaseTransition: 'trial' },
       { id: 'trial-2', name: 'Jury selection / voir dire', coins: 10, completed: false, icon: '👥', description: 'Select jury through voir dire process' },
       { id: 'trial-3', name: 'Opening statements', coins: 15, completed: false, icon: '🗣️', description: 'Present opening arguments to the jury' },
       { id: 'trial-4', name: "Plaintiff's witness testimony (direct and cross examination)", coins: 15, completed: false, icon: '👨‍⚖️', description: 'Plaintiff presents witness testimony' },
@@ -157,6 +195,7 @@ export const LITIGATION_STAGES = [
     description: 'Reach a settlement agreement with the opposing party',
     expanded: false,
     position: { top: '74%', left: '65%' },
+    phase: CASE_PHASES.TRIAL.id,
     subStages: [
       { id: 'settle-1', name: 'Negotiations', coins: 10, completed: false, icon: '🤝', description: 'Negotiate settlement terms with opposing party' },
       { id: 'settle-2', name: 'Agreement to settle', coins: 10, completed: false, icon: '📋', description: 'Reach formal agreement to settle the case' },
@@ -181,6 +220,7 @@ export const LITIGATION_STAGES = [
     description: 'Your case reaches final resolution - congratulations!',
     expanded: false,
     position: { top: '88%', left: '45%' },
+    phase: CASE_PHASES.TRIAL.id,
     subStages: [
       { id: 'cr-1', name: 'Judgment Entry', coins: 100, completed: false, icon: '⚖️', description: 'Court enters final judgment' },
       { id: 'cr-2', name: 'Case Closure', coins: 100, completed: false, icon: '🎊', description: 'Close out the case' }
