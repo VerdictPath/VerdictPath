@@ -87,7 +87,7 @@ exports.getDashboard = async (req, res) => {
     
     // Get all medical records for consented patients
     const medicalRecordsResult = await db.query(
-      `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_at, mr.category, mr.user_id,
+      `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_at, mr.record_type, mr.user_id,
               u.first_name_encrypted, u.last_name_encrypted
        FROM medical_records mr
        INNER JOIN users u ON mr.user_id = u.id
@@ -105,7 +105,7 @@ exports.getDashboard = async (req, res) => {
       const lastName = encryption.decrypt(record.last_name_encrypted);
       
       return {
-        type: record.category || record.file_name,
+        type: record.record_type || record.file_name,
         status: 'Available',
         clientName: `${lastName}, ${firstName}`,
         patientName: `${lastName}, ${firstName}`,
@@ -120,7 +120,7 @@ exports.getDashboard = async (req, res) => {
       
       return {
         title: record.file_name,
-        type: record.category || 'Medical Document',
+        type: record.record_type || 'Medical Document',
         patientName: `${lastName}, ${firstName}`,
         addedDate: record.uploaded_at
       };
