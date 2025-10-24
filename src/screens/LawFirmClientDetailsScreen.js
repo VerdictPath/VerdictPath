@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '../styles/theme';
 
-const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
+const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [clientData, setClientData] = useState(null);
   const [litigationProgress, setLitigationProgress] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -138,6 +138,14 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack }) => {
                 </Text>
               </View>
             </View>
+
+            {/* View Full Interactive Roadmap Button */}
+            <TouchableOpacity 
+              style={styles.viewRoadmapButton}
+              onPress={() => onNavigate && onNavigate('client-roadmap', { clientId, clientData: litigationProgress })}
+            >
+              <Text style={styles.viewRoadmapButtonText}>🗺️ View Full Interactive Roadmap</Text>
+            </TouchableOpacity>
 
             {/* Full Roadmap - All 9 Stages */}
             <View style={styles.roadmapContainer}>
@@ -505,6 +513,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     fontWeight: '500',
+  },
+  viewRoadmapButton: {
+    backgroundColor: theme.colors.mahogany,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 15,
+    marginBottom: 15,
+  },
+  viewRoadmapButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   roadmapContainer: {
     marginTop: 10,

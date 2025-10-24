@@ -44,6 +44,7 @@ const CaseCompassApp = () => {
   });
   
   const [selectedClientId, setSelectedClientId] = useState(null);
+  const [clientRoadmapData, setClientRoadmapData] = useState(null);
 
   const authToken = user?.token || null;
 
@@ -558,7 +559,11 @@ const CaseCompassApp = () => {
     }));
   };
 
-  const handleNavigate = (screen) => {
+  const handleNavigate = (screen, data) => {
+    if (screen === 'client-roadmap' && data) {
+      setSelectedClientId(data.clientId);
+      setClientRoadmapData(data.clientData);
+    }
     setCurrentScreen(screen);
   };
 
@@ -676,6 +681,25 @@ const CaseCompassApp = () => {
           user={user}
           clientId={selectedClientId}
           onBack={handleBackToLawFirmDashboard}
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentScreen === 'client-roadmap' && (
+        <RoadmapScreen
+          onNavigate={handleNavigate}
+          selectedAvatar={selectedAvatar}
+          onSelectAvatar={setSelectedAvatar}
+          onCompleteSubStage={() => {}} // Read-only mode
+          onPurchaseVideo={() => {}} // Read-only mode
+          onUploadFile={() => {}} // Read-only mode
+          onDataEntry={() => {}} // Read-only mode
+          authToken={authToken}
+          medicalHubUploads={medicalHubUploads}
+          readOnly={true}
+          clientId={selectedClientId}
+          clientRoadmapData={clientRoadmapData}
+          user={user}
         />
       )}
       

@@ -11,7 +11,24 @@ const { width, height } = Dimensions.get('window');
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const RoadmapScreen = ({ litigationStages, onCompleteStage, onUncompleteStage, onNavigate, selectedAvatar, onSelectAvatar, onCompleteSubStage, onPurchaseVideo, onUploadFile, onDataEntry, medicalHubUploads, authToken }) => {
+const RoadmapScreen = ({ 
+  litigationStages, 
+  onCompleteStage, 
+  onUncompleteStage, 
+  onNavigate, 
+  selectedAvatar, 
+  onSelectAvatar, 
+  onCompleteSubStage, 
+  onPurchaseVideo, 
+  onUploadFile, 
+  onDataEntry, 
+  medicalHubUploads, 
+  authToken,
+  readOnly = false,
+  clientId = null,
+  clientRoadmapData = null,
+  user = null
+}) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [animatingPaths, setAnimatingPaths] = useState([]);
