@@ -618,6 +618,8 @@ const CaseCompassApp = () => {
           setPassword={setPassword}
           onLogin={handleLogin}
           onNavigate={handleNavigate}
+          userType={userType}
+          setUserType={setUserType}
         />
       )}
       
