@@ -5,7 +5,7 @@ import {
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
-const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout }) => {
+const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('patients');
   const [patients, setPatients] = useState([]);
   const [providerData, setProviderData] = useState(null);
@@ -250,6 +250,21 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onLogout })
             <Text style={styles.billingLabel}>Pending Reviews:</Text>
             <Text style={styles.billingValue}>{analytics?.pendingReviews || 0}</Text>
           </View>
+        </View>
+      </View>
+      
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📋 HIPAA Forms</Text>
+        <View style={styles.hipaaSection}>
+          <Text style={styles.hipaaDescription}>
+            Manage consent forms and authorizations for sharing patient medical information
+          </Text>
+          <TouchableOpacity 
+            style={styles.hipaaButton}
+            onPress={() => onNavigate('hipaaForms')}
+          >
+            <Text style={styles.hipaaButtonText}>📄 View HIPAA Forms</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -742,6 +757,30 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
+  },
+  hipaaSection: {
+    backgroundColor: theme.colors.cream,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+  },
+  hipaaDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  hipaaButton: {
+    backgroundColor: theme.colors.mahogany,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  hipaaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

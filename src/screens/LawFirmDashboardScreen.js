@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 
-const LawFirmDashboardScreen = ({ user, onNavigateToClient, onLogout }) => {
+const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
   const [clients, setClients] = useState([]);
   const [firmData, setFirmData] = useState(null);
@@ -197,6 +197,21 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onLogout }) => {
             <Text style={styles.billingLabel}>Total Records:</Text>
             <Text style={styles.billingValue}>{analytics?.totalRecords || 0}</Text>
           </View>
+        </View>
+      </View>
+      
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📋 HIPAA Forms</Text>
+        <View style={styles.hipaaSection}>
+          <Text style={styles.hipaaDescription}>
+            Manage consent forms and authorizations for sharing client medical information
+          </Text>
+          <TouchableOpacity 
+            style={styles.hipaaButton}
+            onPress={() => onNavigate('hipaaForms')}
+          >
+            <Text style={styles.hipaaButtonText}>📄 View HIPAA Forms</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -634,6 +649,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.navy,
     paddingVertical: 6,
+  },
+  hipaaSection: {
+    backgroundColor: theme.colors.cream,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+  },
+  hipaaDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  hipaaButton: {
+    backgroundColor: theme.colors.mahogany,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  hipaaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   logoutButton: {
     backgroundColor: theme.colors.mahogany,

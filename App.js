@@ -665,6 +665,7 @@ const CaseCompassApp = () => {
         <LawFirmDashboardScreen
           user={user}
           onNavigateToClient={handleNavigateToClient}
+          onNavigate={handleNavigate}
           onLogout={handleLogout}
         />
       )}
@@ -681,6 +682,7 @@ const CaseCompassApp = () => {
         <MedicalProviderDashboardScreen
           user={user}
           onNavigateToPatient={() => {}}
+          onNavigate={handleNavigate}
           onLogout={handleLogout}
         />
       )}
