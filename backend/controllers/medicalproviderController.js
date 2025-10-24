@@ -126,14 +126,26 @@ exports.getDashboard = async (req, res) => {
       };
     });
     
-    // Calculate litigation stage analytics
-    // TODO: When litigation tracking is implemented, calculate from actual stage data
-    // For now, return placeholder values
+    // Calculate litigation stage analytics by phase
+    const phaseAnalytics = await db.query(
+      `SELECT 
+         COUNT(*) FILTER (WHERE u.current_phase = 'pre_litigation') AS pre_litigation_count,
+         COUNT(*) FILTER (WHERE u.current_phase = 'litigation') AS litigation_count,
+         COUNT(*) FILTER (WHERE u.current_phase = 'trial') AS trial_count
+       FROM users u
+       INNER JOIN consent_records cr ON u.id = cr.patient_id
+       WHERE cr.granted_to_type = 'medical_provider'
+         AND cr.granted_to_id = $1
+         AND cr.status = 'active'
+         AND u.user_type = 'client'`,
+      [providerId]
+    );
+    
     const analytics = {
       totalPatients: patients.length,
-      preLitigationCount: 0,  // Patients in Pre-Litigation stage
-      litigationCount: 0,      // Patients in Litigation stages
-      trialCount: 0            // Patients in Trial stage
+      preLitigationCount: parseInt(phaseAnalytics.rows[0]?.pre_litigation_count || 0),
+      litigationCount: parseInt(phaseAnalytics.rows[0]?.litigation_count || 0),
+      trialCount: parseInt(phaseAnalytics.rows[0]?.trial_count || 0)
     };
     
     res.json({

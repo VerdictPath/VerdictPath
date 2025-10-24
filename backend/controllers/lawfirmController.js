@@ -45,14 +45,23 @@ exports.getDashboard = async (req, res) => {
       };
     });
     
-    // Calculate litigation stage analytics
-    // TODO: When litigation tracking is implemented, calculate from actual stage data
-    // For now, return placeholder values
+    // Calculate litigation stage analytics by phase
+    const phaseAnalytics = await db.query(
+      `SELECT 
+         COUNT(*) FILTER (WHERE current_phase = 'pre_litigation') AS pre_litigation_count,
+         COUNT(*) FILTER (WHERE current_phase = 'litigation') AS litigation_count,
+         COUNT(*) FILTER (WHERE current_phase = 'trial') AS trial_count
+       FROM users u
+       JOIN law_firm_clients lfc ON u.id = lfc.client_id
+       WHERE lfc.law_firm_id = $1`,
+      [lawFirmId]
+    );
+    
     const analytics = {
       totalClients: clients.length,
-      preLitigationCount: 0,  // Clients in Pre-Litigation stage
-      litigationCount: 0,      // Clients in Litigation stages
-      trialCount: 0            // Clients in Trial stage
+      preLitigationCount: parseInt(phaseAnalytics.rows[0]?.pre_litigation_count || 0),
+      litigationCount: parseInt(phaseAnalytics.rows[0]?.litigation_count || 0),
+      trialCount: parseInt(phaseAnalytics.rows[0]?.trial_count || 0)
     };
     
     // HIPAA: Log law firm accessing client list
