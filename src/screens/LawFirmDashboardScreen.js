@@ -18,14 +18,23 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
   const fetchDashboardData = async () => {
     try {
+      console.log('[Dashboard] Fetching dashboard data...');
+      console.log('[Dashboard] Token:', user?.token ? 'Present' : 'Missing');
+      console.log('[Dashboard] API URL:', `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.DASHBOARD}`);
+      
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.DASHBOARD}`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
       
+      console.log('[Dashboard] Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[Dashboard] Data received:', data);
+        console.log('[Dashboard] Clients count:', data.clients?.length || 0);
+        
         setFirmData(data);
         setClients(data.clients || []);
         
@@ -40,9 +49,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         // Set medical records and evidence
         setMedicalRecords(data.medicalRecords || []);
         setEvidence(data.evidence || []);
+      } else {
+        const errorData = await response.json();
+        console.error('[Dashboard] Failed response:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error fetching dashboard:', error);
+      console.error('[Dashboard] Error fetching dashboard:', error);
     } finally {
       setLoading(false);
     }
