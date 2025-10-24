@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { CASE_PHASES } from '../constants/mockData';
 
 const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('patients');
@@ -150,61 +151,133 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     </View>
   );
 
-  const renderAnalyticsTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 Provider Analytics</Text>
-        
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>👥</Text>
-            <Text style={styles.statValue}>{analytics?.totalPatients || 0}</Text>
-            <Text style={styles.statLabel}>Total Patients</Text>
-          </View>
+  const renderAnalyticsTab = () => {
+    const totalPatients = analytics?.totalPatients || 0;
+    const preLitigationCount = analytics?.preLitigationCount || 0;
+    const litigationCount = analytics?.litigationCount || 0;
+    const trialCount = analytics?.trialCount || 0;
+
+    const preLitigationPct = totalPatients > 0 ? Math.round((preLitigationCount / totalPatients) * 100) : 0;
+    const litigationPct = totalPatients > 0 ? Math.round((litigationCount / totalPatients) * 100) : 0;
+    const trialPct = totalPatients > 0 ? Math.round((trialCount / totalPatients) * 100) : 0;
+
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📊 Provider Analytics</Text>
           
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📝</Text>
-            <Text style={styles.statValue}>{analytics?.preLitigationCount || 0}</Text>
-            <Text style={styles.statLabel}>Pre-Litigation</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⚖️</Text>
-            <Text style={styles.statValue}>{analytics?.litigationCount || 0}</Text>
-            <Text style={styles.statLabel}>Litigation</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🏛️</Text>
-            <Text style={styles.statValue}>{analytics?.trialCount || 0}</Text>
-            <Text style={styles.statLabel}>Trial</Text>
-          </View>
-        </View>
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📈 Recent Activity</Text>
-        <View style={styles.activityList}>
-          <View style={styles.activityItem}>
-            <Text style={styles.activityIcon}>🆕</Text>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityText}>Welcome to your Medical Provider Portal</Text>
-              <Text style={styles.activityTime}>Just now</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statIcon}>👥</Text>
+              <Text style={styles.statValue}>{totalPatients}</Text>
+              <Text style={styles.statLabel}>Total Patients</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.PRE_LITIGATION.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.PRE_LITIGATION.icon}</Text>
+              <Text style={styles.statValue}>{preLitigationCount}</Text>
+              <Text style={styles.statLabel}>Pre-Litigation</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.LITIGATION.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.LITIGATION.icon}</Text>
+              <Text style={styles.statValue}>{litigationCount}</Text>
+              <Text style={styles.statLabel}>Litigation</Text>
+            </View>
+            
+            <View style={[styles.statCard, { borderLeftColor: CASE_PHASES.TRIAL.color, borderLeftWidth: 4 }]}>
+              <Text style={styles.statIcon}>{CASE_PHASES.TRIAL.icon}</Text>
+              <Text style={styles.statValue}>{trialCount}</Text>
+              <Text style={styles.statLabel}>Trial</Text>
             </View>
           </View>
-          {patients.length > 0 && (
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎯 Patient Phase Distribution</Text>
+          
+          {/* Pre-Litigation Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.PRE_LITIGATION.icon} {CASE_PHASES.PRE_LITIGATION.name}</Text>
+              <Text style={styles.phaseCount}>{preLitigationCount} patients ({preLitigationPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${preLitigationPct}%`, 
+                    backgroundColor: CASE_PHASES.PRE_LITIGATION.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Litigation Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.LITIGATION.icon} {CASE_PHASES.LITIGATION.name}</Text>
+              <Text style={styles.phaseCount}>{litigationCount} patients ({litigationPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${litigationPct}%`, 
+                    backgroundColor: CASE_PHASES.LITIGATION.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+
+          {/* Trial Phase */}
+          <View style={styles.phaseRow}>
+            <View style={styles.phaseInfo}>
+              <Text style={styles.phaseName}>{CASE_PHASES.TRIAL.icon} {CASE_PHASES.TRIAL.name}</Text>
+              <Text style={styles.phaseCount}>{trialCount} patients ({trialPct}%)</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { 
+                    width: `${trialPct}%`, 
+                    backgroundColor: CASE_PHASES.TRIAL.color 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📈 Recent Activity</Text>
+          <View style={styles.activityList}>
             <View style={styles.activityItem}>
-              <Text style={styles.activityIcon}>👤</Text>
+              <Text style={styles.activityIcon}>🆕</Text>
               <View style={styles.activityContent}>
-                <Text style={styles.activityText}>{patients.length} patient(s) registered</Text>
-                <Text style={styles.activityTime}>Today</Text>
+                <Text style={styles.activityText}>Welcome to your Medical Provider Portal</Text>
+                <Text style={styles.activityTime}>Just now</Text>
               </View>
             </View>
-          )}
+            {patients.length > 0 && (
+              <View style={styles.activityItem}>
+                <Text style={styles.activityIcon}>👤</Text>
+                <View style={styles.activityContent}>
+                  <Text style={styles.activityText}>{patients.length} patient(s) registered</Text>
+                  <Text style={styles.activityTime}>Today</Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderMedicalHubTab = () => (
     <View style={styles.tabContent}>
@@ -539,6 +612,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     textAlign: 'center',
+  },
+  phaseRow: {
+    marginBottom: 20,
+  },
+  phaseInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  phaseName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+  },
+  phaseCount: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  progressBarContainer: {
+    height: 12,
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.colors.warmGray,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 5,
   },
   activityList: {
     gap: 12,
