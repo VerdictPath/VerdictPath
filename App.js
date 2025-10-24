@@ -187,14 +187,36 @@ const CaseCompassApp = () => {
       return;
     }
     
-    if (userType === USER_TYPES.LAW_FIRM) {
-      try {
-        const response = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
-          method: 'POST',
-          body: JSON.stringify({ email, password, userType: 'lawfirm' })
-        });
-        
-        const userData = {
+    console.log('[Login] Attempting login with userType:', userType);
+    
+    try {
+      let apiUserType;
+      let targetScreen;
+      
+      if (userType === USER_TYPES.LAW_FIRM) {
+        apiUserType = 'lawfirm';
+        targetScreen = 'lawfirm-dashboard';
+      } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
+        apiUserType = 'medical_provider';
+        targetScreen = 'medicalprovider-dashboard';
+      } else {
+        apiUserType = 'individual';
+        targetScreen = 'dashboard';
+      }
+      
+      console.log('[Login] API userType:', apiUserType, 'Target screen:', targetScreen);
+      
+      const response = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
+        method: 'POST',
+        body: JSON.stringify({ email, password, userType: apiUserType })
+      });
+      
+      console.log('[Login] Login successful, user:', response.user);
+      
+      let userData;
+      
+      if (userType === USER_TYPES.LAW_FIRM) {
+        userData = {
           id: response.user.id,
           email: response.user.email,
           type: USER_TYPES.LAW_FIRM,
@@ -204,31 +226,42 @@ const CaseCompassApp = () => {
           coins: 150,
           streak: 3
         };
-        
-        setUser(userData);
-        setCoins(150);
-        setLoginStreak(3);
-        setIsLoggedIn(true);
-        setCurrentScreen('lawfirm-dashboard');
-      } catch (error) {
-        Alert.alert('Error', 'Login failed. Please check your credentials.');
+      } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
+        userData = {
+          id: response.user.id,
+          email: response.user.email,
+          type: USER_TYPES.MEDICAL_PROVIDER,
+          providerName: response.user.providerName,
+          providerCode: response.user.providerCode,
+          token: response.token,
+          coins: 0,
+          streak: 0
+        };
+      } else {
+        userData = {
+          id: response.user.id,
+          email: response.user.email,
+          type: USER_TYPES.INDIVIDUAL,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          token: response.token,
+          subscription: subscriptionTier,
+          coins: 0,
+          streak: 0
+        };
       }
-    } else {
-      const userData = {
-        id: 1,
-        email: email,
-        type: userType,
-        subscription: subscriptionTier,
-        firmSize: firmSize,
-        coins: 150,
-        streak: 3
-      };
+      
+      console.log('[Login] Setting user data:', userData);
+      console.log('[Login] Navigating to:', targetScreen);
       
       setUser(userData);
-      setCoins(150);
-      setLoginStreak(3);
+      setCoins(userData.coins);
+      setLoginStreak(userData.streak);
       setIsLoggedIn(true);
-      setCurrentScreen('dashboard');
+      setCurrentScreen(targetScreen);
+    } catch (error) {
+      console.error('[Login] Login error:', error);
+      Alert.alert('Error', error.message || 'Login failed. Please check your credentials.');
     }
   };
 
