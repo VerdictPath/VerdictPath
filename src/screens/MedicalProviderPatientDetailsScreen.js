@@ -56,27 +56,26 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       if (stageIndex !== -1) {
         const stage = stagesWithProgress[stageIndex];
         
-        // Safety check: ensure substages array exists
-        if (stage.substages && Array.isArray(stage.substages)) {
-          const substageIndex = stage.substages.findIndex(sub => {
-            const substageId = `${stage.id}-${substageIndex}`;
-            return completedSubstage.substage_id === substageId;
-          });
+        // Safety check: ensure subStages array exists (note: LITIGATION_STAGES uses camelCase 'subStages')
+        if (stage.subStages && Array.isArray(stage.subStages)) {
+          const substageIndex = stage.subStages.findIndex(sub => 
+            sub.id === completedSubstage.substage_id
+          );
 
           if (substageIndex !== -1) {
-            stage.substages[substageIndex].completed = true;
-            stage.substages[substageIndex].completedAt = completedSubstage.completed_at;
+            stage.subStages[substageIndex].completed = true;
+            stage.subStages[substageIndex].completedAt = completedSubstage.completed_at;
           }
         }
       }
     });
 
     stagesWithProgress.forEach(stage => {
-      // Safety check: ensure substages array exists
-      if (stage.substages && Array.isArray(stage.substages)) {
-        const hasAnyCompleted = stage.substages.some(sub => sub.completed);
+      // Safety check: ensure subStages array exists
+      if (stage.subStages && Array.isArray(stage.subStages)) {
+        const hasAnyCompleted = stage.subStages.some(sub => sub.completed);
         if (hasAnyCompleted) {
-          stage.completed = stage.substages.every(sub => sub.completed);
+          stage.completed = stage.subStages.every(sub => sub.completed);
         }
       }
     });
@@ -112,8 +111,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       
       // Determine stage status: complete, in-progress, or not started
       const isComplete = stage.completed === true;
-      const hasAnyCompleted = (stage.substages && Array.isArray(stage.substages)) 
-        ? stage.substages.some(sub => sub.completed === true) 
+      const hasAnyCompleted = (stage.subStages && Array.isArray(stage.subStages)) 
+        ? stage.subStages.some(sub => sub.completed === true) 
         : false;
       const isInProgress = !isComplete && hasAnyCompleted;
       
@@ -149,8 +148,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       
       // Determine stage status: complete, in-progress, or not started
       const isComplete = stage.completed === true;
-      const hasAnyCompleted = (stage.substages && Array.isArray(stage.substages)) 
-        ? stage.substages.some(sub => sub.completed === true) 
+      const hasAnyCompleted = (stage.subStages && Array.isArray(stage.subStages)) 
+        ? stage.subStages.some(sub => sub.completed === true) 
         : false;
       const isInProgress = !isComplete && hasAnyCompleted;
       
@@ -188,9 +187,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         
         {stages.map((stage, index) => {
           const pos = stagePositions[index];
-          const hasProgress = stage.completed || (stage.substages && stage.substages.some(sub => sub.completed));
-          const completedCount = stage.substages ? stage.substages.filter(sub => sub.completed).length : 0;
-          const totalCount = stage.substages ? stage.substages.length : 0;
+          const hasProgress = stage.completed || (stage.subStages && stage.subStages.some(sub => sub.completed));
+          const completedCount = stage.subStages ? stage.subStages.filter(sub => sub.completed).length : 0;
+          const totalCount = stage.subStages ? stage.subStages.length : 0;
           
           return (
             <View
@@ -244,9 +243,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📋 Stage Details</Text>
           {stages.map((stage, index) => {
-            if (!stage.substages || !Array.isArray(stage.substages)) return null;
+            if (!stage.subStages || !Array.isArray(stage.subStages)) return null;
             
-            const completedCount = stage.substages.filter(sub => sub.completed).length;
+            const completedCount = stage.subStages.filter(sub => sub.completed).length;
             const hasProgress = completedCount > 0;
             
             if (!hasProgress) return null;
@@ -258,10 +257,10 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                   <Text style={styles.stageDetailName}>{stage.name}</Text>
                 </View>
                 <Text style={styles.stageDetailProgress}>
-                  {completedCount} of {stage.substages.length} tasks completed
+                  {completedCount} of {stage.subStages.length} tasks completed
                 </Text>
                 <View style={styles.substageList}>
-                  {stage.substages.filter(sub => sub.completed).map((substage, subIndex) => (
+                  {stage.subStages.filter(sub => sub.completed).map((substage, subIndex) => (
                     <Text key={subIndex} style={styles.completedSubstage}>
                       ✓ {substage.name}
                     </Text>
