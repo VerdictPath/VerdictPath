@@ -565,6 +565,47 @@ const styles = StyleSheet.create({
     color: theme.colors.warmGray,
     marginTop: 4,
   },
+  litigationSection: {
+    marginVertical: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.warmGray + '40',
+  },
+  litigationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  litigationLabel: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  litigationStage: {
+    fontSize: 13,
+    color: theme.colors.mahogany,
+    fontWeight: '600',
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.warmGray + '40',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.warmGold,
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: 12,
+    color: theme.colors.warmGray,
+    textAlign: 'right',
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -619,10 +660,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.colors.warmGray,
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 5,
   },
   activityList: {
     gap: 12,
