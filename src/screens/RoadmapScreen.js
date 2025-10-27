@@ -5,7 +5,7 @@ import AvatarSelector from '../components/AvatarSelector';
 import UploadModal from '../components/UploadModal';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
-import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
+import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
 import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
 
@@ -101,31 +101,29 @@ const RoadmapScreen = ({
 
   const pickImageFromCamera = async (stageId, subStageId) => {
     try {
+      console.log('[RoadmapScreen] Taking photo with camera...');
       const result = await pickImage();
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadEvidenceFile(result.assets[0], stageId, subStageId);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      if (error.message === 'Camera permission is required') {
-        alert('Permission Required', 'Camera permission is required to take photos.');
-      } else {
-        alert('Error', 'Failed to take photo. Please try again.');
-      }
+      console.error('[RoadmapScreen] Error taking photo:', error);
+      alert('Permission Required', error.message || 'Failed to take photo. Please try again.');
     }
   };
 
   const pickDocumentFromDevice = async (stageId, subStageId) => {
     try {
-      const result = await pickDocument();
+      console.log('[RoadmapScreen] Picking image from library...');
+      const result = await pickImageFromLibrary();
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         await uploadEvidenceFile(result.assets[0], stageId, subStageId);
       }
     } catch (error) {
-      console.error('Error picking document:', error);
-      alert('Error', 'Failed to select file. Please try again.');
+      console.error('[RoadmapScreen] Error picking from library:', error);
+      alert('Permission Required', error.message || 'Failed to access photo library. Please try again.');
     }
   };
 

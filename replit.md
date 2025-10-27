@@ -6,11 +6,19 @@ Verdict Path is a legal case management and education platform for Georgia Civil
 ## Recent Changes (October 27, 2025)
 - **Intuitive Upload Modal**: Replaced basic Alert dialogs with a custom UploadModal component (`src/components/UploadModal.js`) for the individual user portal's pre-litigation stage. The new modal features:
   - Beautiful pirate-themed design with cream, mahogany, and warm gold colors
-  - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (file picker)
+  - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (photo library)
   - Clear file format information showing accepted types
   - Proper async flow ensuring modal stays mounted during file picker interaction
   - Null-safe rendering with optional chaining
   - Smooth fade animations on open/close
+  - Three ways to close: X button, tap outside, or Cancel button
+  - High z-index to ensure modal appears on top
+- **Camera & Photo Library Permissions**: Implemented proper permission handling for iOS and Android:
+  - Camera permission request with user-friendly error messages
+  - Photo library permission request for selecting existing photos
+  - Detailed logging for debugging permission issues
+  - Clear guidance to enable permissions in device settings if denied
+  - Separate functions for camera (`pickImage`) and photo library (`pickImageFromLibrary`)
 
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.

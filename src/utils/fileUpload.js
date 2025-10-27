@@ -117,19 +117,50 @@ export const pickImageForWeb = () => {
 };
 
 export const pickImage = async (options = {}) => {
-  console.log('[FileUpload] pickImage called, Platform.OS:', Platform.OS);
+  console.log('[FileUpload] pickImage called (camera), Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     return await pickImageForWeb();
   } else {
+    console.log('[FileUpload] Requesting camera permissions...');
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     
+    console.log('[FileUpload] Camera permission result:', permissionResult);
+    
     if (permissionResult.granted === false) {
-      throw new Error('Camera permission is required');
+      console.error('[FileUpload] Camera permission denied');
+      throw new Error('Camera permission is required to take photos. Please enable camera access in your device settings.');
     }
 
+    console.log('[FileUpload] Launching camera...');
     return await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
+      quality: 0.8,
+      ...options
+    });
+  }
+};
+
+export const pickImageFromLibrary = async (options = {}) => {
+  console.log('[FileUpload] pickImageFromLibrary called, Platform.OS:', Platform.OS);
+  if (Platform.OS === 'web') {
+    return await pickImageForWeb();
+  } else {
+    console.log('[FileUpload] Requesting media library permissions...');
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    console.log('[FileUpload] Media library permission result:', permissionResult);
+    
+    if (permissionResult.granted === false) {
+      console.error('[FileUpload] Media library permission denied');
+      throw new Error('Photo library permission is required to select photos. Please enable photo access in your device settings.');
+    }
+
+    console.log('[FileUpload] Launching image library...');
+    return await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      allowsMultipleSelection: false,
       quality: 0.8,
       ...options
     });
