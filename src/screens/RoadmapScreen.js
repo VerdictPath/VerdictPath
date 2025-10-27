@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, Dimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
+import UploadModal from '../components/UploadModal';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
 import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
@@ -40,6 +41,8 @@ const RoadmapScreen = ({
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmModalData, setConfirmModalData] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [uploadModalSubStage, setUploadModalSubStage] = useState(null);
 
   const openStageModal = (stage) => {
     setSelectedStage(stage);
@@ -73,21 +76,27 @@ const RoadmapScreen = ({
       return;
     }
 
-    alert(
-      '📁 Upload Document',
-      `Select files to upload for "${subStage.name}"\n\nAccepted formats: ${subStage.acceptedFormats}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Take Photo', 
-          onPress: () => simulateUpload(selectedStage.id, subStageId, 'photo')
-        },
-        { 
-          text: 'Choose Files', 
-          onPress: () => simulateUpload(selectedStage.id, subStageId, 'file')
-        }
-      ]
-    );
+    setUploadModalSubStage(subStage);
+    setUploadModalVisible(true);
+  };
+
+  const handleUploadModalTakePhoto = async (subStage) => {
+    if (subStage && selectedStage) {
+      await pickImageFromCamera(selectedStage.id, subStage.id);
+      closeUploadModal();
+    }
+  };
+
+  const handleUploadModalChooseFile = async (subStage) => {
+    if (subStage && selectedStage) {
+      await pickDocumentFromDevice(selectedStage.id, subStage.id);
+      closeUploadModal();
+    }
+  };
+
+  const closeUploadModal = () => {
+    setUploadModalVisible(false);
+    setTimeout(() => setUploadModalSubStage(null), 300);
   };
 
   const pickImageFromCamera = async (stageId, subStageId) => {
@@ -897,6 +906,14 @@ const RoadmapScreen = ({
           </View>
         </View>
       </Modal>
+
+      <UploadModal
+        visible={uploadModalVisible}
+        onClose={closeUploadModal}
+        onTakePhoto={handleUploadModalTakePhoto}
+        onChooseFile={handleUploadModalChooseFile}
+        subStage={uploadModalSubStage}
+      />
     </View>
   );
 };
