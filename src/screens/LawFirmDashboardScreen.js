@@ -100,6 +100,28 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 </Text>
               </View>
               <Text style={styles.clientEmail}>{client.email}</Text>
+              
+              {/* Litigation Progress */}
+              <View style={styles.litigationSection}>
+                <View style={styles.litigationHeader}>
+                  <Text style={styles.litigationLabel}>⚖️ Litigation Progress:</Text>
+                  <Text style={styles.litigationStage}>
+                    {client.litigationStage || 'Not Started'}
+                  </Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill, 
+                      { width: `${client.litigationProgress || 0}%` }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.progressText}>
+                  {client.litigationProgress || 0}% Complete
+                </Text>
+              </View>
+
               <View style={styles.clientStats}>
                 <Text style={styles.clientStat}>📋 {client.medicalRecordCount || 0} Records</Text>
                 <Text style={styles.clientStat}>💰 ${client.totalBilled || 0} Billed</Text>

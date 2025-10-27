@@ -22,6 +22,7 @@ exports.getDashboard = async (req, res) => {
       `SELECT u.id, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted, 
               u.email, u.current_phase, lfc.registered_date,
               ulp.current_stage_name,
+              ulp.progress_percentage,
               (SELECT COUNT(*) FROM medical_records WHERE user_id = u.id) as medical_record_count,
               (SELECT COALESCE(SUM(total_amount), 0) FROM medical_billing WHERE user_id = u.id) as total_billed
        FROM users u
@@ -47,6 +48,7 @@ exports.getDashboard = async (req, res) => {
         email: client.email,
         registeredDate: client.registered_date,
         litigationStage: client.current_stage_name || 'Not Started',
+        litigationProgress: Math.round(parseFloat(client.progress_percentage) || 0),
         currentPhase: client.current_phase || 'pre_litigation',
         medicalRecordCount: parseInt(client.medical_record_count) || 0,
         totalBilled: parseFloat(client.total_billed) || 0
