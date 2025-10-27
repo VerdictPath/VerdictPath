@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Dimensions
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
 
-const { width } = Dimensions.get('window');
-
 const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
+  const { width } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
   const [patient, setPatient] = useState(null);
   const [litigationProgress, setLitigationProgress] = useState(null);

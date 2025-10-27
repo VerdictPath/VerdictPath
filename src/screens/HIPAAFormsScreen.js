@@ -10,7 +10,6 @@ import {
   TextInput,
   Modal
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -27,15 +26,14 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
 
   const loadForms = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
+      if (!user?.token) {
         Alert.alert('Error', 'Please log in to continue');
         return;
       }
 
       const response = await fetch(`${API_BASE_URL}/forms/my-forms`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -56,10 +54,14 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
 
   const viewForm = async (formId) => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      if (!user?.token) {
+        Alert.alert('Error', 'Please log in to continue');
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/forms/submissions/${formId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -83,12 +85,16 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
       return;
     }
 
+    if (!user?.token) {
+      Alert.alert('Error', 'Please log in to continue');
+      return;
+    }
+
     try {
-      const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/forms/submissions/${selectedForm.id}/sign`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

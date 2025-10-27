@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import { commonStyles } from './src/styles/commonStyles';
+import { theme } from './src/styles/theme';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
@@ -661,7 +662,11 @@ const CaseCompassApp = () => {
 
   return (
     <SafeAreaView style={commonStyles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar 
+        barStyle="dark-content" 
+        backgroundColor={theme.colors.background}
+        translucent={false}
+      />
       
       {currentScreen === 'landing' && (
         <LandingScreen onNavigate={handleNavigate} />

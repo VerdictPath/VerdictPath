@@ -12,7 +12,7 @@ const UploadModal = ({ visible, onClose, onTakePhoto, onChooseFile, subStage }) 
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+          <TouchableWithoutFeedback>
             <View style={styles.modalContainer}>
               <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* Close Button */}
