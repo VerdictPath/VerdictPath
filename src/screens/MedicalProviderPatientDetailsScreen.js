@@ -51,6 +51,19 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
     const stagesWithProgress = JSON.parse(JSON.stringify(LITIGATION_STAGES));
 
+    // Map numeric stage IDs to string prefixes
+    const stageIdToPrefix = {
+      1: 'pre-',
+      2: 'cf-',
+      3: 'disc-',
+      4: 'dep-',
+      5: 'med-',
+      6: 'tp-',
+      7: 'trial-',
+      8: 'settle-',
+      9: 'cr-'
+    };
+
     litigationProgress.completedSubstages.forEach(completedSubstage => {
       const stageIndex = stagesWithProgress.findIndex(s => s.id === completedSubstage.stage_id);
       if (stageIndex !== -1) {
@@ -58,8 +71,26 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         
         // Safety check: ensure subStages array exists (note: LITIGATION_STAGES uses camelCase 'subStages')
         if (stage.subStages && Array.isArray(stage.subStages)) {
+          // Convert database format "4-0" to mockData format "dep-1"
+          // Database uses numeric stage_id and zero-based index
+          // Frontend uses string prefix and one-based index
+          let matchingSubstageId = completedSubstage.substage_id;
+          
+          // Check if substage_id is in numeric format (e.g., "4-0", "3-2")
+          if (/^\d+-\d+$/.test(completedSubstage.substage_id)) {
+            const parts = completedSubstage.substage_id.split('-');
+            const stageId = parseInt(parts[0]);
+            const zeroBasedIndex = parseInt(parts[1]);
+            const prefix = stageIdToPrefix[stageId];
+            
+            if (prefix) {
+              // Convert zero-based to one-based
+              matchingSubstageId = `${prefix}${zeroBasedIndex + 1}`;
+            }
+          }
+
           const substageIndex = stage.subStages.findIndex(sub => 
-            sub.id === completedSubstage.substage_id
+            sub.id === matchingSubstageId
           );
 
           if (substageIndex !== -1) {
