@@ -66,10 +66,10 @@ export const pickDocument = async (options = {}) => {
   }
 };
 
-export const pickImageForWeb = () => {
+export const pickImageForWeb = (useCamera = false) => {
   return new Promise((resolve, reject) => {
     try {
-      console.log('[FileUpload] Creating image input for web');
+      console.log('[FileUpload] Creating image input for web, useCamera:', useCamera);
       if (typeof document === 'undefined') {
         console.error('[FileUpload] document is undefined - not in browser context');
         reject(new Error('document is not available'));
@@ -79,6 +79,13 @@ export const pickImageForWeb = () => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
+      
+      // On mobile web browsers, capture="environment" opens the camera directly
+      if (useCamera) {
+        input.capture = 'environment';
+        console.log('[FileUpload] Camera capture enabled for mobile web');
+      }
+      
       input.style.display = 'none';
       
       input.onchange = (event) => {
@@ -119,7 +126,9 @@ export const pickImageForWeb = () => {
 export const pickImage = async (options = {}) => {
   console.log('[FileUpload] pickImage called (camera), Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
-    return await pickImageForWeb();
+    // On mobile web browsers, capture="environment" will open the camera
+    // On desktop browsers, it will open file picker
+    return await pickImageForWeb(true);
   } else {
     console.log('[FileUpload] Requesting camera permissions...');
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
@@ -144,7 +153,8 @@ export const pickImage = async (options = {}) => {
 export const pickImageFromLibrary = async (options = {}) => {
   console.log('[FileUpload] pickImageFromLibrary called, Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
-    return await pickImageForWeb();
+    // On web browsers, this opens the regular file picker (no capture attribute)
+    return await pickImageForWeb(false);
   } else {
     console.log('[FileUpload] Requesting media library permissions...');
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
