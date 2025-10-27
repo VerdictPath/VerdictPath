@@ -109,10 +109,10 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                     {client.litigationStage || 'Not Started'}
                   </Text>
                 </View>
-                <View style={styles.progressBar}>
+                <View style={styles.progressBarContainer}>
                   <View 
                     style={[
-                      styles.progressFill, 
+                      styles.progressBarFill, 
                       { width: `${client.litigationProgress || 0}%` }
                     ]} 
                   />
@@ -190,7 +190,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             <View style={styles.progressBarContainer}>
               <View 
                 style={[
-                  styles.progressBar, 
+                  styles.progressBarFill, 
                   { 
                     width: `${preLitigationPct}%`, 
                     backgroundColor: CASE_PHASES.PRE_LITIGATION.color 
@@ -209,7 +209,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             <View style={styles.progressBarContainer}>
               <View 
                 style={[
-                  styles.progressBar, 
+                  styles.progressBarFill, 
                   { 
                     width: `${litigationPct}%`, 
                     backgroundColor: CASE_PHASES.LITIGATION.color 
@@ -228,7 +228,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             <View style={styles.progressBarContainer}>
               <View 
                 style={[
-                  styles.progressBar, 
+                  styles.progressBarFill, 
                   { 
                     width: `${trialPct}%`, 
                     backgroundColor: CASE_PHASES.TRIAL.color 
@@ -660,6 +660,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.colors.warmGray,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: theme.colors.warmGold,
+    borderRadius: 4,
   },
   activityList: {
     gap: 12,
