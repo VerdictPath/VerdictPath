@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, StyleSheet, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import { theme } from '../styles/theme';
 
 const UploadModal = ({ visible, onClose, onTakePhoto, onChooseFile, subStage }) => {
@@ -10,15 +10,22 @@ const UploadModal = ({ visible, onClose, onTakePhoto, onChooseFile, subStage }) 
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerIcon}>📤</Text>
-              <Text style={styles.headerTitle}>Upload Documents</Text>
-              <Text style={styles.headerSubtitle}>{subStage?.name || 'Document Upload'}</Text>
-            </View>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+            <View style={styles.modalContainer}>
+              <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* Close Button */}
+                <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.headerIcon}>📤</Text>
+                  <Text style={styles.headerTitle}>Upload Documents</Text>
+                  <Text style={styles.headerSubtitle}>{subStage?.name || 'Document Upload'}</Text>
+                </View>
 
             {/* Description */}
             <View style={styles.descriptionContainer}>
@@ -85,9 +92,11 @@ const UploadModal = ({ visible, onClose, onTakePhoto, onChooseFile, subStage }) 
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-          </ScrollView>
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -118,6 +127,26 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.mahogany,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10001,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: theme.colors.cream,
+    fontWeight: 'bold',
+    lineHeight: 24,
   },
   header: {
     alignItems: 'center',
