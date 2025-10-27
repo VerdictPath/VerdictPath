@@ -6,6 +6,9 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
+import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
+import alert from '../utils/alert';
+import UploadModal from '../components/UploadModal';
 
 const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const { width } = useWindowDimensions();
@@ -13,6 +16,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [patient, setPatient] = useState(null);
   const [litigationProgress, setLitigationProgress] = useState(null);
   const [activeTab, setActiveTab] = useState('roadmap');
+  const [uploading, setUploading] = useState(false);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [currentDocumentType, setCurrentDocumentType] = useState(null);
 
   useEffect(() => {
     fetchPatientDetails();
@@ -304,6 +310,161 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     );
   };
 
+  const handleUploadMedicalBills = () => {
+    setCurrentDocumentType({
+      type: 'medicalBills',
+      name: 'Medical Bills',
+      icon: '💵',
+      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
+    });
+    setUploadModalVisible(true);
+  };
+
+  const handleUploadMedicalRecords = () => {
+    setCurrentDocumentType({
+      type: 'medicalRecords',
+      name: 'Medical Records',
+      icon: '📋',
+      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
+    });
+    setUploadModalVisible(true);
+  };
+
+  const closeUploadModal = () => {
+    setUploadModalVisible(false);
+    setTimeout(() => setCurrentDocumentType(null), 300);
+  };
+
+  const handleModalTakePhoto = async () => {
+    closeUploadModal();
+    if (currentDocumentType) {
+      await pickImageFromCamera(currentDocumentType.type);
+    }
+  };
+
+  const handleModalChooseFile = async () => {
+    closeUploadModal();
+    if (currentDocumentType) {
+      await pickDocumentFromDevice(currentDocumentType.type);
+    }
+  };
+
+  const pickImageFromCamera = async (documentType) => {
+    try {
+      const result = await pickImage();
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadFile(result.assets[0], documentType);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      if (error.message === 'Camera permission is required') {
+        alert('Permission Required', 'Camera permission is required to take photos.');
+      } else {
+        alert('Error', 'Failed to take photo. Please try again.');
+      }
+    }
+  };
+
+  const pickDocumentFromDevice = async (documentType) => {
+    try {
+      const result = await pickDocument();
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadFile(result.assets[0], documentType);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error', 'Failed to select file. Please try again.');
+    }
+  };
+
+  const uploadFile = async (file, documentType) => {
+    if (!user?.token) {
+      alert('Error', 'You must be logged in to upload files.');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const endpoint = documentType === 'medicalBills' ? 'medical-bill' : 'medical-record';
+      const recordType = documentType === 'medicalBills' ? 'Medical Bill' : 'Medical Record';
+      
+      const formData = createFormDataFromFile(file, 'file', { 
+        recordType,
+        patientId: patientId
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/uploads/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(
+          '✅ Upload Successful!',
+          `${data.document.file_name} has been uploaded successfully for ${patient?.displayName}.`
+        );
+      } else {
+        alert('Upload Failed', data.error || 'Failed to upload file.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Upload Failed', 'An error occurred while uploading the file.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const renderMedicalHubTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>💵 Medical Bills</Text>
+        <Text style={styles.sectionDescription}>
+          Upload medical bills on behalf of {patient?.displayName}
+        </Text>
+        <TouchableOpacity 
+          style={styles.uploadButton}
+          onPress={handleUploadMedicalBills}
+          disabled={uploading}
+        >
+          <Text style={styles.uploadButtonText}>
+            {uploading ? '⏳ Uploading...' : '📤 Upload Medical Bills'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📋 Medical Records</Text>
+        <Text style={styles.sectionDescription}>
+          Upload medical records on behalf of {patient?.displayName}
+        </Text>
+        <TouchableOpacity 
+          style={styles.uploadButton}
+          onPress={handleUploadMedicalRecords}
+          disabled={uploading}
+        >
+          <Text style={styles.uploadButtonText}>
+            {uploading ? '⏳ Uploading...' : '📤 Upload Medical Records'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoIcon}>ℹ️</Text>
+        <Text style={styles.infoText}>
+          Documents uploaded here will be securely stored in {patient?.displayName}'s Medical Hub and can be accessed by their law firm (with consent).
+        </Text>
+      </View>
+    </View>
+  );
+
   const renderOverviewTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.section}>
@@ -409,16 +570,34 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
             Roadmap
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'medicalHub' && styles.activeTab]}
+          onPress={() => setActiveTab('medicalHub')}
+        >
+          <Text style={styles.tabIcon}>🏥</Text>
+          <Text style={[styles.tabText, activeTab === 'medicalHub' && styles.activeTabText]}>
+            Medical Hub
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'overview' && renderOverviewTab()}
         {activeTab === 'roadmap' && renderRoadmapTab()}
+        {activeTab === 'medicalHub' && renderMedicalHubTab()}
 
         <TouchableOpacity style={styles.backButtonBottom} onPress={onBack}>
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <UploadModal
+        visible={uploadModalVisible}
+        onClose={closeUploadModal}
+        onTakePhoto={handleModalTakePhoto}
+        onChooseFile={handleModalChooseFile}
+        subStage={currentDocumentType}
+      />
     </View>
   );
 };
@@ -531,6 +710,44 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  uploadButton: {
+    backgroundColor: theme.colors.mahogany,
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  uploadButtonText: {
+    color: theme.colors.cream,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  infoSection: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  infoIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.navy,
+    lineHeight: 20,
   },
   infoRow: {
     flexDirection: 'row',
