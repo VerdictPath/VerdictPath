@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    zIndex: 9999,
   },
   modalContainer: {
     backgroundColor: theme.colors.cream,
@@ -112,7 +113,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 999,
+    zIndex: 10000,
   },
   scrollContent: {
     padding: 24,
