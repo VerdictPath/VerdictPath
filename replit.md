@@ -10,6 +10,7 @@ Verdict Path is a legal case management and education platform for Georgia Civil
   - **Android StatusBar**: Added proper platform-specific StatusBar configuration with correct background color from theme
   - **Modal Event Handling**: Fixed UploadModal event propagation for cross-platform compatibility
   - **Memory Leaks Prevention**: useWindowDimensions ensures dimension updates don't cause stale closures
+  - **Dynamic Styles**: Moved height-dependent styles in RoadmapScreen to dynamic styles object to prevent variable reference errors across platforms
 - **Law Firm Portal Progress Bar Fixes**: Fixed styling issues in the law firm dashboard:
   - Active clients' litigation progress bars now display with proper warm gold coloring
   - Case phase distribution progress bars are now properly centered within their containers

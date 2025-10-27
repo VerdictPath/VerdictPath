@@ -43,6 +43,19 @@ const RoadmapScreen = ({
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploadModalSubStage, setUploadModalSubStage] = useState(null);
 
+  // Dynamic styles that depend on window dimensions
+  const dynamicStyles = {
+    mapContainer: {
+      minHeight: height * 1.2,
+    },
+    pirateMap: {
+      minHeight: height * 1.1,
+    },
+    modalContent: {
+      maxHeight: height * 0.85,
+    },
+  };
+
   const openStageModal = (stage) => {
     setSelectedStage(stage);
     setModalVisible(true);
@@ -574,7 +587,7 @@ const RoadmapScreen = ({
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, dynamicStyles.modalContent]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{currentStage.name}</Text>
               <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
@@ -808,9 +821,9 @@ const RoadmapScreen = ({
       ) : (
         <ScrollView 
           style={styles.mapScrollView}
-          contentContainerStyle={styles.mapContainer}
+          contentContainerStyle={[styles.mapContainer, dynamicStyles.mapContainer]}
         >
-          <View style={styles.pirateMap}>
+          <View style={[styles.pirateMap, dynamicStyles.pirateMap]}>
             <Text style={[styles.mapDecor, { top: '5%', left: '5%' }]}>⚓</Text>
             <Text style={[styles.mapDecor, { top: '10%', right: '8%' }]}>🦜</Text>
             <Text style={[styles.mapDecor, { top: '30%', left: '85%' }]}>🏴‍☠️</Text>
@@ -967,7 +980,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapContainer: {
-    minHeight: height * 1.2,
   },
   pirateMap: {
     flex: 1,
@@ -976,7 +988,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     borderWidth: 5,
     borderColor: '#8b7355',
-    minHeight: height * 1.1,
     position: 'relative',
     padding: 20,
   },
@@ -1087,7 +1098,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
-    maxHeight: height * 0.85,
     padding: 20,
   },
   modalHeader: {
