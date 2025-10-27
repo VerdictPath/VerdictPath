@@ -583,7 +583,7 @@ const RoadmapScreen = ({
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible && !dataEntryModalVisible && !confirmModalVisible}
+        visible={modalVisible && !dataEntryModalVisible && !confirmModalVisible && !uploadModalVisible}
         onRequestClose={closeModal}
       >
         <View style={styles.modalOverlay}>
