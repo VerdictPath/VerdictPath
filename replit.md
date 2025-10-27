@@ -4,6 +4,13 @@
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## Recent Changes (October 27, 2025)
+- **Avatar Selection Removed from Law Firm Portal**: Law firm users viewing client roadmaps now see a clean, read-only view without avatar selection UI:
+  - Hidden "change avatar" button in header
+  - Hidden AvatarSelector component 
+  - Hidden avatar icon on current stage treasure chest
+  - Hidden "Your Position" legend item from map legend
+  - Roadmap immediately displays for law firm users without requiring avatar selection
+  - All avatar UI elements are controlled by the `readOnly` prop in RoadmapScreen.js
 - **Intuitive Upload Modal**: Replaced basic Alert dialogs with a custom UploadModal component (`src/components/UploadModal.js`) for the individual user portal's pre-litigation stage. The new modal features:
   - Beautiful pirate-themed design with cream, mahogany, and warm gold colors
   - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (photo library)

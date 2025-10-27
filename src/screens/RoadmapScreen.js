@@ -542,7 +542,7 @@ const RoadmapScreen = ({
           onPress={() => openStageModal(stage)}
           activeOpacity={0.7}
         >
-          {isCurrent && selectedAvatar && !stage.completed ? (
+          {isCurrent && selectedAvatar && !stage.completed && !readOnly ? (
             <Text style={styles.avatarIcon}>{selectedAvatar.emoji}</Text>
           ) : (
             <Text style={styles.treasureIcon}>{stage.completed ? '🏆' : '💰'}</Text>
@@ -773,7 +773,7 @@ const RoadmapScreen = ({
           <Text style={commonStyles.backButton}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Litigation Map</Text>
-        {selectedAvatar && (
+        {selectedAvatar && !readOnly && (
           <TouchableOpacity 
             style={styles.changeAvatarButton}
             onPress={() => onSelectAvatar(null)}
@@ -799,7 +799,7 @@ const RoadmapScreen = ({
         );
       })()}
 
-      {!selectedAvatar ? (
+      {!selectedAvatar && !readOnly ? (
         <View style={styles.avatarSelectorContainer}>
           <AvatarSelector 
             selectedAvatar={selectedAvatar} 
@@ -829,7 +829,7 @@ const RoadmapScreen = ({
               <Text style={styles.legendTitle}>🗺️ Map Legend</Text>
               <Text style={styles.legendItem}>💰 = Treasure to Claim</Text>
               <Text style={styles.legendItem}>🏆 = Treasure Found!</Text>
-              <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>
+              {!readOnly && <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>}
             </View>
           </View>
         </ScrollView>
