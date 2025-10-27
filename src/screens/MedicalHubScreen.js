@@ -2,46 +2,52 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import { API_URL } from '../config/api';
-import { pickDocument, pickImage, createFormDataFromFile } from '../utils/fileUpload';
+import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
+import UploadModal from '../components/UploadModal';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
   const [uploading, setUploading] = useState(false);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [currentDocumentType, setCurrentDocumentType] = useState(null);
 
   const handleUploadMedicalBills = () => {
-    alert(
-      '📄 Upload Medical Bills',
-      'Select files to upload for Medical Bills\n\nAccepted formats: PDF, JPG, PNG',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Take Photo', 
-          onPress: () => simulateUpload('medicalBills', 'photo')
-        },
-        { 
-          text: 'Choose Files', 
-          onPress: () => simulateUpload('medicalBills', 'file')
-        }
-      ]
-    );
+    setCurrentDocumentType({
+      type: 'medicalBills',
+      name: 'Medical Bills',
+      icon: '💵',
+      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
+    });
+    setUploadModalVisible(true);
   };
 
   const handleUploadMedicalRecords = () => {
-    alert(
-      '📋 Upload Medical Records',
-      'Select files to upload for Medical Records\n\nAccepted formats: PDF, JPG, PNG',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Take Photo', 
-          onPress: () => simulateUpload('medicalRecords', 'photo')
-        },
-        { 
-          text: 'Choose Files', 
-          onPress: () => simulateUpload('medicalRecords', 'file')
-        }
-      ]
-    );
+    setCurrentDocumentType({
+      type: 'medicalRecords',
+      name: 'Medical Records',
+      icon: '📋',
+      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
+    });
+    setUploadModalVisible(true);
+  };
+
+  const closeUploadModal = () => {
+    setUploadModalVisible(false);
+    setTimeout(() => setCurrentDocumentType(null), 300);
+  };
+
+  const handleModalTakePhoto = async () => {
+    closeUploadModal();
+    if (currentDocumentType) {
+      await pickImageFromCamera(currentDocumentType.type);
+    }
+  };
+
+  const handleModalChooseFile = async () => {
+    closeUploadModal();
+    if (currentDocumentType) {
+      await pickDocumentFromDevice(currentDocumentType.type);
+    }
   };
 
   const pickImageFromCamera = async (documentType) => {
@@ -115,13 +121,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     }
   };
 
-  const simulateUpload = (documentType, uploadType) => {
-    if (uploadType === 'photo') {
-      pickImageFromCamera(documentType);
-    } else {
-      pickDocumentFromDevice(documentType);
-    }
-  };
 
   const handleAddProvider = () => {
     alert('Coming Soon', 'Provider management in progress');
@@ -225,6 +224,14 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           </TouchableOpacity>
         </View>
       </View>
+
+      <UploadModal
+        visible={uploadModalVisible}
+        onClose={closeUploadModal}
+        onTakePhoto={handleModalTakePhoto}
+        onChooseFile={handleModalChooseFile}
+        subStage={currentDocumentType}
+      />
     </ScrollView>
   );
 };
