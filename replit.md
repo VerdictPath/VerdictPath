@@ -3,6 +3,15 @@
 ## Overview
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
+## Recent Changes (October 27, 2025)
+- **Intuitive Upload Modal**: Replaced basic Alert dialogs with a custom UploadModal component (`src/components/UploadModal.js`) for the individual user portal's pre-litigation stage. The new modal features:
+  - Beautiful pirate-themed design with cream, mahogany, and warm gold colors
+  - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (file picker)
+  - Clear file format information showing accepted types
+  - Proper async flow ensuring modal stays mounted during file picker interaction
+  - Null-safe rendering with optional chaining
+  - Smooth fade animations on open/close
+
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
 
