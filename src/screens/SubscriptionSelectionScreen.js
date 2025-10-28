@@ -10,7 +10,7 @@ const SubscriptionSelectionScreen = ({
   onNavigate
 }) => {
   const [selectedTier, setSelectedTier] = useState(TIER_LEVELS.FREE);
-  const [selectedSize, setSelectedSize] = useState(FIRM_SIZES.SMALL);
+  const [selectedSize, setSelectedSize] = useState(FIRM_SIZES.SHINGLE);
 
   const isOrganization = userType === USER_TYPES.LAW_FIRM || userType === USER_TYPES.MEDICAL_PROVIDER;
 
@@ -119,44 +119,96 @@ const SubscriptionSelectionScreen = ({
       {isOrganization && (
         <View style={styles.sizeSelectionContainer}>
           <Text style={styles.sectionTitle}>Organization Size</Text>
-          <View style={styles.sizeButtonsContainer}>
+          <Text style={styles.sectionSubtitle}>Choose the tier that matches your current or expected client count</Text>
+          
+          <View style={styles.sizeCardsContainer}>
             <TouchableOpacity
-              style={[styles.sizeButton, selectedSize === FIRM_SIZES.SMALL && styles.sizeButtonActive]}
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardActive]}
+              onPress={() => setSelectedSize(FIRM_SIZES.SHINGLE)}
+            >
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardTitleActive]}>
+                Shingle Firm
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardLimitActive]}>
+                1-24 clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Solo practitioners or new firms just getting started
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardActive]}
+              onPress={() => setSelectedSize(FIRM_SIZES.BOUTIQUE)}
+            >
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardTitleActive]}>
+                Boutique Firm
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardLimitActive]}>
+                25-49 clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Small teams focusing on specialized practice areas
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardActive]}
               onPress={() => setSelectedSize(FIRM_SIZES.SMALL)}
             >
-              <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.SMALL && styles.sizeButtonTextActive]}>
-                Small{'\n'}
-                <Text style={styles.sizeButtonSubtext}>Up to 99 clients</Text>
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardTitleActive]}>
+                Small Firm
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardLimitActive]}>
+                50-99 clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Growing practices with multiple attorneys
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.sizeButton, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeButtonActive]}
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeCardActive]}
               onPress={() => setSelectedSize(FIRM_SIZES.MEDIUM)}
             >
-              <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeButtonTextActive]}>
-                Medium{'\n'}
-                <Text style={styles.sizeButtonSubtext}>100-499 clients</Text>
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeCardTitleActive]}>
+                Medium Firm
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeCardLimitActive]}>
+                100-499 clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Established firms with diverse practice areas
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.sizeButton, selectedSize === FIRM_SIZES.LARGE && styles.sizeButtonActive]}
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.LARGE && styles.sizeCardActive]}
               onPress={() => setSelectedSize(FIRM_SIZES.LARGE)}
             >
-              <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.LARGE && styles.sizeButtonTextActive]}>
-                Large{'\n'}
-                <Text style={styles.sizeButtonSubtext}>500-999 clients</Text>
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.LARGE && styles.sizeCardTitleActive]}>
+                Large Firm
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.LARGE && styles.sizeCardLimitActive]}>
+                500-999 clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Regional firms with multiple office locations
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.sizeButton, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeButtonActive]}
+              style={[styles.sizeCard, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeCardActive]}
               onPress={() => setSelectedSize(FIRM_SIZES.ENTERPRISE)}
             >
-              <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeButtonTextActive]}>
-                Enterprise{'\n'}
-                <Text style={styles.sizeButtonSubtext}>1,000+ clients</Text>
+              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeCardTitleActive]}>
+                Enterprise
+              </Text>
+              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeCardLimitActive]}>
+                1,000+ clients
+              </Text>
+              <Text style={styles.sizeCardDescription}>
+                Large-scale operations and national firms
               </Text>
             </TouchableOpacity>
           </View>
@@ -209,42 +261,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2c3e50',
+    marginBottom: 8,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#7f8c8d',
     marginBottom: 15,
   },
   sizeSelectionContainer: {
     padding: 20,
     paddingTop: 0,
   },
-  sizeButtonsContainer: {
-    flexDirection: 'row',
-    gap: 10,
+  sizeCardsContainer: {
+    gap: 12,
   },
-  sizeButton: {
-    flex: 1,
-    paddingVertical: 15,
-    paddingHorizontal: 8,
+  sizeCard: {
+    padding: 16,
     borderWidth: 2,
-    borderColor: '#bdc3c7',
-    borderRadius: 10,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
     backgroundColor: '#fff',
-    alignItems: 'center',
   },
-  sizeButtonActive: {
+  sizeCardActive: {
     borderColor: '#3498db',
-    backgroundColor: '#ebf5fb',
+    backgroundColor: '#f0f8ff',
   },
-  sizeButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#7f8c8d',
-    textAlign: 'center',
+  sizeCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
   },
-  sizeButtonTextActive: {
+  sizeCardTitleActive: {
     color: '#3498db',
   },
-  sizeButtonSubtext: {
-    fontSize: 10,
-    fontWeight: 'normal',
+  sizeCardLimit: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7f8c8d',
+    marginBottom: 8,
+  },
+  sizeCardLimitActive: {
+    color: '#3498db',
+  },
+  sizeCardDescription: {
+    fontSize: 12,
+    color: '#95a5a6',
+    lineHeight: 18,
   },
   pricingContainer: {
     padding: 20,

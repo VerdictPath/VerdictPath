@@ -1,13 +1,18 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
-- **Law Firm Paid Tier Client Limits**: Implemented firm size-based client limits for paid tiers:
+- **Law Firm Size Tiers Expansion**: Added two new law firm size tiers and redesigned subscription UI:
   - Free tier: 10 clients maximum (unchanged)
-  - Small tier: Under 100 clients (99 max)
-  - Medium tier: 100-499 clients (499 max)
-  - Large tier: 500-999 clients (999 max)
-  - Enterprise tier: 1,000+ clients (unlimited)
-  - Added firm_size column to law_firms table with enum constraint
+  - **NEW: Shingle Firm tier**: 1-24 clients - Solo practitioners or new firms
+  - **NEW: Boutique Firm tier**: 25-49 clients - Small teams with specialized practice areas
+  - Small tier: 50-99 clients - Growing practices with multiple attorneys
+  - Medium tier: 100-499 clients - Established firms with diverse practice areas
+  - Large tier: 500-999 clients - Regional firms with multiple offices
+  - Enterprise tier: 1,000+ clients (unlimited) - Large-scale operations
+  - Updated database enum constraint to include 'shingle' and 'boutique'
+  - Added description boxes to subscription screen for better tier selection guidance
+  - Redesigned organization size UI from compact buttons to descriptive cards
+  - Updated pricing structure: Shingle ($40 basic/$54 premium), Boutique ($70 basic/$95 premium)
   - Created centralized subscriptionLimits.js utility for limit calculations
   - Updated registration and connection controllers to enforce new limits
   - Pirate-themed error messages for both free and paid tier limits
