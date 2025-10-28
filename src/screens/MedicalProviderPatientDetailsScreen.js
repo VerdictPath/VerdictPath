@@ -15,6 +15,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [patient, setPatient] = useState(null);
   const [litigationProgress, setLitigationProgress] = useState(null);
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [medicalBilling, setMedicalBilling] = useState([]);
+  const [evidence, setEvidence] = useState([]);
   const [activeTab, setActiveTab] = useState('roadmap');
   const [uploading, setUploading] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
@@ -39,6 +42,11 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         const data = await response.json();
         setPatient(data.patient);
         setLitigationProgress(data.litigationProgress);
+        
+        // Set patient-specific documents
+        setMedicalRecords(data.medicalRecords || []);
+        setMedicalBilling(data.medicalBilling || []);
+        setEvidence(data.evidence || []);
       } else {
         console.error('Failed to fetch patient details');
       }
@@ -422,48 +430,163 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     }
   };
 
-  const renderMedicalHubTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💵 Medical Bills</Text>
-        <Text style={styles.sectionDescription}>
-          Upload medical bills on behalf of {patient?.displayName}
-        </Text>
-        <TouchableOpacity 
-          style={styles.uploadButton}
-          onPress={handleUploadMedicalBills}
-          disabled={uploading}
-        >
-          <Text style={styles.uploadButtonText}>
-            {uploading ? '⏳ Uploading...' : '📤 Upload Medical Bills'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+  const renderMedicalHubTab = () => {
+    const totalBilled = medicalBilling.reduce((sum, bill) => sum + (parseFloat(bill.total_amount) || 0), 0);
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📋 Medical Records</Text>
-        <Text style={styles.sectionDescription}>
-          Upload medical records on behalf of {patient?.displayName}
-        </Text>
-        <TouchableOpacity 
-          style={styles.uploadButton}
-          onPress={handleUploadMedicalRecords}
-          disabled={uploading}
-        >
-          <Text style={styles.uploadButtonText}>
-            {uploading ? '⏳ Uploading...' : '📤 Upload Medical Records'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    return (
+      <View style={styles.tabContent}>
+        {/* Medical Records Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>📋 Medical Records</Text>
+            <TouchableOpacity 
+              style={styles.uploadButtonSmall}
+              onPress={handleUploadMedicalRecords}
+              disabled={uploading}
+            >
+              <Text style={styles.uploadButtonSmallText}>
+                {uploading ? '⏳' : '📤 Upload'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {medicalRecords.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🏥</Text>
+              <Text style={styles.emptyText}>No medical records uploaded yet</Text>
+            </View>
+          ) : (
+            medicalRecords.map((record) => (
+              <View key={record.id} style={styles.documentCard}>
+                <View style={styles.documentHeader}>
+                  <Text style={styles.documentTitle}>📄 {record.record_type || 'Medical Record'}</Text>
+                  <Text style={styles.documentBadge}>{record.file_name}</Text>
+                </View>
+                {record.facility_name && (
+                  <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
+                )}
+                {record.provider_name && (
+                  <Text style={styles.documentDetail}>👨‍⚕️ {record.provider_name}</Text>
+                )}
+                {record.date_of_service && (
+                  <Text style={styles.documentDetail}>
+                    📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
+                  </Text>
+                )}
+                <Text style={styles.documentDate}>
+                  Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.infoIcon}>ℹ️</Text>
-        <Text style={styles.infoText}>
-          Documents uploaded here will be securely stored in {patient?.displayName}'s Medical Hub and can be accessed by their law firm (with consent).
-        </Text>
+        {/* Medical Billing Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>💊 Medical Billing</Text>
+            <TouchableOpacity 
+              style={styles.uploadButtonSmall}
+              onPress={handleUploadMedicalBills}
+              disabled={uploading}
+            >
+              <Text style={styles.uploadButtonSmallText}>
+                {uploading ? '⏳' : '📤 Upload'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {medicalBilling.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>💰</Text>
+              <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.billingSummary}>
+                <View style={styles.billingRow}>
+                  <Text style={styles.billingLabel}>Total Billed:</Text>
+                  <Text style={styles.billingValue}>${totalBilled.toLocaleString()}</Text>
+                </View>
+                <View style={styles.billingRow}>
+                  <Text style={styles.billingLabel}>Total Bills:</Text>
+                  <Text style={styles.billingValue}>{medicalBilling.length}</Text>
+                </View>
+              </View>
+              
+              {medicalBilling.map((bill) => (
+                <View key={bill.id} style={styles.documentCard}>
+                  <View style={styles.documentHeader}>
+                    <Text style={styles.documentTitle}>💰 {bill.billing_type || 'Medical Bill'}</Text>
+                    <Text style={styles.documentBadge}>${parseFloat(bill.total_amount || 0).toFixed(2)}</Text>
+                  </View>
+                  {bill.facility_name && (
+                    <Text style={styles.documentDetail}>🏥 {bill.facility_name}</Text>
+                  )}
+                  {bill.bill_number && (
+                    <Text style={styles.documentDetail}>📝 Bill #: {bill.bill_number}</Text>
+                  )}
+                  {bill.date_of_service && (
+                    <Text style={styles.documentDetail}>
+                      📅 Service: {new Date(bill.date_of_service).toLocaleDateString()}
+                    </Text>
+                  )}
+                  <Text style={styles.documentDate}>
+                    Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+        </View>
+
+        {/* Evidence Locker Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📎 Evidence Locker</Text>
+          
+          {evidence.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🗃️</Text>
+              <Text style={styles.emptyText}>No evidence documents uploaded yet</Text>
+            </View>
+          ) : (
+            evidence.map((item) => (
+              <View key={item.id} style={styles.documentCard}>
+                <View style={styles.documentHeader}>
+                  <Text style={styles.documentTitle}>📎 {item.evidence_type || 'Evidence'}</Text>
+                  <Text style={styles.documentBadge}>{item.file_name}</Text>
+                </View>
+                {item.title && (
+                  <Text style={styles.documentDetail}>📝 {item.title}</Text>
+                )}
+                {item.description && (
+                  <Text style={styles.documentDetail}>📋 {item.description}</Text>
+                )}
+                {item.location && (
+                  <Text style={styles.documentDetail}>📍 {item.location}</Text>
+                )}
+                {item.date_of_incident && (
+                  <Text style={styles.documentDetail}>
+                    📅 Incident: {new Date(item.date_of_incident).toLocaleDateString()}
+                  </Text>
+                )}
+                <Text style={styles.documentDate}>
+                  Uploaded: {new Date(item.uploaded_at).toLocaleDateString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+
+        <View style={styles.infoSection}>
+          <Text style={styles.infoIcon}>ℹ️</Text>
+          <Text style={styles.infoText}>
+            All documents can be accessed by {patient?.displayName}'s law firm with proper consent.
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderOverviewTab = () => (
     <View style={styles.tabContent}>
@@ -729,6 +852,105 @@ const styles = StyleSheet.create({
     color: theme.colors.cream,
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.secondary,
+  },
+  uploadButtonSmall: {
+    backgroundColor: theme.colors.mahogany,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  uploadButtonSmallText: {
+    color: theme.colors.cream,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  documentCard: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 15,
+    borderRadius: 6,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.warmGold,
+  },
+  documentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  documentTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+    flex: 1,
+  },
+  documentBadge: {
+    backgroundColor: theme.colors.warmGold,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.navy,
+  },
+  documentDetail: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  documentDate: {
+    fontSize: 12,
+    color: theme.colors.warmGray,
+    marginTop: 4,
+  },
+  emptyState: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  billingSummary: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 15,
+    borderRadius: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.warmGold,
+  },
+  billingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  billingLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  billingValue: {
+    fontSize: 16,
+    color: theme.colors.mahogany,
+    fontWeight: 'bold',
   },
   infoSection: {
     backgroundColor: theme.colors.lightCream,
