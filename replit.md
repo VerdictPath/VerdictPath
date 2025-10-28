@@ -3,7 +3,18 @@
 ## Overview
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
-## Recent Changes (October 27, 2025)
+## Recent Changes (October 28, 2025)
+- **Invite/Referral System**: Implemented comprehensive friend invite and referral system for individual users:
+  - Users can generate unique 8-character invite codes from their dashboard
+  - Share invites via native share API (text/email) or copy-to-clipboard with pre-formatted message
+  - InviteModal displays invite code, shareable link, and stats (pending/successful invites)
+  - New users can enter invite code during registration
+  - Referrers automatically earn 500 coins when their invitee successfully signs up
+  - Backend tracks all invites with status (pending, used, expired) in `user_invites` table
+  - Invite codes expire after 30 days if unused
+  - API endpoints: `/api/invites/my-code` (get/generate), `/api/invites/process` (redeem), `/api/invites/stats` (view stats)
+  - Cross-platform compatibility: uses shared API_BASE_URL helper for web and native clients
+  - Dynamic share URL generation based on request headers for proper domain resolution
 - **Medical Provider Upload Functionality**: Added Medical Hub tab to Medical Provider patient details screen:
   - Medical providers can now upload medical records and bills on behalf of their patients
   - New "Medical Hub" tab alongside Overview and Roadmap tabs
