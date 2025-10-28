@@ -217,14 +217,11 @@ const CaseCompassApp = () => {
           welcomeMessage += '\n\nYour friend earned 500 coins for inviting you!';
         }
         
-        Alert.alert(
-          '🎉 Welcome to Verdict Path!',
-          welcomeMessage
-        );
+        alert('🎉 Welcome to Verdict Path!\n\n' + welcomeMessage);
       } catch (error) {
         console.error('Registration Error Details:', error);
         const errorMsg = error.message || error.toString() || 'Failed to create account. Please try again.';
-        Alert.alert('Registration Error', errorMsg);
+        alert('Registration Error: ' + errorMsg);
       }
     } else {
       Alert.alert(
