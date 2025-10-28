@@ -88,12 +88,10 @@ const CaseCompassApp = () => {
         let userData;
         
         if (userType === USER_TYPES.LAW_FIRM) {
-          const firmCode = `FIRM${Date.now()}`;
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
             method: 'POST',
             body: JSON.stringify({
               firmName: email.split('@')[0] + ' Law Firm',
-              firmCode: firmCode,
               email: email,
               password: password
             })
@@ -113,14 +111,12 @@ const CaseCompassApp = () => {
           
           setCurrentScreen('lawfirm-dashboard');
         } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-          const providerCode = `MED${Date.now()}`;
-          console.log('Registering medical provider:', { providerCode, email });
+          console.log('Registering medical provider:', { email });
           
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
             method: 'POST',
             body: JSON.stringify({
               providerName: email.split('@')[0] + ' Medical Center',
-              providerCode: providerCode,
               email: email,
               password: password
             })
