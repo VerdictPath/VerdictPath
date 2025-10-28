@@ -51,7 +51,7 @@ const LandingScreen = ({ onNavigate }) => {
               <View style={styles.coinShine} />
             </View>
           </View>
-          <Text style={styles.featureItem}>Earn coins as you progress</Text>
+          <Text style={styles.featureItem}>Earn treasure as you progress</Text>
         </View>
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeVideoCamera}>
@@ -64,7 +64,7 @@ const LandingScreen = ({ onNavigate }) => {
               <View style={styles.videoCameraMic} />
             </View>
           </View>
-          <Text style={styles.featureItem}>Expert video tutorials</Text>
+          <Text style={styles.featureItem}>Educational audio/video tutorials</Text>
         </View>
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeHospital}>
@@ -73,7 +73,7 @@ const LandingScreen = ({ onNavigate }) => {
               <View style={styles.hospitalCrossHorizontal} />
             </View>
           </View>
-          <Text style={styles.featureItem}>Secure medical records storage</Text>
+          <Text style={styles.featureItem}>Medical Hub COMING SOON</Text>
         </View>
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeGem}>
