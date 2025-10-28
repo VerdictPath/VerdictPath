@@ -196,7 +196,11 @@ const CaseCompassApp = () => {
         setIsLoggedIn(true);
         
         let welcomeMessage = 'Your free account has been created successfully!';
-        if (inviteCode && inviteCode.trim() && userType === USER_TYPES.INDIVIDUAL) {
+        if (userType === USER_TYPES.LAW_FIRM && userData.firmCode) {
+          welcomeMessage += `\n\nYour unique Law Firm Code:\n${userData.firmCode}\n\nShare this code with your clients so they can connect to your firm.`;
+        } else if (userType === USER_TYPES.MEDICAL_PROVIDER && userData.providerCode) {
+          welcomeMessage += `\n\nYour unique Provider Code:\n${userData.providerCode}\n\nShare this code with your patients so they can connect to your practice.`;
+        } else if (inviteCode && inviteCode.trim() && userType === USER_TYPES.INDIVIDUAL) {
           welcomeMessage += '\n\nYour friend earned 500 coins for inviting you!';
         }
         
