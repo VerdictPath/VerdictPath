@@ -60,7 +60,7 @@ const CaseCompassApp = () => {
     
     if (!email || !password) {
       console.log('[Registration] ERROR: Missing email or password');
-      Alert.alert('Error', 'Please fill in all fields');
+      alert('Error: Please fill in all fields');
       return;
     }
     
@@ -68,20 +68,20 @@ const CaseCompassApp = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       console.log('[Registration] ERROR: Invalid email format');
-      Alert.alert('Error', 'Please enter a valid email address');
+      alert('Error: Please enter a valid email address');
       return;
     }
     
     if (password !== confirmPassword) {
       console.log('[Registration] ERROR: Passwords do not match');
-      Alert.alert('Error', 'Passwords do not match');
+      alert('Error: Passwords do not match');
       return;
     }
     
     // Password strength validation
     if (password.length < 6) {
       console.log('[Registration] ERROR: Password too short');
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      alert('Error: Password must be at least 6 characters long');
       return;
     }
     
