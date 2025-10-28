@@ -12,23 +12,17 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const [currentDocumentType, setCurrentDocumentType] = useState(null);
 
   const handleUploadMedicalBills = () => {
-    setCurrentDocumentType({
-      type: 'medicalBills',
-      name: 'Medical Bills',
-      icon: '💵',
-      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
-    });
-    setUploadModalVisible(true);
+    alert(
+      '🏴‍☠️ Ahoy There, Matey!',
+      'Blimey! This treasure chest be still under construction by our crew! The Medical Bills upload feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon - we\'ll have it shipshape soon! ⚓'
+    );
   };
 
   const handleUploadMedicalRecords = () => {
-    setCurrentDocumentType({
-      type: 'medicalRecords',
-      name: 'Medical Records',
-      icon: '📋',
-      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
-    });
-    setUploadModalVisible(true);
+    alert(
+      '🏴‍☠️ Shiver Me Timbers!',
+      'Arrr! The Medical Records vault be locked up tighter than Davy Jones\' locker! Our ship\'s carpenter be workin\' hard to get this feature ready for ye. Check back soon, savvy? ⚓'
+    );
   };
 
   const closeUploadModal = () => {
@@ -123,25 +117,17 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
 
   const handleAddProvider = () => {
-    alert('Coming Soon', 'Provider management in progress');
+    alert(
+      '🏴‍☠️ Aye, Not Quite Ready!',
+      'Arrr! Our navigators be still plottin\' the course to add medical providers to yer crew! This feature be comin\' soon, so hold fast and keep yer compass handy! ⚓'
+    );
   };
 
   const viewUploadedDocuments = (documentType) => {
-    const documents = medicalHubUploads[documentType];
-    
-    if (!documents || documents.length === 0) {
-      alert('No Documents', `No ${documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records'} have been uploaded yet.`);
-      return;
-    }
-
-    const fileList = documents.map((file, index) => 
-      `${index + 1}. ${file}`
-    ).join('\n');
-
+    const documentName = documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records';
     alert(
-      `📁 ${documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records'}`,
-      fileList,
-      [{ text: 'OK' }]
+      '🏴‍☠️ X Marks the Spot!',
+      `Avast! The ${documentName} treasure map be incomplete, matey! Our crew hasn't finished chartin' these waters yet. Once we do, ye'll be able to view yer precious documents here. Stand by! ⚓`
     );
   };
 

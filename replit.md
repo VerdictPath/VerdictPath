@@ -39,7 +39,7 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
 - **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions, now including interactive audio descriptions.
 - **Video Library**: Integrated educational tutorials.
-- **Medical Hub**: HIPAA-compliant document storage and upload system for medical records and bills.
+- **Medical Hub**: HIPAA-compliant document storage placeholder with pirate-themed "coming soon" messages for upload/download features currently under development.
 - **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients, medical records, billing, evidence, and litigation stages.
 - **Document Upload**: Intuitive, pirate-themed upload modal with camera and photo library options.
 
