@@ -18,16 +18,25 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Clear visual distinction helps users quickly identify their progress
 - UI state properly syncs with backend completion status
 
+**Audio Icons Enhancement**:
+- Audio icons (🎧) in roadmap substages feature solid blue background (#3498db) for high visibility
+- Enhanced size (46x46) with shadow/elevation effects for better user recognition
+- Positioned prominently within substage descriptions
+
 **Individual User Dashboard**:
 - Header button displays "Invite Friends" (👍) in the top right to allow individual users to invite other users
 - "My Connections" link appears in the dashboard menu for managing law firm and medical provider connections
 - Separate invite and connections functionality for clear user workflows
+- **Roadmap Screen**: File upload functionality completely disabled - substages with upload requirements display "🏴‍☠️ File upload coming soon!" banners
+- **Medical Hub Screen**: Upload functionality completely disabled with pirate-themed "Coming Soon" messaging
 
 **Medical Provider Portal**:
-- Upload functionality completely disabled with pirate-themed "🏴‍☠️ Coming Soon" badges replacing upload buttons
+- **Upload functionality COMPLETELY DISABLED across all screens** - no active upload pathways remain
+- Patient Details view displays pirate-themed "🏴‍☠️ Coming Soon" badges for upload sections
+- All upload imports, state variables, and UploadModal component removed from codebase
+- All upload handler functions disabled to prevent any document uploads until feature is fully implemented
 - "Manage Law Firm Connections" link added to dashboard for future law firm connection management
 - Connections tab displays pirate-themed coming soon message explaining future feature to connect with cooperating law firms
-- All upload handler functions disabled to prevent any document uploads until feature is fully implemented
 
 **Law Firm Portal**:
 - "Invite" button in header for inviting new users via unique firm code
@@ -49,11 +58,11 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
-- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions, now including interactive audio descriptions.
+- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions, including interactive audio descriptions with enhanced visibility.
 - **Video Library**: Integrated educational tutorials.
-- **Medical Hub**: HIPAA-compliant document storage placeholder with pirate-themed "coming soon" messages for upload/download features currently under development.
-- **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients, medical records, billing, evidence, and litigation stages.
-- **Document Upload**: Intuitive, pirate-themed upload modal with camera and photo library options.
+- **Medical Hub**: HIPAA-compliant document storage placeholder with pirate-themed "coming soon" messages. **All upload functionality completely disabled** across Individual, Medical Provider, and Law Firm portals pending full implementation.
+- **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients with read-only views of medical records, billing, evidence, and litigation stages.
+- **Document Upload Status**: Feature completely disabled system-wide. All upload buttons, modals, file pickers, and API endpoints are inactive. Display pirate-themed "Coming Soon" messaging throughout the application.
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.

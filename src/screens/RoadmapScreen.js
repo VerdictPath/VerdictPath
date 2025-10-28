@@ -115,11 +115,10 @@ const RoadmapScreen = ({
   };
 
   const simulateUpload = (stageId, subStageId, uploadType) => {
-    if (uploadType === 'photo') {
-      pickImageFromCamera(stageId, subStageId);
-    } else {
-      pickDocumentFromDevice(stageId, subStageId);
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const viewUploadedFiles = (subStage) => {
