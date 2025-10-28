@@ -334,7 +334,9 @@ const RoadmapScreen = ({
         console.error('[RoadmapScreen] API error:', data.error);
         // Handle duplicate completion gracefully
         if (data.error && data.error.includes('already completed')) {
-          alert('Already Completed', 'This task has already been completed.');
+          // Update UI to reflect that it's already completed
+          onCompleteSubStage(selectedStage.id, subStageId, 0); // 0 coins since already awarded
+          alert('Already Completed', 'This task has already been completed. Your progress has been updated.');
         } else {
           alert('Error', data.error || 'Failed to complete task.');
         }
