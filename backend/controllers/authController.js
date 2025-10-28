@@ -6,6 +6,7 @@ const encryption = require('../services/encryption');
 const auditLogger = require('../services/auditLogger');
 const { handleFailedLogin, handleSuccessfulLogin } = require('../middleware/security');
 const consentController = require('./consentController');
+const { generateUniqueCode } = require('../utils/codeGenerator');
 
 exports.registerClient = async (req, res) => {
   try {
@@ -106,16 +107,19 @@ exports.registerClient = async (req, res) => {
 
 exports.registerLawFirm = async (req, res) => {
   try {
-    const { firmName, firmCode, email, password, barNumber, phoneNumber, address } = req.body;
+    const { firmName, email, password, barNumber, phoneNumber, address } = req.body;
     
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Generate unique firm code automatically
+    const firmCode = await generateUniqueCode('lawfirm');
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
        street, city, state, zip_code) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
        RETURNING id, firm_name, firm_code, email`,
-      [firmName, firmCode.toUpperCase(), email.toLowerCase(), hashedPassword, barNumber || null, 
+      [firmName, firmCode, email.toLowerCase(), hashedPassword, barNumber || null, 
        phoneNumber || null, address?.street || null, address?.city || null, 
        address?.state || null, address?.zipCode || null]
     );
@@ -159,7 +163,6 @@ exports.registerMedicalProvider = async (req, res) => {
   try {
     const {
       providerName,
-      providerCode,
       email,
       password,
       npiNumber,
@@ -169,13 +172,16 @@ exports.registerMedicalProvider = async (req, res) => {
       licenseNumber
     } = req.body;
 
-    if (!providerName || !providerCode || !email || !password) {
+    if (!providerName || !email || !password) {
       return res.status(400).json({ 
-        message: 'Provider name, provider code, email, and password are required' 
+        message: 'Provider name, email, and password are required' 
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate unique provider code automatically
+    const providerCode = await generateUniqueCode('medicalprovider');
 
     const result = await db.query(
       `INSERT INTO medical_providers 
@@ -185,7 +191,7 @@ exports.registerMedicalProvider = async (req, res) => {
        RETURNING id, provider_name, provider_code, email`,
       [
         providerName,
-        providerCode.toUpperCase(),
+        providerCode,
         email.toLowerCase(),
         hashedPassword,
         npiNumber || null,
