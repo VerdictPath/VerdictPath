@@ -146,7 +146,7 @@ const InviteModal = ({ visible, onClose, user }) => {
                     Earn 500 coins for each friend who joins using your invite code!
                   </Text>
                 </View>
-              ) : user?.userType === 'law_firm' ? (
+              ) : user?.userType === 'lawfirm' ? (
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>⚓</Text>
                   <Text style={styles.infoText}>
