@@ -1,116 +1,5 @@
 # Verdict Path - React Native Mobile App
 
-## Recent Changes (October 28, 2025)
-- **Individual User Subscription Pricing Update**: Simplified and reduced pricing structure for individual users:
-  - Free tier: Roadmap access, Medical Hub, Evidence Locker, Free daily coins (unchanged at $0)
-  - Basic tier: Everything in Free + Audio library access (with ads) - reduced from $4.99 to $2.99/month
-  - Premium tier: Everything in Basic + Video library access + No ads - reduced from $11.99 to $4.99/month
-  - Updated feature descriptions with emoji icons for better visual clarity
-  - SubscriptionSelectionScreen automatically displays new pricing during registration
-  - Law firm and medical provider organization-based pricing remains unchanged
-- **Medical Provider Size Selection**: Added organization size tiers for medical providers, mirroring law firm functionality:
-  - Added provider_size column to medical_providers database table
-  - Four size tiers: Small (up to 100 patients), Medium (101-500), Large (501-1,000), Enterprise (1,000+)
-  - Updated subscription screen with descriptive size selection cards matching law firm UI pattern
-  - Patient limits now based on practice size, not just subscription tier
-  - Backend API endpoints updated to handle providerSize parameter
-  - Fixed hasChanges() logic to prevent false positives on free tier accounts
-  - Pricing structure: Small ($70 basic/$95 premium), Medium ($350/$473), Large ($840/$1,134), Enterprise ($1,750/$2,363)
-  - Consistent UX between law firm and medical provider subscription management
-  - PROVIDER_SIZES constant added to subscriptionPricing.js
-  - Updated subscriptionLimits.js utility to calculate patient limits based on size
-- **Subscription Upgrade/Downgrade Protocol**: Implemented complete subscription management system for law firms and medical providers:
-  - Added "Subscription" tab (💳) to both law firm and medical provider dashboards
-  - Created full subscription management screens showing current plan, limits, and usage
-  - Backend API endpoints for viewing and updating subscriptions with validation
-  - Prevents downgrades when current client/patient count exceeds new tier limits
-  - Pirate-themed error messages when downgrade attempts are blocked
-  - Real-time display of current subscription tier, organization size, client/patient limits and current counts
-  - One-click subscription updates with loading states and success/error alerts
-  - Law firms can change both subscription tier and firm size (6 tiers)
-  - Medical providers can change both subscription tier and practice size (4 tiers)
-  - Secure API endpoints with authenticateToken middleware
-  - Parameterized database queries for security
-  - Comprehensive validation on both frontend and backend
-- **Law Firm Size Tiers Expansion**: Added two new law firm size tiers and redesigned subscription UI:
-  - Free tier: 10 clients maximum (unchanged)
-  - **NEW: Shingle Firm tier**: 1-24 clients - Solo practitioners or new firms
-  - **NEW: Boutique Firm tier**: 25-49 clients - Small teams with specialized practice areas
-  - Small tier: 50-99 clients - Growing practices with multiple attorneys
-  - Medium tier: 100-499 clients - Established firms with diverse practice areas
-  - Large tier: 500-999 clients - Regional firms with multiple offices
-  - Enterprise tier: 1,000+ clients (unlimited) - Large-scale operations
-  - Updated database enum constraint to include 'shingle' and 'boutique'
-  - Added description boxes to subscription screen for better tier selection guidance
-  - Redesigned organization size UI from compact buttons to descriptive cards
-  - Updated pricing structure: Shingle ($40 basic/$54 premium), Boutique ($70 basic/$95 premium)
-  - Created centralized subscriptionLimits.js utility for limit calculations
-  - Updated registration and connection controllers to enforce new limits
-  - Pirate-themed error messages for both free and paid tier limits
-- **Free Trial Subscription Limits**: Implemented client/patient limits for free trial accounts:
-  - Added subscription_tier column to law_firms and medical_providers tables with default 'free' value
-  - Free tier law firms limited to 10 clients maximum
-  - Free tier medical providers limited to 10 patients maximum
-  - Limit enforcement during both registration and connection updates
-  - Pirate-themed error messages when limits reached (e.g., "Blimey! This law firm's ship be full to the brim!")
-  - Database-level DEFAULT constraints ensure new accounts default to free tier
-  - Parameterized queries prevent SQL injection
-  - Fixed connectionsController to query correct tables (law_firms and medical_providers instead of users)
-- **Automatic Unique Code Generation**: Implemented automatic code assignment for law firms and medical providers:
-  - Law firms receive unique codes in format LAW-XXXXXX (e.g., LAW-AB3K9P)
-  - Medical providers receive unique codes in format MED-XXXXXX (e.g., MED-XY7M2N)
-  - Codes are automatically generated during account registration
-  - Users see their code immediately after registration in the welcome message
-  - Codes use collision-resistant character set (excludes confusing characters like 0/O, 1/I)
-  - Backend utility ensures uniqueness with up to 10 generation attempts
-  - Removed manual code input from registration screens
-  - Clients/patients use these codes to establish connections with law firms/medical providers
-- **Dashboard Header Enhancements**: Improved individual user dashboard with connection visibility:
-  - Added "Add" button (🔗) in top right corner to quickly open ConnectionsModal
-  - Top left now displays connected law firm and medical provider names (⚖️ Law Firm, 🏥 Medical Provider)
-  - Auto-fetches connection data on dashboard load
-  - Refreshes connection info after adding/updating connections
-  - Clean, responsive layout with proper flex positioning
-- **My Connections Feature**: Added connection management for individual users:
-  - New "My Connections" menu item in individual user dashboard
-  - ConnectionsModal component allows users to view and update their law firm and medical provider connections
-  - Users can change law firm or medical provider after registration by entering new codes
-  - Backend API endpoints: GET /api/connections/my-connections, PUT /api/connections/update-lawfirm, PUT /api/connections/update-medicalprovider
-  - Displays current connection details (firm name, facility name, email)
-  - Success/error alerts with pirate-themed messaging
-  - Automatic linkage in law_firm_clients and medical_provider_patients tables
-- **Invite Code for All User Types**: Added invite/referral code field for Law Firms and Medical Providers on registration:
-  - Law firms and medical providers can now enter an invite code during sign-up
-  - Matches individual user invite code functionality
-  - Helps referrers earn rewards when new firms/providers sign up
-  - Supports universal referral system across all user types
-- **Law Firm Portal Tab Structure**: Refactored Law Firm Client Details Screen to match Medical Provider portal:
-  - Converted from single-scroll view to tab-based navigation for better organization
-  - Four tabs: Overview (📋), Roadmap (🗺️), Medical Hub (🏥), Evidence Locker (🗃️)
-  - Overview tab displays client info, case summary stats, and case details
-  - Roadmap tab shows litigation progress with interactive roadmap button
-  - Medical Hub tab combines medical records and billing sections
-  - Evidence Locker tab displays all evidence documents
-  - Consistent styling and UX between Law Firm and Medical Provider portals
-- **Evidence Locker Tab Added**: Created dedicated Evidence Locker tab in Medical Provider Patient Details Screen:
-  - New tab button (🗃️) next to Medical Hub for better organization
-  - Removed evidence section from Medical Hub to eliminate duplication
-  - Evidence tab displays all evidence documents with type, title, description, location, and incident date
-  - Empty state with helpful message when no evidence exists
-  - Info section explaining secure evidence sharing with consent
-  - Tab structure: Overview → Roadmap → Medical Hub → Evidence Locker
-- **Medical Provider Search Bug Fix**: Fixed critical rendering issue preventing real-time search updates:
-  - Fixed syntax error in renderPatientsTab function (removed extra `};` that blocked React re-renders)
-  - Fixed backend to handle both encrypted and non-encrypted patient names (resolved "null, null" display issue)
-  - Search now filters patients in real-time as you type without requiring page refresh
-  - Added fallback logic in medicalproviderController.js for secure name field handling
-- **Client/Patient Search Functionality**: Added search tools to both law firm and medical provider portals:
-  - Real-time search by name or email with instant filtering
-  - Search bar with 🔍 icon and clear button (✕)
-  - Case-insensitive search across displayName, email, firstName, and lastName fields
-  - Empty states for "no results found"
-  - Consistent UX between both portals
-
 ## Overview
 Verdict Path is a React Native mobile application designed as a legal case management and education platform for Georgia Civil Litigation. It provides an interactive case roadmap, gamification elements, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to offer an engaging and informative tool to support justice.
 
@@ -121,32 +10,27 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme. The backend is a Node.js/Express server with a PostgreSQL database.
 
 ### UI/UX Decisions
-The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include an interactive litigation roadmap visualized as a treasure map, a compass/ship wheel logo with the tagline "Chart Your Course to Justice," pirate-themed badges and icons for gamification, and tailored subscription selection screens. The Medical Hub features distinct upload sections and real-time status tracking.
+The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include an interactive litigation roadmap, a compass/ship wheel logo, pirate-themed badges for gamification, and tailored subscription selection screens. The Medical Hub features distinct upload sections and real-time status tracking. UI elements like audio icons for roadmap substages and descriptive subscription cards are consistently styled to match the theme.
 
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
-- **Deployment**: Single-server architecture serving both API and Expo web build on port 5000.
-- **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
-- **Document Management**: Robust multi-file upload with specific file type filters.
-- **State Management**: Centralized in `App.js`.
-- **Styling**: Uses shared and screen-specific stylesheets.
-- **SVG Animation**: Utilizes `react-native-svg` for cubic Bezier curve path animations.
 - **Backend**: Node.js/Express (port 5000) with PostgreSQL for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
-- **HIPAA Security**: Implements AES-256-GCM encryption for PHI at rest, Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions, Patient Consent Management, comprehensive audit logging, and account security measures like lockout after 5 failed login attempts. Dual-layer protection (Permission checks + Consent verification) is enforced before PHI access.
-- **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey with 60 substages. This includes database tables, API endpoints for progress management, automatic coin rewards, and real-time progress display across user portals.
-- **Client/Patient Management**: Search functionality for clients (law firm) and patients (medical provider) with real-time filtering. Restructured portals to organize client/patient-specific data on individual detail pages, including medical records, billing, and evidence.
+- **HIPAA Security**: Implements AES-256-GCM encryption for PHI at rest, Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions, Patient Consent Management, comprehensive audit logging, and account security measures.
+- **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey with 60 substages, including database tables, API endpoints, automatic coin rewards, and real-time progress display.
+- **Client/Patient Management**: Includes real-time search functionality by name or email, restructured portals with tab-based navigation (Overview, Roadmap, Medical Hub, Evidence Locker) for individual client/patient details, and robust connection management for users.
+- **Subscription Management**: Implements a complete system for individual, law firm, and medical provider subscriptions with Free, Basic, and Premium tiers. This includes automatic unique code generation, free trial limits, expanded law firm and medical provider size tiers, and a full upgrade/downgrade protocol with validation.
+- **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
 - **Universal Invite/Referral System**: Allows all user types to generate unique invite codes, with coin rewards for individual users whose invitees sign up.
-- **Cross-Platform Compatibility**: Extensive bug fixes for iOS, Android, mobile web, and desktop web, including responsive design, StatusBar configuration, and modal event handling.
+- **Cross-Platform Compatibility**: Extensive support for iOS, Android, mobile web, and desktop web.
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
-- **Gamification**: Coin system with a lifetime cap.
-- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions.
+- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions, now including interactive audio descriptions.
 - **Video Library**: Integrated educational tutorials.
 - **Medical Hub**: HIPAA-compliant document storage and upload system for medical records and bills.
 - **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients, medical records, billing, evidence, and litigation stages.
-- **Document Upload**: Intuitive, pirate-themed upload modal with camera and photo library options, including proper permission handling.
+- **Document Upload**: Intuitive, pirate-themed upload modal with camera and photo library options.
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
