@@ -1,10 +1,10 @@
-const pool = require('../config/database');
+const db = require('../config/db');
 
 const getMyConnections = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const result = await pool.query(
+    const result = await db.query(
       `SELECT 
         law_firm_code,
         medical_provider_code
