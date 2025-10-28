@@ -163,3 +163,20 @@ CREATE TABLE IF NOT EXISTS coin_conversions (
 
 CREATE INDEX idx_coin_conversions_user_id ON coin_conversions(user_id);
 CREATE INDEX idx_coin_conversions_converted_at ON coin_conversions(converted_at);
+
+-- Step 10: User Invites table (depends on users) - For referral system and rewards
+CREATE TABLE IF NOT EXISTS user_invites (
+  id SERIAL PRIMARY KEY,
+  referrer_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  referee_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  invite_code VARCHAR(20) UNIQUE NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
+  coins_awarded INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  accepted_at TIMESTAMP,
+  expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 days')
+);
+
+CREATE INDEX idx_user_invites_referrer_user_id ON user_invites(referrer_user_id);
+CREATE INDEX idx_user_invites_invite_code ON user_invites(invite_code);
+CREATE INDEX idx_user_invites_status ON user_invites(status);
