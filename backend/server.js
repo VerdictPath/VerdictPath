@@ -26,10 +26,28 @@ app.use(cookieParser());
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static files from public directory
-app.use(express.static(path.join(__dirname, 'public')));
-// Serve Expo web app static files
-app.use(express.static(path.join(__dirname, 'public/app')));
+// Serve static files from public directory with cache control
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js') || filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
+
+// Serve Expo web app static files with strict no-cache for JS and HTML
+app.use(express.static(path.join(__dirname, 'public/app'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.js') || filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
+
 // NOTE: Uploaded files are NOT served as static files for HIPAA compliance
 // They must be accessed through authenticated API endpoints only
 
