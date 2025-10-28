@@ -84,10 +84,10 @@ const DashboardScreen = ({
           </View>
           <TouchableOpacity 
             style={styles.inviteButton}
-            onPress={() => setInviteModalVisible(true)}
+            onPress={() => setConnectionsModalVisible(true)}
           >
-            <Text style={styles.inviteIcon}>👍</Text>
-            <Text style={styles.inviteButtonText}>Invite</Text>
+            <Text style={styles.inviteIcon}>🔗</Text>
+            <Text style={styles.inviteButtonText}>Connections</Text>
           </TouchableOpacity>
         </View>
         
@@ -187,16 +187,6 @@ const DashboardScreen = ({
             </View>
           </View>
           <Text style={styles.menuText}>Medical Hub</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => setConnectionsModalVisible(true)}
-        >
-          <View style={styles.iconBadgeEmoji}>
-            <Text style={styles.emojiIcon}>🔗</Text>
-          </View>
-          <Text style={styles.menuText}>My Connections</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
