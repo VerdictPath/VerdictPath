@@ -23,12 +23,28 @@ exports.registerClient = async (req, res) => {
     
     if (lawFirmCode) {
       const lawFirmResult = await db.query(
-        'SELECT id FROM law_firms WHERE firm_code = $1',
+        'SELECT id, subscription_tier FROM law_firms WHERE firm_code = $1',
         [lawFirmCode.toUpperCase()]
       );
       
       if (lawFirmResult.rows.length > 0) {
-        connectedLawFirmId = lawFirmResult.rows[0].id;
+        const lawFirm = lawFirmResult.rows[0];
+        connectedLawFirmId = lawFirm.id;
+        
+        // Check client limit for free trial accounts
+        if (lawFirm.subscription_tier === 'free') {
+          const clientCountResult = await db.query(
+            'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
+            [connectedLawFirmId]
+          );
+          
+          const clientCount = parseInt(clientCountResult.rows[0].count);
+          if (clientCount >= 10) {
+            return res.status(403).json({ 
+              message: 'This law firm has reached the maximum number of clients (10) for their free trial account. They need to upgrade to add more clients.' 
+            });
+          }
+        }
       }
     }
     
@@ -116,12 +132,12 @@ exports.registerLawFirm = async (req, res) => {
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
-       street, city, state, zip_code) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
-       RETURNING id, firm_name, firm_code, email`,
+       street, city, state, zip_code, subscription_tier) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+       RETURNING id, firm_name, firm_code, email, subscription_tier`,
       [firmName, firmCode, email.toLowerCase(), hashedPassword, barNumber || null, 
        phoneNumber || null, address?.street || null, address?.city || null, 
-       address?.state || null, address?.zipCode || null]
+       address?.state || null, address?.zipCode || null, 'free']
     );
     
     const lawFirm = result.rows[0];
@@ -186,9 +202,9 @@ exports.registerMedicalProvider = async (req, res) => {
     const result = await db.query(
       `INSERT INTO medical_providers 
        (provider_name, provider_code, email, password, npi_number, specialty, phone_number, 
-        street, city, state, zip_code, license_number) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-       RETURNING id, provider_name, provider_code, email`,
+        street, city, state, zip_code, license_number, subscription_tier) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+       RETURNING id, provider_name, provider_code, email, subscription_tier`,
       [
         providerName,
         providerCode,
@@ -201,7 +217,8 @@ exports.registerMedicalProvider = async (req, res) => {
         address?.city || null,
         address?.state || null,
         address?.zipCode || null,
-        licenseNumber || null
+        licenseNumber || null,
+        'free'
       ]
     );
 
