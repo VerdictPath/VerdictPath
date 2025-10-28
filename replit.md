@@ -1,6 +1,14 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Law Firm Portal Tab Structure**: Refactored Law Firm Client Details Screen to match Medical Provider portal:
+  - Converted from single-scroll view to tab-based navigation for better organization
+  - Four tabs: Overview (📋), Roadmap (🗺️), Medical Hub (🏥), Evidence Locker (🗃️)
+  - Overview tab displays client info, case summary stats, and case details
+  - Roadmap tab shows litigation progress with interactive roadmap button
+  - Medical Hub tab combines medical records and billing sections
+  - Evidence Locker tab displays all evidence documents
+  - Consistent styling and UX between Law Firm and Medical Provider portals
 - **Evidence Locker Tab Added**: Created dedicated Evidence Locker tab in Medical Provider Patient Details Screen:
   - New tab button (🗃️) next to Medical Hub for better organization
   - Removed evidence section from Medical Hub to eliminate duplication
