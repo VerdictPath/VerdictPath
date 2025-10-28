@@ -163,12 +163,13 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
               </Text>
             </View>
           ) : (
-            filteredPatients.map(patient => (
-            <TouchableOpacity
-              key={patient.id}
-              style={styles.patientCard}
-              onPress={() => onNavigateToPatient(patient.id)}
-            >
+            <View key={`patient-list-${searchQuery}-${filteredPatients.length}`}>
+              {filteredPatients.map(patient => (
+              <TouchableOpacity
+                key={patient.id}
+                style={styles.patientCard}
+                onPress={() => onNavigateToPatient(patient.id)}
+              >
               <View style={styles.patientHeader}>
                 <Text style={styles.patientName}>👤 {patient.displayName}</Text>
                 <Text style={styles.patientBadge}>
@@ -206,7 +207,8 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
                 ⏰ Registered: {new Date(patient.registeredDate).toLocaleDateString()}
               </Text>
             </TouchableOpacity>
-          ))
+          ))}
+            </View>
         )}
       </View>
     </View>
@@ -370,7 +372,7 @@ const renderAnalyticsTab = () => {
         {renderTabButton('analytics', 'Analytics', '📊')}
       </View>
 
-      <ScrollView style={styles.content} key={searchQuery}>
+      <ScrollView style={styles.content}>
         {activeTab === 'patients' && renderPatientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
 
