@@ -26,7 +26,7 @@ const getMyConnections = async (req, res) => {
     };
 
     if (user.law_firm_code) {
-      const lawFirmResult = await pool.query(
+      const lawFirmResult = await db.query(
         `SELECT id, email, firm_name
         FROM users
         WHERE user_type = 'law_firm' AND firm_code = $1`,
@@ -38,7 +38,7 @@ const getMyConnections = async (req, res) => {
     }
 
     if (user.medical_provider_code) {
-      const providerResult = await pool.query(
+      const providerResult = await db.query(
         `SELECT id, email, facility_name
         FROM users
         WHERE user_type = 'medical_provider' AND provider_code = $1`,
@@ -67,7 +67,7 @@ const updateLawFirm = async (req, res) => {
 
     const trimmedCode = lawFirmCode.trim().toUpperCase();
 
-    const lawFirmResult = await pool.query(
+    const lawFirmResult = await db.query(
       `SELECT id, email, firm_name
       FROM users
       WHERE user_type = 'law_firm' AND firm_code = $1`,
@@ -80,7 +80,7 @@ const updateLawFirm = async (req, res) => {
 
     const lawFirm = lawFirmResult.rows[0];
 
-    await pool.query(
+    await db.query(
       `UPDATE users
       SET law_firm_code = $1,
           updated_at = NOW()
@@ -88,14 +88,14 @@ const updateLawFirm = async (req, res) => {
       [trimmedCode, userId]
     );
 
-    const clientResult = await pool.query(
+    const clientResult = await db.query(
       `SELECT id FROM law_firm_clients
       WHERE law_firm_id = $1 AND client_id = $2`,
       [lawFirm.id, userId]
     );
 
     if (clientResult.rows.length === 0) {
-      await pool.query(
+      await db.query(
         `INSERT INTO law_firm_clients (law_firm_id, client_id, created_at)
         VALUES ($1, $2, NOW())`,
         [lawFirm.id, userId]
@@ -128,7 +128,7 @@ const updateMedicalProvider = async (req, res) => {
 
     const trimmedCode = medicalProviderCode.trim().toUpperCase();
 
-    const providerResult = await pool.query(
+    const providerResult = await db.query(
       `SELECT id, email, facility_name
       FROM users
       WHERE user_type = 'medical_provider' AND provider_code = $1`,
@@ -141,7 +141,7 @@ const updateMedicalProvider = async (req, res) => {
 
     const provider = providerResult.rows[0];
 
-    await pool.query(
+    await db.query(
       `UPDATE users
       SET medical_provider_code = $1,
           updated_at = NOW()
@@ -149,14 +149,14 @@ const updateMedicalProvider = async (req, res) => {
       [trimmedCode, userId]
     );
 
-    const patientResult = await pool.query(
+    const patientResult = await db.query(
       `SELECT id FROM medical_provider_patients
       WHERE provider_id = $1 AND patient_id = $2`,
       [provider.id, userId]
     );
 
     if (patientResult.rows.length === 0) {
-      await pool.query(
+      await db.query(
         `INSERT INTO medical_provider_patients (provider_id, patient_id, created_at)
         VALUES ($1, $2, NOW())`,
         [provider.id, userId]
