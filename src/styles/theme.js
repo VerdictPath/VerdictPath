@@ -26,6 +26,8 @@ export const theme = {
     warmPurple: '#8B7355',
     warmBlue: '#6B8E99',
     warmGreen: '#8B7355',
+    successGreen: '#5FAD56',
+    lightGreen: '#7BC67E',
     
     primary: '#8B6F47',
     primaryDark: '#6B4423',

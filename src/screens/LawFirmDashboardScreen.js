@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: theme.colors.successGreen,
     borderRadius: 4,
   },
   activityList: {
