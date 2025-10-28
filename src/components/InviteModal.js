@@ -139,12 +139,28 @@ const InviteModal = ({ visible, onClose, user }) => {
             </View>
           ) : inviteData ? (
             <View style={styles.content}>
-              <View style={styles.infoSection}>
-                <Text style={styles.infoIcon}>💰</Text>
-                <Text style={styles.infoText}>
-                  Earn 500 coins for each friend who joins using your invite code!
-                </Text>
-              </View>
+              {user?.userType === 'individual' ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoIcon}>💰</Text>
+                  <Text style={styles.infoText}>
+                    Earn 500 coins for each friend who joins using your invite code!
+                  </Text>
+                </View>
+              ) : user?.userType === 'law_firm' ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoIcon}>⚓</Text>
+                  <Text style={styles.infoText}>
+                    Invite clients and colleagues to join your firm on Verdict Path!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoIcon}>⚕️</Text>
+                  <Text style={styles.infoText}>
+                    Invite patients and medical professionals to join Verdict Path!
+                  </Text>
+                </View>
+              )}
 
               <View style={styles.codeSection}>
                 <Text style={styles.codeLabel}>Your Invite Code:</Text>

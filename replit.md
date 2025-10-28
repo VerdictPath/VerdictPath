@@ -10,10 +10,10 @@ Verdict Path is a legal case management and education platform for Georgia Civil
   - Law Firms: Thumbs-up invite button in header next to firm code
   - Medical Providers: Thumbs-up invite button in header next to provider code
   - Share invites via native share API (text/email) or copy-to-clipboard with pre-formatted message
-  - InviteModal displays invite code, shareable link, and stats (pending/successful invites)
+  - InviteModal displays invite code, shareable link, and context-aware messaging based on user type
   - New users can enter invite code during registration (any user type can invite any user type)
-  - Referrers automatically earn 500 coins when their invitee successfully signs up
-  - Backend tracks all invites with status (pending, used, expired) in `user_invites` table
+  - **Coin Rewards**: Only individual users earn 500 coins when their invitee successfully signs up (law firms and medical providers do not receive coin rewards)
+  - Backend tracks all invites with status (pending, accepted, expired) in `user_invites` table
   - Invite codes expire after 30 days if unused
   - API endpoints: `/api/invites/my-code` (get/generate), `/api/invites/process` (redeem), `/api/invites/stats` (view stats)
   - Cross-platform compatibility: uses shared API_BASE_URL helper for web and native clients

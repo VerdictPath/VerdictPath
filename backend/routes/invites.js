@@ -152,13 +152,14 @@ router.post('/process', async (req, res) => {
       return res.status(400).json({ error: 'Missing invite code or user ID' });
     }
 
-    // Find the pending invite
+    // Find the pending invite and check referrer's user type
     const inviteResult = await db.query(
-      `SELECT id, referrer_user_id 
-       FROM user_invites 
-       WHERE invite_code = $1 
-       AND status = 'pending' 
-       AND expires_at > NOW()`,
+      `SELECT ui.id, ui.referrer_user_id, u.user_type
+       FROM user_invites ui
+       JOIN users u ON ui.referrer_user_id = u.id
+       WHERE ui.invite_code = $1 
+       AND ui.status = 'pending' 
+       AND ui.expires_at > NOW()`,
       [inviteCode.toUpperCase()]
     );
 
@@ -173,10 +174,12 @@ router.post('/process', async (req, res) => {
       return res.status(400).json({ error: 'Cannot use your own invite code' });
     }
 
-    // Reward amount for successful referral
+    // Only award coins to individual users, not law firms or medical providers
     const REFERRAL_REWARD_COINS = 500;
+    const shouldAwardCoins = invite.user_type === 'individual';
+    const coinsToAward = shouldAwardCoins ? REFERRAL_REWARD_COINS : 0;
 
-    // Update invite status and award coins
+    // Update invite status
     await db.query(
       `UPDATE user_invites 
        SET status = 'accepted', 
@@ -184,21 +187,24 @@ router.post('/process', async (req, res) => {
            accepted_at = NOW(),
            coins_awarded = $2
        WHERE id = $3`,
-      [newUserId, REFERRAL_REWARD_COINS, invite.id]
+      [newUserId, coinsToAward, invite.id]
     );
 
-    // Award coins to the referrer
-    await db.query(
-      'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
-      [REFERRAL_REWARD_COINS, invite.referrer_user_id]
-    );
-
-    console.log(`✅ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. ${REFERRAL_REWARD_COINS} coins awarded.`);
+    // Award coins only to individual users
+    if (shouldAwardCoins) {
+      await db.query(
+        'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
+        [REFERRAL_REWARD_COINS, invite.referrer_user_id]
+      );
+      console.log(`✅ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. ${REFERRAL_REWARD_COINS} coins awarded.`);
+    } else {
+      console.log(`✅ Invite processed: User ${newUserId} accepted invite from ${invite.user_type} User ${invite.referrer_user_id}. No coins awarded (business account).`);
+    }
 
     res.json({
       success: true,
-      coinsAwarded: REFERRAL_REWARD_COINS,
-      message: `Your friend earned ${REFERRAL_REWARD_COINS} coins for inviting you!`
+      coinsAwarded: coinsToAward,
+      message: shouldAwardCoins ? `Your friend earned ${REFERRAL_REWARD_COINS} coins for inviting you!` : 'Invite accepted successfully!'
     });
   } catch (error) {
     console.error('Error processing invite:', error);
