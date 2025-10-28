@@ -29,6 +29,12 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Connections tab displays pirate-themed coming soon message explaining future feature to connect with cooperating law firms
 - All upload handler functions disabled to prevent any document uploads until feature is fully implemented
 
+**Law Firm Portal**:
+- "Invite" button in header for inviting new users via unique firm code
+- "My Connections" link added to dashboard menu for managing client and provider connections
+- Both invite and connections functionality clearly separated for streamlined workflows
+- Client Details view is read-only for Medical Hub (no upload capabilities)
+
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
