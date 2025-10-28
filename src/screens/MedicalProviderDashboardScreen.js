@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
@@ -14,6 +14,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -84,21 +85,67 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     </TouchableOpacity>
   );
 
-  const renderPatientsTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚕️ Patient List</Text>
-        
-        {patients.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🏥</Text>
-            <Text style={styles.emptyText}>No patients registered yet</Text>
-            <Text style={styles.emptySubtext}>
-              Share your provider code with patients: {providerData?.providerCode}
-            </Text>
+  // Filter patients based on search query
+  const getFilteredPatients = () => {
+    if (!searchQuery.trim()) {
+      return patients;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return patients.filter(patient => 
+      patient.displayName?.toLowerCase().includes(query) ||
+      patient.email?.toLowerCase().includes(query) ||
+      patient.firstName?.toLowerCase().includes(query) ||
+      patient.lastName?.toLowerCase().includes(query)
+    );
+  };
+
+  const renderPatientsTab = () => {
+    const filteredPatients = getFilteredPatients();
+    
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⚕️ Patient List</Text>
+          
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search patients by name or email..."
+              placeholderTextColor={theme.colors.warmGray}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        ) : (
-          patients.map(patient => (
+          
+          {patients.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🏥</Text>
+              <Text style={styles.emptyText}>No patients registered yet</Text>
+              <Text style={styles.emptySubtext}>
+                Share your provider code with patients: {providerData?.providerCode}
+              </Text>
+            </View>
+          ) : filteredPatients.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔍</Text>
+              <Text style={styles.emptyText}>No patients found</Text>
+              <Text style={styles.emptySubtext}>
+                Try a different search term
+              </Text>
+            </View>
+          ) : (
+            filteredPatients.map(patient => (
             <TouchableOpacity
               key={patient.id}
               style={styles.patientCard}
@@ -422,6 +469,36 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 15,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.colors.navy,
+    padding: 0,
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: theme.colors.warmGray,
+    fontWeight: 'bold',
   },
   emptyState: {
     padding: 30,
