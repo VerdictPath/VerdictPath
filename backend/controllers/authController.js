@@ -41,7 +41,7 @@ exports.registerClient = async (req, res) => {
           const clientCount = parseInt(clientCountResult.rows[0].count);
           if (clientCount >= 10) {
             return res.status(403).json({ 
-              message: 'This law firm has reached the maximum number of clients (10) for their free trial account. They need to upgrade to add more clients.' 
+              message: 'Blimey! This law firm\'s ship be full to the brim! They\'ve reached the maximum crew of 10 clients on their free trial voyage. Tell \'em to upgrade their vessel to bring more mateys aboard!' 
             });
           }
         }

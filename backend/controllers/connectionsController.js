@@ -90,7 +90,7 @@ const updateLawFirm = async (req, res) => {
       const clientCount = parseInt(clientCountResult.rows[0].count);
       if (clientCount >= 10) {
         return res.status(403).json({ 
-          error: 'This law firm has reached the maximum number of clients (10) for their free trial account. They need to upgrade to add more clients.' 
+          error: 'Blimey! This law firm\'s ship be full to the brim! They\'ve reached the maximum crew of 10 clients on their free trial voyage. Tell \'em to upgrade their vessel to bring more mateys aboard!' 
         });
       }
     }
@@ -166,7 +166,7 @@ const updateMedicalProvider = async (req, res) => {
       const patientCount = parseInt(patientCountResult.rows[0].count);
       if (patientCount >= 10) {
         return res.status(403).json({ 
-          error: 'This medical provider has reached the maximum number of patients (10) for their free trial account. They need to upgrade to add more patients.' 
+          error: 'Avast! This medical provider\'s roster be at full capacity! They\'ve reached the maximum of 10 patients on their free trial voyage. Time to upgrade the ship to welcome more souls aboard!' 
         });
       }
     }
