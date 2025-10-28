@@ -183,6 +183,17 @@ exports.getClientDetails = async (req, res) => {
       [clientId]
     );
     
+    // HIPAA: Decrypt evidence PHI fields
+    const decryptedEvidence = evidenceResult.rows.map(evidence => ({
+      ...evidence,
+      title: evidence.title_encrypted ? 
+        encryption.decrypt(evidence.title_encrypted) : evidence.title,
+      description: evidence.description_encrypted ? 
+        encryption.decrypt(evidence.description_encrypted) : evidence.description,
+      location: evidence.location_encrypted ? 
+        encryption.decrypt(evidence.location_encrypted) : evidence.location
+    }));
+    
     const litigationStageResult = await db.query(
       'SELECT * FROM litigation_stages WHERE user_id = $1 AND law_firm_id = $2',
       [clientId, lawFirmId]
@@ -257,8 +268,8 @@ exports.getClientDetails = async (req, res) => {
         bills: decryptedBillingRecords
       },
       evidenceDocuments: {
-        total: evidenceResult.rows.length,
-        documents: evidenceResult.rows
+        total: decryptedEvidence.length,
+        documents: decryptedEvidence
       },
       litigationStage: litigationStageResult.rows[0] || null
     });
@@ -630,7 +641,7 @@ exports.getAllClientDocuments = async (req, res) => {
       [clientIds]
     );
     
-    // Format evidence
+    // Decrypt and format evidence
     const evidence = evidenceResult.rows.map(item => {
       const firstName = item.first_name_encrypted ? 
         encryption.decrypt(item.first_name_encrypted) : item.first_name;
@@ -642,10 +653,13 @@ exports.getAllClientDocuments = async (req, res) => {
         clientId: item.user_id,
         clientName: `${lastName}, ${firstName}`,
         evidenceType: item.evidence_type,
-        title: item.title,
-        description: item.description,
+        title: item.title_encrypted ? 
+          encryption.decrypt(item.title_encrypted) : item.title,
+        description: item.description_encrypted ? 
+          encryption.decrypt(item.description_encrypted) : item.description,
         dateOfIncident: item.date_of_incident,
-        location: item.location,
+        location: item.location_encrypted ? 
+          encryption.decrypt(item.location_encrypted) : item.location,
         fileName: item.file_name,
         fileSize: item.file_size,
         uploadedAt: item.uploaded_at,

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const encryptionService = require('./encryption');
 
 async function verifyLawFirmClientRelationship(lawFirmId, clientId) {
   const result = await pool.query(
@@ -130,13 +131,27 @@ async function listClientDocuments(lawFirmId, clientId) {
 
   if (evidenceConsent) {
     const result = await pool.query(
-      `SELECT id, evidence_type, title, file_name, file_size, uploaded_at, description, date_of_incident
+      `SELECT id, evidence_type, title, title_encrypted, description, description_encrypted, 
+              location, location_encrypted, file_name, file_size, uploaded_at, date_of_incident
        FROM evidence 
        WHERE user_id = $1 AND accessible_by_law_firm = TRUE
        ORDER BY uploaded_at DESC`,
       [clientId]
     );
-    documents.evidence = result.rows;
+    
+    // Decrypt PHI fields (prefer encrypted versions if available)
+    documents.evidence = result.rows.map(row => {
+      return {
+        ...row,
+        title: row.title_encrypted ? encryptionService.decrypt(row.title_encrypted) : row.title,
+        description: row.description_encrypted ? encryptionService.decrypt(row.description_encrypted) : row.description,
+        location: row.location_encrypted ? encryptionService.decrypt(row.location_encrypted) : row.location,
+        // Remove encrypted fields from output for security
+        title_encrypted: undefined,
+        description_encrypted: undefined,
+        location_encrypted: undefined
+      };
+    });
   }
 
   return {
