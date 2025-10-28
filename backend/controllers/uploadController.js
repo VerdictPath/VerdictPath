@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 const documentAccessService = require('../services/documentAccessService');
+const encryptionService = require('../services/encryption');
 const path = require('path');
 const fs = require('fs');
 
@@ -352,20 +353,30 @@ const uploadEvidence = async (req, res) => {
       location 
     } = req.body;
 
-    // Insert into evidence table
+    // Encrypt PHI fields (title, description, location) for HIPAA compliance
+    const titleValue = title || file.originalname;
+    const titleEncrypted = encryptionService.encrypt(titleValue);
+    const descriptionEncrypted = description ? encryptionService.encrypt(description) : null;
+    const locationEncrypted = location ? encryptionService.encrypt(location) : null;
+
+    // Insert into evidence table with encrypted PHI fields
     const result = await pool.query(
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
+        title_encrypted, description_encrypted, location_encrypted,
         document_url, file_name, file_size, mime_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
        RETURNING *`,
       [
         userId,
         evidenceType || 'Document',
-        title || file.originalname,
-        description || null,
+        titleValue,  // Keep plain text for backward compatibility
+        description || null,  // Keep plain text for backward compatibility
         dateOfIncident || null,
-        location || null,
+        location || null,  // Keep plain text for backward compatibility
+        titleEncrypted,  // Encrypted PHI
+        descriptionEncrypted,  // Encrypted PHI
+        locationEncrypted,  // Encrypted PHI
         file.filename, // Store just the filename, not the full path
         file.originalname,
         file.size,
