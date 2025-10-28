@@ -381,41 +381,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             </>
           )}
         </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📎 Evidence Documents</Text>
-          
-          {evidence.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📂</Text>
-              <Text style={styles.emptyText}>No evidence uploaded yet</Text>
-              <Text style={styles.emptySubtext}>
-                Evidence documents will appear here once clients upload them
-              </Text>
-            </View>
-          ) : (
-            evidence.map((item) => (
-              <View key={item.id} style={styles.recordCard}>
-                <View style={styles.recordHeader}>
-                  <Text style={styles.recordTitle}>📎 {item.title || 'Evidence'}</Text>
-                  <Text style={styles.recordBadge}>{item.evidenceType}</Text>
-                </View>
-                <Text style={styles.recordClient}>Client: {item.clientName}</Text>
-                {item.description && (
-                  <Text style={styles.recordDetail}>{item.description}</Text>
-                )}
-                {item.dateOfIncident && (
-                  <Text style={styles.recordDetail}>
-                    📅 Incident: {new Date(item.dateOfIncident).toLocaleDateString()}
-                  </Text>
-                )}
-                <Text style={styles.recordDate}>
-                  Uploaded: {new Date(item.uploadedAt).toLocaleDateString()}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
       </View>
     );
   };
@@ -424,28 +389,39 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📎 Evidence Locker</Text>
+        <Text style={styles.sectionSubtitle}>
+          All evidence documents uploaded by clients (photos, reports, and other case materials)
+        </Text>
         
         {evidence.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🗃️</Text>
             <Text style={styles.emptyText}>Evidence locker is empty</Text>
             <Text style={styles.emptySubtext}>
-              Evidence documents will be stored securely here
+              Evidence documents uploaded by clients will appear here
             </Text>
           </View>
         ) : (
-          evidence.map((item, index) => (
-            <View key={index} style={styles.evidenceCard}>
-              <View style={styles.evidenceHeader}>
-                <Text style={styles.evidenceIcon}>📎</Text>
-                <View style={styles.evidenceInfo}>
-                  <Text style={styles.evidenceTitle}>{item.title}</Text>
-                  <Text style={styles.evidenceClient}>Client: {item.clientName}</Text>
-                </View>
-                <Text style={styles.evidenceBadge}>{item.type}</Text>
+          evidence.map((item) => (
+            <View key={item.id} style={styles.recordCard}>
+              <View style={styles.recordHeader}>
+                <Text style={styles.recordTitle}>📎 {item.title || 'Evidence'}</Text>
+                <Text style={styles.recordBadge}>{item.evidenceType}</Text>
               </View>
-              <Text style={styles.evidenceDate}>
-                Added: {new Date(item.addedDate).toLocaleDateString()}
+              <Text style={styles.recordClient}>Client: {item.clientName}</Text>
+              {item.description && (
+                <Text style={styles.recordDetail}>{item.description}</Text>
+              )}
+              {item.location && (
+                <Text style={styles.recordDetail}>📍 {item.location}</Text>
+              )}
+              {item.dateOfIncident && (
+                <Text style={styles.recordDetail}>
+                  📅 Incident: {new Date(item.dateOfIncident).toLocaleDateString()}
+                </Text>
+              )}
+              <Text style={styles.recordDate}>
+                Uploaded: {new Date(item.uploadedAt).toLocaleDateString()}
               </Text>
             </View>
           ))
@@ -622,6 +598,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
   },
   emptyState: {
     padding: 30,

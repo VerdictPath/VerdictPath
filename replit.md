@@ -4,6 +4,13 @@
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## Recent Changes (October 28, 2025)
+- **Law Firm Portal Document Organization**: Clarified and organized document access in the law firm portal:
+  - **Medical Hub Tab**: Now exclusively displays medical records and medical bills uploaded by clients
+  - **Evidence Locker Tab**: Contains all other evidence documents (photos, reports, police reports, accident photos, etc.)
+  - Clear separation between medical documentation and case evidence for better organization
+  - Backend endpoint `/api/lawfirm/documents/all` fetches all client documents organized by category
+  - Proper HIPAA-compliant encryption and audit logging for all document access
+  - Each document displays the client's name for easy identification
 - **Universal Invite/Referral System**: Implemented comprehensive friend invite and referral system for ALL user types (Individual, Law Firm, Medical Provider):
   - All users can generate unique 8-character invite codes from their dashboards
   - Individual users: Invite button on main dashboard menu
