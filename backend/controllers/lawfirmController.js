@@ -191,7 +191,11 @@ exports.getClientDetails = async (req, res) => {
       description: evidence.description_encrypted ? 
         encryption.decrypt(evidence.description_encrypted) : evidence.description,
       location: evidence.location_encrypted ? 
-        encryption.decrypt(evidence.location_encrypted) : evidence.location
+        encryption.decrypt(evidence.location_encrypted) : evidence.location,
+      // Remove encrypted fields from output for security
+      title_encrypted: undefined,
+      description_encrypted: undefined,
+      location_encrypted: undefined
     }));
     
     const litigationStageResult = await db.query(
@@ -641,13 +645,14 @@ exports.getAllClientDocuments = async (req, res) => {
       [clientIds]
     );
     
-    // Decrypt and format evidence
+    // Decrypt and format evidence (build sanitized object without encrypted fields)
     const evidence = evidenceResult.rows.map(item => {
       const firstName = item.first_name_encrypted ? 
         encryption.decrypt(item.first_name_encrypted) : item.first_name;
       const lastName = item.last_name_encrypted ? 
         encryption.decrypt(item.last_name_encrypted) : item.last_name;
       
+      // Build sanitized response object without encrypted fields
       return {
         id: item.id,
         clientId: item.user_id,
@@ -664,6 +669,7 @@ exports.getAllClientDocuments = async (req, res) => {
         fileSize: item.file_size,
         uploadedAt: item.uploaded_at,
         documentUrl: item.document_url
+        // Encrypted fields are intentionally excluded from response for security
       };
     });
     
