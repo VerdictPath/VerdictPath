@@ -1,13 +1,18 @@
 // API Configuration
-// Backend and frontend both run on port 5000 (single server architecture)
+// Backend runs on port 3001, frontend (Expo) runs on port 5000
 const getApiBaseUrl = () => {
   // Check if we're in a browser environment (React Native Web)
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     
-    // In Replit, backend and frontend are on the same domain/port
-    // Use the current origin (same protocol, hostname, and port)
+    // Backend API runs on port 3001 (different from frontend port 5000)
+    // In localhost, use port 3001. In production, use the base domain (backend proxy)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//${hostname}:3001`;
+    }
+    
+    // In Replit production, backend is on the same domain
     return `${protocol}//${hostname}`;
   }
   
