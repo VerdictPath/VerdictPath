@@ -22,14 +22,23 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
   const fetchDashboardData = async () => {
     try {
+      console.log('[MedProvider Dashboard] Fetching dashboard data...');
+      console.log('[MedProvider Dashboard] Token:', user.token ? 'Present' : 'Missing');
+      console.log('[MedProvider Dashboard] API URL:', `${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD}`);
+      
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD}`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
       
+      console.log('[MedProvider Dashboard] Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[MedProvider Dashboard] Data received:', data);
+        console.log('[MedProvider Dashboard] Patients count:', data.patients?.length || 0);
+        
         setProviderData(data);
         setPatients(data.patients || []);
         
