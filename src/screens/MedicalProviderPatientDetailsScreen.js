@@ -385,15 +385,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>📋 Medical Records</Text>
-            <TouchableOpacity 
-              style={styles.uploadButtonSmall}
-              onPress={handleUploadMedicalRecords}
-              disabled={uploading}
-            >
-              <Text style={styles.uploadButtonSmallText}>
-                {uploading ? '⏳' : '📤 Upload'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
           </View>
           
           {medicalRecords.length === 0 ? (
@@ -431,15 +423,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>💊 Medical Billing</Text>
-            <TouchableOpacity 
-              style={styles.uploadButtonSmall}
-              onPress={handleUploadMedicalBills}
-              disabled={uploading}
-            >
-              <Text style={styles.uploadButtonSmallText}>
-                {uploading ? '⏳' : '📤 Upload'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
           </View>
           
           {medicalBilling.length === 0 ? (
@@ -843,6 +827,17 @@ const styles = StyleSheet.create({
     color: theme.colors.cream,
     fontSize: 12,
     fontWeight: '600',
+  },
+  comingSoonBadge: {
+    backgroundColor: theme.colors.warmGold,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
   },
   documentCard: {
     backgroundColor: theme.colors.lightCream,

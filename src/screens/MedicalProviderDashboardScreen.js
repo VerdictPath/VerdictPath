@@ -344,6 +344,38 @@ const renderAnalyticsTab = () => {
     );
   };
 
+  const renderConnectionsTab = () => {
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔗 Law Firm Connections</Text>
+          
+          <View style={styles.comingSoonContainer}>
+            <Text style={styles.comingSoonIcon}>🏴‍☠️</Text>
+            <Text style={styles.comingSoonTitle}>Ahoy, Matey!</Text>
+            <Text style={styles.comingSoonText}>
+              The Law Firm Connections feature be under construction by our crew! 
+            </Text>
+            <Text style={styles.comingSoonText}>
+              Soon ye'll be able to connect with cooperating law firms to share patient medical records and billing information securely. Keep yer eyes on the horizon! ⚓
+            </Text>
+          </View>
+          
+          <View style={styles.infoBox}>
+            <Text style={styles.infoIcon}>ℹ️</Text>
+            <Text style={styles.infoText}>
+              Once available, you'll be able to:
+              {'\n'}• Add law firms by their unique firm code
+              {'\n'}• View connected law firms
+              {'\n'}• Manage connection permissions
+              {'\n'}• Remove connections when needed
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -378,6 +410,16 @@ const renderAnalyticsTab = () => {
         {activeTab === 'patients' && renderPatientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'subscription' && <MedicalProviderSubscriptionScreen token={user.token} />}
+        {activeTab === 'connections' && renderConnectionsTab()}
+
+        {activeTab !== 'connections' && (
+          <TouchableOpacity 
+            style={styles.connectionsButton} 
+            onPress={() => setActiveTab('connections')}
+          >
+            <Text style={styles.connectionsButtonText}>🔗 Manage Law Firm Connections</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
@@ -825,6 +867,65 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  connectionsButton: {
+    backgroundColor: theme.colors.warmGold,
+    padding: 15,
+    borderRadius: 8,
+    margin: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  connectionsButtonText: {
+    color: theme.colors.mahogany,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  comingSoonContainer: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    marginBottom: 20,
+  },
+  comingSoonIcon: {
+    fontSize: 64,
+    marginBottom: 15,
+  },
+  comingSoonTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 15,
+  },
+  comingSoonText: {
+    fontSize: 15,
+    color: theme.colors.navy,
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 22,
+  },
+  infoBox: {
+    backgroundColor: theme.colors.cream,
+    padding: 20,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  infoIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.navy,
+    lineHeight: 22,
   },
   // Litigation Progress Styles
   litigationSection: {
