@@ -76,13 +76,18 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Medical Hub COMING SOON</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeGem}>
-            <View style={styles.iconGem}>
-              <View style={styles.gemTop} />
-              <View style={styles.gemBottom} />
+          <View style={styles.iconBadgeLocker}>
+            <View style={styles.iconLocker}>
+              <View style={styles.lockerBody} />
+              <View style={styles.lockerDrawer1} />
+              <View style={styles.lockerDrawer2} />
+              <View style={styles.lockerDrawer3} />
+              <View style={styles.lockerHandle1} />
+              <View style={styles.lockerHandle2} />
+              <View style={styles.lockerHandle3} />
             </View>
           </View>
-          <Text style={styles.featureItem}>Daily login rewards</Text>
+          <Text style={styles.featureItem}>Evidence Locker</Text>
         </View>
       </View>
     </View>
@@ -333,47 +338,89 @@ const styles = StyleSheet.create({
     left: 0,
     top: 5.5,
   },
-  iconBadgeGem: {
+  iconBadgeLocker: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.charcoal,
+    backgroundColor: theme.colors.mahogany,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
   },
-  iconGem: {
-    width: 14,
-    height: 16,
+  iconLocker: {
+    width: 18,
+    height: 20,
     position: 'relative',
   },
-  gemTop: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: theme.colors.warmPurple,
-    position: 'absolute',
-    top: 0,
-    left: 0,
+  lockerBody: {
+    width: 18,
+    height: 20,
+    backgroundColor: theme.colors.charcoal,
+    borderRadius: 2,
+    borderWidth: 1.5,
+    borderColor: theme.colors.darkGold,
   },
-  gemBottom: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: theme.colors.warmPurple,
+  lockerDrawer1: {
+    width: 14,
+    height: 5,
+    backgroundColor: theme.colors.warmGray,
+    borderRadius: 1,
     position: 'absolute',
-    bottom: 0,
-    left: 0,
+    left: 2,
+    top: 2,
+    borderWidth: 0.5,
+    borderColor: theme.colors.charcoal,
+  },
+  lockerDrawer2: {
+    width: 14,
+    height: 5,
+    backgroundColor: theme.colors.warmGray,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 2,
+    top: 8,
+    borderWidth: 0.5,
+    borderColor: theme.colors.charcoal,
+  },
+  lockerDrawer3: {
+    width: 14,
+    height: 5,
+    backgroundColor: theme.colors.warmGray,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 2,
+    top: 14,
+    borderWidth: 0.5,
+    borderColor: theme.colors.charcoal,
+  },
+  lockerHandle1: {
+    width: 3,
+    height: 2,
+    backgroundColor: theme.colors.darkGold,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 7.5,
+    top: 3.5,
+  },
+  lockerHandle2: {
+    width: 3,
+    height: 2,
+    backgroundColor: theme.colors.darkGold,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 7.5,
+    top: 9.5,
+  },
+  lockerHandle3: {
+    width: 3,
+    height: 2,
+    backgroundColor: theme.colors.darkGold,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 7.5,
+    top: 15.5,
   },
 });
 
