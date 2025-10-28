@@ -13,8 +13,10 @@ const CLIENT_LIMITS = {
 const PATIENT_LIMITS = {
   free: 10,
   paid: {
-    basic: Infinity,
-    premium: Infinity
+    small: 100,
+    medium: 500,
+    large: 1000,
+    enterprise: Infinity
   }
 };
 
@@ -30,12 +32,16 @@ const getLawFirmClientLimit = (subscriptionTier, firmSize) => {
   return CLIENT_LIMITS.paid[firmSize] || CLIENT_LIMITS.free;
 };
 
-const getMedicalProviderPatientLimit = (subscriptionTier) => {
+const getMedicalProviderPatientLimit = (subscriptionTier, providerSize) => {
   if (subscriptionTier === 'free' || !subscriptionTier) {
     return PATIENT_LIMITS.free;
   }
   
-  return PATIENT_LIMITS.paid[subscriptionTier] || PATIENT_LIMITS.free;
+  if (!providerSize) {
+    return PATIENT_LIMITS.free;
+  }
+  
+  return PATIENT_LIMITS.paid[providerSize] || PATIENT_LIMITS.free;
 };
 
 const checkLawFirmLimit = (clientCount, subscriptionTier, firmSize) => {
@@ -48,8 +54,8 @@ const checkLawFirmLimit = (clientCount, subscriptionTier, firmSize) => {
   };
 };
 
-const checkMedicalProviderLimit = (patientCount, subscriptionTier) => {
-  const limit = getMedicalProviderPatientLimit(subscriptionTier);
+const checkMedicalProviderLimit = (patientCount, subscriptionTier, providerSize) => {
+  const limit = getMedicalProviderPatientLimit(subscriptionTier, providerSize);
   return {
     withinLimit: patientCount < limit,
     currentCount: patientCount,

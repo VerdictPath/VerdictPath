@@ -323,6 +323,13 @@ export const FIRM_SIZES = {
   ENTERPRISE: 'enterprise'
 };
 
+export const PROVIDER_SIZES = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+  ENTERPRISE: 'enterprise'
+};
+
 export const TIER_LEVELS = {
   FREE: 'free',
   BASIC: 'basic',
