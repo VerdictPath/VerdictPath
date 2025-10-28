@@ -25,6 +25,8 @@ exports.getDashboard = async (req, res) => {
     const patientsResult = await db.query(
       `SELECT DISTINCT
         u.id,
+        u.first_name,
+        u.last_name,
         u.first_name_encrypted,
         u.last_name_encrypted,
         u.email,
@@ -45,8 +47,9 @@ exports.getDashboard = async (req, res) => {
     
     // Decrypt patient names and format data
     const patients = await Promise.all(patientsResult.rows.map(async (patient) => {
-      const firstName = encryption.decrypt(patient.first_name_encrypted);
-      const lastName = encryption.decrypt(patient.last_name_encrypted);
+      // Use encrypted names if available, otherwise fall back to regular names
+      const firstName = patient.first_name_encrypted ? encryption.decrypt(patient.first_name_encrypted) : patient.first_name;
+      const lastName = patient.last_name_encrypted ? encryption.decrypt(patient.last_name_encrypted) : patient.last_name;
       const recordCount = parseInt(patient.record_count) || 0;
       
       // Get litigation progress for this patient
@@ -67,6 +70,8 @@ exports.getDashboard = async (req, res) => {
       
       return {
         id: patient.id,
+        firstName: firstName,
+        lastName: lastName,
         displayName: `${lastName}, ${firstName}`,
         email: patient.email,
         recordCount: recordCount,
@@ -88,7 +93,7 @@ exports.getDashboard = async (req, res) => {
     // Get all medical records for consented patients
     const medicalRecordsResult = await db.query(
       `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_at, mr.record_type, mr.user_id,
-              u.first_name_encrypted, u.last_name_encrypted
+              u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
        FROM medical_records mr
        INNER JOIN users u ON mr.user_id = u.id
        INNER JOIN consent_records cr ON u.id = cr.patient_id
@@ -101,8 +106,8 @@ exports.getDashboard = async (req, res) => {
     );
     
     const medicalRecords = medicalRecordsResult.rows.map(record => {
-      const firstName = encryption.decrypt(record.first_name_encrypted);
-      const lastName = encryption.decrypt(record.last_name_encrypted);
+      const firstName = record.first_name_encrypted ? encryption.decrypt(record.first_name_encrypted) : record.first_name;
+      const lastName = record.last_name_encrypted ? encryption.decrypt(record.last_name_encrypted) : record.last_name;
       
       return {
         type: record.record_type || record.file_name,
@@ -115,8 +120,8 @@ exports.getDashboard = async (req, res) => {
     
     // Get evidence documents (using medical records as evidence for now)
     const evidence = medicalRecordsResult.rows.slice(0, 10).map(record => {
-      const firstName = encryption.decrypt(record.first_name_encrypted);
-      const lastName = encryption.decrypt(record.last_name_encrypted);
+      const firstName = record.first_name_encrypted ? encryption.decrypt(record.first_name_encrypted) : record.first_name;
+      const lastName = record.last_name_encrypted ? encryption.decrypt(record.last_name_encrypted) : record.last_name;
       
       return {
         title: record.file_name,
