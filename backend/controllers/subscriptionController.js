@@ -63,14 +63,14 @@ const updateLawFirmSubscription = async (req, res) => {
 const updateMedicalProviderSubscription = async (req, res) => {
   try {
     const providerId = req.user.id;
-    const { subscriptionTier } = req.body;
+    const { subscriptionTier, providerSize } = req.body;
 
     if (!subscriptionTier) {
       return res.status(400).json({ error: 'Subscription tier is required' });
     }
 
     const providerResult = await db.query(
-      'SELECT id, subscription_tier FROM medical_providers WHERE id = $1',
+      'SELECT id, subscription_tier, provider_size FROM medical_providers WHERE id = $1',
       [providerId]
     );
 
@@ -78,13 +78,17 @@ const updateMedicalProviderSubscription = async (req, res) => {
       return res.status(404).json({ error: 'Medical provider not found' });
     }
 
+    const provider = providerResult.rows[0];
+    const newTier = subscriptionTier;
+    const newSize = (newTier !== 'free' && providerSize) ? providerSize : null;
+
     const patientCountResult = await db.query(
       'SELECT COUNT(*) as count FROM medical_provider_patients WHERE medical_provider_id = $1',
       [providerId]
     );
 
     const currentPatientCount = parseInt(patientCountResult.rows[0].count);
-    const newLimit = getMedicalProviderPatientLimit(subscriptionTier);
+    const newLimit = getMedicalProviderPatientLimit(newTier, newSize);
 
     if (currentPatientCount > newLimit) {
       return res.status(400).json({ 
@@ -95,15 +99,16 @@ const updateMedicalProviderSubscription = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE medical_providers SET subscription_tier = $1 WHERE id = $2',
-      [subscriptionTier, providerId]
+      'UPDATE medical_providers SET subscription_tier = $1, provider_size = $2 WHERE id = $3',
+      [newTier, newSize, providerId]
     );
 
     res.json({
       success: true,
       message: 'Your subscription has been updated successfully!',
       subscription: {
-        tier: subscriptionTier,
+        tier: newTier,
+        providerSize: newSize,
         patientLimit: newLimit,
         currentPatientCount: currentPatientCount
       }
@@ -158,7 +163,7 @@ const getMedicalProviderSubscription = async (req, res) => {
     const providerId = req.user.id;
 
     const providerResult = await db.query(
-      'SELECT id, provider_name, email, subscription_tier FROM medical_providers WHERE id = $1',
+      'SELECT id, provider_name, email, subscription_tier, provider_size FROM medical_providers WHERE id = $1',
       [providerId]
     );
 
@@ -174,11 +179,12 @@ const getMedicalProviderSubscription = async (req, res) => {
     );
 
     const currentPatientCount = parseInt(patientCountResult.rows[0].count);
-    const currentLimit = getMedicalProviderPatientLimit(provider.subscription_tier);
+    const currentLimit = getMedicalProviderPatientLimit(provider.subscription_tier, provider.provider_size);
 
     res.json({
       subscription: {
         tier: provider.subscription_tier,
+        providerSize: provider.provider_size,
         patientLimit: currentLimit,
         currentPatientCount: currentPatientCount,
         providerName: provider.provider_name,
