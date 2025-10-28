@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
+import InviteModal from '../components/InviteModal';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -12,6 +13,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -387,8 +389,16 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
-        <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
+        <View>
+          <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
+          <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.inviteButton} 
+          onPress={() => setInviteModalVisible(true)}
+        >
+          <Text style={styles.inviteButtonText}>👍 Invite</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.tabBar}>
@@ -408,6 +418,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <InviteModal
+        visible={inviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
+        user={user}
+      />
     </View>
   );
 };
@@ -433,6 +449,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 3,
     borderBottomColor: theme.colors.secondary,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   firmName: {
     fontSize: 24,
@@ -444,6 +463,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     fontFamily: 'monospace',
+  },
+  inviteButton: {
+    backgroundColor: theme.colors.warmGold,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  inviteButtonText: {
+    color: theme.colors.navy,
+    fontSize: 14,
+    fontWeight: '600',
   },
   tabBar: {
     flexDirection: 'row',
