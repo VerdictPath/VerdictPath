@@ -24,33 +24,28 @@ export const SUBSCRIPTION_TIERS = {
       price: 0, 
       name: 'Free', 
       features: [
-        'Basic roadmap access',
-        'Limited video library',
-        '100 coin limit',
-        'Community support'
+        '🗺️ Roadmap access',
+        '🏥 Medical Hub',
+        '🗃️ Evidence Locker',
+        '💰 Free daily coins'
       ] 
     },
     basic: { 
-      price: 4.99, 
+      price: 2.99, 
       name: 'Basic', 
       features: [
-        'Full roadmap access',
-        'Standard video library',
-        'Unlimited coins',
-        'Email support',
-        'Document templates'
+        '✅ Everything in Free',
+        '🎧 Audio library access',
+        '📢 Ads included'
       ] 
     },
     premium: { 
-      price: 11.99, 
+      price: 4.99, 
       name: 'Premium', 
       features: [
-        'Everything in Basic',
-        'Premium video library',
-        'Priority support',
-        'Advanced document templates',
-        'Legal form templates',
-        'Monthly Q&A sessions'
+        '✅ Everything in Basic',
+        '🎥 Video library access',
+        '🚫 No ads'
       ] 
     }
   },
