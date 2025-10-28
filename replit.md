@@ -1,152 +1,41 @@
 # Verdict Path - React Native Mobile App
 
 ## Overview
-Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
-
-## Recent Changes (October 28, 2025)
-- **Medical Provider Portal Organization - Patient-Specific Views**: Restructured the medical provider portal to match law firm portal pattern with patient-specific organization:
-  - **Dashboard Simplified**: Main dashboard now has only 2 tabs (Patients and Analytics) - removed aggregated Medical Hub and Evidence tabs
-  - **Patient Details Page**: All patient-specific data now lives in individual patient details pages, including:
-    - Overview tab with patient information
-    - Litigation Roadmap tab with progress tracking
-    - Medical Hub tab with three sections:
-      - Medical Records section (all records for that specific patient)
-      - Medical Billing section (all bills with totals for that specific patient)
-      - Evidence Locker section (all evidence documents specific to that patient)
-  - **Better Organization**: Each patient's complete case file (medical + evidence) is now in one place for easier case management
-  - Backend endpoint updated to fetch patient-specific medical records, billing, and evidence documents
-  - Upload functionality integrated into patient-specific Medical Hub tab
-  - Test patients Emily Rodriguez and David Thompson added with full consent records for Test Medical Center
-- **HIPAA Security Enhancement - Evidence Encryption**: Fixed critical security gap in evidence document storage:
-  - Added encrypted fields to evidence table (title_encrypted, description_encrypted, location_encrypted)
-  - Upload controller now encrypts all PHI fields using AES-256-GCM before storage
-  - All retrieval endpoints decrypt PHI fields and sanitize responses (encrypted fields excluded from API output)
-  - Backward compatibility maintained: falls back to plain text for existing records uploaded before encryption
-  - Matches encryption pattern used for medical_records and medical_billing tables
-  - No encrypted ciphertext leakage in API responses (verified by architect review)
-- **Law Firm Portal Organization - Client-Specific Views**: Restructured the law firm portal to organize all client-specific information in individual client detail pages:
-  - **Dashboard Simplified**: Main dashboard now has only 2 tabs (Clients and Analytics) - removed aggregated Medical Hub and Evidence tabs
-  - **Client Details Page**: All client-specific data now lives in individual client details pages, including:
-    - Litigation Roadmap with progress tracking
-    - Medical Records section (all medical records for that specific client)
-    - Medical Billing section (all bills with totals for that specific client)
-    - Evidence Locker section (all photos, reports, and evidence specific to that client)
-  - **Better Organization**: Each client's complete case file (medical + evidence) is now in one place for easier case management
-  - Backend endpoint `/api/lawfirm/documents/all` available but not used in main dashboard
-  - Proper HIPAA-compliant encryption and audit logging for all document access
-  - Created test clients Emily Rodriguez and David Thompson with comprehensive medical records, bills, and evidence
-- **Universal Invite/Referral System**: Implemented comprehensive friend invite and referral system for ALL user types (Individual, Law Firm, Medical Provider):
-  - All users can generate unique 8-character invite codes from their dashboards
-  - Individual users: Invite button on main dashboard menu
-  - Law Firms: Thumbs-up invite button in header next to firm code
-  - Medical Providers: Thumbs-up invite button in header next to provider code
-  - Share invites via native share API (text/email) or copy-to-clipboard with pre-formatted message
-  - InviteModal displays invite code, shareable link, and context-aware messaging based on user type
-  - New users can enter invite code during registration (any user type can invite any user type)
-  - **Coin Rewards**: Only individual users earn 500 coins when their invitee successfully signs up (law firms and medical providers do not receive coin rewards)
-  - Backend tracks all invites with status (pending, accepted, expired) in `user_invites` table
-  - Invite codes expire after 30 days if unused
-  - API endpoints: `/api/invites/my-code` (get/generate), `/api/invites/process` (redeem), `/api/invites/stats` (view stats)
-  - Cross-platform compatibility: uses shared API_BASE_URL helper for web and native clients
-  - Dynamic share URL generation based on request headers for proper domain resolution
-- **Medical Provider Upload Functionality**: Added Medical Hub tab to Medical Provider patient details screen:
-  - Medical providers can now upload medical records and bills on behalf of their patients
-  - New "Medical Hub" tab alongside Overview and Roadmap tabs
-  - Uses the same beautiful UploadModal component for consistent user experience
-  - Upload options: "Take Photo" (camera) and "Choose Files" (photo library)
-  - Documents are securely stored in the patient's Medical Hub
-  - Uploaded records can be accessed by patient's law firm (with consent)
-  - HIPAA-compliant secure storage with proper authorization
-- **Medical Hub Upload Modal**: Replaced basic Alert dialogs with the intuitive pirate-themed UploadModal component in the Medical Hub for all individual users:
-  - Beautiful design with cream, mahogany, and warm gold colors matching the app theme
-  - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (photo library)
-  - Clear file format information and accepted types display
-  - Consistent upload experience across Pre-Litigation tasks and Medical Hub sections
-  - Works for both Medical Bills and Medical Records upload sections
-- **Cross-Platform Compatibility Fixes**: Comprehensive bug fixes for iOS, Android, mobile web, and desktop web:
-  - **HIPAAFormsScreen Authentication**: Fixed to use `user.token` prop instead of AsyncStorage for consistency across all API calls (loadForms, viewForm, signForm)
-  - **Responsive Design**: Replaced static `Dimensions.get('window')` with `useWindowDimensions()` hook in RoadmapScreen and MedicalProviderPatientDetailsScreen for proper orientation change handling
-  - **Android StatusBar**: Added proper platform-specific StatusBar configuration with correct background color from theme
-  - **Modal Event Handling**: Fixed UploadModal event propagation for cross-platform compatibility
-  - **Memory Leaks Prevention**: useWindowDimensions ensures dimension updates don't cause stale closures
-  - **Dynamic Styles**: Moved height-dependent styles in RoadmapScreen to dynamic styles object to prevent variable reference errors across platforms
-- **Law Firm Portal Progress Bar Fixes**: Fixed styling issues in the law firm dashboard:
-  - Active clients' litigation progress bars now display with proper warm gold coloring
-  - Case phase distribution progress bars are now properly centered within their containers
-  - Created unified `progressBarFill` style for consistent progress bar rendering
-  - All progress bars use `progressBarContainer` + `progressBarFill` pattern for clean, centered display
-- **Avatar Selection Removed from Law Firm Portal**: Law firm users viewing client roadmaps now see a clean, read-only view without avatar selection UI:
-  - Hidden "change avatar" button in header
-  - Hidden AvatarSelector component 
-  - Hidden avatar icon on current stage treasure chest
-  - Hidden "Your Position" legend item from map legend
-  - Roadmap immediately displays for law firm users without requiring avatar selection
-  - All avatar UI elements are controlled by the `readOnly` prop in RoadmapScreen.js
-- **Intuitive Upload Modal**: Replaced basic Alert dialogs with a custom UploadModal component (`src/components/UploadModal.js`) for the individual user portal's pre-litigation stage. The new modal features:
-  - Beautiful pirate-themed design with cream, mahogany, and warm gold colors
-  - Two prominent option cards: "Take Photo" (camera) and "Choose Files" (photo library)
-  - Clear file format information showing accepted types
-  - Proper async flow ensuring modal stays mounted during file picker interaction
-  - Null-safe rendering with optional chaining
-  - Smooth fade animations on open/close
-  - Three ways to close: X button, tap outside, or Cancel button
-  - High z-index to ensure modal appears on top
-- **Camera & Photo Library Permissions**: Implemented proper permission handling for iOS and Android:
-  - Camera permission request with user-friendly error messages
-  - Photo library permission request for selecting existing photos
-  - Detailed logging for debugging permission issues
-  - Clear guidance to enable permissions in device settings if denied
-  - Separate functions for camera (`pickImage`) and photo library (`pickImageFromLibrary`)
+Verdict Path is a React Native mobile application designed as a legal case management and education platform for Georgia Civil Litigation. It provides an interactive case roadmap, gamification elements, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to offer an engaging and informative tool to support justice.
 
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
 
 ## System Architecture
-The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme.
+The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme. The backend is a Node.js/Express server with a PostgreSQL database.
 
 ### UI/UX Decisions
-The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include:
-- An interactive litigation roadmap visualized as a treasure map with animated paths and chests.
-- A Verdict Path logo featuring a compass/ship wheel design and a "Chart Your Course to Justice" tagline, influencing the app's color scheme (Tan/Sand, Cream, Mahogany, Warm Gold, Navy, Warm Gray).
-- Pirate-themed badges and icons for gamification and navigation on landing and dashboard screens.
-- Tailored subscription selection screens for Individual, Law Firm, and Medical Provider user types.
-- A Medical Hub with distinct upload sections and real-time status tracking.
+The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include an interactive litigation roadmap visualized as a treasure map, a compass/ship wheel logo with the tagline "Chart Your Course to Justice," pirate-themed badges and icons for gamification, and tailored subscription selection screens. The Medical Hub features distinct upload sections and real-time status tracking.
 
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
-- **Project Structure**: Modular, with `src/screens/` and `src/components/`.
-- **Deployment**: Single-server architecture where the backend serves both API and Expo web build on port 5000.
-- **Gamification Logic**: Coin system for milestones and daily streaks, with fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit per user).
+- **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
+- **Deployment**: Single-server architecture serving both API and Expo web build on port 5000.
+- **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
 - **Document Management**: Robust multi-file upload with specific file type filters.
 - **State Management**: Centralized in `App.js`.
-- **Styling**: Shared and screen-specific styles.
+- **Styling**: Uses shared and screen-specific stylesheets.
 - **SVG Animation**: Utilizes `react-native-svg` for cubic Bezier curve path animations.
 - **Backend**: Node.js/Express (port 5000) with PostgreSQL for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
-- **HIPAA Security**:
-  - AES-256-GCM encryption for PHI at rest.
-  - Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions.
-  - Patient Consent Management for PHI sharing control.
-  - Comprehensive audit logging for PHI access with IP tracking.
-  - Account security measures including lockout after 5 failed login attempts.
-  - Dual-layer protection (Permission checks + Consent verification) before PHI access.
-  - Auto-consent for clients registering with law firm codes.
-- **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey, including 60 substages. This includes:
-  - Database tables (`user_litigation_progress`, `litigation_substage_completions`, etc.).
-  - API endpoints for getting/updating progress, completing stages/substages, and tracking video views.
-  - Automatic coin rewards and progress percentage calculation upon substage completion (including auto-completion via document uploads).
-  - Manual task completion feature for ALL pre-litigation tasks - users can mark tasks complete without upload requirements.
-  - Real-time progress display on the Dashboard, Law Firm client portal, and Medical Provider dashboard.
+- **HIPAA Security**: Implements AES-256-GCM encryption for PHI at rest, Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions, Patient Consent Management, comprehensive audit logging, and account security measures like lockout after 5 failed login attempts. Dual-layer protection (Permission checks + Consent verification) is enforced before PHI access.
+- **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey with 60 substages. This includes database tables, API endpoints for progress management, automatic coin rewards, and real-time progress display across user portals.
+- **Client/Patient Management**: Search functionality for clients (law firm) and patients (medical provider) with real-time filtering. Restructured portals to organize client/patient-specific data on individual detail pages, including medical records, billing, and evidence.
+- **Universal Invite/Referral System**: Allows all user types to generate unique invite codes, with coin rewards for individual users whose invitees sign up.
+- **Cross-Platform Compatibility**: Extensive bug fixes for iOS, Android, mobile web, and desktop web, including responsive design, StatusBar configuration, and modal event handling.
 
 ### Feature Specifications
-- **User Authentication & Types**: Supports Individual, Law Firm, Medical Provider (Free, Basic, Premium tiers).
-- **Avatar Selection**: Pirate-themed avatars.
-- **Gamification**: Coin system with a lifetime cap of $5 credit ($25,000 coins).
-- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, including detailed substages and modal descriptions.
-- **Video Library**: Integrated educational tutorials covering litigation stages.
-- **Medical Hub**: HIPAA-compliant document storage and upload system.
-- **Document Upload & Data Entry**: Tasks for file uploads and text-based data entry.
-- **Law Firm Client Portal**: Web and mobile access for client, medical record, billing, evidence, and litigation stage management.
-- **HIPAA Compliance**: Production-ready implementation including encryption, RBAC (6 roles, 23 permissions), and Patient Consent Management (multiple consent types).
+- **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
+- **Gamification**: Coin system with a lifetime cap.
+- **Interactive Pirate Map**: 9-stage litigation journey with progress tracking, detailed substages, and modal descriptions.
+- **Video Library**: Integrated educational tutorials.
+- **Medical Hub**: HIPAA-compliant document storage and upload system for medical records and bills.
+- **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients, medical records, billing, evidence, and litigation stages.
+- **Document Upload**: Intuitive, pirate-themed upload modal with camera and photo library options, including proper permission handling.
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
