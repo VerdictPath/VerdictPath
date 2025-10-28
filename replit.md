@@ -1,6 +1,19 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Subscription Upgrade/Downgrade Protocol**: Implemented complete subscription management system for law firms and medical providers:
+  - Added "Subscription" tab (💳) to both law firm and medical provider dashboards
+  - Created full subscription management screens showing current plan, limits, and usage
+  - Backend API endpoints for viewing and updating subscriptions with validation
+  - Prevents downgrades when current client/patient count exceeds new tier limits
+  - Pirate-themed error messages when downgrade attempts are blocked
+  - Real-time display of current subscription tier, organization size, client/patient limits and current counts
+  - One-click subscription updates with loading states and success/error alerts
+  - Law firms can change both subscription tier and firm size (6 tiers)
+  - Medical providers can change subscription tier (3 tiers: Free, Basic, Premium)
+  - Secure API endpoints with authenticateToken middleware
+  - Parameterized database queries for security
+  - Comprehensive validation on both frontend and backend
 - **Law Firm Size Tiers Expansion**: Added two new law firm size tiers and redesigned subscription UI:
   - Free tier: 10 clients maximum (unchanged)
   - **NEW: Shingle Firm tier**: 1-24 clients - Solo practitioners or new firms
