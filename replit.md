@@ -4,6 +4,19 @@
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## Recent Changes (October 28, 2025)
+- **Medical Provider Portal Organization - Patient-Specific Views**: Restructured the medical provider portal to match law firm portal pattern with patient-specific organization:
+  - **Dashboard Simplified**: Main dashboard now has only 2 tabs (Patients and Analytics) - removed aggregated Medical Hub and Evidence tabs
+  - **Patient Details Page**: All patient-specific data now lives in individual patient details pages, including:
+    - Overview tab with patient information
+    - Litigation Roadmap tab with progress tracking
+    - Medical Hub tab with three sections:
+      - Medical Records section (all records for that specific patient)
+      - Medical Billing section (all bills with totals for that specific patient)
+      - Evidence Locker section (all evidence documents specific to that patient)
+  - **Better Organization**: Each patient's complete case file (medical + evidence) is now in one place for easier case management
+  - Backend endpoint updated to fetch patient-specific medical records, billing, and evidence documents
+  - Upload functionality integrated into patient-specific Medical Hub tab
+  - Test patients Emily Rodriguez and David Thompson added with full consent records for Test Medical Center
 - **HIPAA Security Enhancement - Evidence Encryption**: Fixed critical security gap in evidence document storage:
   - Added encrypted fields to evidence table (title_encrypted, description_encrypted, location_encrypted)
   - Upload controller now encrypts all PHI fields using AES-256-GCM before storage
