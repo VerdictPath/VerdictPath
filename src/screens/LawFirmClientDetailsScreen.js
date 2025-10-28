@@ -295,23 +295,33 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         )}
       </View>
 
-      {/* Evidence Documents */}
+      {/* Evidence Locker */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Evidence Documents ({evidenceDocuments.total})</Text>
+        <Text style={styles.sectionTitle}>📎 Evidence Locker ({evidenceDocuments.total})</Text>
+        <Text style={styles.sectionSubtitle}>
+          Photos, reports, and other case evidence uploaded by this client
+        </Text>
         {evidenceDocuments.documents.length === 0 ? (
-          <Text style={styles.emptyText}>No evidence documents uploaded yet</Text>
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyIcon}>🗃️</Text>
+            <Text style={styles.emptyText}>Evidence locker is empty</Text>
+            <Text style={styles.emptySubtext}>Evidence documents will appear here once uploaded</Text>
+          </View>
         ) : (
           evidenceDocuments.documents.map((doc) => (
             <View key={doc.id} style={styles.documentItem}>
-              <Text style={styles.documentTitle}>{doc.title}</Text>
+              <Text style={styles.documentTitle}>📎 {doc.title}</Text>
               <Text style={styles.documentMeta}>
                 Type: {doc.evidence_type?.replace(/_/g, ' ').toUpperCase()}
+                {doc.location && ` | Location: ${doc.location}`}
                 {doc.date_of_incident && ` | Incident: ${new Date(doc.date_of_incident).toLocaleDateString()}`}
-                | Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
               </Text>
               {doc.description && (
                 <Text style={styles.documentDescription}>{doc.description}</Text>
               )}
+              <Text style={styles.documentUploadDate}>
+                Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+              </Text>
             </View>
           ))
         )}
@@ -427,6 +437,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
   },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  emptyStateContainer: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 10,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: theme.colors.warmGray,
+    textAlign: 'center',
+    marginTop: 5,
+  },
   litigationStatus: {
     backgroundColor: theme.colors.secondary,
     padding: 10,
@@ -475,6 +505,11 @@ const styles = StyleSheet.create({
   documentDescription: {
     fontSize: 14,
     color: theme.colors.navy,
+    marginTop: 5,
+  },
+  documentUploadDate: {
+    fontSize: 12,
+    color: theme.colors.warmGray,
     marginTop: 5,
   },
   emptyText: {

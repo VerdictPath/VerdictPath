@@ -11,7 +11,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [firmData, setFirmData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [medicalRecords, setMedicalRecords] = useState([]);
-  const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
@@ -31,7 +30,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       if (response.ok) {
         const data = await response.json();
         setMedicalRecords(data.medicalRecords || []);
-        setEvidence(data.evidence || []);
         // Store medical bills separately in analytics for now
         setAnalytics(prev => ({
           ...prev,
@@ -72,10 +70,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           litigationCount: 0,
           trialCount: 0
         });
-        
-        // Set medical records and evidence
-        setMedicalRecords(data.medicalRecords || []);
-        setEvidence(data.evidence || []);
       } else {
         const errorData = await response.json();
         console.error('[Dashboard] Failed response:', response.status, errorData);
@@ -385,68 +379,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     );
   };
 
-  const renderEvidenceTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📎 Evidence Locker</Text>
-        <Text style={styles.sectionSubtitle}>
-          All evidence documents uploaded by clients (photos, reports, and other case materials)
-        </Text>
-        
-        {evidence.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🗃️</Text>
-            <Text style={styles.emptyText}>Evidence locker is empty</Text>
-            <Text style={styles.emptySubtext}>
-              Evidence documents uploaded by clients will appear here
-            </Text>
-          </View>
-        ) : (
-          evidence.map((item) => (
-            <View key={item.id} style={styles.recordCard}>
-              <View style={styles.recordHeader}>
-                <Text style={styles.recordTitle}>📎 {item.title || 'Evidence'}</Text>
-                <Text style={styles.recordBadge}>{item.evidenceType}</Text>
-              </View>
-              <Text style={styles.recordClient}>Client: {item.clientName}</Text>
-              {item.description && (
-                <Text style={styles.recordDetail}>{item.description}</Text>
-              )}
-              {item.location && (
-                <Text style={styles.recordDetail}>📍 {item.location}</Text>
-              )}
-              {item.dateOfIncident && (
-                <Text style={styles.recordDetail}>
-                  📅 Incident: {new Date(item.dateOfIncident).toLocaleDateString()}
-                </Text>
-              )}
-              <Text style={styles.recordDate}>
-                Uploaded: {new Date(item.uploadedAt).toLocaleDateString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔐 HIPAA Compliance Status</Text>
-        <View style={styles.complianceCard}>
-          <Text style={styles.complianceIcon}>✅</Text>
-          <Text style={styles.complianceTitle}>Fully Compliant</Text>
-          <Text style={styles.complianceText}>
-            All client data is encrypted and protected with HIPAA-compliant security measures.
-          </Text>
-          <View style={styles.complianceFeatures}>
-            <Text style={styles.complianceFeature}>🔒 AES-256-GCM Encryption</Text>
-            <Text style={styles.complianceFeature}>👁️ Audit Logging Enabled</Text>
-            <Text style={styles.complianceFeature}>🛡️ Role-Based Access Control</Text>
-            <Text style={styles.complianceFeature}>📋 Patient Consent Management</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -475,14 +407,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
         {renderTabButton('medical', 'Medical Hub', '🏥')}
-        {renderTabButton('evidence', 'Evidence', '📎')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'clients' && renderClientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'medical' && renderMedicalHubTab()}
-        {activeTab === 'evidence' && renderEvidenceTab()}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
