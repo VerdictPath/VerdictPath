@@ -48,6 +48,17 @@ export const API_ENDPOINTS = {
     STATS: '/api/invites/stats',
     VALIDATE: (code) => `/api/invites/validate/${code}`,
     PROCESS: '/api/invites/process'
+  },
+  SUBSCRIPTION: {
+    LAWFIRM_CURRENT: '/api/subscription/lawfirm/current',
+    LAWFIRM_UPDATE: '/api/subscription/lawfirm/update',
+    MEDICALPROVIDER_CURRENT: '/api/subscription/medicalprovider/current',
+    MEDICALPROVIDER_UPDATE: '/api/subscription/medicalprovider/update'
+  },
+  CONNECTIONS: {
+    MY_CONNECTIONS: '/api/connections/my-connections',
+    UPDATE_LAWFIRM: '/api/connections/update-lawfirm',
+    UPDATE_MEDICALPROVIDER: '/api/connections/update-medicalprovider'
   }
 };
 
