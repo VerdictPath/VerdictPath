@@ -1,6 +1,8 @@
 const CLIENT_LIMITS = {
   free: 10,
   paid: {
+    shingle: 24,
+    boutique: 49,
     small: 99,
     medium: 499,
     large: 999,

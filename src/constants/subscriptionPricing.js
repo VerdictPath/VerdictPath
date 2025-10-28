@@ -4,9 +4,11 @@
 
 // Law Firm Base Prices (based on number of clients)
 const lawFirmBasePrices = {
-  small: 100,      // Under 100 clients
-  medium: 500,     // 101-500 clients
-  large: 1200,     // 501-1,000 clients
+  shingle: 40,     // 1-24 clients
+  boutique: 70,    // 25-49 clients
+  small: 100,      // 50-99 clients
+  medium: 500,     // 100-499 clients
+  large: 1200,     // 500-999 clients
   enterprise: 2500 // 1,000+ clients
 };
 
@@ -64,10 +66,30 @@ export const SUBSCRIPTION_TIERS = {
       ] 
     },
     basic: {
+      shingle: { 
+        price: lawFirmBasePrices.shingle, 
+        name: 'Basic - Shingle Firm', 
+        subtitle: '1-24 clients',
+        features: [
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
+        ] 
+      },
+      boutique: { 
+        price: lawFirmBasePrices.boutique, 
+        name: 'Basic - Boutique Firm', 
+        subtitle: '25-49 clients',
+        features: [
+          'Basic package for your clients',
+          'Document storage for your clients',
+          'Basic analytics dashboard'
+        ] 
+      },
       small: { 
         price: lawFirmBasePrices.small, 
         name: 'Basic - Small Firm', 
-        subtitle: 'Under 100 clients',
+        subtitle: '50-99 clients',
         features: [
           'Basic package for your clients',
           'Document storage for your clients',
@@ -77,7 +99,7 @@ export const SUBSCRIPTION_TIERS = {
       medium: { 
         price: lawFirmBasePrices.medium, 
         name: 'Basic - Medium Firm', 
-        subtitle: '101-500 clients',
+        subtitle: '100-499 clients',
         features: [
           'Basic package for your clients',
           'Document storage for your clients',
@@ -87,7 +109,7 @@ export const SUBSCRIPTION_TIERS = {
       large: { 
         price: lawFirmBasePrices.large, 
         name: 'Basic - Large Firm', 
-        subtitle: '501-1,000 clients',
+        subtitle: '500-999 clients',
         features: [
           'Basic package for your clients',
           'Document storage for your clients',
@@ -106,10 +128,36 @@ export const SUBSCRIPTION_TIERS = {
       }
     },
     premium: {
+      shingle: { 
+        price: Math.round(lawFirmBasePrices.shingle * premiumMultiplier), 
+        name: 'Premium - Shingle Firm', 
+        subtitle: '1-24 clients',
+        features: [
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'Premium analytics',
+          'HIPAA-Compliant Storage',
+          'Download medical bills and records from patient and medical providers accounts'
+        ] 
+      },
+      boutique: { 
+        price: Math.round(lawFirmBasePrices.boutique * premiumMultiplier), 
+        name: 'Premium - Boutique Firm', 
+        subtitle: '25-49 clients',
+        features: [
+          'Everything in Basic',
+          'Custom branding',
+          'Medical Hub',
+          'Premium analytics',
+          'HIPAA-Compliant Storage',
+          'Download medical bills and records from patient and medical providers accounts'
+        ] 
+      },
       small: { 
         price: Math.round(lawFirmBasePrices.small * premiumMultiplier), 
         name: 'Premium - Small Firm', 
-        subtitle: 'Under 100 clients',
+        subtitle: '50-99 clients',
         features: [
           'Everything in Basic',
           'Custom branding',
@@ -122,7 +170,7 @@ export const SUBSCRIPTION_TIERS = {
       medium: { 
         price: Math.round(lawFirmBasePrices.medium * premiumMultiplier), 
         name: 'Premium - Medium Firm', 
-        subtitle: '101-500 clients',
+        subtitle: '100-499 clients',
         features: [
           'Everything in Basic',
           'Custom branding',
@@ -135,7 +183,7 @@ export const SUBSCRIPTION_TIERS = {
       large: { 
         price: Math.round(lawFirmBasePrices.large * premiumMultiplier), 
         name: 'Premium - Large Firm', 
-        subtitle: '501-1,000 clients',
+        subtitle: '500-999 clients',
         features: [
           'Everything in Basic',
           'Custom branding',
@@ -267,6 +315,8 @@ export const SUBSCRIPTION_TIERS = {
 };
 
 export const FIRM_SIZES = {
+  SHINGLE: 'shingle',
+  BOUTIQUE: 'boutique',
   SMALL: 'small',
   MEDIUM: 'medium',
   LARGE: 'large',
