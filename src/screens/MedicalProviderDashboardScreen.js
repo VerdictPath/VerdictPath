@@ -211,9 +211,9 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
       </View>
     </View>
   );
-  };
+};
 
-  const renderAnalyticsTab = () => {
+const renderAnalyticsTab = () => {
     const totalPatients = analytics?.totalPatients || 0;
     const preLitigationCount = analytics?.preLitigationCount || 0;
     const litigationCount = analytics?.litigationCount || 0;
