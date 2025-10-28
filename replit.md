@@ -1,5 +1,18 @@
 # Verdict Path - React Native Mobile App
 
+## Recent Changes (October 28, 2025)
+- **Medical Provider Search Bug Fix**: Fixed critical rendering issue preventing real-time search updates:
+  - Fixed syntax error in renderPatientsTab function (removed extra `};` that blocked React re-renders)
+  - Fixed backend to handle both encrypted and non-encrypted patient names (resolved "null, null" display issue)
+  - Search now filters patients in real-time as you type without requiring page refresh
+  - Added fallback logic in medicalproviderController.js for secure name field handling
+- **Client/Patient Search Functionality**: Added search tools to both law firm and medical provider portals:
+  - Real-time search by name or email with instant filtering
+  - Search bar with 🔍 icon and clear button (✕)
+  - Case-insensitive search across displayName, email, firstName, and lastName fields
+  - Empty states for "no results found"
+  - Consistent UX between both portals
+
 ## Overview
 Verdict Path is a React Native mobile application designed as a legal case management and education platform for Georgia Civil Litigation. It provides an interactive case roadmap, gamification elements, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to offer an engaging and informative tool to support justice.
 
