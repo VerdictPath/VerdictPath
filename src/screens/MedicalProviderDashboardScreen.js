@@ -193,6 +193,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
       </View>
     </View>
   );
+  };
 
   const renderAnalyticsTab = () => {
     const totalPatients = analytics?.totalPatients || 0;

@@ -178,6 +178,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       </View>
     </View>
   );
+  };
 
   const renderAnalyticsTab = () => {
     const totalClients = analytics?.totalClients || 0;
