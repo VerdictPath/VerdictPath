@@ -40,7 +40,7 @@ const updateLawFirmSubscription = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE law_firms SET subscription_tier = $1, firm_size = $2, updated_at = NOW() WHERE id = $3',
+      'UPDATE law_firms SET subscription_tier = $1, firm_size = $2 WHERE id = $3',
       [newTier, newSize, lawFirmId]
     );
 
@@ -79,7 +79,7 @@ const updateMedicalProviderSubscription = async (req, res) => {
     }
 
     const patientCountResult = await db.query(
-      'SELECT COUNT(*) as count FROM medical_provider_patients WHERE provider_id = $1',
+      'SELECT COUNT(*) as count FROM medical_provider_patients WHERE medical_provider_id = $1',
       [providerId]
     );
 
@@ -95,7 +95,7 @@ const updateMedicalProviderSubscription = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE medical_providers SET subscription_tier = $1, updated_at = NOW() WHERE id = $2',
+      'UPDATE medical_providers SET subscription_tier = $1 WHERE id = $2',
       [subscriptionTier, providerId]
     );
 
@@ -169,7 +169,7 @@ const getMedicalProviderSubscription = async (req, res) => {
     const provider = providerResult.rows[0];
 
     const patientCountResult = await db.query(
-      'SELECT COUNT(*) as count FROM medical_provider_patients WHERE provider_id = $1',
+      'SELECT COUNT(*) as count FROM medical_provider_patients WHERE medical_provider_id = $1',
       [providerId]
     );
 
