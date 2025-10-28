@@ -1,6 +1,13 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Individual User Subscription Pricing Update**: Simplified and reduced pricing structure for individual users:
+  - Free tier: Roadmap access, Medical Hub, Evidence Locker, Free daily coins (unchanged at $0)
+  - Basic tier: Everything in Free + Audio library access (with ads) - reduced from $4.99 to $2.99/month
+  - Premium tier: Everything in Basic + Video library access + No ads - reduced from $11.99 to $4.99/month
+  - Updated feature descriptions with emoji icons for better visual clarity
+  - SubscriptionSelectionScreen automatically displays new pricing during registration
+  - Law firm and medical provider organization-based pricing remains unchanged
 - **Medical Provider Size Selection**: Added organization size tiers for medical providers, mirroring law firm functionality:
   - Added provider_size column to medical_providers database table
   - Four size tiers: Small (up to 100 patients), Medium (101-500), Large (501-1,000), Enterprise (1,000+)
