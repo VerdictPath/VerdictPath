@@ -19,8 +19,8 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - UI state properly syncs with backend completion status
 
 **Individual User Dashboard**:
-- Header button displays "Connections" (🔗) to allow individual users to manage law firm and medical provider connections
-- "Invite Friends" link appears in the dashboard menu for inviting other individual users
+- Header button displays "Invite Friends" (👍) in the top right to allow individual users to invite other users
+- "My Connections" link appears in the dashboard menu for managing law firm and medical provider connections
 - Separate invite and connections functionality for clear user workflows
 
 ### Technical Implementations
