@@ -23,6 +23,12 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - "My Connections" link appears in the dashboard menu for managing law firm and medical provider connections
 - Separate invite and connections functionality for clear user workflows
 
+**Medical Provider Portal**:
+- Upload functionality completely disabled with pirate-themed "🏴‍☠️ Coming Soon" badges replacing upload buttons
+- "Manage Law Firm Connections" link added to dashboard for future law firm connection management
+- Connections tab displays pirate-themed coming soon message explaining future feature to connect with cooperating law firms
+- All upload handler functions disabled to prevent any document uploads until feature is fully implemented
+
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
