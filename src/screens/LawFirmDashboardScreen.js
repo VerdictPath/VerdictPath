@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
@@ -12,6 +12,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -69,21 +70,67 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     </TouchableOpacity>
   );
 
-  const renderClientsTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚓ Active Clients</Text>
-        
-        {clients.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🏴‍☠️</Text>
-            <Text style={styles.emptyText}>No clients aboard yet!</Text>
-            <Text style={styles.emptySubtext}>
-              Share your firm code with clients to get started: {firmData?.firmCode}
-            </Text>
+  // Filter clients based on search query
+  const getFilteredClients = () => {
+    if (!searchQuery.trim()) {
+      return clients;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return clients.filter(client => 
+      client.displayName?.toLowerCase().includes(query) ||
+      client.email?.toLowerCase().includes(query) ||
+      client.firstName?.toLowerCase().includes(query) ||
+      client.lastName?.toLowerCase().includes(query)
+    );
+  };
+
+  const renderClientsTab = () => {
+    const filteredClients = getFilteredClients();
+    
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>⚓ Active Clients</Text>
+          
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search clients by name or email..."
+              placeholderTextColor={theme.colors.warmGray}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                onPress={() => setSearchQuery('')}
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        ) : (
-          clients.map(client => (
+          
+          {clients.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🏴‍☠️</Text>
+              <Text style={styles.emptyText}>No clients aboard yet!</Text>
+              <Text style={styles.emptySubtext}>
+                Share your firm code with clients to get started: {firmData?.firmCode}
+              </Text>
+            </View>
+          ) : filteredClients.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔍</Text>
+              <Text style={styles.emptyText}>No clients found</Text>
+              <Text style={styles.emptySubtext}>
+                Try a different search term
+              </Text>
+            </View>
+          ) : (
+            filteredClients.map(client => (
             <TouchableOpacity
               key={client.id}
               style={styles.clientCard}
@@ -407,6 +454,36 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 15,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.colors.navy,
+    padding: 0,
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: theme.colors.warmGray,
+    fontWeight: 'bold',
   },
   sectionSubtitle: {
     fontSize: 14,
