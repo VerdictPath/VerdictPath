@@ -4,6 +4,13 @@
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## Recent Changes (October 28, 2025)
+- **HIPAA Security Enhancement - Evidence Encryption**: Fixed critical security gap in evidence document storage:
+  - Added encrypted fields to evidence table (title_encrypted, description_encrypted, location_encrypted)
+  - Upload controller now encrypts all PHI fields using AES-256-GCM before storage
+  - All retrieval endpoints decrypt PHI fields and sanitize responses (encrypted fields excluded from API output)
+  - Backward compatibility maintained: falls back to plain text for existing records uploaded before encryption
+  - Matches encryption pattern used for medical_records and medical_billing tables
+  - No encrypted ciphertext leakage in API responses (verified by architect review)
 - **Law Firm Portal Organization - Client-Specific Views**: Restructured the law firm portal to organize all client-specific information in individual client detail pages:
   - **Dashboard Simplified**: Main dashboard now has only 2 tabs (Clients and Analytics) - removed aggregated Medical Hub and Evidence tabs
   - **Client Details Page**: All client-specific data now lives in individual client details pages, including:
