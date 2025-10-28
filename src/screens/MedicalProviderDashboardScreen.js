@@ -6,6 +6,7 @@ import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
+import MedicalProviderSubscriptionScreen from './MedicalProviderSubscriptionScreen';
 
 const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('patients');
@@ -370,11 +371,13 @@ const renderAnalyticsTab = () => {
       <View style={styles.tabBar}>
         {renderTabButton('patients', 'Patients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
+        {renderTabButton('subscription', 'Subscription', '💳')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'patients' && renderPatientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
+        {activeTab === 'subscription' && <MedicalProviderSubscriptionScreen token={user.token} />}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>

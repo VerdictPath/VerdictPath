@@ -4,6 +4,7 @@ import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
+import LawFirmSubscriptionScreen from './LawFirmSubscriptionScreen';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -335,11 +336,13 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
+        {renderTabButton('subscription', 'Subscription', '💳')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'clients' && renderClientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
+        {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
