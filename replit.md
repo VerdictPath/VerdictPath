@@ -1,6 +1,15 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Automatic Unique Code Generation**: Implemented automatic code assignment for law firms and medical providers:
+  - Law firms receive unique codes in format LAW-XXXXXX (e.g., LAW-AB3K9P)
+  - Medical providers receive unique codes in format MED-XXXXXX (e.g., MED-XY7M2N)
+  - Codes are automatically generated during account registration
+  - Users see their code immediately after registration in the welcome message
+  - Codes use collision-resistant character set (excludes confusing characters like 0/O, 1/I)
+  - Backend utility ensures uniqueness with up to 10 generation attempts
+  - Removed manual code input from registration screens
+  - Clients/patients use these codes to establish connections with law firms/medical providers
 - **Dashboard Header Enhancements**: Improved individual user dashboard with connection visibility:
   - Added "Add" button (🔗) in top right corner to quickly open ConnectionsModal
   - Top left now displays connected law firm and medical provider names (⚖️ Law Firm, 🏥 Medical Provider)
