@@ -28,8 +28,8 @@ const getMyConnections = async (req, res) => {
     if (user.law_firm_code) {
       const lawFirmResult = await db.query(
         `SELECT id, email, firm_name
-        FROM users
-        WHERE user_type = 'law_firm' AND firm_code = $1`,
+        FROM law_firms
+        WHERE firm_code = $1`,
         [user.law_firm_code]
       );
       if (lawFirmResult.rows.length > 0) {
@@ -39,9 +39,9 @@ const getMyConnections = async (req, res) => {
 
     if (user.medical_provider_code) {
       const providerResult = await db.query(
-        `SELECT id, email, facility_name
-        FROM users
-        WHERE user_type = 'medical_provider' AND provider_code = $1`,
+        `SELECT id, email, provider_name
+        FROM medical_providers
+        WHERE provider_code = $1`,
         [user.medical_provider_code]
       );
       if (providerResult.rows.length > 0) {
@@ -68,9 +68,9 @@ const updateLawFirm = async (req, res) => {
     const trimmedCode = lawFirmCode.trim().toUpperCase();
 
     const lawFirmResult = await db.query(
-      `SELECT id, email, firm_name
-      FROM users
-      WHERE user_type = 'law_firm' AND firm_code = $1`,
+      `SELECT id, email, firm_name, subscription_tier
+      FROM law_firms
+      WHERE firm_code = $1`,
       [trimmedCode]
     );
 
@@ -79,6 +79,21 @@ const updateLawFirm = async (req, res) => {
     }
 
     const lawFirm = lawFirmResult.rows[0];
+    
+    // Check client limit for free tier accounts
+    if (lawFirm.subscription_tier === 'free') {
+      const clientCountResult = await db.query(
+        'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
+        [lawFirm.id]
+      );
+      
+      const clientCount = parseInt(clientCountResult.rows[0].count);
+      if (clientCount >= 10) {
+        return res.status(403).json({ 
+          error: 'This law firm has reached the maximum number of clients (10) for their free trial account. They need to upgrade to add more clients.' 
+        });
+      }
+    }
 
     await db.query(
       `UPDATE users
@@ -104,7 +119,7 @@ const updateLawFirm = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Successfully connected to ${lawFirm.firm_name || lawFirm.email}`,
+      message: `Ahoy! Successfully charted course with ${lawFirm.firm_name || lawFirm.email}!`,
       lawFirm: {
         id: lawFirm.id,
         email: lawFirm.email,
@@ -129,9 +144,9 @@ const updateMedicalProvider = async (req, res) => {
     const trimmedCode = medicalProviderCode.trim().toUpperCase();
 
     const providerResult = await db.query(
-      `SELECT id, email, facility_name
-      FROM users
-      WHERE user_type = 'medical_provider' AND provider_code = $1`,
+      `SELECT id, email, provider_name, subscription_tier
+      FROM medical_providers
+      WHERE provider_code = $1`,
       [trimmedCode]
     );
 
@@ -140,6 +155,21 @@ const updateMedicalProvider = async (req, res) => {
     }
 
     const provider = providerResult.rows[0];
+    
+    // Check patient limit for free tier accounts
+    if (provider.subscription_tier === 'free') {
+      const patientCountResult = await db.query(
+        'SELECT COUNT(*) as count FROM medical_provider_patients WHERE provider_id = $1',
+        [provider.id]
+      );
+      
+      const patientCount = parseInt(patientCountResult.rows[0].count);
+      if (patientCount >= 10) {
+        return res.status(403).json({ 
+          error: 'This medical provider has reached the maximum number of patients (10) for their free trial account. They need to upgrade to add more patients.' 
+        });
+      }
+    }
 
     await db.query(
       `UPDATE users
@@ -165,11 +195,11 @@ const updateMedicalProvider = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Successfully connected to ${provider.facility_name || provider.email}`,
+      message: `Ahoy! Successfully charted course with ${provider.provider_name || provider.email}!`,
       medicalProvider: {
         id: provider.id,
         email: provider.email,
-        facility_name: provider.facility_name
+        provider_name: provider.provider_name
       }
     });
   } catch (error) {
