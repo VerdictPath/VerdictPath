@@ -126,7 +126,7 @@ const SubscriptionSelectionScreen = ({
             >
               <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.SMALL && styles.sizeButtonTextActive]}>
                 Small{'\n'}
-                <Text style={styles.sizeButtonSubtext}>Under 100</Text>
+                <Text style={styles.sizeButtonSubtext}>Up to 99 clients</Text>
               </Text>
             </TouchableOpacity>
 
@@ -136,7 +136,7 @@ const SubscriptionSelectionScreen = ({
             >
               <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeButtonTextActive]}>
                 Medium{'\n'}
-                <Text style={styles.sizeButtonSubtext}>101-500</Text>
+                <Text style={styles.sizeButtonSubtext}>100-499 clients</Text>
               </Text>
             </TouchableOpacity>
 
@@ -146,7 +146,7 @@ const SubscriptionSelectionScreen = ({
             >
               <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.LARGE && styles.sizeButtonTextActive]}>
                 Large{'\n'}
-                <Text style={styles.sizeButtonSubtext}>501-1,000</Text>
+                <Text style={styles.sizeButtonSubtext}>500-999 clients</Text>
               </Text>
             </TouchableOpacity>
 
@@ -156,7 +156,7 @@ const SubscriptionSelectionScreen = ({
             >
               <Text style={[styles.sizeButtonText, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeButtonTextActive]}>
                 Enterprise{'\n'}
-                <Text style={styles.sizeButtonSubtext}>1,000+</Text>
+                <Text style={styles.sizeButtonSubtext}>1,000+ clients</Text>
               </Text>
             </TouchableOpacity>
           </View>
