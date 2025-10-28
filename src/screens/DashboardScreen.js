@@ -83,11 +83,11 @@ const DashboardScreen = ({
             )}
           </View>
           <TouchableOpacity 
-            style={styles.addConnectionButton}
-            onPress={() => setConnectionsModalVisible(true)}
+            style={styles.inviteButton}
+            onPress={() => setInviteModalVisible(true)}
           >
-            <Text style={styles.addConnectionIcon}>🔗</Text>
-            <Text style={styles.addConnectionText}>Add</Text>
+            <Text style={styles.inviteIcon}>👍</Text>
+            <Text style={styles.inviteButtonText}>Invite</Text>
           </TouchableOpacity>
         </View>
         
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontWeight: '500',
   },
-  addConnectionButton: {
+  inviteButton: {
     backgroundColor: theme.colors.primary,
     paddingHorizontal: 15,
     paddingVertical: 10,
@@ -307,11 +307,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 60,
   },
-  addConnectionIcon: {
+  inviteIcon: {
     fontSize: 18,
     marginBottom: 2,
   },
-  addConnectionText: {
+  inviteButtonText: {
     color: theme.colors.white,
     fontSize: 11,
     fontWeight: '600',

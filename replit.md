@@ -18,6 +18,11 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Clear visual distinction helps users quickly identify their progress
 - UI state properly syncs with backend completion status
 
+**Individual User Dashboard**:
+- Header button displays "Invite" (👍) to allow individual users to invite other individual users
+- "My Connections" link remains in the dashboard menu for managing law firm and medical provider connections
+- Separate invite and connections functionality for clear user workflows
+
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
