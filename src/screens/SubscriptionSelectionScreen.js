@@ -10,9 +10,12 @@ const SubscriptionSelectionScreen = ({
   onNavigate
 }) => {
   const [selectedTier, setSelectedTier] = useState(TIER_LEVELS.FREE);
-  const [selectedSize, setSelectedSize] = useState(FIRM_SIZES.SHINGLE);
+  const [selectedSize, setSelectedSize] = useState(
+    userType === USER_TYPES.LAW_FIRM ? FIRM_SIZES.SHINGLE : FIRM_SIZES.SMALL
+  );
 
   const isOrganization = userType === USER_TYPES.LAW_FIRM || userType === USER_TYPES.MEDICAL_PROVIDER;
+  const isLawFirm = userType === USER_TYPES.LAW_FIRM;
 
   const handleContinue = () => {
     onSelectSubscription(selectedTier, selectedSize);
@@ -119,51 +122,61 @@ const SubscriptionSelectionScreen = ({
       {isOrganization && (
         <View style={styles.sizeSelectionContainer}>
           <Text style={styles.sectionTitle}>Organization Size</Text>
-          <Text style={styles.sectionSubtitle}>Choose the tier that matches your current or expected client count</Text>
+          <Text style={styles.sectionSubtitle}>
+            {isLawFirm 
+              ? 'Choose the tier that matches your current or expected client count'
+              : 'Choose the tier that matches your current or expected patient count'}
+          </Text>
           
           <View style={styles.sizeCardsContainer}>
-            <TouchableOpacity
-              style={[styles.sizeCard, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardActive]}
-              onPress={() => setSelectedSize(FIRM_SIZES.SHINGLE)}
-            >
-              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardTitleActive]}>
-                Shingle Firm
-              </Text>
-              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardLimitActive]}>
-                1-24 clients
-              </Text>
-              <Text style={styles.sizeCardDescription}>
-                Solo practitioners or new firms just getting started
-              </Text>
-            </TouchableOpacity>
+            {isLawFirm && (
+              <>
+                <TouchableOpacity
+                  style={[styles.sizeCard, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardActive]}
+                  onPress={() => setSelectedSize(FIRM_SIZES.SHINGLE)}
+                >
+                  <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardTitleActive]}>
+                    Shingle Firm
+                  </Text>
+                  <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.SHINGLE && styles.sizeCardLimitActive]}>
+                    1-24 clients
+                  </Text>
+                  <Text style={styles.sizeCardDescription}>
+                    Solo practitioners or new firms just getting started
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.sizeCard, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardActive]}
-              onPress={() => setSelectedSize(FIRM_SIZES.BOUTIQUE)}
-            >
-              <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardTitleActive]}>
-                Boutique Firm
-              </Text>
-              <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardLimitActive]}>
-                25-49 clients
-              </Text>
-              <Text style={styles.sizeCardDescription}>
-                Small teams focusing on specialized practice areas
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sizeCard, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardActive]}
+                  onPress={() => setSelectedSize(FIRM_SIZES.BOUTIQUE)}
+                >
+                  <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardTitleActive]}>
+                    Boutique Firm
+                  </Text>
+                  <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.BOUTIQUE && styles.sizeCardLimitActive]}>
+                    25-49 clients
+                  </Text>
+                  <Text style={styles.sizeCardDescription}>
+                    Small teams focusing on specialized practice areas
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
 
             <TouchableOpacity
               style={[styles.sizeCard, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardActive]}
               onPress={() => setSelectedSize(FIRM_SIZES.SMALL)}
             >
               <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardTitleActive]}>
-                Small Firm
+                {isLawFirm ? 'Small Firm' : 'Small Practice'}
               </Text>
               <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.SMALL && styles.sizeCardLimitActive]}>
-                50-99 clients
+                {isLawFirm ? '50-99 clients' : 'Up to 99 patients'}
               </Text>
               <Text style={styles.sizeCardDescription}>
-                Growing practices with multiple attorneys
+                {isLawFirm 
+                  ? 'Growing practices with multiple attorneys'
+                  : 'Growing practices with multiple providers'}
               </Text>
             </TouchableOpacity>
 
@@ -172,13 +185,13 @@ const SubscriptionSelectionScreen = ({
               onPress={() => setSelectedSize(FIRM_SIZES.MEDIUM)}
             >
               <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeCardTitleActive]}>
-                Medium Firm
+                {isLawFirm ? 'Medium Firm' : 'Medium Practice'}
               </Text>
               <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.MEDIUM && styles.sizeCardLimitActive]}>
-                100-499 clients
+                {isLawFirm ? '100-499 clients' : '100-499 patients'}
               </Text>
               <Text style={styles.sizeCardDescription}>
-                Established firms with diverse practice areas
+                Established practices with diverse specialties
               </Text>
             </TouchableOpacity>
 
@@ -187,13 +200,15 @@ const SubscriptionSelectionScreen = ({
               onPress={() => setSelectedSize(FIRM_SIZES.LARGE)}
             >
               <Text style={[styles.sizeCardTitle, selectedSize === FIRM_SIZES.LARGE && styles.sizeCardTitleActive]}>
-                Large Firm
+                {isLawFirm ? 'Large Firm' : 'Large Practice'}
               </Text>
               <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.LARGE && styles.sizeCardLimitActive]}>
-                500-999 clients
+                {isLawFirm ? '500-999 clients' : '500-999 patients'}
               </Text>
               <Text style={styles.sizeCardDescription}>
-                Regional firms with multiple office locations
+                {isLawFirm 
+                  ? 'Regional firms with multiple office locations'
+                  : 'Regional practices with multiple facilities'}
               </Text>
             </TouchableOpacity>
 
@@ -205,10 +220,10 @@ const SubscriptionSelectionScreen = ({
                 Enterprise
               </Text>
               <Text style={[styles.sizeCardLimit, selectedSize === FIRM_SIZES.ENTERPRISE && styles.sizeCardLimitActive]}>
-                1,000+ clients
+                {isLawFirm ? '1,000+ clients' : '1,000+ patients'}
               </Text>
               <Text style={styles.sizeCardDescription}>
-                Large-scale operations and national firms
+                Large-scale operations and national organizations
               </Text>
             </TouchableOpacity>
           </View>
