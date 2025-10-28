@@ -370,7 +370,7 @@ const renderAnalyticsTab = () => {
         {renderTabButton('analytics', 'Analytics', '📊')}
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} key={searchQuery}>
         {activeTab === 'patients' && renderPatientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
 
