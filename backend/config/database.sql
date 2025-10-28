@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS law_firms (
   state VARCHAR(50),
   zip_code VARCHAR(20),
   subscription_tier VARCHAR(50) DEFAULT 'free',
-  firm_size VARCHAR(20) CHECK (firm_size IN ('small', 'medium', 'large', 'enterprise')),
+  firm_size VARCHAR(20) CHECK (firm_size IN ('shingle', 'boutique', 'small', 'medium', 'large', 'enterprise')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
