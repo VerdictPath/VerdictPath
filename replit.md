@@ -12,6 +12,12 @@ The application is a React Native mobile app built with the Expo framework, feat
 ### UI/UX Decisions
 The design is centered on a "pirate treasure map" theme with a warm tan/beige color palette. Key UI/UX elements include an interactive litigation roadmap, a compass/ship wheel logo, pirate-themed badges for gamification, and tailored subscription selection screens. The Medical Hub features distinct upload sections and real-time status tracking. UI elements like audio icons for roadmap substages and descriptive subscription cards are consistently styled to match the theme.
 
+**Roadmap Substage Completion Visual Feedback**:
+- "Mark Complete" buttons appear in RED (#e74c3c) for incomplete substages
+- After completion, buttons transform to solid GREEN (#27ae60) displaying "✓ Completed" in white text
+- Clear visual distinction helps users quickly identify their progress
+- UI state properly syncs with backend completion status
+
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
 - **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.

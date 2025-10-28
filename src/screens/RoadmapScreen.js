@@ -711,10 +711,7 @@ const RoadmapScreen = ({
                           </View>
                         ) : (
                           <TouchableOpacity
-                            style={[
-                              styles.miniCompleteButton,
-                              selectedAvatar && { backgroundColor: selectedAvatar.color }
-                            ]}
+                            style={styles.miniCompleteButton}
                             onPress={() => handleSubStageComplete(subStage.id, subStage.coins)}
                           >
                             <Text style={styles.miniCompleteButtonText}>Mark Complete</Text>
@@ -1352,7 +1349,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   miniCompleteButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#e74c3c',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -1368,14 +1365,14 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   checkmarkLarge: {
-    backgroundColor: '#d5f4e6',
+    backgroundColor: '#27ae60',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   checkmarkText: {
-    color: '#27ae60',
+    color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
   },
