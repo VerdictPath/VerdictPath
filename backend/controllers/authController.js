@@ -142,15 +142,6 @@ exports.registerLawFirm = async (req, res) => {
     
     const lawFirm = result.rows[0];
     
-    // HIPAA Phase 2: Assign default LAW_FIRM_ADMIN role
-    try {
-      const permissionService = require('../services/permissionService');
-      await permissionService.assignRole(lawFirm.id, 'LAW_FIRM_ADMIN');
-    } catch (roleError) {
-      console.error('Error assigning LAW_FIRM_ADMIN role:', roleError);
-      // Don't fail registration if role assignment fails
-    }
-    
     const token = jwt.sign(
       { id: lawFirm.id, email: lawFirm.email, userType: 'lawfirm', firmCode: lawFirm.firm_code },
       JWT_SECRET,
@@ -223,15 +214,6 @@ exports.registerMedicalProvider = async (req, res) => {
     );
 
     const medicalProvider = result.rows[0];
-
-    // HIPAA Phase 2: Assign default MEDICAL_PROVIDER_ADMIN role
-    try {
-      const permissionService = require('../services/permissionService');
-      await permissionService.assignRole(medicalProvider.id, 'MEDICAL_PROVIDER_ADMIN');
-    } catch (roleError) {
-      console.error('Error assigning MEDICAL_PROVIDER_ADMIN role:', roleError);
-      // Don't fail registration if role assignment fails
-    }
 
     const token = jwt.sign(
       { 
