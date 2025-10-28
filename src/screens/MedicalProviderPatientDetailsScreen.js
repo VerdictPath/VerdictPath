@@ -540,53 +540,66 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           )}
         </View>
 
-        {/* Evidence Locker Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📎 Evidence Locker</Text>
-          
-          {evidence.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🗃️</Text>
-              <Text style={styles.emptyText}>No evidence documents uploaded yet</Text>
-            </View>
-          ) : (
-            evidence.map((item) => (
-              <View key={item.id} style={styles.documentCard}>
-                <View style={styles.documentHeader}>
-                  <Text style={styles.documentTitle}>📎 {item.evidence_type || 'Evidence'}</Text>
-                  <Text style={styles.documentBadge}>{item.file_name}</Text>
-                </View>
-                {item.title && (
-                  <Text style={styles.documentDetail}>📝 {item.title}</Text>
-                )}
-                {item.description && (
-                  <Text style={styles.documentDetail}>📋 {item.description}</Text>
-                )}
-                {item.location && (
-                  <Text style={styles.documentDetail}>📍 {item.location}</Text>
-                )}
-                {item.date_of_incident && (
-                  <Text style={styles.documentDetail}>
-                    📅 Incident: {new Date(item.date_of_incident).toLocaleDateString()}
-                  </Text>
-                )}
-                <Text style={styles.documentDate}>
-                  Uploaded: {new Date(item.uploaded_at).toLocaleDateString()}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
-
         <View style={styles.infoSection}>
           <Text style={styles.infoIcon}>ℹ️</Text>
           <Text style={styles.infoText}>
-            All documents can be accessed by {patient?.displayName}'s law firm with proper consent.
+            All medical records and billing can be accessed by {patient?.displayName}'s law firm with proper consent.
           </Text>
         </View>
       </View>
     );
   };
+
+  const renderEvidenceTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📎 Evidence Locker</Text>
+        
+        {evidence.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>🗃️</Text>
+            <Text style={styles.emptyText}>No evidence documents uploaded yet</Text>
+            <Text style={styles.emptySubtext}>
+              Evidence documents will appear here when uploaded by the patient or their law firm
+            </Text>
+          </View>
+        ) : (
+          evidence.map((item) => (
+            <View key={item.id} style={styles.documentCard}>
+              <View style={styles.documentHeader}>
+                <Text style={styles.documentTitle}>📎 {item.evidence_type || 'Evidence'}</Text>
+                <Text style={styles.documentBadge}>{item.file_name}</Text>
+              </View>
+              {item.title && (
+                <Text style={styles.documentDetail}>📝 {item.title}</Text>
+              )}
+              {item.description && (
+                <Text style={styles.documentDetail}>📋 {item.description}</Text>
+              )}
+              {item.location && (
+                <Text style={styles.documentDetail}>📍 {item.location}</Text>
+              )}
+              {item.date_of_incident && (
+                <Text style={styles.documentDetail}>
+                  📅 Incident: {new Date(item.date_of_incident).toLocaleDateString()}
+                </Text>
+              )}
+              <Text style={styles.documentDate}>
+                Uploaded: {new Date(item.uploaded_at).toLocaleDateString()}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoIcon}>ℹ️</Text>
+        <Text style={styles.infoText}>
+          Evidence documents are securely shared with proper consent and can be accessed by {patient?.displayName}'s law firm.
+        </Text>
+      </View>
+    </View>
+  );
 
   const renderOverviewTab = () => (
     <View style={styles.tabContent}>
@@ -702,12 +715,22 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
             Medical Hub
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'evidence' && styles.activeTab]}
+          onPress={() => setActiveTab('evidence')}
+        >
+          <Text style={styles.tabIcon}>📎</Text>
+          <Text style={[styles.tabText, activeTab === 'evidence' && styles.activeTabText]}>
+            Evidence Locker
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'overview' && renderOverviewTab()}
         {activeTab === 'roadmap' && renderRoadmapTab()}
         {activeTab === 'medicalHub' && renderMedicalHubTab()}
+        {activeTab === 'evidence' && renderEvidenceTab()}
 
         <TouchableOpacity style={styles.backButtonBottom} onPress={onBack}>
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
