@@ -75,10 +75,9 @@ const LawFirmSubscriptionScreen = ({ token }) => {
 
   const hasChanges = () => {
     if (!currentSubscription) return false;
-    return (
-      selectedTier !== currentSubscription.tier ||
-      selectedSize !== currentSubscription.firmSize
-    );
+    const tierChanged = selectedTier !== currentSubscription.tier;
+    const sizeChanged = selectedTier !== TIER_LEVELS.FREE && selectedSize !== currentSubscription.firmSize;
+    return tierChanged || sizeChanged;
   };
 
   const renderCurrentPlan = () => {

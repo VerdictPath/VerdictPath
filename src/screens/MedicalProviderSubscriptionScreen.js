@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
-import { TIER_LEVELS } from '../constants/subscriptionPricing';
+import { TIER_LEVELS, PROVIDER_SIZES } from '../constants/subscriptionPricing';
 import { getPrice } from '../utils/subscriptionPricing';
 
 const MedicalProviderSubscriptionScreen = ({ token }) => {
@@ -9,6 +9,7 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
   const [updating, setUpdating] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [selectedTier, setSelectedTier] = useState(TIER_LEVELS.FREE);
+  const [selectedSize, setSelectedSize] = useState(PROVIDER_SIZES.SMALL);
 
   useEffect(() => {
     fetchSubscriptionDetails();
@@ -25,6 +26,7 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
       });
       setCurrentSubscription(response.subscription);
       setSelectedTier(response.subscription.tier || TIER_LEVELS.FREE);
+      setSelectedSize(response.subscription.providerSize || PROVIDER_SIZES.SMALL);
     } catch (error) {
       console.error('Error fetching subscription:', error);
       if (Platform.OS === 'web') {
@@ -47,7 +49,8 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          subscriptionTier: selectedTier
+          subscriptionTier: selectedTier,
+          providerSize: selectedTier !== TIER_LEVELS.FREE ? selectedSize : null
         })
       });
 
@@ -72,7 +75,9 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
 
   const hasChanges = () => {
     if (!currentSubscription) return false;
-    return selectedTier !== currentSubscription.tier;
+    const tierChanged = selectedTier !== currentSubscription.tier;
+    const sizeChanged = selectedTier !== TIER_LEVELS.FREE && selectedSize !== currentSubscription.providerSize;
+    return tierChanged || sizeChanged;
   };
 
   const renderCurrentPlan = () => {
@@ -90,6 +95,14 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
               {currentSubscription.tier === TIER_LEVELS.PREMIUM && 'Premium'}
             </Text>
           </View>
+          {currentSubscription.providerSize && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Practice Size:</Text>
+              <Text style={styles.detailValue}>
+                {currentSubscription.providerSize.charAt(0).toUpperCase() + currentSubscription.providerSize.slice(1)}
+              </Text>
+            </View>
+          )}
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Patient Limit:</Text>
             <Text style={styles.detailValue}>
@@ -110,7 +123,7 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
   const renderPricingCard = (tier) => {
     const isSelected = selectedTier === tier;
     const isFree = tier === TIER_LEVELS.FREE;
-    const price = isFree ? 0 : getPrice('medicalprovider', tier, 'small');
+    const price = isFree ? 0 : getPrice('medicalprovider', tier, selectedSize);
     
     const features = {
       [TIER_LEVELS.FREE]: [
@@ -120,14 +133,14 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
         'Email support'
       ],
       [TIER_LEVELS.BASIC]: [
-        'Up to 99 patients',
+        'Based on practice size',
         'HIPAA-compliant storage',
         'Patient consent management',
         'Priority email support',
         'Evidence sharing with law firms'
       ],
       [TIER_LEVELS.PREMIUM]: [
-        'Up to 99 patients',
+        'Based on practice size',
         'Everything in Basic',
         'Advanced patient analytics',
         'Automated HIPAA forms',
@@ -171,6 +184,34 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
     );
   };
 
+  const renderSizeCard = (size) => {
+    const isSelected = selectedSize === size;
+    const sizeInfo = {
+      [PROVIDER_SIZES.SMALL]: { title: 'Small Practice', limit: 'Up to 100 patients', desc: 'Individual practitioners or small clinics' },
+      [PROVIDER_SIZES.MEDIUM]: { title: 'Medium Practice', limit: '101-500 patients', desc: 'Multi-provider practices or specialty clinics' },
+      [PROVIDER_SIZES.LARGE]: { title: 'Large Practice', limit: '501-1,000 patients', desc: 'Regional medical centers or group practices' },
+      [PROVIDER_SIZES.ENTERPRISE]: { title: 'Enterprise', limit: '1,000+ patients', desc: 'Hospital systems or large-scale healthcare networks' }
+    };
+
+    const info = sizeInfo[size];
+
+    return (
+      <TouchableOpacity
+        key={size}
+        style={[styles.sizeCard, isSelected && styles.sizeCardSelected]}
+        onPress={() => setSelectedSize(size)}
+      >
+        <Text style={[styles.sizeCardTitle, isSelected && styles.sizeCardTitleSelected]}>
+          {info.title}
+        </Text>
+        <Text style={[styles.sizeCardLimit, isSelected && styles.sizeCardLimitSelected]}>
+          {info.limit}
+        </Text>
+        <Text style={styles.sizeCardDesc}>{info.desc}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -197,6 +238,19 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
           {renderPricingCard(TIER_LEVELS.PREMIUM)}
         </View>
       </View>
+
+      {selectedTier !== TIER_LEVELS.FREE && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Select Practice Size</Text>
+          <Text style={styles.sectionSubtitle}>Choose the tier that matches your current or expected patient count</Text>
+          <View style={styles.sizeCardsContainer}>
+            {renderSizeCard(PROVIDER_SIZES.SMALL)}
+            {renderSizeCard(PROVIDER_SIZES.MEDIUM)}
+            {renderSizeCard(PROVIDER_SIZES.LARGE)}
+            {renderSizeCard(PROVIDER_SIZES.ENTERPRISE)}
+          </View>
+        </View>
+      )}
 
       {hasChanges() && (
         <View style={styles.actionContainer}>
@@ -257,6 +311,49 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: '#e0e0e0'
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 15,
+    marginTop: 5
+  },
+  sizeCardsContainer: {
+    gap: 10
+  },
+  sizeCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd'
+  },
+  sizeCardSelected: {
+    borderColor: '#1a5490',
+    backgroundColor: '#f0f7ff'
+  },
+  sizeCardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5
+  },
+  sizeCardTitleSelected: {
+    color: '#1a5490'
+  },
+  sizeCardLimit: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 5
+  },
+  sizeCardLimitSelected: {
+    color: '#1a5490'
+  },
+  sizeCardDesc: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic'
   },
   currentPlanCard: {
     backgroundColor: '#fff',
