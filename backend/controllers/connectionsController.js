@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { checkLawFirmLimit, checkMedicalProviderLimit } = require('../utils/subscriptionLimits');
 
 const getMyConnections = async (req, res) => {
   try {
@@ -68,7 +69,7 @@ const updateLawFirm = async (req, res) => {
     const trimmedCode = lawFirmCode.trim().toUpperCase();
 
     const lawFirmResult = await db.query(
-      `SELECT id, email, firm_name, subscription_tier
+      `SELECT id, email, firm_name, subscription_tier, firm_size
       FROM law_firms
       WHERE firm_code = $1`,
       [trimmedCode]
@@ -80,19 +81,23 @@ const updateLawFirm = async (req, res) => {
 
     const lawFirm = lawFirmResult.rows[0];
     
-    // Check client limit for free tier accounts
-    if (lawFirm.subscription_tier === 'free') {
-      const clientCountResult = await db.query(
-        'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
-        [lawFirm.id]
-      );
-      
-      const clientCount = parseInt(clientCountResult.rows[0].count);
-      if (clientCount >= 10) {
-        return res.status(403).json({ 
-          error: 'Blimey! This law firm\'s ship be full to the brim! They\'ve reached the maximum crew of 10 clients on their free trial voyage. Tell \'em to upgrade their vessel to bring more mateys aboard!' 
-        });
+    const clientCountResult = await db.query(
+      'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
+      [lawFirm.id]
+    );
+    
+    const clientCount = parseInt(clientCountResult.rows[0].count);
+    const limitCheck = checkLawFirmLimit(clientCount, lawFirm.subscription_tier, lawFirm.firm_size);
+    
+    if (!limitCheck.withinLimit) {
+      let errorMessage;
+      if (lawFirm.subscription_tier === 'free') {
+        errorMessage = 'Blimey! This law firm\'s ship be full to the brim! They\'ve reached the maximum crew of 10 clients on their free trial voyage. Tell \'em to upgrade their vessel to bring more mateys aboard!';
+      } else {
+        const firmSizeName = lawFirm.firm_size ? lawFirm.firm_size.charAt(0).toUpperCase() + lawFirm.firm_size.slice(1) : 'current';
+        errorMessage = `Avast! This law firm has reached their ${firmSizeName} tier limit of ${limitCheck.limit} clients. Time to upgrade the ship to a larger vessel!`;
       }
+      return res.status(403).json({ error: errorMessage });
     }
 
     await db.query(
