@@ -1,6 +1,13 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Evidence Locker Tab Added**: Created dedicated Evidence Locker tab in Medical Provider Patient Details Screen:
+  - New tab button (📎) next to Medical Hub for better organization
+  - Removed evidence section from Medical Hub to eliminate duplication
+  - Evidence tab displays all evidence documents with type, title, description, location, and incident date
+  - Empty state with helpful message when no evidence exists
+  - Info section explaining secure evidence sharing with consent
+  - Tab structure: Overview → Roadmap → Medical Hub → Evidence Locker
 - **Medical Provider Search Bug Fix**: Fixed critical rendering issue preventing real-time search updates:
   - Fixed syntax error in renderPatientsTab function (removed extra `};` that blocked React re-renders)
   - Fixed backend to handle both encrypted and non-encrypted patient names (resolved "null, null" display issue)
