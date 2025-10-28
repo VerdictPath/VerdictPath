@@ -111,6 +111,17 @@ const RoadmapScreen = ({
     setTimeout(() => setUploadModalSubStage(null), 300);
   };
 
+  const handlePlayAudio = (subStage) => {
+    // TODO: Play audio file when uploaded
+    // For now, show a message that audio is coming soon
+    if (subStage.audioFile) {
+      // Future: Play the audio file
+      alert('🎧 Playing Audio', `Audio description for "${subStage.name}" would play here.`);
+    } else {
+      alert('🎧 Audio Description', `Audio description for "${subStage.name}" is coming soon!\n\nThis feature will help you understand each step with detailed audio explanations.`);
+    }
+  };
+
   const pickImageFromCamera = async (stageId, subStageId) => {
     try {
       console.log('[RoadmapScreen] Taking photo with camera...');
@@ -624,6 +635,12 @@ const RoadmapScreen = ({
                           <Text style={styles.subStageDescription}>{subStage.description}</Text>
                           <Text style={styles.subStageRowCoins}>+{subStage.coins} coins</Text>
                         </View>
+                        <TouchableOpacity
+                          style={styles.audioButton}
+                          onPress={() => handlePlayAudio(subStage)}
+                        >
+                          <Text style={styles.audioIcon}>🎧</Text>
+                        </TouchableOpacity>
                       </View>
 
                       {subStage.isDataEntry ? (
@@ -1202,6 +1219,20 @@ const styles = StyleSheet.create({
   },
   subStageInfo: {
     flex: 1,
+  },
+  audioButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#e8f4f8',
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    borderWidth: 2,
+    borderColor: '#3498db',
+  },
+  audioIcon: {
+    fontSize: 20,
   },
   subStageRowName: {
     fontSize: 16,
