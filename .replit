@@ -27,10 +27,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 35231
-externalPort = 6800
-
-[[ports]]
 localPort = 35579
 externalPort = 6000
 
@@ -94,5 +90,5 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash -c \"BACKEND_PORT=3001 node backend/server.js & sleep 2 && REACT_APP_API_URL=http://localhost:3001 npx expo start --web --port 5000\""
+args = "node backend/server.js"
 waitForPort = 5000

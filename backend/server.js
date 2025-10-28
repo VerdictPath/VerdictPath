@@ -16,7 +16,7 @@ const connectionsRoutes = require('./routes/connections');
 const subscriptionRoutes = require('./routes/subscription');
 
 const app = express();
-const PORT = process.env.BACKEND_PORT || 3001; // Backend API runs on internal port
+const PORT = 5000; // Replit only exposes port 5000
 
 app.use(cors());
 app.use(express.json());
