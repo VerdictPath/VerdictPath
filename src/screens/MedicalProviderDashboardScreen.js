@@ -96,17 +96,26 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
   // Filter patients based on search query
   const getFilteredPatients = () => {
+    console.log('[MedProvider Search] Query:', searchQuery);
+    console.log('[MedProvider Search] Total patients:', patients.length);
+    
     if (!searchQuery.trim()) {
+      console.log('[MedProvider Search] No query, returning all patients');
       return patients;
     }
     
     const query = searchQuery.toLowerCase();
-    return patients.filter(patient => 
+    const filtered = patients.filter(patient => 
       patient.displayName?.toLowerCase().includes(query) ||
       patient.email?.toLowerCase().includes(query) ||
       patient.firstName?.toLowerCase().includes(query) ||
       patient.lastName?.toLowerCase().includes(query)
     );
+    
+    console.log('[MedProvider Search] Filtered results:', filtered.length);
+    console.log('[MedProvider Search] Filtered patients:', filtered.map(p => p.displayName));
+    
+    return filtered;
   };
 
   const renderPatientsTab = () => {
