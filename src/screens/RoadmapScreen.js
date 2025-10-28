@@ -2,10 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
-import UploadModal from '../components/UploadModal';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
-import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
 import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
 
@@ -39,9 +37,6 @@ const RoadmapScreen = ({
   const [dataEntrySubStage, setDataEntrySubStage] = useState(null);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmModalData, setConfirmModalData] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [uploadModalSubStage, setUploadModalSubStage] = useState(null);
 
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
@@ -67,48 +62,24 @@ const RoadmapScreen = ({
   };
 
   const handleFileUpload = (subStageId) => {
-    const currentStage = litigationStages.find(s => s.id === selectedStage.id);
-    const subStage = currentStage.subStages.find(s => s.id === subStageId);
-    
-    if (subStage.linkToMedicalHub) {
-      alert(
-        '🏥 Medical Hub',
-        `This document is managed in your Medical Hub. Would you like to go there now?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Go to Medical Hub', 
-            onPress: () => {
-              closeModal();
-              onNavigate('medical');
-            }
-          }
-        ]
-      );
-      return;
-    }
-
-    setUploadModalSubStage(subStage);
-    setUploadModalVisible(true);
+    alert(
+      '🏴‍☠️ Ahoy There, Matey!',
+      'Arrr! File uploads be under construction by our crew! This feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon! ⚓'
+    );
   };
 
   const handleUploadModalTakePhoto = async (subStage) => {
-    if (subStage && selectedStage) {
-      await pickImageFromCamera(selectedStage.id, subStage.id);
-      closeUploadModal();
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const handleUploadModalChooseFile = async (subStage) => {
-    if (subStage && selectedStage) {
-      await pickDocumentFromDevice(selectedStage.id, subStage.id);
-      closeUploadModal();
-    }
-  };
-
-  const closeUploadModal = () => {
-    setUploadModalVisible(false);
-    setTimeout(() => setUploadModalSubStage(null), 300);
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const handlePlayAudio = (subStage) => {
@@ -123,75 +94,24 @@ const RoadmapScreen = ({
   };
 
   const pickImageFromCamera = async (stageId, subStageId) => {
-    try {
-      console.log('[RoadmapScreen] Taking photo with camera...');
-      const result = await pickImage();
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadEvidenceFile(result.assets[0], stageId, subStageId);
-      }
-    } catch (error) {
-      console.error('[RoadmapScreen] Error taking photo:', error);
-      alert('Permission Required', error.message || 'Failed to take photo. Please try again.');
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const pickDocumentFromDevice = async (stageId, subStageId) => {
-    try {
-      console.log('[RoadmapScreen] Picking image from library...');
-      const result = await pickImageFromLibrary();
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadEvidenceFile(result.assets[0], stageId, subStageId);
-      }
-    } catch (error) {
-      console.error('[RoadmapScreen] Error picking from library:', error);
-      alert('Permission Required', error.message || 'Failed to access photo library. Please try again.');
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const uploadEvidenceFile = async (file, stageId, subStageId) => {
-    if (!authToken) {
-      alert('Error', 'You must be logged in to upload files.');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const currentStage = litigationStages.find(s => s.id === stageId);
-      const subStage = currentStage.subStages.find(s => s.id === subStageId);
-
-      const formData = createFormDataFromFile(file, 'file', {
-        evidenceType: subStage.name,
-        title: subStage.name
-      });
-
-      const response = await fetch(`${API_URL}/uploads/evidence`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        onUploadFile(stageId, subStageId, data.document.file_name);
-        alert(
-          '✅ Upload Successful!',
-          `${data.document.file_name} has been uploaded successfully.`
-        );
-      } else {
-        alert('Upload Failed', data.error || 'Failed to upload file.');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Upload Failed', 'An error occurred while uploading the file.');
-    } finally {
-      setUploading(false);
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'File uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const simulateUpload = (stageId, subStageId, uploadType) => {
@@ -665,38 +585,9 @@ const RoadmapScreen = ({
                         </View>
                       ) : subStage.acceptedFormats ? (
                         <View style={styles.uploadSection}>
-                          {subStage.linkToMedicalHub ? (
-                            <TouchableOpacity
-                              style={styles.medicalHubButton}
-                              onPress={() => handleFileUpload(subStage.id)}
-                            >
-                              <Text style={styles.medicalHubIcon}>🏥</Text>
-                              <Text style={styles.medicalHubText}>Manage in Medical Hub</Text>
-                            </TouchableOpacity>
-                          ) : (
-                            <>
-                              <TouchableOpacity
-                                style={styles.uploadButton}
-                                onPress={() => handleFileUpload(subStage.id)}
-                              >
-                                <Text style={styles.uploadIcon}>📤</Text>
-                                <Text style={styles.uploadButtonText}>
-                                  {subStage.uploaded ? 'Upload More' : 'Upload Files'}
-                                </Text>
-                              </TouchableOpacity>
-
-                              {subStage.uploaded && (
-                                <TouchableOpacity
-                                  style={styles.viewFilesButton}
-                                  onPress={() => viewUploadedFiles(subStage)}
-                                >
-                                  <Text style={styles.viewFilesText}>
-                                    View Files ({subStage.uploadedFiles?.length || 0})
-                                  </Text>
-                                </TouchableOpacity>
-                              )}
-                            </>
-                          )}
+                          <View style={styles.comingSoonBanner}>
+                            <Text style={styles.comingSoonText}>🏴‍☠️ File upload coming soon!</Text>
+                          </View>
                         </View>
                       ) : null}
 
@@ -932,14 +823,6 @@ const RoadmapScreen = ({
           </View>
         </View>
       </Modal>
-
-      <UploadModal
-        visible={uploadModalVisible}
-        onClose={closeUploadModal}
-        onTakePhoto={handleUploadModalTakePhoto}
-        onChooseFile={handleUploadModalChooseFile}
-        subStage={uploadModalSubStage}
-      />
     </View>
   );
 };
@@ -1220,18 +1103,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   audioButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: '#e8f4f8',
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    backgroundColor: '#3498db',
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 10,
     borderWidth: 2,
-    borderColor: '#3498db',
+    borderColor: '#2980b9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   audioIcon: {
-    fontSize: 20,
+    fontSize: 22,
   },
   subStageRowName: {
     fontSize: 16,
@@ -1254,6 +1142,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 10,
     gap: 8,
+  },
+  comingSoonBanner: {
+    backgroundColor: '#fff3cd',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+    alignItems: 'center',
+    flex: 1,
+  },
+  comingSoonText: {
+    color: '#856404',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   uploadButton: {
     flex: 1,

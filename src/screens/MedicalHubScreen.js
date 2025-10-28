@@ -1,87 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
-import { API_URL } from '../config/api';
-import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
-import UploadModal from '../components/UploadModal';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [currentDocumentType, setCurrentDocumentType] = useState(null);
-
-  const handleUploadMedicalBills = () => {
-    alert(
-      '🏴‍☠️ Ahoy There, Matey!',
-      'Blimey! This treasure chest be still under construction by our crew! The Medical Bills upload feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon - we\'ll have it shipshape soon! ⚓'
-    );
-  };
-
-  const handleUploadMedicalRecords = () => {
-    alert(
-      '🏴‍☠️ Shiver Me Timbers!',
-      'Arrr! The Medical Records vault be locked up tighter than Davy Jones\' locker! Our ship\'s carpenter be workin\' hard to get this feature ready for ye. Check back soon, savvy? ⚓'
-    );
-  };
-
-  const closeUploadModal = () => {
-    setUploadModalVisible(false);
-    setTimeout(() => setCurrentDocumentType(null), 300);
-  };
-
-  const handleModalTakePhoto = async () => {
-    closeUploadModal();
-    alert(
-      '🏴‍☠️ Hold Yer Horses!',
-      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
-    );
-  };
-
-  const handleModalChooseFile = async () => {
-    closeUploadModal();
-    alert(
-      '🏴‍☠️ Hold Yer Horses!',
-      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
-    );
-  };
-
-  // DISABLED: Upload functionality under development
-  // Will be re-enabled when Medical Hub upload feature is complete
-  const pickImageFromCamera = async (documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
-  };
-
-  const pickDocumentFromDevice = async (documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
-  };
-
-  const uploadFile = async (file, documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
-  };
-
-
   const handleAddProvider = () => {
     alert(
       '🏴‍☠️ Aye, Not Quite Ready!',
       'Arrr! Our navigators be still plottin\' the course to add medical providers to yer crew! This feature be comin\' soon, so hold fast and keep yer compass handy! ⚓'
-    );
-  };
-
-  const viewUploadedDocuments = (documentType) => {
-    const documentName = documentType === 'medicalBills' ? 'Medical Bills' : 'Medical Records';
-    alert(
-      '🏴‍☠️ X Marks the Spot!',
-      `Avast! The ${documentName} treasure map be incomplete, matey! Our crew hasn't finished chartin' these waters yet. Once we do, ye'll be able to view yer precious documents here. Stand by! ⚓`
     );
   };
 
@@ -144,14 +70,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           </TouchableOpacity>
         </View>
       </View>
-
-      <UploadModal
-        visible={uploadModalVisible}
-        onClose={closeUploadModal}
-        onTakePhoto={handleModalTakePhoto}
-        onChooseFile={handleModalChooseFile}
-        subStage={currentDocumentType}
-      />
     </ScrollView>
   );
 };
@@ -225,20 +143,6 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginBottom: 15,
     lineHeight: 20,
-  },
-  viewButton: {
-    backgroundColor: '#ecf0f1',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-  },
-  viewButtonText: {
-    color: '#34495e',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 

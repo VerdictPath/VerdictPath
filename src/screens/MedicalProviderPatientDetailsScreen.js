@@ -6,9 +6,7 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
-import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 import alert from '../utils/alert';
-import UploadModal from '../components/UploadModal';
 
 const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const { width } = useWindowDimensions();
@@ -19,9 +17,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [medicalBilling, setMedicalBilling] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [activeTab, setActiveTab] = useState('roadmap');
-  const [uploading, setUploading] = useState(false);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [currentDocumentType, setCurrentDocumentType] = useState(null);
 
   useEffect(() => {
     fetchPatientDetails();
@@ -329,27 +324,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     alert(
       '🏴‍☠️ Shiver Me Timbers!',
       'Arrr! The Medical Records vault be locked up tighter than Davy Jones\' locker! Our ship\'s carpenter be workin\' hard to get this feature ready for ye. Check back soon, savvy? ⚓'
-    );
-  };
-
-  const closeUploadModal = () => {
-    setUploadModalVisible(false);
-    setTimeout(() => setCurrentDocumentType(null), 300);
-  };
-
-  const handleModalTakePhoto = async () => {
-    closeUploadModal();
-    alert(
-      '🏴‍☠️ Hold Yer Horses!',
-      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
-    );
-  };
-
-  const handleModalChooseFile = async () => {
-    closeUploadModal();
-    alert(
-      '🏴‍☠️ Hold Yer Horses!',
-      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
     );
   };
 
@@ -666,14 +640,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <UploadModal
-        visible={uploadModalVisible}
-        onClose={closeUploadModal}
-        onTakePhoto={handleModalTakePhoto}
-        onChooseFile={handleModalChooseFile}
-        subStage={currentDocumentType}
-      />
     </View>
   );
 };
