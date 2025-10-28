@@ -328,3 +328,39 @@ export const TIER_LEVELS = {
   BASIC: 'basic',
   PREMIUM: 'premium'
 };
+
+// Export simplified pricing structure for easy lookup
+export const PRICING = {
+  lawfirm: {
+    basic: {
+      shingle: lawFirmBasePrices.shingle,
+      boutique: lawFirmBasePrices.boutique,
+      small: lawFirmBasePrices.small,
+      medium: lawFirmBasePrices.medium,
+      large: lawFirmBasePrices.large,
+      enterprise: lawFirmBasePrices.enterprise
+    },
+    premium: {
+      shingle: Math.round(lawFirmBasePrices.shingle * premiumMultiplier),
+      boutique: Math.round(lawFirmBasePrices.boutique * premiumMultiplier),
+      small: Math.round(lawFirmBasePrices.small * premiumMultiplier),
+      medium: Math.round(lawFirmBasePrices.medium * premiumMultiplier),
+      large: Math.round(lawFirmBasePrices.large * premiumMultiplier),
+      enterprise: Math.round(lawFirmBasePrices.enterprise * premiumMultiplier)
+    }
+  },
+  medicalprovider: {
+    basic: {
+      small: Math.round(lawFirmBasePrices.small * medicalProviderDiscount),
+      medium: Math.round(lawFirmBasePrices.medium * medicalProviderDiscount),
+      large: Math.round(lawFirmBasePrices.large * medicalProviderDiscount),
+      enterprise: Math.round(lawFirmBasePrices.enterprise * medicalProviderDiscount)
+    },
+    premium: {
+      small: Math.round(lawFirmBasePrices.small * premiumMultiplier * medicalProviderDiscount),
+      medium: Math.round(lawFirmBasePrices.medium * premiumMultiplier * medicalProviderDiscount),
+      large: Math.round(lawFirmBasePrices.large * premiumMultiplier * medicalProviderDiscount),
+      enterprise: Math.round(lawFirmBasePrices.enterprise * premiumMultiplier * medicalProviderDiscount)
+    }
+  }
+};
