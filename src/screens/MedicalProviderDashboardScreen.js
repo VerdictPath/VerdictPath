@@ -12,8 +12,6 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
   const [patients, setPatients] = useState([]);
   const [providerData, setProviderData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
-  const [medicalRecords, setMedicalRecords] = useState([]);
-  const [evidence, setEvidence] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
@@ -41,10 +39,6 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
           litigationCount: 0,
           trialCount: 0
         });
-        
-        // Set medical records and evidence
-        setMedicalRecords(data.medicalRecords || []);
-        setEvidence(data.evidence || []);
       } else {
         // Fallback for when API doesn't exist yet
         setProviderData({
@@ -281,121 +275,6 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     );
   };
 
-  const renderMedicalHubTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏥 Medical Records Hub</Text>
-        
-        {medicalRecords.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyText}>No medical records yet</Text>
-            <Text style={styles.emptySubtext}>
-              Patient medical records will appear here once uploaded
-            </Text>
-          </View>
-        ) : (
-          medicalRecords.map((record, index) => (
-            <View key={index} style={styles.recordCard}>
-              <View style={styles.recordHeader}>
-                <Text style={styles.recordTitle}>📄 {record.type}</Text>
-                <Text style={styles.recordBadge}>{record.status}</Text>
-              </View>
-              <Text style={styles.recordPatient}>Patient: {record.patientName}</Text>
-              <Text style={styles.recordDate}>
-                Uploaded: {new Date(record.uploadedDate).toLocaleDateString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💊 Billing Summary</Text>
-        <View style={styles.billingSummary}>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Total Billed:</Text>
-            <Text style={styles.billingValue}>${(analytics?.totalBilling || 0).toLocaleString()}</Text>
-          </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Total Records:</Text>
-            <Text style={styles.billingValue}>{analytics?.totalRecords || 0}</Text>
-          </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Pending Reviews:</Text>
-            <Text style={styles.billingValue}>{analytics?.pendingReviews || 0}</Text>
-          </View>
-        </View>
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📋 HIPAA Forms</Text>
-        <View style={styles.hipaaSection}>
-          <Text style={styles.hipaaDescription}>
-            Manage consent forms and authorizations for sharing patient medical information
-          </Text>
-          <TouchableOpacity 
-            style={styles.hipaaButton}
-            onPress={() => onNavigate('hipaaForms')}
-          >
-            <Text style={styles.hipaaButtonText}>📄 View HIPAA Forms</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderEvidenceTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📎 Medical Evidence</Text>
-        
-        {evidence.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🗃️</Text>
-            <Text style={styles.emptyText}>No evidence documents yet</Text>
-            <Text style={styles.emptySubtext}>
-              Medical evidence and supporting documents will be stored here
-            </Text>
-          </View>
-        ) : (
-          evidence.map((item, index) => (
-            <View key={index} style={styles.evidenceCard}>
-              <View style={styles.evidenceHeader}>
-                <Text style={styles.evidenceIcon}>📎</Text>
-                <View style={styles.evidenceInfo}>
-                  <Text style={styles.evidenceTitle}>{item.title}</Text>
-                  <Text style={styles.evidencePatient}>Patient: {item.patientName}</Text>
-                </View>
-                <Text style={styles.evidenceBadge}>{item.type}</Text>
-              </View>
-              <Text style={styles.evidenceDate}>
-                Added: {new Date(item.addedDate).toLocaleDateString()}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔐 HIPAA Compliance Status</Text>
-        <View style={styles.complianceCard}>
-          <Text style={styles.complianceIcon}>✅</Text>
-          <Text style={styles.complianceTitle}>Fully Compliant</Text>
-          <Text style={styles.complianceText}>
-            All patient data is encrypted and protected with HIPAA-compliant security measures.
-          </Text>
-          <View style={styles.complianceFeatures}>
-            <Text style={styles.complianceFeature}>🔒 AES-256-GCM Encryption</Text>
-            <Text style={styles.complianceFeature}>👁️ Audit Logging Enabled</Text>
-            <Text style={styles.complianceFeature}>🛡️ Role-Based Access Control</Text>
-            <Text style={styles.complianceFeature}>📋 Patient Consent Management</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -423,15 +302,11 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
       <View style={styles.tabBar}>
         {renderTabButton('patients', 'Patients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
-        {renderTabButton('medical', 'Medical Hub', '🏥')}
-        {renderTabButton('evidence', 'Evidence', '📎')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'patients' && renderPatientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
-        {activeTab === 'medical' && renderMedicalHubTab()}
-        {activeTab === 'evidence' && renderEvidenceTab()}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
