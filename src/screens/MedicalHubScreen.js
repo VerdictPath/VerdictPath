@@ -101,47 +101,27 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
       <View style={styles.medicalContainer}>
         <View style={styles.documentSection}>
-          <Text style={styles.sectionTitle}>💵 Medical Bills</Text>
-          <TouchableOpacity 
-            style={commonStyles.primaryButton}
-            onPress={handleUploadMedicalBills}
-          >
-            <Text style={commonStyles.buttonText}>
-              {medicalHubUploads.medicalBills.length > 0 ? '📤 Upload More Bills' : '📤 Upload Medical Bills'}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>💵 Medical Bills</Text>
+            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
+          </View>
+          <View style={styles.comingSoonMessage}>
+            <Text style={styles.comingSoonText}>
+              Blimey! This treasure chest be still under construction. Medical Bills upload will be ready soon! ⚓
             </Text>
-          </TouchableOpacity>
-          {medicalHubUploads.medicalBills.length > 0 && (
-            <TouchableOpacity 
-              style={styles.viewButton}
-              onPress={() => viewUploadedDocuments('medicalBills')}
-            >
-              <Text style={styles.viewButtonText}>
-                📁 View Uploaded Bills ({medicalHubUploads.medicalBills.length})
-              </Text>
-            </TouchableOpacity>
-          )}
+          </View>
         </View>
 
         <View style={styles.documentSection}>
-          <Text style={styles.sectionTitle}>📋 Medical Records</Text>
-          <TouchableOpacity 
-            style={commonStyles.primaryButton}
-            onPress={handleUploadMedicalRecords}
-          >
-            <Text style={commonStyles.buttonText}>
-              {medicalHubUploads.medicalRecords.length > 0 ? '📤 Upload More Records' : '📤 Upload Medical Records'}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>📋 Medical Records</Text>
+            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
+          </View>
+          <View style={styles.comingSoonMessage}>
+            <Text style={styles.comingSoonText}>
+              Arrr! The Medical Records vault be locked tighter than Davy Jones' locker! Upload feature coming soon, savvy? ⚓
             </Text>
-          </TouchableOpacity>
-          {medicalHubUploads.medicalRecords.length > 0 && (
-            <TouchableOpacity 
-              style={styles.viewButton}
-              onPress={() => viewUploadedDocuments('medicalRecords')}
-            >
-              <Text style={styles.viewButtonText}>
-                📁 View Uploaded Records ({medicalHubUploads.medicalRecords.length})
-              </Text>
-            </TouchableOpacity>
-          )}
+          </View>
         </View>
 
         <TouchableOpacity 
@@ -205,11 +185,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 15,
+  },
+  comingSoonBadge: {
+    backgroundColor: '#f39c12',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#e67e22',
+  },
+  comingSoonMessage: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f39c12',
+  },
+  comingSoonText: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   sectionDescription: {
     fontSize: 14,

@@ -4,6 +4,7 @@ import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
+import ConnectionsModal from '../components/ConnectionsModal';
 import LawFirmSubscriptionScreen from './LawFirmSubscriptionScreen';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
@@ -13,6 +14,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -344,10 +346,23 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
 
+        <TouchableOpacity 
+          style={styles.connectionsButton} 
+          onPress={() => setConnectionsModalVisible(true)}
+        >
+          <Text style={styles.connectionsButtonText}>🔗 My Connections</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <ConnectionsModal
+        visible={connectionsModalVisible}
+        onClose={() => setConnectionsModalVisible(false)}
+        user={user}
+      />
 
       <InviteModal
         visible={inviteModalVisible}
@@ -856,11 +871,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  connectionsButton: {
+    backgroundColor: theme.colors.warmGold,
+    padding: 15,
+    borderRadius: 8,
+    margin: 16,
+    marginBottom: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  connectionsButtonText: {
+    color: theme.colors.mahogany,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   logoutButton: {
     backgroundColor: theme.colors.mahogany,
     padding: 15,
     borderRadius: 8,
     margin: 16,
+    marginTop: 8,
     alignItems: 'center',
   },
   logoutText: {
