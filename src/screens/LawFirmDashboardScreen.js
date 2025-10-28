@@ -10,36 +10,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [clients, setClients] = useState([]);
   const [firmData, setFirmData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
-  const [medicalRecords, setMedicalRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
-    fetchAllDocuments();
   }, []);
-
-  const fetchAllDocuments = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.ALL_DOCUMENTS}`, {
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMedicalRecords(data.medicalRecords || []);
-        // Store medical bills separately in analytics for now
-        setAnalytics(prev => ({
-          ...prev,
-          medicalBills: data.medicalBills || []
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-    }
-  };
 
   const fetchDashboardData = async () => {
     try {
@@ -284,101 +260,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     );
   };
 
-  const renderMedicalHubTab = () => {
-    const medicalBills = analytics?.medicalBills || [];
-    const totalBilled = medicalBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
-
-    return (
-      <View style={styles.tabContent}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Medical Records</Text>
-          
-          {medicalRecords.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🏥</Text>
-              <Text style={styles.emptyText}>No medical records uploaded yet</Text>
-              <Text style={styles.emptySubtext}>
-                Medical records will appear here once clients upload them
-              </Text>
-            </View>
-          ) : (
-            medicalRecords.map((record) => (
-              <View key={record.id} style={styles.recordCard}>
-                <View style={styles.recordHeader}>
-                  <Text style={styles.recordTitle}>📄 {record.recordType || 'Medical Record'}</Text>
-                  <Text style={styles.recordBadge}>{record.fileName}</Text>
-                </View>
-                <Text style={styles.recordClient}>Client: {record.clientName}</Text>
-                {record.facilityName && (
-                  <Text style={styles.recordDetail}>🏥 {record.facilityName}</Text>
-                )}
-                {record.dateOfService && (
-                  <Text style={styles.recordDetail}>
-                    📅 Service: {new Date(record.dateOfService).toLocaleDateString()}
-                  </Text>
-                )}
-                <Text style={styles.recordDate}>
-                  Uploaded: {new Date(record.uploadedAt).toLocaleDateString()}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💊 Medical Bills</Text>
-          
-          {medicalBills.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>💰</Text>
-              <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
-              <Text style={styles.emptySubtext}>
-                Medical bills will appear here once clients upload them
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.billingSummary}>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Billed:</Text>
-                  <Text style={styles.billingValue}>${totalBilled.toLocaleString()}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Bills:</Text>
-                  <Text style={styles.billingValue}>{medicalBills.length}</Text>
-                </View>
-              </View>
-              
-              {medicalBills.map((bill) => (
-                <View key={bill.id} style={styles.recordCard}>
-                  <View style={styles.recordHeader}>
-                    <Text style={styles.recordTitle}>💰 {bill.billingType || 'Medical Bill'}</Text>
-                    <Text style={styles.recordBadge}>${bill.totalAmount.toFixed(2)}</Text>
-                  </View>
-                  <Text style={styles.recordClient}>Client: {bill.clientName}</Text>
-                  {bill.facilityName && (
-                    <Text style={styles.recordDetail}>🏥 {bill.facilityName}</Text>
-                  )}
-                  {bill.billNumber && (
-                    <Text style={styles.recordDetail}>📝 Bill #: {bill.billNumber}</Text>
-                  )}
-                  {bill.dateOfService && (
-                    <Text style={styles.recordDetail}>
-                      📅 Service: {new Date(bill.dateOfService).toLocaleDateString()}
-                    </Text>
-                  )}
-                  <Text style={styles.recordDate}>
-                    Uploaded: {new Date(bill.uploadedAt).toLocaleDateString()}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
-        </View>
-      </View>
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -406,13 +287,11 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
-        {renderTabButton('medical', 'Medical Hub', '🏥')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'clients' && renderClientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
-        {activeTab === 'medical' && renderMedicalHubTab()}
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>🚪 Sign Out</Text>

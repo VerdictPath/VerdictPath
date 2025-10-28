@@ -4,13 +4,17 @@
 Verdict Path is a legal case management and education platform for Georgia Civil Litigation, designed as a React Native mobile application. It offers an interactive case roadmap, gamification, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to provide an engaging and informative tool for justice.
 
 ## Recent Changes (October 28, 2025)
-- **Law Firm Portal Document Organization**: Clarified and organized document access in the law firm portal:
-  - **Medical Hub Tab**: Now exclusively displays medical records and medical bills uploaded by clients
-  - **Evidence Locker Tab**: Contains all other evidence documents (photos, reports, police reports, accident photos, etc.)
-  - Clear separation between medical documentation and case evidence for better organization
-  - Backend endpoint `/api/lawfirm/documents/all` fetches all client documents organized by category
+- **Law Firm Portal Organization - Client-Specific Views**: Restructured the law firm portal to organize all client-specific information in individual client detail pages:
+  - **Dashboard Simplified**: Main dashboard now has only 2 tabs (Clients and Analytics) - removed aggregated Medical Hub and Evidence tabs
+  - **Client Details Page**: All client-specific data now lives in individual client details pages, including:
+    - Litigation Roadmap with progress tracking
+    - Medical Records section (all medical records for that specific client)
+    - Medical Billing section (all bills with totals for that specific client)
+    - Evidence Locker section (all photos, reports, and evidence specific to that client)
+  - **Better Organization**: Each client's complete case file (medical + evidence) is now in one place for easier case management
+  - Backend endpoint `/api/lawfirm/documents/all` available but not used in main dashboard
   - Proper HIPAA-compliant encryption and audit logging for all document access
-  - Each document displays the client's name for easy identification
+  - Created test clients Emily Rodriguez and David Thompson with comprehensive medical records, bills, and evidence
 - **Universal Invite/Referral System**: Implemented comprehensive friend invite and referral system for ALL user types (Individual, Law Firm, Medical Provider):
   - All users can generate unique 8-character invite codes from their dashboards
   - Individual users: Invite button on main dashboard menu
