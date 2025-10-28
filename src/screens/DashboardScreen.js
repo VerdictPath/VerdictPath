@@ -4,6 +4,7 @@ import { commonStyles } from '../styles/commonStyles';
 import { calculateDailyBonus } from '../utils/gamification';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
+import InviteModal from '../components/InviteModal';
 
 const DashboardScreen = ({ 
   user, 
@@ -14,6 +15,7 @@ const DashboardScreen = ({
   onNavigate, 
   onLogout 
 }) => {
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
   return (
     <ScrollView style={commonStyles.container}>
@@ -128,6 +130,20 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
+          onPress={() => setInviteModalVisible(true)}
+        >
+          <View style={styles.iconBadgeGift}>
+            <View style={styles.iconGiftBonus}>
+              <View style={styles.giftBoxBonus} />
+              <View style={styles.giftTopBonus} />
+              <View style={styles.giftLockBonus} />
+            </View>
+          </View>
+          <Text style={styles.menuText}>Invite Friends</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
           onPress={onConvertCoins}
         >
           <View style={styles.iconBadgeTreasureChest}>
@@ -153,6 +169,12 @@ const DashboardScreen = ({
           <Text style={styles.menuText}>Logout</Text>
         </TouchableOpacity>
       </View>
+
+      <InviteModal
+        visible={inviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
+        user={user}
+      />
     </ScrollView>
   );
 };
