@@ -1,6 +1,15 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Free Trial Subscription Limits**: Implemented client/patient limits for free trial accounts:
+  - Added subscription_tier column to law_firms and medical_providers tables with default 'free' value
+  - Free tier law firms limited to 10 clients maximum
+  - Free tier medical providers limited to 10 patients maximum
+  - Limit enforcement during both registration and connection updates
+  - Pirate-themed error messages when limits reached (e.g., "Blimey! This law firm's ship be full to the brim!")
+  - Database-level DEFAULT constraints ensure new accounts default to free tier
+  - Parameterized queries prevent SQL injection
+  - Fixed connectionsController to query correct tables (law_firms and medical_providers instead of users)
 - **Automatic Unique Code Generation**: Implemented automatic code assignment for law firms and medical providers:
   - Law firms receive unique codes in format LAW-XXXXXX (e.g., LAW-AB3K9P)
   - Medical providers receive unique codes in format MED-XXXXXX (e.g., MED-XY7M2N)
