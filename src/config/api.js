@@ -41,6 +41,12 @@ export const API_ENDPOINTS = {
     CONVERT: '/api/coins/convert',
     BALANCE: '/api/coins/balance',
     CONVERSION_HISTORY: '/api/coins/conversion-history'
+  },
+  INVITES: {
+    MY_CODE: '/api/invites/my-code',
+    STATS: '/api/invites/stats',
+    VALIDATE: (code) => `/api/invites/validate/${code}`,
+    PROCESS: '/api/invites/process'
   }
 };
 

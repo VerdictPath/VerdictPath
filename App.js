@@ -33,6 +33,7 @@ const CaseCompassApp = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firmCode, setFirmCode] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
 
   const [subscriptionTier, setSubscriptionTier] = useState('free');
   const [firmSize, setFirmSize] = useState('small');
@@ -171,6 +172,25 @@ const CaseCompassApp = () => {
             streak: 0
           };
           
+          // Process invite code if provided
+          if (inviteCode && inviteCode.trim()) {
+            try {
+              const inviteResponse = await apiRequest(API_ENDPOINTS.INVITES.PROCESS, {
+                method: 'POST',
+                body: JSON.stringify({
+                  inviteCode: inviteCode.trim(),
+                  newUserId: response.user.id
+                })
+              });
+              
+              if (inviteResponse.success) {
+                console.log('✅ Invite processed:', inviteResponse.message);
+              }
+            } catch (inviteError) {
+              console.error('Error processing invite:', inviteError);
+            }
+          }
+          
           setCurrentScreen('dashboard');
         }
         
@@ -179,9 +199,14 @@ const CaseCompassApp = () => {
         setLoginStreak(0);
         setIsLoggedIn(true);
         
+        let welcomeMessage = 'Your free account has been created successfully!';
+        if (inviteCode && inviteCode.trim() && userType === USER_TYPES.INDIVIDUAL) {
+          welcomeMessage += '\n\nYour friend earned 500 coins for inviting you!';
+        }
+        
         Alert.alert(
           '🎉 Welcome to Verdict Path!',
-          'Your free account has been created successfully!'
+          welcomeMessage
         );
       } catch (error) {
         console.error('Registration Error Details:', error);
@@ -684,6 +709,8 @@ const CaseCompassApp = () => {
           setUserType={setUserType}
           firmCode={firmCode}
           setFirmCode={setFirmCode}
+          inviteCode={inviteCode}
+          setInviteCode={setInviteCode}
           onRegister={handleRegister}
           onNavigate={handleNavigate}
         />

@@ -14,6 +14,8 @@ const RegisterScreen = ({
   setUserType,
   firmCode,
   setFirmCode,
+  inviteCode,
+  setInviteCode,
   onRegister, 
   onNavigate 
 }) => {
@@ -78,12 +80,27 @@ const RegisterScreen = ({
         />
 
         {userType === USER_TYPES.INDIVIDUAL && (
-          <TextInput
-            style={commonStyles.input}
-            placeholder="Law Firm or Provider Code (Optional)"
-            value={firmCode}
-            onChangeText={setFirmCode}
-          />
+          <>
+            <TextInput
+              style={commonStyles.input}
+              placeholder="Law Firm or Provider Code (Optional)"
+              value={firmCode}
+              onChangeText={setFirmCode}
+            />
+            <TextInput
+              style={commonStyles.input}
+              placeholder="Friend's Invite Code (Optional)"
+              value={inviteCode}
+              onChangeText={(text) => setInviteCode(text.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={8}
+            />
+            {inviteCode && (
+              <Text style={styles.inviteHint}>
+                💰 You'll help your friend earn 500 coins!
+              </Text>
+            )}
+          </>
         )}
 
         <TouchableOpacity style={commonStyles.primaryButton} onPress={onRegister}>
@@ -152,6 +169,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     lineHeight: 18,
+  },
+  inviteHint: {
+    fontSize: 14,
+    color: '#27ae60',
+    fontWeight: '600',
+    marginTop: -10,
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 
