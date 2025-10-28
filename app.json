@@ -29,7 +29,10 @@
       "package": "com.verdictpath.app"
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "build": {
+        "pwa": false
+      }
     }
   }
 }
