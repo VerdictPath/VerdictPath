@@ -102,15 +102,8 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('videos')}
         >
-          <View style={styles.iconBadgeVideoPro}>
-            <View style={styles.iconVideoPro}>
-              <View style={styles.videoProBody} />
-              <View style={styles.videoProLens} />
-              <View style={styles.videoProLensOuter} />
-              <View style={styles.videoProLensInner} />
-              <View style={styles.videoProViewfinder} />
-              <View style={styles.videoProMic} />
-            </View>
+          <View style={styles.iconBadgeEmoji}>
+            <Text style={styles.emojiIcon}>🎥</Text>
           </View>
           <Text style={styles.menuText}>Video Library</Text>
         </TouchableOpacity>
@@ -132,12 +125,8 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => setInviteModalVisible(true)}
         >
-          <View style={styles.iconBadgeGift}>
-            <View style={styles.iconGiftBonus}>
-              <View style={styles.giftBoxBonus} />
-              <View style={styles.giftTopBonus} />
-              <View style={styles.giftLockBonus} />
-            </View>
+          <View style={styles.iconBadgeEmoji}>
+            <Text style={styles.emojiIcon}>👍</Text>
           </View>
           <Text style={styles.menuText}>Invite Friends</Text>
         </TouchableOpacity>
@@ -146,11 +135,11 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={onConvertCoins}
         >
-          <View style={styles.iconBadgeTreasureChest}>
-            <View style={styles.iconTreasureChest}>
-              <View style={styles.treasureChestBottom} />
-              <View style={styles.treasureChestTop} />
-              <View style={styles.treasureChestLock} />
+          <View style={styles.iconBadgeCoin}>
+            <View style={styles.iconCoin}>
+              <View style={styles.coinOuter} />
+              <View style={styles.coinInner} />
+              <View style={styles.coinShine} />
             </View>
           </View>
           <Text style={styles.menuText}>Convert Coins</Text>
@@ -861,6 +850,66 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Emoji Icon Badge
+  iconBadgeEmoji: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.cream,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  emojiIcon: {
+    fontSize: 28,
+  },
+  // Coin Icon Badge for Convert Coins
+  iconBadgeCoin: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.mahogany,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  iconCoin: {
+    width: 24,
+    height: 24,
+    position: 'relative',
+  },
+  coinOuter: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.paleGold,
+    borderWidth: 2,
+    borderColor: theme.colors.darkGold,
+  },
+  coinInner: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    borderColor: theme.colors.darkGold,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    top: 5,
+    left: 5,
+  },
+  coinShine: {
+    width: 5,
+    height: 2.5,
+    backgroundColor: theme.colors.lightGold,
+    borderRadius: 2.5,
+    position: 'absolute',
+    top: 7,
+    left: 7,
   },
 });
 
