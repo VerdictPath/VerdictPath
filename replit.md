@@ -1,6 +1,12 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Dashboard Header Enhancements**: Improved individual user dashboard with connection visibility:
+  - Added "Add" button (🔗) in top right corner to quickly open ConnectionsModal
+  - Top left now displays connected law firm and medical provider names (⚖️ Law Firm, 🏥 Medical Provider)
+  - Auto-fetches connection data on dashboard load
+  - Refreshes connection info after adding/updating connections
+  - Clean, responsive layout with proper flex positioning
 - **My Connections Feature**: Added connection management for individual users:
   - New "My Connections" menu item in individual user dashboard
   - ConnectionsModal component allows users to view and update their law firm and medical provider connections
