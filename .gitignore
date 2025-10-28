@@ -160,3 +160,20 @@ yarn-error.*
 
 # Typescript
 *.tsbuildinfo
+
+# Verdict Path Specific
+# Uploaded files (HIPAA-protected PHI)
+backend/uploads/
+uploads/
+
+# Compiled Expo web bundle (regenerate with: npx expo export --platform web --output-dir backend/public/app)
+backend/public/app/
+
+# Temporary logs
+/tmp/
+
+# Replit-specific
+.replit
+.config/
+.upm/
+replit.nix
