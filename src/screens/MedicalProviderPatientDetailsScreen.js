@@ -319,23 +319,17 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   };
 
   const handleUploadMedicalBills = () => {
-    setCurrentDocumentType({
-      type: 'medicalBills',
-      name: 'Medical Bills',
-      icon: '💵',
-      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
-    });
-    setUploadModalVisible(true);
+    alert(
+      '🏴‍☠️ Ahoy There, Matey!',
+      'Blimey! This treasure chest be still under construction by our crew! The Medical Bills upload feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon - we\'ll have it shipshape soon! ⚓'
+    );
   };
 
   const handleUploadMedicalRecords = () => {
-    setCurrentDocumentType({
-      type: 'medicalRecords',
-      name: 'Medical Records',
-      icon: '📋',
-      acceptedFormats: 'PDF, JPG, PNG, DOC, DOCX'
-    });
-    setUploadModalVisible(true);
+    alert(
+      '🏴‍☠️ Shiver Me Timbers!',
+      'Arrr! The Medical Records vault be locked up tighter than Davy Jones\' locker! Our ship\'s carpenter be workin\' hard to get this feature ready for ye. Check back soon, savvy? ⚓'
+    );
   };
 
   const closeUploadModal = () => {
@@ -345,89 +339,41 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const handleModalTakePhoto = async () => {
     closeUploadModal();
-    if (currentDocumentType) {
-      await pickImageFromCamera(currentDocumentType.type);
-    }
+    alert(
+      '🏴‍☠️ Hold Yer Horses!',
+      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
+    );
   };
 
   const handleModalChooseFile = async () => {
     closeUploadModal();
-    if (currentDocumentType) {
-      await pickDocumentFromDevice(currentDocumentType.type);
-    }
+    alert(
+      '🏴‍☠️ Hold Yer Horses!',
+      'Arrr! This feature be under construction, matey! Our crew is workin\' hard to get it ready for ye. Check back soon! ⚓'
+    );
   };
 
+  // DISABLED: Upload functionality under development
+  // Will be re-enabled when Medical Hub upload feature is complete
   const pickImageFromCamera = async (documentType) => {
-    try {
-      const result = await pickImage();
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadFile(result.assets[0], documentType);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      if (error.message === 'Camera permission is required') {
-        alert('Permission Required', 'Camera permission is required to take photos.');
-      } else {
-        alert('Error', 'Failed to take photo. Please try again.');
-      }
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const pickDocumentFromDevice = async (documentType) => {
-    try {
-      const result = await pickDocument();
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadFile(result.assets[0], documentType);
-      }
-    } catch (error) {
-      console.error('Error picking document:', error);
-      alert('Error', 'Failed to select file. Please try again.');
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const uploadFile = async (file, documentType) => {
-    if (!user?.token) {
-      alert('Error', 'You must be logged in to upload files.');
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const endpoint = documentType === 'medicalBills' ? 'medical-bill' : 'medical-record';
-      const recordType = documentType === 'medicalBills' ? 'Medical Bill' : 'Medical Record';
-      
-      const formData = createFormDataFromFile(file, 'file', { 
-        recordType,
-        patientId: patientId
-      });
-
-      const response = await fetch(`${API_BASE_URL}/api/uploads/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${user.token}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert(
-          '✅ Upload Successful!',
-          `${data.document.file_name} has been uploaded successfully for ${patient?.displayName}.`
-        );
-      } else {
-        alert('Upload Failed', data.error || 'Failed to upload file.');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Upload Failed', 'An error occurred while uploading the file.');
-    } finally {
-      setUploading(false);
-    }
+    alert(
+      '🏴‍☠️ Feature Coming Soon!',
+      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
+    );
   };
 
   const renderMedicalHubTab = () => {
