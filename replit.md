@@ -1,6 +1,14 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **My Connections Feature**: Added connection management for individual users:
+  - New "My Connections" menu item in individual user dashboard
+  - ConnectionsModal component allows users to view and update their law firm and medical provider connections
+  - Users can change law firm or medical provider after registration by entering new codes
+  - Backend API endpoints: GET /api/connections/my-connections, PUT /api/connections/update-lawfirm, PUT /api/connections/update-medicalprovider
+  - Displays current connection details (firm name, facility name, email)
+  - Success/error alerts with pirate-themed messaging
+  - Automatic linkage in law_firm_clients and medical_provider_patients tables
 - **Invite Code for All User Types**: Added invite/referral code field for Law Firms and Medical Providers on registration:
   - Law firms and medical providers can now enter an invite code during sign-up
   - Matches individual user invite code functionality
