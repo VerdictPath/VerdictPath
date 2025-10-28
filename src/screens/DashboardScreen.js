@@ -18,12 +18,78 @@ const DashboardScreen = ({
 }) => {
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
+  const [connections, setConnections] = useState({
+    lawFirm: null,
+    medicalProvider: null
+  });
+  const [loadingConnections, setLoadingConnections] = useState(true);
+
+  useEffect(() => {
+    fetchConnections();
+  }, []);
+
+  const fetchConnections = async () => {
+    try {
+      setLoadingConnections(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConnections({
+          lawFirm: data.lawFirm,
+          medicalProvider: data.medicalProvider
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+    } finally {
+      setLoadingConnections(false);
+    }
+  };
+
+  const handleConnectionsClose = () => {
+    setConnectionsModalVisible(false);
+    fetchConnections();
+  };
 
   return (
     <ScrollView style={commonStyles.container}>
       <View style={styles.dashboardHeader}>
-        <Text style={styles.welcomeText}>Welcome back! 👋</Text>
-        <Text style={styles.emailText}>{user?.email}</Text>
+        <View style={styles.headerTopRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.welcomeText}>Welcome back! 👋</Text>
+            <Text style={styles.emailText}>{user?.email}</Text>
+            {!loadingConnections && (connections.lawFirm || connections.medicalProvider) && (
+              <View style={styles.connectionsInfo}>
+                {connections.lawFirm && (
+                  <View style={styles.connectionItem}>
+                    <Text style={styles.connectionLabel}>⚖️ Law Firm:</Text>
+                    <Text style={styles.connectionValue}>{connections.lawFirm.firm_name || connections.lawFirm.email}</Text>
+                  </View>
+                )}
+                {connections.medicalProvider && (
+                  <View style={styles.connectionItem}>
+                    <Text style={styles.connectionLabel}>🏥 Medical Provider:</Text>
+                    <Text style={styles.connectionValue}>{connections.medicalProvider.facility_name || connections.medicalProvider.email}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+          <TouchableOpacity 
+            style={styles.addConnectionButton}
+            onPress={() => setConnectionsModalVisible(true)}
+          >
+            <Text style={styles.addConnectionIcon}>🔗</Text>
+            <Text style={styles.addConnectionText}>Add</Text>
+          </TouchableOpacity>
+        </View>
         
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -173,7 +239,7 @@ const DashboardScreen = ({
 
       <ConnectionsModal
         visible={connectionsModalVisible}
-        onClose={() => setConnectionsModalVisible(false)}
+        onClose={handleConnectionsClose}
         user={user}
       />
 
@@ -192,6 +258,16 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  headerLeft: {
+    flex: 1,
+    marginRight: 10,
+  },
   welcomeText: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -201,7 +277,44 @@ const styles = StyleSheet.create({
   emailText: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: 20,
+    marginBottom: 10,
+  },
+  connectionsInfo: {
+    marginTop: 5,
+  },
+  connectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  connectionLabel: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginRight: 5,
+    fontWeight: '600',
+  },
+  connectionValue: {
+    fontSize: 12,
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  addConnectionButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 60,
+  },
+  addConnectionIcon: {
+    fontSize: 18,
+    marginBottom: 2,
+  },
+  addConnectionText: {
+    color: theme.colors.white,
+    fontSize: 11,
+    fontWeight: '600',
   },
   statsContainer: {
     flexDirection: 'row',
