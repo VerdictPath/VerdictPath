@@ -51,11 +51,16 @@ router.get('/my-code', authenticateToken, async (req, res) => {
       );
     }
 
+    // Get the domain from request headers or environment
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
+    const baseUrl = `${protocol}://${host}`;
+
     res.json({
       success: true,
       inviteCode,
       shareText: `Join Verdict Path and chart your course to justice! Use my invite code: ${inviteCode}`,
-      shareUrl: `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/?invite=${inviteCode}`
+      shareUrl: `${baseUrl}/?invite=${inviteCode}`
     });
   } catch (error) {
     console.error('Error generating invite code:', error);

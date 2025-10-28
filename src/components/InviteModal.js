@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Share, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import theme from '../theme';
+import { theme } from '../styles/theme';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const InviteModal = ({ visible, onClose, user }) => {
   const [loading, setLoading] = useState(false);
@@ -17,8 +18,7 @@ const InviteModal = ({ visible, onClose, user }) => {
   const fetchInviteCode = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.REACT_APP_API_URL || '';
-      const response = await fetch(`${apiUrl}/api/invites/my-code`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.INVITES.MY_CODE}`, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
