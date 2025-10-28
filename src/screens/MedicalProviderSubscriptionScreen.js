@@ -239,18 +239,21 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
         </View>
       </View>
 
-      {selectedTier !== TIER_LEVELS.FREE && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Select Practice Size</Text>
-          <Text style={styles.sectionSubtitle}>Choose the tier that matches your current or expected patient count</Text>
-          <View style={styles.sizeCardsContainer}>
-            {renderSizeCard(PROVIDER_SIZES.SMALL)}
-            {renderSizeCard(PROVIDER_SIZES.MEDIUM)}
-            {renderSizeCard(PROVIDER_SIZES.LARGE)}
-            {renderSizeCard(PROVIDER_SIZES.ENTERPRISE)}
+      {(() => {
+        console.log('[MedProvider Subscription] selectedTier:', selectedTier, 'TIER_LEVELS.FREE:', TIER_LEVELS.FREE, 'Should show size:', selectedTier !== TIER_LEVELS.FREE);
+        return selectedTier !== TIER_LEVELS.FREE && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Practice Size</Text>
+            <Text style={styles.sectionSubtitle}>Choose the tier that matches your current or expected patient count</Text>
+            <View style={styles.sizeCardsContainer}>
+              {renderSizeCard(PROVIDER_SIZES.SMALL)}
+              {renderSizeCard(PROVIDER_SIZES.MEDIUM)}
+              {renderSizeCard(PROVIDER_SIZES.LARGE)}
+              {renderSizeCard(PROVIDER_SIZES.ENTERPRISE)}
+            </View>
           </View>
-        </View>
-      )}
+        );
+      })()}
 
       {hasChanges() && (
         <View style={styles.actionContainer}>
