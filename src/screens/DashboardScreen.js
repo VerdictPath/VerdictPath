@@ -5,6 +5,7 @@ import { calculateDailyBonus } from '../utils/gamification';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 import InviteModal from '../components/InviteModal';
+import ConnectionsModal from '../components/ConnectionsModal';
 
 const DashboardScreen = ({ 
   user, 
@@ -16,6 +17,7 @@ const DashboardScreen = ({
   onLogout 
 }) => {
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
 
   return (
     <ScrollView style={commonStyles.container}>
@@ -123,6 +125,16 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
+          onPress={() => setConnectionsModalVisible(true)}
+        >
+          <View style={styles.iconBadgeEmoji}>
+            <Text style={styles.emojiIcon}>🔗</Text>
+          </View>
+          <Text style={styles.menuText}>My Connections</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
           onPress={() => setInviteModalVisible(true)}
         >
           <View style={styles.iconBadgeEmoji}>
@@ -158,6 +170,12 @@ const DashboardScreen = ({
           <Text style={styles.menuText}>Logout</Text>
         </TouchableOpacity>
       </View>
+
+      <ConnectionsModal
+        visible={connectionsModalVisible}
+        onClose={() => setConnectionsModalVisible(false)}
+        user={user}
+      />
 
       <InviteModal
         visible={inviteModalVisible}
