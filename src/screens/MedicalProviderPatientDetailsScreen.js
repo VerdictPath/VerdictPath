@@ -553,7 +553,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const renderEvidenceTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏦 Evidence Locker</Text>
+        <Text style={styles.sectionTitle}>🗃️ Evidence Locker</Text>
         
         {evidence.length === 0 ? (
           <View style={styles.emptyState}>
@@ -719,7 +719,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           style={[styles.tab, activeTab === 'evidence' && styles.activeTab]}
           onPress={() => setActiveTab('evidence')}
         >
-          <Text style={styles.tabIcon}>🏦</Text>
+          <Text style={styles.tabIcon}>🗃️</Text>
           <Text style={[styles.tabText, activeTab === 'evidence' && styles.activeTabText]}>
             Evidence Locker
           </Text>

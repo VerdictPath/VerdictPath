@@ -2,7 +2,7 @@
 
 ## Recent Changes (October 28, 2025)
 - **Evidence Locker Tab Added**: Created dedicated Evidence Locker tab in Medical Provider Patient Details Screen:
-  - New tab button (📎) next to Medical Hub for better organization
+  - New tab button (🗃️) next to Medical Hub for better organization
   - Removed evidence section from Medical Hub to eliminate duplication
   - Evidence tab displays all evidence documents with type, title, description, location, and incident date
   - Empty state with helpful message when no evidence exists
