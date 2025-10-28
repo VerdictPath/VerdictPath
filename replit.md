@@ -1,6 +1,16 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Law Firm Paid Tier Client Limits**: Implemented firm size-based client limits for paid tiers:
+  - Free tier: 10 clients maximum (unchanged)
+  - Small tier: Under 100 clients (99 max)
+  - Medium tier: 100-499 clients (499 max)
+  - Large tier: 500-999 clients (999 max)
+  - Enterprise tier: 1,000+ clients (unlimited)
+  - Added firm_size column to law_firms table with enum constraint
+  - Created centralized subscriptionLimits.js utility for limit calculations
+  - Updated registration and connection controllers to enforce new limits
+  - Pirate-themed error messages for both free and paid tier limits
 - **Free Trial Subscription Limits**: Implemented client/patient limits for free trial accounts:
   - Added subscription_tier column to law_firms and medical_providers tables with default 'free' value
   - Free tier law firms limited to 10 clients maximum
