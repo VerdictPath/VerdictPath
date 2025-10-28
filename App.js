@@ -104,7 +104,9 @@ const CaseCompassApp = () => {
             body: JSON.stringify({
               firmName: email.split('@')[0] + ' Law Firm',
               email: email,
-              password: password
+              password: password,
+              subscriptionTier: tier,
+              firmSize: size || null
             })
           });
           

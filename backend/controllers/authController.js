@@ -123,21 +123,24 @@ exports.registerClient = async (req, res) => {
 
 exports.registerLawFirm = async (req, res) => {
   try {
-    const { firmName, email, password, barNumber, phoneNumber, address } = req.body;
+    const { firmName, email, password, barNumber, phoneNumber, address, subscriptionTier, firmSize } = req.body;
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
     // Generate unique firm code automatically
     const firmCode = await generateUniqueCode('lawfirm');
     
+    const tier = subscriptionTier || 'free';
+    const size = (tier !== 'free' && firmSize) ? firmSize : null;
+    
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
-       street, city, state, zip_code, subscription_tier) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-       RETURNING id, firm_name, firm_code, email, subscription_tier`,
+       street, city, state, zip_code, subscription_tier, firm_size) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+       RETURNING id, firm_name, firm_code, email, subscription_tier, firm_size`,
       [firmName, firmCode, email.toLowerCase(), hashedPassword, barNumber || null, 
        phoneNumber || null, address?.street || null, address?.city || null, 
-       address?.state || null, address?.zipCode || null, 'free']
+       address?.state || null, address?.zipCode || null, tier, size]
     );
     
     const lawFirm = result.rows[0];
@@ -155,7 +158,9 @@ exports.registerLawFirm = async (req, res) => {
         id: lawFirm.id,
         firmName: lawFirm.firm_name,
         firmCode: lawFirm.firm_code,
-        email: lawFirm.email
+        email: lawFirm.email,
+        subscriptionTier: lawFirm.subscription_tier,
+        firmSize: lawFirm.firm_size
       }
     });
   } catch (error) {
