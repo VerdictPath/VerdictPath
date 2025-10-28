@@ -229,12 +229,28 @@ exports.getPatientDetails = async (req, res) => {
     // Get evidence documents
     const evidenceResult = await db.query(
       `SELECT id, file_name, mime_type, file_size, uploaded_at, evidence_type,
-              title, description, location, date_of_incident
+              title, title_encrypted, description, description_encrypted, 
+              location, location_encrypted, date_of_incident
        FROM evidence
        WHERE user_id = $1
        ORDER BY uploaded_at DESC`,
       [patientId]
     );
+    
+    // HIPAA: Decrypt evidence PHI fields and sanitize response
+    const decryptedEvidence = evidenceResult.rows.map(evidence => ({
+      ...evidence,
+      title: evidence.title_encrypted ? 
+        encryption.decrypt(evidence.title_encrypted) : evidence.title,
+      description: evidence.description_encrypted ? 
+        encryption.decrypt(evidence.description_encrypted) : evidence.description,
+      location: evidence.location_encrypted ? 
+        encryption.decrypt(evidence.location_encrypted) : evidence.location,
+      // Remove encrypted fields from output for security
+      title_encrypted: undefined,
+      description_encrypted: undefined,
+      location_encrypted: undefined
+    }));
     
     // Get litigation progress
     const litigationProgressResult = await db.query(
@@ -265,7 +281,7 @@ exports.getPatientDetails = async (req, res) => {
       },
       medicalRecords: medicalRecordsResult.rows || [],
       medicalBilling: billingResult.rows || [],
-      evidence: evidenceResult.rows || [],
+      evidence: decryptedEvidence || [],
       litigationProgress: {
         progress: litigationProgressResult.rows[0] || null,
         completedSubstages: completedSubstagesResult.rows || []
