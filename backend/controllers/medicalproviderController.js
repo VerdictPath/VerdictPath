@@ -226,6 +226,16 @@ exports.getPatientDetails = async (req, res) => {
       [patientId]
     );
     
+    // Get evidence documents
+    const evidenceResult = await db.query(
+      `SELECT id, file_name, mime_type, file_size, uploaded_at, evidence_type,
+              title, description, location, date_of_incident
+       FROM evidence
+       WHERE user_id = $1
+       ORDER BY uploaded_at DESC`,
+      [patientId]
+    );
+    
     // Get litigation progress
     const litigationProgressResult = await db.query(
       `SELECT id, user_id, current_stage_id, current_stage_name, total_coins_earned,
@@ -253,16 +263,9 @@ exports.getPatientDetails = async (req, res) => {
         displayName: `${lastName}, ${firstName}`,
         email: patient.email
       },
-      medicalRecords: {
-        total: medicalRecordsResult.rows.length,
-        records: medicalRecordsResult.rows
-      },
-      medicalBilling: {
-        total: billingResult.rows.length,
-        totalAmountBilled: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.total_amount || 0), 0),
-        totalAmountDue: billingResult.rows.reduce((sum, bill) => sum + parseFloat(bill.amount_due || 0), 0),
-        bills: billingResult.rows
-      },
+      medicalRecords: medicalRecordsResult.rows || [],
+      medicalBilling: billingResult.rows || [],
+      evidence: evidenceResult.rows || [],
       litigationProgress: {
         progress: litigationProgressResult.rows[0] || null,
         completedSubstages: completedSubstagesResult.rows || []
