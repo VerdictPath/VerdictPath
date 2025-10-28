@@ -1,6 +1,17 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Medical Provider Size Selection**: Added organization size tiers for medical providers, mirroring law firm functionality:
+  - Added provider_size column to medical_providers database table
+  - Four size tiers: Small (up to 100 patients), Medium (101-500), Large (501-1,000), Enterprise (1,000+)
+  - Updated subscription screen with descriptive size selection cards matching law firm UI pattern
+  - Patient limits now based on practice size, not just subscription tier
+  - Backend API endpoints updated to handle providerSize parameter
+  - Fixed hasChanges() logic to prevent false positives on free tier accounts
+  - Pricing structure: Small ($70 basic/$95 premium), Medium ($350/$473), Large ($840/$1,134), Enterprise ($1,750/$2,363)
+  - Consistent UX between law firm and medical provider subscription management
+  - PROVIDER_SIZES constant added to subscriptionPricing.js
+  - Updated subscriptionLimits.js utility to calculate patient limits based on size
 - **Subscription Upgrade/Downgrade Protocol**: Implemented complete subscription management system for law firms and medical providers:
   - Added "Subscription" tab (💳) to both law firm and medical provider dashboards
   - Created full subscription management screens showing current plan, limits, and usage
@@ -10,7 +21,7 @@
   - Real-time display of current subscription tier, organization size, client/patient limits and current counts
   - One-click subscription updates with loading states and success/error alerts
   - Law firms can change both subscription tier and firm size (6 tiers)
-  - Medical providers can change subscription tier (3 tiers: Free, Basic, Premium)
+  - Medical providers can change both subscription tier and practice size (4 tiers)
   - Secure API endpoints with authenticateToken middleware
   - Parameterized database queries for security
   - Comprehensive validation on both frontend and backend
