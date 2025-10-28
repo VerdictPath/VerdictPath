@@ -103,6 +103,24 @@ const RegisterScreen = ({
           </>
         )}
 
+        {(userType === USER_TYPES.LAW_FIRM || userType === USER_TYPES.MEDICAL_PROVIDER) && (
+          <>
+            <TextInput
+              style={commonStyles.input}
+              placeholder="Referral/Invite Code (Optional)"
+              value={inviteCode}
+              onChangeText={(text) => setInviteCode(text.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={8}
+            />
+            {inviteCode && (
+              <Text style={styles.inviteHint}>
+                💰 You'll help your referrer earn rewards!
+              </Text>
+            )}
+          </>
+        )}
+
         <TouchableOpacity style={commonStyles.primaryButton} onPress={onRegister}>
           <Text style={commonStyles.buttonText}>Create Account</Text>
         </TouchableOpacity>

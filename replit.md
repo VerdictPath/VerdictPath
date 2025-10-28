@@ -1,6 +1,11 @@
 # Verdict Path - React Native Mobile App
 
 ## Recent Changes (October 28, 2025)
+- **Invite Code for All User Types**: Added invite/referral code field for Law Firms and Medical Providers on registration:
+  - Law firms and medical providers can now enter an invite code during sign-up
+  - Matches individual user invite code functionality
+  - Helps referrers earn rewards when new firms/providers sign up
+  - Supports universal referral system across all user types
 - **Law Firm Portal Tab Structure**: Refactored Law Firm Client Details Screen to match Medical Provider portal:
   - Converted from single-scroll view to tab-based navigation for better organization
   - Four tabs: Overview (📋), Roadmap (🗺️), Medical Hub (🏥), Evidence Locker (🗃️)
