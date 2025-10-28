@@ -525,3 +525,159 @@ exports.getAllLawFirmForms = async (req, res) => {
     res.status(500).json({ message: 'Error fetching forms', error: error.message });
   }
 };
+
+// Get all documents across all clients (for Medical Hub aggregated view)
+exports.getAllClientDocuments = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    
+    // Get all client IDs for this law firm
+    const clientsResult = await db.query(
+      `SELECT client_id FROM law_firm_clients WHERE law_firm_id = $1`,
+      [lawFirmId]
+    );
+    
+    if (clientsResult.rows.length === 0) {
+      return res.json({
+        medicalRecords: [],
+        medicalBills: [],
+        evidence: []
+      });
+    }
+    
+    const clientIds = clientsResult.rows.map(row => row.client_id);
+    
+    // Fetch medical records for all clients
+    const medicalRecordsResult = await db.query(
+      `SELECT mr.*, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
+       FROM medical_records mr
+       JOIN users u ON mr.user_id = u.id
+       WHERE mr.user_id = ANY($1) AND mr.accessible_by_law_firm = true
+       ORDER BY mr.uploaded_at DESC`,
+      [clientIds]
+    );
+    
+    // Decrypt and format medical records
+    const medicalRecords = medicalRecordsResult.rows.map(record => {
+      const firstName = record.first_name_encrypted ? 
+        encryption.decrypt(record.first_name_encrypted) : record.first_name;
+      const lastName = record.last_name_encrypted ? 
+        encryption.decrypt(record.last_name_encrypted) : record.last_name;
+      
+      return {
+        id: record.id,
+        clientId: record.user_id,
+        clientName: `${lastName}, ${firstName}`,
+        recordType: record.record_type,
+        facilityName: record.facility_name_encrypted ? 
+          encryption.decrypt(record.facility_name_encrypted) : record.facility_name,
+        providerName: record.provider_name_encrypted ? 
+          encryption.decrypt(record.provider_name_encrypted) : record.provider_name,
+        dateOfService: record.date_of_service,
+        description: record.description_encrypted ? 
+          encryption.decrypt(record.description_encrypted) : record.description,
+        fileName: record.file_name,
+        fileSize: record.file_size,
+        uploadedAt: record.uploaded_at,
+        documentUrl: record.document_url
+      };
+    });
+    
+    // Fetch medical bills for all clients
+    const medicalBillsResult = await db.query(
+      `SELECT mb.*, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
+       FROM medical_billing mb
+       JOIN users u ON mb.user_id = u.id
+       WHERE mb.user_id = ANY($1) AND mb.accessible_by_law_firm = true
+       ORDER BY mb.uploaded_at DESC`,
+      [clientIds]
+    );
+    
+    // Decrypt and format medical bills
+    const medicalBills = medicalBillsResult.rows.map(bill => {
+      const firstName = bill.first_name_encrypted ? 
+        encryption.decrypt(bill.first_name_encrypted) : bill.first_name;
+      const lastName = bill.last_name_encrypted ? 
+        encryption.decrypt(bill.last_name_encrypted) : bill.last_name;
+      
+      return {
+        id: bill.id,
+        clientId: bill.user_id,
+        clientName: `${lastName}, ${firstName}`,
+        billingType: bill.billing_type,
+        facilityName: bill.facility_name,
+        billNumber: bill.bill_number,
+        dateOfService: bill.date_of_service,
+        billDate: bill.bill_date,
+        totalAmount: parseFloat(bill.total_amount) || 0,
+        amountDue: parseFloat(bill.amount_due) || 0,
+        description: bill.description_encrypted ? 
+          encryption.decrypt(bill.description_encrypted) : bill.description,
+        fileName: bill.file_name,
+        fileSize: bill.file_size,
+        uploadedAt: bill.uploaded_at,
+        documentUrl: bill.document_url
+      };
+    });
+    
+    // Fetch evidence for all clients
+    const evidenceResult = await db.query(
+      `SELECT e.*, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
+       FROM evidence e
+       JOIN users u ON e.user_id = u.id
+       WHERE e.user_id = ANY($1) AND e.accessible_by_law_firm = true
+       ORDER BY e.uploaded_at DESC`,
+      [clientIds]
+    );
+    
+    // Format evidence
+    const evidence = evidenceResult.rows.map(item => {
+      const firstName = item.first_name_encrypted ? 
+        encryption.decrypt(item.first_name_encrypted) : item.first_name;
+      const lastName = item.last_name_encrypted ? 
+        encryption.decrypt(item.last_name_encrypted) : item.last_name;
+      
+      return {
+        id: item.id,
+        clientId: item.user_id,
+        clientName: `${lastName}, ${firstName}`,
+        evidenceType: item.evidence_type,
+        title: item.title,
+        description: item.description,
+        dateOfIncident: item.date_of_incident,
+        location: item.location,
+        fileName: item.file_name,
+        fileSize: item.file_size,
+        uploadedAt: item.uploaded_at,
+        documentUrl: item.document_url
+      };
+    });
+    
+    // HIPAA: Log aggregated document access
+    await auditLogger.log({
+      actorId: lawFirmId,
+      actorType: 'lawfirm',
+      action: 'VIEW_ALL_CLIENT_DOCUMENTS',
+      entityType: 'Documents',
+      entityId: null,
+      status: 'SUCCESS',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      metadata: {
+        medicalRecordCount: medicalRecords.length,
+        billingRecordCount: medicalBills.length,
+        evidenceCount: evidence.length,
+        clientCount: clientIds.length
+      }
+    });
+    
+    res.json({
+      medicalRecords,
+      medicalBills,
+      evidence
+    });
+  } catch (error) {
+    console.error('Error fetching all client documents:', error);
+    res.status(500).json({ message: 'Error fetching documents', error: error.message });
+  }
+};

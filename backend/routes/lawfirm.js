@@ -74,6 +74,14 @@ router.get('/notifications/unread-count',
   lawfirmController.getUnreadNotificationCount
 );
 
+// Get all client documents (Medical Hub aggregated view)
+router.get('/documents/all',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getAllClientDocuments
+);
+
 // HIPAA Forms Management
 router.get('/forms',
   authenticateToken,

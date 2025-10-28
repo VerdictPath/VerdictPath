@@ -30,7 +30,8 @@ export const API_ENDPOINTS = {
   LAWFIRM: {
     DASHBOARD: '/api/lawfirm/dashboard',
     CLIENT_DETAILS: (clientId) => `/api/lawfirm/client/${clientId}`,
-    UPDATE_STAGE: '/api/lawfirm/litigation-stage'
+    UPDATE_STAGE: '/api/lawfirm/litigation-stage',
+    ALL_DOCUMENTS: '/api/lawfirm/documents/all'
   },
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',

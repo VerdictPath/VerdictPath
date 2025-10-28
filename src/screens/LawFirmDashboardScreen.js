@@ -17,7 +17,31 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
   useEffect(() => {
     fetchDashboardData();
+    fetchAllDocuments();
   }, []);
+
+  const fetchAllDocuments = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.ALL_DOCUMENTS}`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalRecords(data.medicalRecords || []);
+        setEvidence(data.evidence || []);
+        // Store medical bills separately in analytics for now
+        setAnalytics(prev => ({
+          ...prev,
+          medicalBills: data.medicalBills || []
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -266,65 +290,135 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     );
   };
 
-  const renderMedicalHubTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏥 Medical Records Hub</Text>
-        
-        {medicalRecords.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🏴‍☠️</Text>
-            <Text style={styles.emptyText}>No medical records yet</Text>
-            <Text style={styles.emptySubtext}>
-              Medical records will appear here once clients upload them
-            </Text>
-          </View>
-        ) : (
-          medicalRecords.map((record, index) => (
-            <View key={index} style={styles.recordCard}>
-              <View style={styles.recordHeader}>
-                <Text style={styles.recordTitle}>📄 {record.type}</Text>
-                <Text style={styles.recordBadge}>{record.status}</Text>
-              </View>
-              <Text style={styles.recordClient}>Client: {record.clientName}</Text>
-              <Text style={styles.recordDate}>
-                Uploaded: {new Date(record.uploadedDate).toLocaleDateString()}
+  const renderMedicalHubTab = () => {
+    const medicalBills = analytics?.medicalBills || [];
+    const totalBilled = medicalBills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0);
+
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📋 Medical Records</Text>
+          
+          {medicalRecords.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🏥</Text>
+              <Text style={styles.emptyText}>No medical records uploaded yet</Text>
+              <Text style={styles.emptySubtext}>
+                Medical records will appear here once clients upload them
               </Text>
             </View>
-          ))
-        )}
-      </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💊 Billing Summary</Text>
-        <View style={styles.billingSummary}>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Total Billed:</Text>
-            <Text style={styles.billingValue}>${(analytics?.totalBilling || 0).toLocaleString()}</Text>
-          </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Total Records:</Text>
-            <Text style={styles.billingValue}>{analytics?.totalRecords || 0}</Text>
-          </View>
+          ) : (
+            medicalRecords.map((record) => (
+              <View key={record.id} style={styles.recordCard}>
+                <View style={styles.recordHeader}>
+                  <Text style={styles.recordTitle}>📄 {record.recordType || 'Medical Record'}</Text>
+                  <Text style={styles.recordBadge}>{record.fileName}</Text>
+                </View>
+                <Text style={styles.recordClient}>Client: {record.clientName}</Text>
+                {record.facilityName && (
+                  <Text style={styles.recordDetail}>🏥 {record.facilityName}</Text>
+                )}
+                {record.dateOfService && (
+                  <Text style={styles.recordDetail}>
+                    📅 Service: {new Date(record.dateOfService).toLocaleDateString()}
+                  </Text>
+                )}
+                <Text style={styles.recordDate}>
+                  Uploaded: {new Date(record.uploadedAt).toLocaleDateString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💊 Medical Bills</Text>
+          
+          {medicalBills.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>💰</Text>
+              <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
+              <Text style={styles.emptySubtext}>
+                Medical bills will appear here once clients upload them
+              </Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.billingSummary}>
+                <View style={styles.billingRow}>
+                  <Text style={styles.billingLabel}>Total Billed:</Text>
+                  <Text style={styles.billingValue}>${totalBilled.toLocaleString()}</Text>
+                </View>
+                <View style={styles.billingRow}>
+                  <Text style={styles.billingLabel}>Total Bills:</Text>
+                  <Text style={styles.billingValue}>{medicalBills.length}</Text>
+                </View>
+              </View>
+              
+              {medicalBills.map((bill) => (
+                <View key={bill.id} style={styles.recordCard}>
+                  <View style={styles.recordHeader}>
+                    <Text style={styles.recordTitle}>💰 {bill.billingType || 'Medical Bill'}</Text>
+                    <Text style={styles.recordBadge}>${bill.totalAmount.toFixed(2)}</Text>
+                  </View>
+                  <Text style={styles.recordClient}>Client: {bill.clientName}</Text>
+                  {bill.facilityName && (
+                    <Text style={styles.recordDetail}>🏥 {bill.facilityName}</Text>
+                  )}
+                  {bill.billNumber && (
+                    <Text style={styles.recordDetail}>📝 Bill #: {bill.billNumber}</Text>
+                  )}
+                  {bill.dateOfService && (
+                    <Text style={styles.recordDetail}>
+                      📅 Service: {new Date(bill.dateOfService).toLocaleDateString()}
+                    </Text>
+                  )}
+                  <Text style={styles.recordDate}>
+                    Uploaded: {new Date(bill.uploadedAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+        </View>
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📎 Evidence Documents</Text>
+          
+          {evidence.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📂</Text>
+              <Text style={styles.emptyText}>No evidence uploaded yet</Text>
+              <Text style={styles.emptySubtext}>
+                Evidence documents will appear here once clients upload them
+              </Text>
+            </View>
+          ) : (
+            evidence.map((item) => (
+              <View key={item.id} style={styles.recordCard}>
+                <View style={styles.recordHeader}>
+                  <Text style={styles.recordTitle}>📎 {item.title || 'Evidence'}</Text>
+                  <Text style={styles.recordBadge}>{item.evidenceType}</Text>
+                </View>
+                <Text style={styles.recordClient}>Client: {item.clientName}</Text>
+                {item.description && (
+                  <Text style={styles.recordDetail}>{item.description}</Text>
+                )}
+                {item.dateOfIncident && (
+                  <Text style={styles.recordDetail}>
+                    📅 Incident: {new Date(item.dateOfIncident).toLocaleDateString()}
+                  </Text>
+                )}
+                <Text style={styles.recordDate}>
+                  Uploaded: {new Date(item.uploadedAt).toLocaleDateString()}
+                </Text>
+              </View>
+            ))
+          )}
         </View>
       </View>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📋 HIPAA Forms</Text>
-        <View style={styles.hipaaSection}>
-          <Text style={styles.hipaaDescription}>
-            Manage consent forms and authorizations for sharing client medical information
-          </Text>
-          <TouchableOpacity 
-            style={styles.hipaaButton}
-            onPress={() => onNavigate('hipaaForms')}
-          >
-            <Text style={styles.hipaaButtonText}>📄 View HIPAA Forms</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderEvidenceTab = () => (
     <View style={styles.tabContent}>
@@ -757,6 +851,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginBottom: 4,
+  },
+  recordDetail: {
+    fontSize: 13,
+    color: theme.colors.textPrimary,
+    marginBottom: 3,
   },
   recordDate: {
     fontSize: 12,
