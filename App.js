@@ -427,25 +427,20 @@ const CaseCompassApp = () => {
     const currentStage = litigationStages.find(s => s.id === stageId);
     if (!currentStage || !currentStage.completed) return;
     
-    let totalCoinsToRemove = stageCoins;
-    const completedSubStages = currentStage.subStages?.filter(s => s.completed) || [];
-    completedSubStages.forEach(subStage => {
-      totalCoinsToRemove += subStage.coins;
-    });
-    
     if (user && user.token) {
       try {
-        const response = await apiRequest(API_ENDPOINTS.COINS.UPDATE, {
+        // Call backend to revert the stage
+        const response = await apiRequest(API_ENDPOINTS.LITIGATION.REVERT_STAGE, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${user.token}`
           },
           body: JSON.stringify({
-            coinsDelta: -totalCoinsToRemove,
-            source: `stage_reverted:${stageId}`
+            stageId: stageId
           })
         });
         
+        // Update local state to reflect the revert
         setLitigationStages(prevStages => 
           prevStages.map(stage => {
             if (stage.id === stageId && stage.completed) {
@@ -459,68 +454,17 @@ const CaseCompassApp = () => {
           })
         );
         
-        setCoins(response.totalCoins);
-        Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+        Alert.alert(
+          'Stage Reverted',
+          'This stage is now marked as incomplete.\n\n💰 Note: Previously earned coins are preserved and cannot be earned again when you re-complete this stage.'
+        );
         
       } catch (error) {
-        console.error('Failed to revert coins:', error);
-        
-        if (error.message && error.message.includes('Cannot refund all coins')) {
-          try {
-            const errorData = JSON.parse(error.message.match(/\{.*\}/)?.[0] || '{}');
-            const maxRefund = errorData.maxRefund || 0;
-            const coinsSpent = errorData.coinsSpent || 0;
-            
-            Alert.alert(
-              '⚠️ Cannot Fully Revert',
-              `You've already converted ${coinsSpent} coins to credits.\n\nOnly ${maxRefund} coins can be refunded.\n\nTo revert this stage, you'll lose those converted coins permanently.`,
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Revert Anyway',
-                  style: 'destructive',
-                  onPress: async () => {
-                    setLitigationStages(prevStages => 
-                      prevStages.map(stage => {
-                        if (stage.id === stageId && stage.completed) {
-                          const updatedSubStages = stage.subStages?.map(subStage => {
-                            return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
-                          }) || [];
-                          
-                          return { ...stage, completed: false, subStages: updatedSubStages };
-                        }
-                        return stage;
-                      })
-                    );
-                    
-                    setCoins(prevCoins => Math.max(0, prevCoins - maxRefund));
-                    Alert.alert('Stage Reverted', `Stage reverted. ${maxRefund} coins removed.`);
-                  }
-                }
-              ]
-            );
-          } catch (parseError) {
-            Alert.alert('Error', 'Cannot revert this stage - some coins were already converted to credits.');
-          }
-        } else {
-          setLitigationStages(prevStages => 
-            prevStages.map(stage => {
-              if (stage.id === stageId && stage.completed) {
-                const updatedSubStages = stage.subStages?.map(subStage => {
-                  return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
-                }) || [];
-                
-                return { ...stage, completed: false, subStages: updatedSubStages };
-              }
-              return stage;
-            })
-          );
-          
-          setCoins(prevCoins => Math.max(0, prevCoins - totalCoinsToRemove));
-          Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
-        }
+        console.error('Failed to revert stage:', error);
+        Alert.alert('Error', error.message || 'Failed to revert stage. Please try again.');
       }
     } else {
+      // Offline mode - just update local state
       setLitigationStages(prevStages => 
         prevStages.map(stage => {
           if (stage.id === stageId && stage.completed) {
@@ -534,14 +478,10 @@ const CaseCompassApp = () => {
         })
       );
       
-      setCoins(prevCoins => {
-        const newBalance = Math.max(0, prevCoins - totalCoinsToRemove);
-        if (newBalance === 0 && prevCoins < totalCoinsToRemove) {
-          console.warn(`Coin underflow prevented: attempted to remove ${totalCoinsToRemove} coins but only had ${prevCoins}`);
-        }
-        return newBalance;
-      });
-      Alert.alert('Stage Reverted', `This stage is now marked as incomplete. ${totalCoinsToRemove} coins removed.`);
+      Alert.alert(
+        'Stage Reverted',
+        'This stage is now marked as incomplete (offline mode).'
+      );
     }
   };
 

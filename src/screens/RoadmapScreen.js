@@ -306,7 +306,7 @@ const RoadmapScreen = ({
     if (Platform.OS === 'web') {
       setConfirmModalData({
         title: 'Revert Stage?',
-        message: `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
+        message: `Mark "${currentStage.name}" as incomplete?\n\n💰 Note: Previously earned coins (${totalCoins} total) are preserved and cannot be earned again when you re-complete this stage.\n\nThis prevents coin farming while allowing you to update your progress.`,
         onConfirm: () => {
           onUncompleteStage(currentStage.id, currentStage.coins);
           setConfirmModalVisible(false);
@@ -320,7 +320,7 @@ const RoadmapScreen = ({
     } else {
       alert(
         'Revert Stage?',
-        `Mark "${currentStage.name}" as incomplete?\n\nYou'll lose:\n• ${subStageCoins} coins from ${completedSubs.length} completed steps\n• ${currentStage.coins} bonus coins\n\nTotal: ${totalCoins} coins will be removed`,
+        `Mark "${currentStage.name}" as incomplete?\n\n💰 Note: Previously earned coins (${totalCoins} total) are preserved and cannot be earned again when you re-complete this stage.\n\nThis prevents coin farming while allowing you to update your progress.`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
