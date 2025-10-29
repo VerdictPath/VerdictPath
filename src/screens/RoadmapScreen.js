@@ -236,18 +236,29 @@ const RoadmapScreen = ({
 
       if (response.ok) {
         console.log('[RoadmapScreen] Success! Updating local state...');
-        // Update local state
-        onCompleteSubStage(selectedStage.id, subStageId, subStageCoins);
+        console.log('[RoadmapScreen] Coins earned from backend:', data.coinsEarned);
+        
+        // Update local state with ACTUAL coins earned (may be 0 if already earned before)
+        const actualCoinsEarned = data.coinsEarned || 0;
+        onCompleteSubStage(selectedStage.id, subStageId, actualCoinsEarned);
         
         // Show celebration if phase transition occurred
         if (phaseTransition) {
           const celebrationMessage = getPhaseCelebrationMessage(phaseTransition);
           alert('🎉 Major Milestone!', celebrationMessage);
         } else {
-          alert(
-            '✅ Task Completed!',
-            `You earned ${subStageCoins} coins! Your progress has been updated.`
-          );
+          // Show different message if coins were already earned before
+          if (data.coinsAlreadyEarnedBefore) {
+            alert(
+              '✅ Task Completed!',
+              `Progress updated! (Coins were already earned previously - cannot earn them again)`
+            );
+          } else {
+            alert(
+              '✅ Task Completed!',
+              `You earned ${actualCoinsEarned} coins! Your progress has been updated.`
+            );
+          }
         }
       } else {
         console.error('[RoadmapScreen] API error:', data.error);

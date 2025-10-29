@@ -391,35 +391,54 @@ const CaseCompassApp = () => {
   };
 
   const handleCompleteStage = async (stageId, stageCoins) => {
-    setLitigationStages(prevStages => 
-      prevStages.map(s => 
-        s.id === stageId && !s.completed ? { ...s, completed: true } : s
-      )
-    );
-    
-    if (user && user.token) {
-      try {
-        const response = await apiRequest(API_ENDPOINTS.COINS.UPDATE, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          },
-          body: JSON.stringify({
-            coinsDelta: stageCoins,
-            source: `stage_completed:${stageId}`
-          })
-        });
-        
-        setCoins(response.totalCoins);
-        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
-      } catch (error) {
-        console.error('Failed to update coins:', error);
-        setCoins(prevCoins => prevCoins + stageCoins);
-        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
-      }
-    } else {
+    if (!user || !user.token) {
+      // Offline mode - just update local state
+      setLitigationStages(prevStages => 
+        prevStages.map(s => 
+          s.id === stageId && !s.completed ? { ...s, completed: true } : s
+        )
+      );
       setCoins(prevCoins => prevCoins + stageCoins);
-      Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${stageCoins} coins!`);
+      Alert.alert('🎉 Congratulations!', `You completed this stage (offline mode)!`);
+      return;
+    }
+
+    try {
+      const stage = litigationStages.find(s => s.id === stageId);
+      
+      // Call backend litigation stage completion endpoint (with coin farming prevention)
+      const response = await apiRequest(API_ENDPOINTS.LITIGATION.COMPLETE_STAGE, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          stageId: stageId,
+          stageName: stage?.name || `Stage ${stageId}`,
+          coinsEarned: stageCoins,
+          allSubstagesCompleted: true
+        })
+      });
+      
+      // Update local state
+      setLitigationStages(prevStages => 
+        prevStages.map(s => 
+          s.id === stageId && !s.completed ? { ...s, completed: true } : s
+        )
+      );
+      
+      // Add coins from backend response (may be 0 if already earned)
+      const actualCoinsEarned = response.coinsEarned || 0;
+      setCoins(prevCoins => prevCoins + actualCoinsEarned);
+      
+      if (actualCoinsEarned > 0) {
+        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${actualCoinsEarned} coins!`);
+      } else {
+        Alert.alert('🎉 Stage Completed!', `Stage marked complete! (Coins were already earned previously)`);
+      }
+    } catch (error) {
+      console.error('Failed to complete stage:', error);
+      Alert.alert('Error', error.message || 'Failed to complete stage. Please try again.');
     }
   };
 
@@ -501,6 +520,7 @@ const CaseCompassApp = () => {
         if (stage.id === stageId) {
           const updatedSubStages = stage.subStages.map(subStage => {
             if (subStage.id === subStageId && !subStage.completed) {
+              // Only add coins from the backend response (could be 0 if already earned)
               setCoins(prevCoins => prevCoins + subStageCoins);
               // Note: Success alert is shown in RoadmapScreen after backend completion
               return { ...subStage, completed: true };
@@ -508,14 +528,8 @@ const CaseCompassApp = () => {
             return subStage;
           });
 
-          const allSubStagesComplete = updatedSubStages.every(sub => sub.completed);
-          
-          if (allSubStagesComplete && !stage.completed && updatedSubStages.length > 0) {
-            setCoins(prevCoins => prevCoins + stage.coins);
-            // Note: Success alert is shown in RoadmapScreen after backend completion
-            return { ...stage, subStages: updatedSubStages, completed: true };
-          }
-
+          // DON'T auto-complete the stage here - user must explicitly click "Complete Stage" button
+          // This prevents coin farming by ensuring stage bonus goes through backend validation
           return { ...stage, subStages: updatedSubStages };
         }
         return stage;
