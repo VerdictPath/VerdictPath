@@ -46,8 +46,9 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
-- **Project Structure**: Modular, organized into `src/screens/` and `src/components/`.
+- **Project Structure**: Modular, organized into `src/screens/` and `src/components/`. Monorepo structure with frontend at root and backend in `backend/` subdirectory.
 - **Backend**: Node.js/Express (port 5000) with PostgreSQL for user authentication, client management, litigation tracking, and HIPAA-compliant data handling.
+- **Deployment**: Railway deployment configured via `railway.json`, `nixpacks.toml`, and `Procfile` to ensure backend server runs correctly. Frontend (Expo) is for local development only; Railway deploys backend API.
 - **HIPAA Security**: Implements AES-256-GCM encryption for PHI at rest, Role-Based Access Control (RBAC) with 6 roles and 23 granular permissions, Patient Consent Management, comprehensive audit logging, and account security measures.
 - **Litigation Progress Tracking**: Comprehensive backend integration for tracking user progress through a 9-stage litigation journey with 60 substages, including database tables, API endpoints, automatic coin rewards, and real-time progress display.
 - **Client/Patient Management**: Includes real-time search functionality by name or email, restructured portals with tab-based navigation (Overview, Roadmap, Medical Hub, Evidence Locker) for individual client/patient details, and robust connection management for users.
