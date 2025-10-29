@@ -64,9 +64,9 @@ const getUserProgress = async (req, res) => {
     // Ensure progress record exists
     const progress = await ensureProgressRecord(userId);
 
-    // Get completed substages
+    // Get completed substages (exclude reverted ones)
     const substagesResult = await db.query(
-      'SELECT * FROM litigation_substage_completions WHERE user_id = $1 ORDER BY completed_at DESC',
+      'SELECT * FROM litigation_substage_completions WHERE user_id = $1 AND is_reverted = FALSE ORDER BY completed_at DESC',
       [userId]
     );
 
@@ -116,45 +116,83 @@ const completeSubstage = async (req, res) => {
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
 
-    // Check if already completed
+    // Check if a completion record exists (active or reverted)
     const existing = await db.query(
-      'SELECT id FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3',
+      'SELECT id, coins_earned, is_reverted FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3',
       [userId, stageId, substageId]
     );
 
-    if (existing.rows.length > 0) {
+    // If active (not reverted) completion exists, user can't complete again
+    if (existing.rows.length > 0 && !existing.rows[0].is_reverted) {
       return res.status(400).json({ error: 'Substage already completed' });
     }
 
-    // Insert completion record
-    const result = await db.query(
-      `INSERT INTO litigation_substage_completions 
-       (user_id, stage_id, stage_name, substage_id, substage_name, substage_type, coins_earned, data_value, file_ids)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [userId, stageId, stageName, substageId, substageName, substageType || 'upload', coinsEarned || 0, dataValue, fileIds || []]
-    );
+    // Check if coins were previously earned for this substage
+    // This prevents coin farming - coins can only be earned once ever
+    const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
+    const coinsToAward = coinsAlreadyEarned ? 0 : (coinsEarned || 0);
 
-    // Update user's total coins
-    await db.query(
-      'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
-      [coinsEarned || 0, userId]
-    );
+    let result;
+    if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
+      // Re-activate the reverted completion
+      result = await db.query(
+        `UPDATE litigation_substage_completions 
+         SET is_reverted = FALSE, 
+             reverted_at = NULL,
+             completed_at = CURRENT_TIMESTAMP,
+             data_value = $1,
+             file_ids = $2
+         WHERE id = $3
+         RETURNING *`,
+        [dataValue, fileIds || [], existing.rows[0].id]
+      );
+    } else {
+      // Insert new completion record
+      result = await db.query(
+        `INSERT INTO litigation_substage_completions 
+         (user_id, stage_id, stage_name, substage_id, substage_name, substage_type, coins_earned, data_value, file_ids, is_reverted)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE)
+         RETURNING *`,
+        [userId, stageId, stageName, substageId, substageName, substageType || 'upload', coinsToAward, dataValue, fileIds || []]
+      );
+    }
 
-    // Update progress totals
-    await db.query(
-      `UPDATE user_litigation_progress 
-       SET total_coins_earned = total_coins_earned + $1,
-           total_substages_completed = total_substages_completed + 1,
-           last_activity_at = CURRENT_TIMESTAMP
-       WHERE user_id = $2`,
-      [coinsEarned || 0, userId]
-    );
+    // Update user's total coins (only if coins are awarded)
+    if (coinsToAward > 0) {
+      await db.query(
+        'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
+        [coinsToAward, userId]
+      );
+
+      // Update progress totals
+      await db.query(
+        `UPDATE user_litigation_progress 
+         SET total_coins_earned = total_coins_earned + $1,
+             total_substages_completed = total_substages_completed + 1,
+             last_activity_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2`,
+        [coinsToAward, userId]
+      );
+    } else {
+      // Just update substage count, no coins
+      await db.query(
+        `UPDATE user_litigation_progress 
+         SET total_substages_completed = total_substages_completed + 1,
+             last_activity_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1`,
+        [userId]
+      );
+    }
+
+    const message = coinsAlreadyEarned 
+      ? 'Substage completed successfully (coins already earned previously)'
+      : 'Substage completed successfully';
 
     res.json({
-      message: 'Substage completed successfully',
+      message: message,
       completion: result.rows[0],
-      coinsEarned: coinsEarned || 0
+      coinsEarned: coinsToAward,
+      coinsAlreadyEarnedBefore: coinsAlreadyEarned
     });
   } catch (error) {
     console.error('Error completing substage:', error);
@@ -330,10 +368,103 @@ const getClientProgress = async (req, res) => {
   }
 };
 
+// Revert (uncomplete) a substage
+const revertSubstage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { stageId, substageId } = req.body;
+
+    if (!stageId || !substageId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Find the completion record
+    const existing = await db.query(
+      'SELECT * FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3 AND is_reverted = FALSE',
+      [userId, stageId, substageId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Substage completion not found or already reverted' });
+    }
+    
+    // Mark as reverted instead of deleting (preserves coin history)
+    await db.query(
+      `UPDATE litigation_substage_completions 
+       SET is_reverted = TRUE, 
+           reverted_at = CURRENT_TIMESTAMP 
+       WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3`,
+      [userId, stageId, substageId]
+    );
+
+    // Note: Coins are NOT refunded - they remain as earned but user can't earn them again
+    // This prevents coin farming by reverting and re-completing
+
+    // Update progress totals
+    await db.query(
+      `UPDATE user_litigation_progress 
+       SET total_substages_completed = GREATEST(0, total_substages_completed - 1),
+           last_activity_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1`,
+      [userId]
+    );
+
+    res.json({
+      message: 'Substage reverted successfully (coins preserved to prevent farming)',
+      substageId: substageId,
+      coinsNotRefunded: true
+    });
+  } catch (error) {
+    console.error('Error reverting substage:', error);
+    res.status(500).json({ error: 'Failed to revert substage' });
+  }
+};
+
+// Revert (uncomplete) an entire stage
+const revertStage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { stageId } = req.body;
+
+    if (!stageId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Delete all substage completions for this stage
+    await db.query(
+      'DELETE FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2',
+      [userId, stageId]
+    );
+
+    // Delete stage completion record
+    const stageResult = await db.query(
+      'DELETE FROM litigation_stage_completions WHERE user_id = $1 AND stage_id = $2 RETURNING *',
+      [userId, stageId]
+    );
+
+    if (stageResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Stage completion not found' });
+    }
+
+    // Note: Coins are NOT refunded - they remain as earned but user can't earn them again
+    // This prevents coin farming
+
+    res.json({
+      message: 'Stage reverted successfully',
+      stageId: stageId
+    });
+  } catch (error) {
+    console.error('Error reverting stage:', error);
+    res.status(500).json({ error: 'Failed to revert stage' });
+  }
+};
+
 module.exports = {
   getUserProgress,
   completeSubstage,
   completeStage,
   updateVideoProgress,
-  getClientProgress
+  getClientProgress,
+  revertSubstage,
+  revertStage
 };
