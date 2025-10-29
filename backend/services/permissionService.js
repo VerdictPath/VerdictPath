@@ -9,10 +9,46 @@ class PermissionService {
    * Check if a user has a specific permission
    * @param {number} userId - User ID to check
    * @param {string} permissionName - Permission name to check
+   * @param {string} userType - User type ('client', 'lawfirm', 'medical_provider')
    * @returns {Promise<boolean>} - True if user has permission
    */
-  async checkPermission(userId, permissionName) {
+  async checkPermission(userId, permissionName, userType = 'client') {
     try {
+      // For law firms and medical providers, grant role permissions directly
+      // since they're in separate tables from the users table
+      if (userType === 'lawfirm') {
+        // Law firms get LAW_FIRM_ADMIN permissions
+        const query = `
+          SELECT EXISTS (
+            SELECT 1
+            FROM roles r
+            JOIN role_permissions rp ON r.id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.id
+            WHERE r.name = 'LAW_FIRM_ADMIN'
+              AND p.name = $1
+          ) as has_permission
+        `;
+        const result = await db.query(query, [permissionName]);
+        return result.rows[0]?.has_permission || false;
+      }
+      
+      if (userType === 'medical_provider') {
+        // Medical providers get MEDICAL_PROVIDER_ADMIN permissions
+        const query = `
+          SELECT EXISTS (
+            SELECT 1
+            FROM roles r
+            JOIN role_permissions rp ON r.id = rp.role_id
+            JOIN permissions p ON rp.permission_id = p.id
+            WHERE r.name = 'MEDICAL_PROVIDER_ADMIN'
+              AND p.name = $1
+          ) as has_permission
+        `;
+        const result = await db.query(query, [permissionName]);
+        return result.rows[0]?.has_permission || false;
+      }
+      
+      // For regular users, check user_roles table
       const query = `
         SELECT EXISTS (
           SELECT 1

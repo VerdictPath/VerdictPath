@@ -17,7 +17,7 @@ const requirePermission = (permissionName) => {
       }
       
       // Check if user has the required permission
-      const hasPermission = await permissionService.checkPermission(userId, permissionName);
+      const hasPermission = await permissionService.checkPermission(userId, permissionName, userType);
       
       if (!hasPermission) {
         // Log permission denial
