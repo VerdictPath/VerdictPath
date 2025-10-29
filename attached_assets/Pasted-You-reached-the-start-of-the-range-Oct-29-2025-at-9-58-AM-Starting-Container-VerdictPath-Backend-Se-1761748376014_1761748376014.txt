@@ -1,0 +1,86 @@
+You reached the start of the range
+Oct 29, 2025 at 9:58 AM
+Starting Container
+VerdictPath Backend Server running on port 5000
+API endpoints available at http://localhost:5000/api
+Web portal available at http://localhost:5000/portal
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+    at /app/node_modules/pg-pool/index.js:45:11
+  port: 5432
+}
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
+Account lockout check failed: Error: connect ECONNREFUSED ::1:5432
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async checkAccountLockout (/app/middleware/security.js:33:20) {
+  errno: -111,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '::1',
+  port: 5432
+}
