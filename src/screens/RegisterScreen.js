@@ -16,6 +16,14 @@ const RegisterScreen = ({
   setFirmCode,
   inviteCode,
   setInviteCode,
+  firstName,
+  setFirstName,
+  lastName,
+  setLastName,
+  firmName,
+  setFirmName,
+  providerName,
+  setProviderName,
   onRegister, 
   onNavigate 
 }) => {
@@ -53,6 +61,45 @@ const RegisterScreen = ({
             </Text>
           </TouchableOpacity>
         </View>
+
+        {userType === USER_TYPES.INDIVIDUAL && (
+          <>
+            <TextInput
+              style={commonStyles.input}
+              placeholder="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              autoCapitalize="words"
+            />
+            <TextInput
+              style={commonStyles.input}
+              placeholder="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              autoCapitalize="words"
+            />
+          </>
+        )}
+
+        {userType === USER_TYPES.LAW_FIRM && (
+          <TextInput
+            style={commonStyles.input}
+            placeholder="Law Firm Name"
+            value={firmName}
+            onChangeText={setFirmName}
+            autoCapitalize="words"
+          />
+        )}
+
+        {userType === USER_TYPES.MEDICAL_PROVIDER && (
+          <TextInput
+            style={commonStyles.input}
+            placeholder="Medical Provider/Practice Name"
+            value={providerName}
+            onChangeText={setProviderName}
+            autoCapitalize="words"
+          />
+        )}
 
         <TextInput
           style={commonStyles.input}

@@ -32,6 +32,10 @@ const CaseCompassApp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firmName, setFirmName] = useState('');
+  const [providerName, setProviderName] = useState('');
   const [firmCode, setFirmCode] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
