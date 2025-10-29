@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { getStageCoins, getSubstageCoins } = require('../config/litigationRewards');
 
 // Helper function to check and update phase transitions based on stage completion
 const updatePhaseOnStageCompletion = async (userId, completedStageId) => {
@@ -70,9 +71,9 @@ const getUserProgress = async (req, res) => {
       [userId]
     );
 
-    // Get completed stages
+    // Get completed stages (exclude reverted ones)
     const stagesResult = await db.query(
-      'SELECT * FROM litigation_stage_completions WHERE user_id = $1 ORDER BY stage_id',
+      'SELECT * FROM litigation_stage_completions WHERE user_id = $1 AND is_reverted = FALSE ORDER BY stage_id',
       [userId]
     );
 
@@ -104,7 +105,6 @@ const completeSubstage = async (req, res) => {
       substageId, 
       substageName, 
       substageType, 
-      coinsEarned, 
       dataValue, 
       fileIds 
     } = req.body;
@@ -112,6 +112,10 @@ const completeSubstage = async (req, res) => {
     if (!stageId || !substageId || !substageName) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // SECURITY: Get canonical coin value from server (NEVER trust client)
+    const canonicalCoins = getSubstageCoins(substageId);
+    console.log(`[Security] Substage ${substageId} canonical coins: ${canonicalCoins}`);
 
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
@@ -130,7 +134,7 @@ const completeSubstage = async (req, res) => {
     // Check if coins were previously earned for this substage
     // This prevents coin farming - coins can only be earned once ever
     const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
-    const coinsToAward = coinsAlreadyEarned ? 0 : (coinsEarned || 0);
+    const coinsToAward = coinsAlreadyEarned ? 0 : canonicalCoins;
 
     let result;
     if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
@@ -204,39 +208,69 @@ const completeSubstage = async (req, res) => {
 const completeStage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { stageId, stageName, coinsEarned, allSubstagesCompleted } = req.body;
+    const { stageId, stageName, allSubstagesCompleted } = req.body;
 
     if (!stageId || !stageName) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // SECURITY: Get canonical coin value from server (NEVER trust client)
+    const canonicalCoins = getStageCoins(stageId);
+    console.log(`[Security] Stage ${stageId} canonical coins: ${canonicalCoins}`);
+
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
 
-    // Check if already completed
+    // Check if a completion record exists (active or reverted)
     const existing = await db.query(
-      'SELECT id FROM litigation_stage_completions WHERE user_id = $1 AND stage_id = $2',
+      'SELECT id, coins_earned, is_reverted FROM litigation_stage_completions WHERE user_id = $1 AND stage_id = $2',
       [userId, stageId]
     );
 
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Stage already completed' });
+    // If active (not reverted) completion exists, user can't complete again
+    if (existing.rows.length > 0 && !existing.rows[0].is_reverted) {
+      return res.json({
+        message: 'Stage already completed (coins already earned)',
+        completion: existing.rows[0],
+        coinsEarned: 0,
+        coinsAlreadyEarnedBefore: true
+      });
     }
 
-    // Insert completion record
-    const result = await db.query(
-      `INSERT INTO litigation_stage_completions 
-       (user_id, stage_id, stage_name, coins_earned, all_substages_completed)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [userId, stageId, stageName, coinsEarned || 0, allSubstagesCompleted !== false]
-    );
+    // Check if coins were previously earned for this stage
+    const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
+    const coinsToAward = coinsAlreadyEarned ? 0 : canonicalCoins;
 
-    // Update user's total coins
-    await db.query(
-      'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
-      [coinsEarned || 0, userId]
-    );
+    let result;
+    if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
+      // Re-activate the reverted completion
+      result = await db.query(
+        `UPDATE litigation_stage_completions 
+         SET is_reverted = FALSE, 
+             reverted_at = NULL,
+             completed_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [existing.rows[0].id]
+      );
+    } else {
+      // Insert new completion record with canonical coins
+      result = await db.query(
+        `INSERT INTO litigation_stage_completions 
+         (user_id, stage_id, stage_name, coins_earned, all_substages_completed, is_reverted)
+         VALUES ($1, $2, $3, $4, $5, FALSE)
+         RETURNING *`,
+        [userId, stageId, stageName, coinsToAward, allSubstagesCompleted !== false]
+      );
+    }
+
+    // Update user's total coins (only if coins are being awarded)
+    if (coinsToAward > 0) {
+      await db.query(
+        'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
+        [coinsToAward, userId]
+      );
+    }
 
     // Update current stage - handle all stages including stage 9 (final stage)
     const stageNames = [
@@ -255,7 +289,7 @@ const completeStage = async (req, res) => {
              progress_percentage = ($1::DECIMAL / 9 * 100),
              last_activity_at = CURRENT_TIMESTAMP
          WHERE user_id = $4`,
-        [nextStageId, stageNames[nextStageId - 1], coinsEarned || 0, userId]
+        [nextStageId, stageNames[nextStageId - 1], coinsToAward, userId]
       );
     } else if (stageId === 9) {
       // Final stage completed - mark as 100% complete
@@ -267,17 +301,22 @@ const completeStage = async (req, res) => {
              progress_percentage = 100.00,
              last_activity_at = CURRENT_TIMESTAMP
          WHERE user_id = $2`,
-        [coinsEarned || 0, userId]
+        [coinsToAward, userId]
       );
     }
 
     // Check for phase transition based on stage completion
     const newPhase = await updatePhaseOnStageCompletion(userId, stageId);
 
+    const message = coinsAlreadyEarned 
+      ? 'Stage completed successfully (coins already earned previously)'
+      : 'Stage completed successfully';
+
     res.json({
-      message: 'Stage completed successfully',
+      message: message,
       completion: result.rows[0],
-      coinsEarned: coinsEarned || 0,
+      coinsEarned: coinsToAward,
+      coinsAlreadyEarnedBefore: coinsAlreadyEarned,
       phaseTransition: newPhase ? { newPhase } : null
     });
   } catch (error) {
@@ -430,28 +469,51 @@ const revertStage = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Delete all substage completions for this stage
+    // Mark all substage completions as reverted for this stage
     await db.query(
-      'DELETE FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2',
+      `UPDATE litigation_substage_completions 
+       SET is_reverted = TRUE, 
+           reverted_at = CURRENT_TIMESTAMP 
+       WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE`,
       [userId, stageId]
     );
 
-    // Delete stage completion record
+    // Mark stage completion record as reverted
     const stageResult = await db.query(
-      'DELETE FROM litigation_stage_completions WHERE user_id = $1 AND stage_id = $2 RETURNING *',
+      `UPDATE litigation_stage_completions 
+       SET is_reverted = TRUE, 
+           reverted_at = CURRENT_TIMESTAMP 
+       WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE
+       RETURNING *`,
       [userId, stageId]
     );
 
     if (stageResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Stage completion not found' });
+      return res.status(404).json({ error: 'Stage completion not found or already reverted' });
     }
 
     // Note: Coins are NOT refunded - they remain as earned but user can't earn them again
     // This prevents coin farming
 
+    // Update progress totals (substage count reduced)
+    const substageCount = await db.query(
+      'SELECT COUNT(*) as count FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2',
+      [userId, stageId]
+    );
+    const countToReduce = substageCount.rows[0]?.count || 0;
+
+    await db.query(
+      `UPDATE user_litigation_progress 
+       SET total_substages_completed = GREATEST(0, total_substages_completed - $1),
+           last_activity_at = CURRENT_TIMESTAMP
+       WHERE user_id = $2`,
+      [countToReduce, userId]
+    );
+
     res.json({
-      message: 'Stage reverted successfully',
-      stageId: stageId
+      message: 'Stage reverted successfully (coins preserved to prevent farming)',
+      stageId: stageId,
+      coinsNotRefunded: true
     });
   } catch (error) {
     console.error('Error reverting stage:', error);
