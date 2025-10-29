@@ -52,10 +52,9 @@ export const SUBSCRIPTION_TIERS = {
   lawfirm: {
     free: { 
       price: 0, 
-      name: 'Free Trial', 
+      name: 'Free', 
       features: [
         'Limited features',
-        '30-day trial period',
         'Up to 10 clients',
         'Basic analytics'
       ] 

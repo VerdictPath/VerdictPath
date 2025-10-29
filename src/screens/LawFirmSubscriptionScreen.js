@@ -90,7 +90,7 @@ const LawFirmSubscriptionScreen = ({ token }) => {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Plan:</Text>
             <Text style={styles.detailValue}>
-              {currentSubscription.tier === TIER_LEVELS.FREE && 'Free Trial'}
+              {currentSubscription.tier === TIER_LEVELS.FREE && 'Free'}
               {currentSubscription.tier === TIER_LEVELS.BASIC && 'Basic'}
               {currentSubscription.tier === TIER_LEVELS.PREMIUM && 'Premium'}
             </Text>
@@ -157,7 +157,7 @@ const LawFirmSubscriptionScreen = ({ token }) => {
       >
         <View style={styles.pricingHeader}>
           <Text style={[styles.pricingTitle, isSelected && styles.pricingTitleSelected]}>
-            {tier === TIER_LEVELS.FREE && 'Free Trial'}
+            {tier === TIER_LEVELS.FREE && 'Free'}
             {tier === TIER_LEVELS.BASIC && 'Basic'}
             {tier === TIER_LEVELS.PREMIUM && 'Premium'}
           </Text>
