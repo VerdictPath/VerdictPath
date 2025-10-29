@@ -14,6 +14,7 @@ const litigationRoutes = require('./routes/litigation');
 const invitesRoutes = require('./routes/invites');
 const connectionsRoutes = require('./routes/connections');
 const subscriptionRoutes = require('./routes/subscription');
+const diagnosticRoutes = require('./routes/diagnostic');
 
 const app = express();
 const PORT = 5000; // Replit only exposes port 5000
@@ -62,6 +63,7 @@ app.use('/api/litigation', litigationRoutes);
 app.use('/api/invites', invitesRoutes);
 app.use('/api/connections', connectionsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/diagnostic', diagnosticRoutes);
 
 // Serve mobile app at root
 app.get('/', (req, res) => {
