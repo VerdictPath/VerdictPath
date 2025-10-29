@@ -3,7 +3,11 @@ const router = express.Router();
 const coinsController = require('../controllers/coinsController');
 const { authenticateToken } = require('../middleware/auth');
 
-router.post('/update', authenticateToken, coinsController.updateCoins);
+// REMOVED: /update endpoint to prevent coin farming vulnerability
+// Coins are now only awarded through secure server-side processes:
+// - Daily rewards: /claim-daily
+// - Stage/substage completion: litigation endpoints
+// - Invite rewards: invite endpoints
 
 router.post('/convert', authenticateToken, coinsController.convertCoinsToCredits);
 

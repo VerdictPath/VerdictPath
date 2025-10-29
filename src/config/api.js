@@ -29,7 +29,7 @@ export const API_ENDPOINTS = {
     PATIENT_DETAILS: (patientId) => `/api/medicalprovider/patient/${patientId}`
   },
   COINS: {
-    UPDATE: '/api/coins/update',
+    // UPDATE endpoint removed for security - use specific endpoints instead
     CONVERT: '/api/coins/convert',
     BALANCE: '/api/coins/balance',
     CONVERSION_HISTORY: '/api/coins/conversion-history',
