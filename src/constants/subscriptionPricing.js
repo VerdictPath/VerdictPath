@@ -216,7 +216,7 @@ export const SUBSCRIPTION_TIERS = {
       small: { 
         price: Math.round(lawFirmBasePrices.small * medicalProviderDiscount), 
         name: 'Basic - Small Practice', 
-        subtitle: 'Under 100 patients',
+        subtitle: 'Up to 100 patients',
         features: [
           'Client Roadmap Access',
           'Evidence Locker',
@@ -262,7 +262,7 @@ export const SUBSCRIPTION_TIERS = {
       small: { 
         price: Math.round(lawFirmBasePrices.small * premiumMultiplier * medicalProviderDiscount), 
         name: 'Premium - Small Practice', 
-        subtitle: 'Under 100 patients',
+        subtitle: 'Up to 100 patients',
         features: [
           'Everything in Basic',
           'Custom branding',
