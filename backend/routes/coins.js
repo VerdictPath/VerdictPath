@@ -11,4 +11,6 @@ router.get('/balance', authenticateToken, coinsController.getBalance);
 
 router.get('/conversion-history', authenticateToken, coinsController.getConversionHistory);
 
+router.post('/claim-daily', authenticateToken, coinsController.claimDailyReward);
+
 module.exports = router;

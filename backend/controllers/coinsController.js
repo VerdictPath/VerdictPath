@@ -3,6 +3,7 @@ const auditLogger = require('../services/auditLogger');
 
 const COINS_PER_CREDIT = 5000; // 5,000 coins = $1
 const MAX_LIFETIME_CREDITS = 5; // $5 lifetime cap per user account
+const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30]; // Daily streak bonus tiers
 
 const updateCoins = async (req, res) => {
   try {
@@ -312,9 +313,122 @@ const getConversionHistory = async (req, res) => {
   }
 };
 
+const claimDailyReward = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Get user's current streak and last claim time
+      const userResult = await client.query(
+        'SELECT total_coins, login_streak, last_daily_claim_at FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const user = userResult.rows[0];
+      const lastClaimAt = user.last_daily_claim_at;
+      const currentCoins = user.total_coins || 0;
+      let currentStreak = user.login_streak || 0;
+
+      // Check if user already claimed today
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (lastClaimAt) {
+        const lastClaimDate = new Date(lastClaimAt);
+        const lastClaimDay = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
+
+        // Check if already claimed today
+        if (lastClaimDay.getTime() === today.getTime()) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ 
+            message: 'Daily reward already claimed today',
+            alreadyClaimed: true,
+            nextClaimAvailable: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+            currentStreak: currentStreak
+          });
+        }
+
+        // Check if streak continues (claimed yesterday)
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+        if (lastClaimDay.getTime() === yesterday.getTime()) {
+          // Streak continues
+          currentStreak++;
+        } else {
+          // Streak broken - reset to 1
+          currentStreak = 1;
+        }
+      } else {
+        // First time claiming
+        currentStreak = 1;
+      }
+
+      // Calculate bonus based on streak (max out at 7 days)
+      const streakIndex = Math.min(currentStreak - 1, DAILY_BONUSES.length - 1);
+      const bonus = DAILY_BONUSES[streakIndex];
+      const newCoinTotal = currentCoins + bonus;
+
+      // Update user with new coins, streak, and last claim time
+      await client.query(
+        `UPDATE users 
+         SET total_coins = $1, 
+             login_streak = $2, 
+             last_daily_claim_at = CURRENT_TIMESTAMP 
+         WHERE id = $3`,
+        [newCoinTotal, currentStreak, userId]
+      );
+
+      // Log the daily reward claim
+      await auditLogger.log({
+        actorId: userId,
+        actorType: req.user.userType || 'client',
+        action: 'DAILY_REWARD_CLAIMED',
+        entityType: 'UserCoins',
+        entityId: userId,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        metadata: { 
+          bonus: bonus,
+          streak: currentStreak,
+          previousCoins: currentCoins,
+          newCoins: newCoinTotal
+        }
+      });
+
+      await client.query('COMMIT');
+
+      res.json({ 
+        success: true,
+        bonus: bonus,
+        newStreak: currentStreak,
+        totalCoins: newCoinTotal,
+        message: `Daily bonus claimed! You earned ${bonus} coins! ${currentStreak} day streak! 🎉`
+      });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('Error claiming daily reward:', error);
+    res.status(500).json({ message: 'Failed to claim daily reward' });
+  }
+};
+
 module.exports = {
   updateCoins,
   convertCoinsToCredits,
   getBalance,
-  getConversionHistory
+  getConversionHistory,
+  claimDailyReward
 };
