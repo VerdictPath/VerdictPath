@@ -205,10 +205,9 @@ export const SUBSCRIPTION_TIERS = {
   medicalprovider: {
     free: { 
       price: 0, 
-      name: 'Free Trial', 
+      name: 'Free', 
       features: [
         'Limited features',
-        '30-day trial period',
         'Up to 10 patients',
         'Basic tracking'
       ] 
