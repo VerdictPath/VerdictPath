@@ -25,7 +25,7 @@ export const CASE_PHASES = {
 
 // Phase Transition Markers
 export const PHASE_TRANSITION_TASKS = {
-  LITIGATION_START: 'cf-1', // Draft Complaint - starts litigation phase
+  LITIGATION_START: 'cf-2', // File with Court - starts litigation phase
   TRIAL_START: 'trial-1' // PreTrial motions - starts trial phase
 };
 
@@ -67,8 +67,8 @@ export const LITIGATION_STAGES = [
     position: { top: '8%', left: '60%' },
     phase: CASE_PHASES.LITIGATION.id,
     subStages: [
-      { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document', triggersPhaseTransition: 'litigation' },
-      { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit complaint to the court' },
+      { id: 'cf-1', name: 'Draft Complaint', coins: 8, completed: false, icon: '📝', description: 'Prepare the legal complaint document' },
+      { id: 'cf-2', name: 'File with Court', coins: 10, completed: false, icon: '⚖️', description: 'Submit complaint to the court', triggersPhaseTransition: 'litigation' },
       { id: 'cf-3', name: 'Serve Defendant', coins: 7, completed: false, icon: '📬', description: 'Deliver complaint to the defendant' },
       { id: 'cf-4', name: 'Answer Filed (within 30 days)', coins: 7, completed: false, icon: '📄', description: 'Defendant files their answer to the complaint' }
     ],
