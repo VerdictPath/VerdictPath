@@ -125,6 +125,15 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
     const isFree = tier === TIER_LEVELS.FREE;
     const price = isFree ? 0 : getPrice('medicalprovider', tier, selectedSize);
     
+    // Get patient count based on selected size
+    const patientCountBySize = {
+      [PROVIDER_SIZES.SMALL]: 'Up to 100 patients',
+      [PROVIDER_SIZES.MEDIUM]: '101-500 patients',
+      [PROVIDER_SIZES.LARGE]: '501-1,000 patients',
+      [PROVIDER_SIZES.ENTERPRISE]: '1,000+ patients'
+    };
+    const patientCount = selectedSize ? patientCountBySize[selectedSize] : 'Based on practice size';
+    
     const features = {
       [TIER_LEVELS.FREE]: [
         '10 patients maximum',
@@ -133,14 +142,14 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
         'Email support'
       ],
       [TIER_LEVELS.BASIC]: [
-        'Based on practice size',
+        patientCount,
         'HIPAA-compliant storage',
         'Patient consent management',
         'Priority email support',
         'Evidence sharing with law firms'
       ],
       [TIER_LEVELS.PREMIUM]: [
-        'Based on practice size',
+        patientCount,
         'Everything in Basic',
         'Advanced patient analytics',
         'Automated HIPAA forms',
