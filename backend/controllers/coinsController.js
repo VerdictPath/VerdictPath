@@ -425,8 +425,11 @@ const claimDailyReward = async (req, res) => {
   }
 };
 
+// NOTE: updateCoins function is kept for internal use only but not exported
+// to prevent arbitrary coin manipulation via API
+
 module.exports = {
-  updateCoins,
+  // updateCoins - REMOVED from exports to prevent coin farming
   convertCoinsToCredits,
   getBalance,
   getConversionHistory,
