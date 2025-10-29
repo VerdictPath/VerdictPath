@@ -266,9 +266,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
-          'HIPAA-compliant storage',
-          'Upload medical bills and records to patient account'
+          'Medical Hub (COMING SOON)',
+          'HIPAA-compliant storage (COMING SOON)',
+          'Upload medical bills and records to patient account (COMING SOON)'
         ] 
       },
       medium: { 
@@ -278,9 +278,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
-          'HIPAA-compliant storage',
-          'Upload medical bills and records to patient account'
+          'Medical Hub (COMING SOON)',
+          'HIPAA-compliant storage (COMING SOON)',
+          'Upload medical bills and records to patient account (COMING SOON)'
         ] 
       },
       large: { 
@@ -290,9 +290,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
-          'HIPAA-compliant storage',
-          'Upload medical bills and records to patient account'
+          'Medical Hub (COMING SOON)',
+          'HIPAA-compliant storage (COMING SOON)',
+          'Upload medical bills and records to patient account (COMING SOON)'
         ] 
       },
       enterprise: { 
@@ -302,9 +302,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
-          'HIPAA-compliant storage',
-          'Upload medical bills and records to patient account'
+          'Medical Hub (COMING SOON)',
+          'HIPAA-compliant storage (COMING SOON)',
+          'Upload medical bills and records to patient account (COMING SOON)'
         ] 
       }
     }
