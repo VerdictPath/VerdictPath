@@ -32,7 +32,8 @@ export const API_ENDPOINTS = {
     UPDATE: '/api/coins/update',
     CONVERT: '/api/coins/convert',
     BALANCE: '/api/coins/balance',
-    CONVERSION_HISTORY: '/api/coins/conversion-history'
+    CONVERSION_HISTORY: '/api/coins/conversion-history',
+    CLAIM_DAILY: '/api/coins/claim-daily'
   },
   INVITES: {
     MY_CODE: '/api/invites/my-code',

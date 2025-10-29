@@ -325,11 +325,35 @@ const CaseCompassApp = () => {
     setCurrentScreen('landing');
   };
 
-  const handleClaimDailyBonus = () => {
-    const bonus = calculateDailyBonus(loginStreak + 1);
-    setCoins(coins + bonus);
-    setLoginStreak(loginStreak + 1);
-    Alert.alert('Daily Bonus!', `You earned ${bonus} coins! ${loginStreak + 1} day streak! 🎉`);
+  const handleClaimDailyBonus = async () => {
+    if (!user || !user.token) {
+      Alert.alert('Error', 'You must be logged in to claim daily rewards');
+      return;
+    }
+
+    try {
+      const response = await apiRequest(API_ENDPOINTS.COINS.CLAIM_DAILY, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (response.success) {
+        setCoins(response.totalCoins);
+        setLoginStreak(response.newStreak);
+        Alert.alert('Daily Bonus!', response.message);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to claim daily reward');
+      }
+    } catch (error) {
+      if (error.message && error.message.includes('already claimed')) {
+        Alert.alert('Already Claimed', 'You have already claimed your daily reward today. Come back tomorrow!');
+      } else {
+        console.error('Error claiming daily bonus:', error);
+        Alert.alert('Error', error.message || 'Failed to claim daily reward');
+      }
+    }
   };
 
   const handleConvertCoinsToCredits = async () => {
