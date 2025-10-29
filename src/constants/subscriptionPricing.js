@@ -218,7 +218,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Small Practice', 
         subtitle: 'Under 100 patients',
         features: [
-          'Basic package for your patients',
+          'Client Roadmap Access',
+          'Evidence Locker',
           'Document storage for your patients',
           'Basic analytics dashboard'
         ] 
@@ -228,7 +229,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Medium Practice', 
         subtitle: '101-500 patients',
         features: [
-          'Basic package for your patients',
+          'Client Roadmap Access',
+          'Evidence Locker',
           'Document storage for your patients',
           'Basic analytics dashboard'
         ] 
@@ -238,7 +240,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Large Practice', 
         subtitle: '501-1,000 patients',
         features: [
-          'Basic package for your patients',
+          'Client Roadmap Access',
+          'Evidence Locker',
           'Document storage for your patients',
           'Basic analytics dashboard'
         ] 
@@ -248,7 +251,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Enterprise', 
         subtitle: '1,000+ patients',
         features: [
-          'Basic package for your patients',
+          'Client Roadmap Access',
+          'Evidence Locker',
           'Document storage for your patients',
           'Basic analytics dashboard'
         ] 
