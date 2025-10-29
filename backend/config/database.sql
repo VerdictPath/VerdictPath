@@ -20,6 +20,28 @@ CREATE TABLE IF NOT EXISTS law_firms (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Step 1b: Medical Providers table (no dependencies)
+CREATE TABLE IF NOT EXISTS medical_providers (
+  id SERIAL PRIMARY KEY,
+  provider_name VARCHAR(255) NOT NULL,
+  provider_code VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  npi_number VARCHAR(100),
+  specialty VARCHAR(255),
+  phone_number VARCHAR(50),
+  street VARCHAR(255),
+  city VARCHAR(100),
+  state VARCHAR(50),
+  zip_code VARCHAR(20),
+  license_number VARCHAR(100),
+  subscription_tier VARCHAR(50) DEFAULT 'free',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_medical_providers_email ON medical_providers(email);
+CREATE INDEX idx_medical_providers_provider_code ON medical_providers(provider_code);
+
 -- Step 2: Users table (depends on law_firms)
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
