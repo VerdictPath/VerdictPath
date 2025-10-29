@@ -1,19 +1,11 @@
 // API Configuration
-// Backend and frontend both run on port 5000 (same server)
+// Backend deployed on Railway, frontend on Replit
 const getApiBaseUrl = () => {
-  // Check if we're in a browser environment (React Native Web)
-  if (typeof window !== 'undefined' && window.location) {
-    const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
-    
-    // Backend and frontend on same domain/port in Replit
-    return `${protocol}//${hostname}`;
-  }
+  // PRODUCTION: Railway backend URL
+  const railwayBackendUrl = 'https://verdictpath.up.railway.app';
   
-  // For React Native mobile apps, use the Replit dev domain
-  // This allows mobile devices to connect to the backend
-  const replitDomain = '3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
-  return `https://${replitDomain}`;
+  // Always use Railway backend for all environments
+  return railwayBackendUrl;
 };
 
 export const API_BASE_URL = getApiBaseUrl();
