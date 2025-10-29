@@ -62,9 +62,25 @@ const CaseCompassApp = () => {
     console.log('[Registration] Confirm password exists:', !!confirmPassword);
     console.log('[Registration] User type:', userType);
     
+    // Name validation based on user type
+    if (userType === USER_TYPES.INDIVIDUAL && (!firstName || !lastName)) {
+      alert('Error: Please enter your first and last name');
+      return;
+    }
+    
+    if (userType === USER_TYPES.LAW_FIRM && !firmName) {
+      alert('Error: Please enter your law firm name');
+      return;
+    }
+    
+    if (userType === USER_TYPES.MEDICAL_PROVIDER && !providerName) {
+      alert('Error: Please enter your medical provider/practice name');
+      return;
+    }
+    
     if (!email || !password) {
       console.log('[Registration] ERROR: Missing email or password');
-      alert('Error: Please fill in all fields');
+      alert('Error: Please fill in all required fields');
       return;
     }
     
@@ -106,7 +122,7 @@ const CaseCompassApp = () => {
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
             method: 'POST',
             body: JSON.stringify({
-              firmName: email.split('@')[0] + ' Law Firm',
+              firmName: firmName,
               email: email,
               password: password,
               subscriptionTier: tier,
@@ -133,7 +149,7 @@ const CaseCompassApp = () => {
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
             method: 'POST',
             body: JSON.stringify({
-              providerName: email.split('@')[0] + ' Medical Center',
+              providerName: providerName,
               email: email,
               password: password
             })
@@ -162,8 +178,8 @@ const CaseCompassApp = () => {
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_CLIENT, {
             method: 'POST',
             body: JSON.stringify({
-              firstName: email.split('@')[0],
-              lastName: 'User',
+              firstName: firstName,
+              lastName: lastName,
               email: email,
               password: password,
               lawFirmCode: firmCode || null,
@@ -198,9 +214,12 @@ const CaseCompassApp = () => {
               
               if (inviteResponse.success) {
                 console.log('✅ Invite processed:', inviteResponse.message);
+                welcomeMessage += '\n\n🎉 Invite code applied! Your friend earned 500 coins for inviting you!';
               }
             } catch (inviteError) {
               console.error('Error processing invite:', inviteError);
+              // Show warning but don't fail registration
+              alert('⚠️ Invalid invite code: ' + (inviteError.message || 'The invite code you entered was not found. Your account was still created successfully.'));
             }
           }
           
@@ -228,11 +247,103 @@ const CaseCompassApp = () => {
         alert('Registration Error: ' + errorMsg);
       }
     } else {
-      Alert.alert(
-        'Payment Required',
-        'In a production app, you would now proceed to payment. For this demo, your account has been created with a free trial.',
-        [{ text: 'OK', onPress: () => setCurrentScreen('login') }]
-      );
+      // Paid tier registration - create account with paid tier
+      try {
+        let response;
+        let userData;
+        
+        if (userType === USER_TYPES.LAW_FIRM) {
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
+            method: 'POST',
+            body: JSON.stringify({
+              firmName: firmName,
+              email: email,
+              password: password,
+              subscriptionTier: tier,
+              firmSize: size || null
+            })
+          });
+          
+          userData = {
+            id: response.lawFirm.id,
+            email: response.lawFirm.email,
+            type: USER_TYPES.LAW_FIRM,
+            firmName: response.lawFirm.firmName,
+            firmCode: response.lawFirm.firmCode,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('lawfirm-dashboard');
+        } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
+            method: 'POST',
+            body: JSON.stringify({
+              providerName: providerName,
+              email: email,
+              password: password
+            })
+          });
+          
+          userData = {
+            id: response.medicalProvider.id,
+            email: response.medicalProvider.email,
+            type: USER_TYPES.MEDICAL_PROVIDER,
+            providerName: response.medicalProvider.providerName,
+            providerCode: response.medicalProvider.providerCode,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('medicalprovider-dashboard');
+        } else {
+          response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_CLIENT, {
+            method: 'POST',
+            body: JSON.stringify({
+              firstName: firstName,
+              lastName: lastName,
+              email: email,
+              password: password,
+              lawFirmCode: firmCode || null,
+              avatarType: 'captain',
+              subscriptionTier: tier,
+              subscriptionPrice: tier === 'basic' ? 9.99 : 19.99
+            })
+          });
+          
+          userData = {
+            id: response.user.id,
+            email: response.user.email,
+            type: USER_TYPES.INDIVIDUAL,
+            firstName: response.user.firstName,
+            lastName: response.user.lastName,
+            token: response.token,
+            subscription: tier,
+            coins: 0,
+            streak: 0
+          };
+          
+          setCurrentScreen('dashboard');
+        }
+        
+        setUser(userData);
+        setCoins(0);
+        setLoginStreak(0);
+        setIsLoggedIn(true);
+        
+        Alert.alert(
+          '🎉 Welcome to Verdict Path!',
+          `Your ${tier} account has been created! In a production app, payment processing would occur here. You're now on a free trial.`,
+          [{ text: 'Get Started!', onPress: () => {} }]
+        );
+      } catch (error) {
+        console.error('Paid Registration Error:', error);
+        Alert.alert('Registration Error', error.message || 'Failed to create account. Please try again.');
+      }
     }
   };
 
@@ -697,6 +808,14 @@ const CaseCompassApp = () => {
           setPassword={setPassword}
           confirmPassword={confirmPassword}
           setConfirmPassword={setConfirmPassword}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          firmName={firmName}
+          setFirmName={setFirmName}
+          providerName={providerName}
+          setProviderName={setProviderName}
           userType={userType}
           setUserType={setUserType}
           firmCode={firmCode}
