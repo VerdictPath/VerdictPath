@@ -8,8 +8,10 @@ Welcome! This folder contains everything you need to create a standalone backend
 |------|---------|
 | **START-HERE.md** | This file - your starting point |
 | **SETUP-INSTRUCTIONS.md** | Step-by-step guide to create & push backend repo |
+| **RAILWAY-DEPLOYMENT.md** | 🚂 Complete Railway production deployment guide |
 | **FILE-MANIFEST.md** | Exact checklist of files to copy |
 | **README.md** | API documentation (copy to new repo) |
+| **server.js** | Railway-ready server template (copy to new repo) |
 | **package.json** | Backend dependencies (copy to new repo) |
 | **.gitignore** | Git exclusions (copy to new repo) |
 | **.replit** | Replit config (copy to new repo) |
@@ -49,12 +51,26 @@ A standalone backend repository containing:
 ## Size Estimate
 **GitHub repository size:** ~5-10 MB (without node_modules)
 
+## Deploy to Production 🚂
+
+After pushing to GitHub, deploy to Railway:
+
+1. Go to https://railway.app
+2. Click "New Project" → "Deploy from GitHub repo"
+3. Select your backend repository
+4. Add PostgreSQL database
+5. Set environment variables (ENCRYPTION_KEY, etc.)
+6. Railway auto-deploys! ✅
+
+📖 **See RAILWAY-DEPLOYMENT.md for complete production deployment guide**
+
 ## Support
 
 Questions? Check:
-1. **SETUP-INSTRUCTIONS.md** - Detailed walkthrough
-2. **FILE-MANIFEST.md** - File copy checklist
-3. **README.md** - API documentation
+1. **SETUP-INSTRUCTIONS.md** - Create backend repo & push to GitHub
+2. **RAILWAY-DEPLOYMENT.md** - Deploy to production on Railway
+3. **FILE-MANIFEST.md** - File copy checklist
+4. **README.md** - API documentation
 
 ---
 
