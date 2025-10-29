@@ -135,10 +135,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       },
       boutique: { 
@@ -148,10 +147,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       },
       small: { 
@@ -161,10 +159,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       },
       medium: { 
@@ -174,10 +171,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       },
       large: { 
@@ -187,10 +183,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       },
       enterprise: { 
@@ -200,10 +195,9 @@ export const SUBSCRIPTION_TIERS = {
         features: [
           'Everything in Basic',
           'Custom branding',
-          'Medical Hub',
+          'Medical Hub (COMING SOON)',
           'Premium analytics',
-          'HIPAA-Compliant Storage',
-          'Download medical bills and records from patient and medical providers accounts'
+          'HIPAA-Compliant Storage (COMING SOON)'
         ] 
       }
     }
