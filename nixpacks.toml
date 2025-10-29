@@ -1,8 +1,9 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
+nixOverlays = ["https://github.com/railwayapp/nix-npm-overlay/archive/main.tar.gz"]
 
 [phases.install]
-cmds = ["cd backend && npm install"]
+cmds = ["npm ci --prefix backend"]
 
 [start]
-cmd = "cd backend && node server.js"
+cmd = "npm start --prefix backend"
