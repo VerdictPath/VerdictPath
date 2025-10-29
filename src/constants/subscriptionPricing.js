@@ -65,7 +65,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Shingle Firm', 
         subtitle: '1-24 clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
@@ -75,7 +76,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Boutique Firm', 
         subtitle: '25-49 clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
@@ -85,7 +87,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Small Firm', 
         subtitle: '50-99 clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
@@ -95,7 +98,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Medium Firm', 
         subtitle: '100-499 clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
@@ -105,7 +109,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Large Firm', 
         subtitle: '500-999 clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
@@ -115,7 +120,8 @@ export const SUBSCRIPTION_TIERS = {
         name: 'Basic - Enterprise', 
         subtitle: '1,000+ clients',
         features: [
-          'Basic package for your clients',
+          'Client roadmap access',
+          'Evidence Locker',
           'Document storage for your clients',
           'Basic analytics dashboard'
         ] 
