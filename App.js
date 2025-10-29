@@ -117,6 +117,7 @@ const CaseCompassApp = () => {
       try {
         let response;
         let userData;
+        let inviteSuccessMessage = '';
         
         if (userType === USER_TYPES.LAW_FIRM) {
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
@@ -214,7 +215,7 @@ const CaseCompassApp = () => {
               
               if (inviteResponse.success) {
                 console.log('✅ Invite processed:', inviteResponse.message);
-                welcomeMessage += '\n\n🎉 Invite code applied! Your friend earned 500 coins for inviting you!';
+                inviteSuccessMessage = '\n\n🎉 Invite code applied! Your friend earned 500 coins for inviting you!';
               }
             } catch (inviteError) {
               console.error('Error processing invite:', inviteError);
@@ -236,8 +237,11 @@ const CaseCompassApp = () => {
           welcomeMessage += `\n\nYour unique Law Firm Code:\n${userData.firmCode}\n\nShare this code with your clients so they can connect to your firm.`;
         } else if (userType === USER_TYPES.MEDICAL_PROVIDER && userData.providerCode) {
           welcomeMessage += `\n\nYour unique Provider Code:\n${userData.providerCode}\n\nShare this code with your patients so they can connect to your practice.`;
-        } else if (inviteCode && inviteCode.trim() && userType === USER_TYPES.INDIVIDUAL) {
-          welcomeMessage += '\n\nYour friend earned 500 coins for inviting you!';
+        }
+        
+        // Add invite success message if it was set
+        if (inviteSuccessMessage) {
+          welcomeMessage += inviteSuccessMessage;
         }
         
         alert('🎉 Welcome to Verdict Path!\n\n' + welcomeMessage);
