@@ -35,6 +35,23 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Returns 403 when preferences block delivery, 202 when quiet hours would queue
   - Urgent notifications bypass quiet hours only when urgent toggle is enabled
   - All notification types properly mapped and checked
+- **Calendar Integration** (Complete - October 30, 2025):
+  - Full device calendar sync via Expo Calendar API for iOS and Android
+  - Calendar events support (court dates, appointments, depositions, deadlines, reminders)
+  - CalendarScreen with event creation, filtering by type, and device sync controls
+  - Backend API endpoints for CRUD operations with proper authentication
+  - Sync status tracking (synced_to_device, device_event_id, last_synced_at)
+  - Event sharing between law firms, medical providers, and clients
+  - Field normalization supporting both camelCase and snake_case for API flexibility
+- **Enhanced Gamification** (Complete - October 30, 2025):
+  - 16 achievements seeded across 4 categories (progress, consistency, engagement, milestones)
+  - 8 pirate-themed badges with rarity system (common, rare, epic, legendary)
+  - AchievementsScreen with progress tracking, filtering, and rarity-based visual styling
+  - BadgeCollectionScreen showing unlock status and collection progress
+  - Transactional coin/badge awards on achievement completion with 25k coin cap
+  - Achievement progress tracking API with automatic reward distribution
+  - Leaderboard system (total coins, achievements, login streak)
+  - User stats dashboard showing completion rates and totals
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.

@@ -30,6 +30,9 @@ import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotification
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import AchievementsScreen from './src/screens/AchievementsScreen';
+import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1057,6 +1060,28 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <ActionDashboardScreen 
           user={user}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'calendar' && (
+        <CalendarScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+
+      {currentScreen === 'achievements' && (
+        <AchievementsScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          onViewBadges={() => setCurrentScreen('badges')}
+        />
+      )}
+
+      {currentScreen === 'badges' && (
+        <BadgeCollectionScreen 
+          user={user}
+          onBack={() => setCurrentScreen('achievements')}
         />
       )}
       
