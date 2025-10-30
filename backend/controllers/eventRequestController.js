@@ -1,19 +1,21 @@
 const { pool } = require('../config/db');
 
 const eventRequestController = {
-  // Law firm creates an event request for a client
+  // Law firm or medical provider creates an event request for a client/patient
   async createEventRequest(req, res) {
     try {
-      const lawFirmId = req.user.id;
+      const providerId = req.user.id;
       const userType = req.user.type;
 
-      if (userType !== 'law_firm') {
-        return res.status(403).json({ error: 'Only law firms can create event requests' });
+      if (userType !== 'law_firm' && userType !== 'medical_provider') {
+        return res.status(403).json({ error: 'Only law firms and medical providers can create event requests' });
       }
 
       const {
         clientId,
         client_id,
+        patientId,
+        patient_id,
         eventType,
         event_type,
         title,
@@ -24,53 +26,78 @@ const eventRequestController = {
         notes
       } = req.body;
 
-      const finalClientId = clientId || client_id;
+      const finalRecipientId = clientId || client_id || patientId || patient_id;
       const finalEventType = eventType || event_type;
       const finalDurationMinutes = durationMinutes || duration_minutes || 60;
 
-      if (!finalClientId || !finalEventType || !title) {
+      if (!finalRecipientId || !finalEventType || !title) {
         return res.status(400).json({
-          error: 'Client ID, event type, and title are required'
+          error: 'Recipient ID, event type, and title are required'
         });
       }
 
-      // Verify client is connected to this law firm
-      const connectionCheck = await pool.query(
-        `SELECT id FROM connections 
-         WHERE individual_user_id = $1 AND law_firm_id = $2 AND status = 'accepted'`,
-        [finalClientId, lawFirmId]
-      );
+      // Verify connection based on user type
+      let connectionCheck;
+      if (userType === 'law_firm') {
+        connectionCheck = await pool.query(
+          `SELECT id FROM connections 
+           WHERE individual_user_id = $1 AND law_firm_id = $2 AND status = 'accepted'`,
+          [finalRecipientId, providerId]
+        );
+      } else {
+        connectionCheck = await pool.query(
+          `SELECT id FROM connections 
+           WHERE individual_user_id = $1 AND medical_provider_id = $2 AND status = 'accepted'`,
+          [finalRecipientId, providerId]
+        );
+      }
 
       if (connectionCheck.rows.length === 0) {
         return res.status(403).json({
-          error: 'Client is not connected to your law firm'
+          error: userType === 'law_firm' ? 'Client is not connected to your law firm' : 'Patient is not connected to your practice'
         });
       }
 
-      // Create event request
-      const result = await pool.query(
-        `INSERT INTO event_requests (
+      // Create event request with appropriate columns
+      let insertQuery, insertParams;
+      if (userType === 'law_firm') {
+        insertQuery = `INSERT INTO event_requests (
           law_firm_id, client_id, event_type, title, description, 
           location, duration_minutes, status, notes
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
-        RETURNING *`,
-        [lawFirmId, finalClientId, finalEventType, title, description, location, finalDurationMinutes, notes]
-      );
+        RETURNING *`;
+        insertParams = [providerId, finalRecipientId, finalEventType, title, description, location, finalDurationMinutes, notes];
+      } else {
+        insertQuery = `INSERT INTO event_requests (
+          medical_provider_id, patient_id, event_type, title, description, 
+          location, duration_minutes, status, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
+        RETURNING *`;
+        insertParams = [providerId, finalRecipientId, finalEventType, title, description, location, finalDurationMinutes, notes];
+      }
 
+      const result = await pool.query(insertQuery, insertParams);
       const eventRequest = result.rows[0];
 
-      // Send notification to client
+      // Send notification to recipient
       try {
+        const notificationTitle = userType === 'law_firm' 
+          ? 'Event Request from Your Law Firm'
+          : 'Appointment Request from Your Medical Provider';
+        const notificationBody = userType === 'law_firm'
+          ? `Your law firm is requesting to schedule a ${finalEventType}. Please select 3 available dates.`
+          : `Your medical provider is requesting to schedule a ${finalEventType}. Please select 3 available dates.`;
+
         await pool.query(
           `INSERT INTO notifications (
             user_id, sender_id, notification_type, title, body, 
             action_type, action_data, is_read
           ) VALUES ($1, $2, 'event_request', $3, $4, 'navigate', $5, false)`,
           [
-            finalClientId,
-            lawFirmId,
-            'Event Request from Your Law Firm',
-            `Your law firm is requesting to schedule a ${finalEventType}. Please select 3 available dates.`,
+            finalRecipientId,
+            providerId,
+            notificationTitle,
+            notificationBody,
             JSON.stringify({ screen: 'event-requests' })
           ]
         );
@@ -83,7 +110,9 @@ const eventRequestController = {
         eventRequest: {
           id: eventRequest.id,
           lawFirmId: eventRequest.law_firm_id,
+          medicalProviderId: eventRequest.medical_provider_id,
           clientId: eventRequest.client_id,
+          patientId: eventRequest.patient_id,
           eventType: eventRequest.event_type,
           title: eventRequest.title,
           description: eventRequest.description,
@@ -100,7 +129,7 @@ const eventRequestController = {
     }
   },
 
-  // Get all event requests for a user (law firm or client)
+  // Get all event requests for a user (law firm, medical provider, or individual)
   async getEventRequests(req, res) {
     try {
       const userId = req.user.id;
@@ -122,16 +151,31 @@ const eventRequestController = {
           WHERE er.law_firm_id = $1
         `;
         params = [userId];
+      } else if (userType === 'medical_provider') {
+        query = `
+          SELECT er.*, 
+            u.name as patient_name,
+            u.email as patient_email,
+            ce.id as confirmed_event_id
+          FROM event_requests er
+          LEFT JOIN users u ON er.patient_id = u.id
+          LEFT JOIN calendar_events ce ON er.confirmed_event_id = ce.id
+          WHERE er.medical_provider_id = $1
+        `;
+        params = [userId];
       } else if (userType === 'individual') {
         query = `
           SELECT er.*, 
-            u.name as law_firm_name,
-            u.email as law_firm_email,
+            lf.name as law_firm_name,
+            lf.email as law_firm_email,
+            mp.name as medical_provider_name,
+            mp.email as medical_provider_email,
             ce.id as confirmed_event_id
           FROM event_requests er
-          LEFT JOIN users u ON er.law_firm_id = u.id
+          LEFT JOIN users lf ON er.law_firm_id = lf.id
+          LEFT JOIN users mp ON er.medical_provider_id = mp.id
           LEFT JOIN calendar_events ce ON er.confirmed_event_id = ce.id
-          WHERE er.client_id = $1
+          WHERE er.client_id = $1 OR er.patient_id = $1
         `;
         params = [userId];
       } else {
@@ -151,8 +195,14 @@ const eventRequestController = {
         id: row.id,
         lawFirmId: row.law_firm_id,
         lawFirmName: row.law_firm_name,
+        medicalProviderId: row.medical_provider_id,
+        medicalProviderName: row.medical_provider_name || row.patient_name,
         clientId: row.client_id,
         clientName: row.client_name,
+        patientId: row.patient_id,
+        patientName: row.patient_name,
+        providerName: row.law_firm_name || row.medical_provider_name,
+        recipientName: row.client_name || row.patient_name,
         eventType: row.event_type,
         title: row.title,
         description: row.description,
