@@ -28,6 +28,7 @@ import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
+import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -938,6 +939,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onUploadMedicalDocument={handleMedicalHubUpload}
           medicalHubUploads={medicalHubUploads}
           authToken={authToken}
+        />
+      )}
+
+      {currentScreen === 'actions' && (
+        <ActionDashboardScreen 
+          user={user}
+          onNavigate={handleNavigateInternal}
         />
       )}
       
