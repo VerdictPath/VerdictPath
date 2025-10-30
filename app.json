@@ -35,8 +35,7 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "verdictpath",
-              "host": "*"
+              "scheme": "verdictpath"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
