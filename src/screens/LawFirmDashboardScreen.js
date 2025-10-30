@@ -183,6 +183,81 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   );
   };
 
+  const renderNotificationsTab = () => {
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔔 Client Notifications</Text>
+          <Text style={styles.sectionDescription}>
+            Send notifications to your clients about case updates, deadlines, and important tasks.
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('lawfirm-send-notification')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>📨</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Send Notification</Text>
+              <Text style={styles.notificationActionDescription}>
+                Compose and send notifications to your clients
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('lawfirm-notification-analytics')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>📊</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>View Analytics</Text>
+              <Text style={styles.notificationActionDescription}>
+                Track notification delivery, read, and click rates
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📋 Notification Templates</Text>
+          <Text style={styles.sectionDescription}>
+            Use pre-built templates for common client communications:
+          </Text>
+          
+          <View style={styles.templatesList}>
+            <View style={styles.templateItem}>
+              <Text style={styles.templateIcon}>⏰</Text>
+              <Text style={styles.templateText}>Deadline Reminders</Text>
+            </View>
+            <View style={styles.templateItem}>
+              <Text style={styles.templateIcon}>📄</Text>
+              <Text style={styles.templateText}>Document Requests</Text>
+            </View>
+            <View style={styles.templateItem}>
+              <Text style={styles.templateIcon}>📅</Text>
+              <Text style={styles.templateText}>Appointment Reminders</Text>
+            </View>
+            <View style={styles.templateItem}>
+              <Text style={styles.templateIcon}>📢</Text>
+              <Text style={styles.templateText}>Case Updates</Text>
+            </View>
+            <View style={styles.templateItem}>
+              <Text style={styles.templateIcon}>📋</Text>
+              <Text style={styles.templateText}>Task Reminders</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderAnalyticsTab = () => {
     const totalClients = analytics?.totalClients || 0;
     const preLitigationCount = analytics?.preLitigationCount || 0;
@@ -338,12 +413,14 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
+        {renderTabButton('notifications', 'Notifications', '🔔')}
         {renderTabButton('subscription', 'Subscription', '💳')}
       </View>
 
       <ScrollView style={styles.content}>
         {activeTab === 'clients' && renderClientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
+        {activeTab === 'notifications' && renderNotificationsTab()}
         {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
 
         <TouchableOpacity 
@@ -473,6 +550,73 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  notificationActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  notificationActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  notificationActionIconText: {
+    fontSize: 24,
+  },
+  notificationActionContent: {
+    flex: 1,
+  },
+  notificationActionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
+  },
+  notificationActionDescription: {
+    fontSize: 13,
+    color: '#666',
+  },
+  notificationActionArrow: {
+    fontSize: 24,
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  templatesList: {
+    gap: 12,
+  },
+  templateItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  templateIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  templateText: {
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
