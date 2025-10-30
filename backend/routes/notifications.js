@@ -15,6 +15,9 @@ router.post('/send-to-patient', authenticateToken, notificationsController.sendT
 
 router.get('/my-notifications', authenticateToken, notificationsController.getMyNotifications);
 router.get('/unread-count', authenticateToken, notificationsController.getUnreadCount);
+router.get('/stats', authenticateToken, notificationsController.getMyNotificationStats);
+router.get('/history', authenticateToken, notificationsController.getNotificationHistory);
+
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.put('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
 
