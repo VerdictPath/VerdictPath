@@ -1,12 +1,14 @@
 // APP VERSION 1.0.2 - 3-Phase Analytics System
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
 import { theme } from './src/styles/theme';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
 
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -23,6 +25,7 @@ import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPa
 import BottomNavigation from './src/components/BottomNavigation';
 
 const CaseCompassApp = () => {
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [userType, setUserType] = useState(USER_TYPES.INDIVIDUAL);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -55,6 +58,24 @@ const CaseCompassApp = () => {
   const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   const authToken = user?.token || null;
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const onboardingStatus = await AsyncStorage.getItem('hasSeenOnboarding');
+        setHasSeenOnboarding(onboardingStatus === 'true');
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setHasSeenOnboarding(true);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
+  const handleOnboardingComplete = () => {
+    setHasSeenOnboarding(true);
+  };
 
   const handleRegister = () => {
     console.log('[Registration] Button clicked - Starting registration...');
@@ -792,6 +813,14 @@ const CaseCompassApp = () => {
     setSelectedClientId(null);
     setCurrentScreen('lawfirm-dashboard');
   };
+
+  if (hasSeenOnboarding === null) {
+    return null;
+  }
+
+  if (hasSeenOnboarding === false) {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <SafeAreaView style={commonStyles.safeArea}>
