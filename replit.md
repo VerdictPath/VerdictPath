@@ -23,6 +23,29 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Enhanced size (46x46) with shadow/elevation effects for better user recognition
 - Positioned prominently within substage descriptions
 
+**Onboarding Experience**:
+- 5-slide visual onboarding flow for first-time users with pirate theme
+- Swipeable horizontal slides covering: Welcome, Navigation, Rewards, Secure Documents, Get Started
+- Progress dots indicating current slide position
+- Skip option on all slides except final
+- "Get Started" button on final slide in green
+- AsyncStorage persists completion status - only shows once per user
+- Smooth transition to landing screen after completion
+
+**Progress Tracking & Gamification UI**:
+- Animated progress percentage bar (0-100%) on roadmap screen with smooth fill animation
+- Celebration animation component with confetti, treasure chest visuals, and pirate messages
+- Triggers automatically on milestone completions (25%, 50%, 75%, 100%)
+- Visual coin rewards display during celebration
+- Pirate-themed colors and styling throughout
+
+**Bottom Navigation (Individual Users)**:
+- Sticky 5-tab navigation bar: Home (🏠), Roadmap (🗺️), Medical Hub (📋), Videos (📺), Profile (👤)
+- Position: absolute at bottom with platform-aware padding for iOS notches
+- Active tab highlighting with solid blue background and white icons/text
+- All individual user screens have 80px bottom padding to prevent content overlap
+- Navigation only visible for individual users, hidden for law firm/medical provider portals
+
 **Individual User Dashboard**:
 - Header button displays "Invite Friends" (👍) in the top right to allow individual users to invite other users
 - "My Connections" link appears in the dashboard menu for managing law firm and medical provider connections
