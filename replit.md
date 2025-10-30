@@ -95,7 +95,7 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
   - Medical provider connections stored in medical_provider_patients junction table
   - All connection operations prevent orphaned database relationships and maintain data integrity
 - **Subscription Management**: Implements a complete system for individual, law firm, and medical provider subscriptions with Free, Basic, and Premium tiers. This includes automatic unique code generation, free trial limits, expanded law firm and medical provider size tiers, and a full upgrade/downgrade protocol with validation.
-- **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
+- **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit). **Coin Accumulation Cap**: Hard limit of 25,000 coins per user ("treasure chest full" system) to prevent unlimited coin farming. Enforced across all earning sources: daily rewards, litigation completion, attorney-assigned tasks, and invite referrals. Users receive pirate-themed messages when they reach the cap.
 - **Universal Invite/Referral System**: Allows all user types to generate unique invite codes, with coin rewards for individual users whose invitees sign up.
 - **Cross-Platform Compatibility**: Extensive support for iOS, Android, mobile web, and desktop web.
 - **Phase 2: Smart Notifications & Attorney-Controlled Action Dashboard** (October 2025):
