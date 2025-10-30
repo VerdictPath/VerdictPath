@@ -8,6 +8,11 @@ router.post('/unregister-device', authenticateToken, notificationsController.unr
 router.get('/devices', authenticateToken, notificationsController.getMyDevices);
 
 router.post('/send', authenticateToken, notificationsController.sendNotification);
+router.post('/send-to-all-clients', authenticateToken, notificationsController.sendToAllClients);
+router.post('/send-to-client', authenticateToken, notificationsController.sendToClient);
+router.post('/send-to-all-patients', authenticateToken, notificationsController.sendToAllPatients);
+router.post('/send-to-patient', authenticateToken, notificationsController.sendToPatient);
+
 router.get('/my-notifications', authenticateToken, notificationsController.getMyNotifications);
 router.get('/unread-count', authenticateToken, notificationsController.getUnreadCount);
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);

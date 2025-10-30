@@ -396,3 +396,367 @@ exports.getUnreadCount = async (req, res) => {
     res.status(500).json({ error: 'Failed to get unread count' });
   }
 };
+
+exports.sendToAllClients = async (req, res) => {
+  const { title, body, type, priority = 'medium', actionUrl, actionData } = req.body;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (entityInfo.userType !== 'lawfirm') {
+    return res.status(403).json({ error: 'Only law firms can use this endpoint' });
+  }
+
+  const lawFirmId = entityInfo.entityId;
+
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Title and body are required' });
+  }
+
+  try {
+    const clientsQuery = `
+      SELECT u.id, u.email 
+      FROM users u
+      JOIN law_firm_clients lfc ON u.id = lfc.user_id
+      WHERE lfc.law_firm_id = $1
+    `;
+    const clientsResult = await pool.query(clientsQuery, [lawFirmId]);
+
+    if (clientsResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No clients found' });
+    }
+
+    const lawFirmQuery = 'SELECT firm_name FROM law_firms WHERE id = $1';
+    const lawFirmResult = await pool.query(lawFirmQuery, [lawFirmId]);
+    const senderName = lawFirmResult.rows[0]?.firm_name || 'Law Firm';
+
+    const notificationPromises = clientsResult.rows.map(async (client) => {
+      try {
+        const notificationQuery = `
+          INSERT INTO notifications (
+            sender_type, sender_id, sender_name, recipient_type, recipient_id,
+            type, priority, title, body, action_url, action_data
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          RETURNING *
+        `;
+        const notificationResult = await pool.query(notificationQuery, [
+          'law_firm', lawFirmId, senderName, 'user', client.id,
+          type, priority, title, body, actionUrl, JSON.stringify(actionData || {})
+        ]);
+
+        const deviceQuery = `
+          SELECT expo_push_token FROM user_devices 
+          WHERE user_id = $1 AND is_active = true
+        `;
+        const deviceResult = await pool.query(deviceQuery, [client.id]);
+
+        const safeActionData = actionData || {};
+        const pushPromises = deviceResult.rows.map(device =>
+          pushNotificationService.sendPushNotification({
+            expoPushToken: device.expo_push_token,
+            title,
+            body,
+            data: {
+              notificationId: notificationResult.rows[0].id,
+              type,
+              actionUrl,
+              ...safeActionData
+            },
+            priority: priority === 'urgent' ? 'high' : 'default'
+          })
+        );
+
+        await Promise.allSettled(pushPromises);
+        return { success: true, clientId: client.id };
+      } catch (error) {
+        console.error(`Failed to send notification to client ${client.id}:`, error);
+        return { success: false, clientId: client.id, error: error.message };
+      }
+    });
+
+    const results = await Promise.allSettled(notificationPromises);
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+
+    res.status(200).json({
+      message: `Notifications sent to ${successCount} of ${clientsResult.rows.length} clients`,
+      totalClients: clientsResult.rows.length,
+      successCount
+    });
+  } catch (error) {
+    console.error('Send to all clients error:', error);
+    res.status(500).json({ error: 'Failed to send notifications' });
+  }
+};
+
+exports.sendToClient = async (req, res) => {
+  const { clientId, title, body, type, priority = 'medium', actionUrl, actionData } = req.body;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (entityInfo.userType !== 'lawfirm') {
+    return res.status(403).json({ error: 'Only law firms can use this endpoint' });
+  }
+
+  const lawFirmId = entityInfo.entityId;
+
+  if (!clientId || !title || !body) {
+    return res.status(400).json({ error: 'Client ID, title, and body are required' });
+  }
+
+  try {
+    const verifyQuery = `
+      SELECT 1 FROM law_firm_clients 
+      WHERE law_firm_id = $1 AND user_id = $2
+    `;
+    const verifyResult = await pool.query(verifyQuery, [lawFirmId, clientId]);
+
+    if (verifyResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Client not associated with your law firm' });
+    }
+
+    const lawFirmQuery = 'SELECT firm_name FROM law_firms WHERE id = $1';
+    const lawFirmResult = await pool.query(lawFirmQuery, [lawFirmId]);
+    const senderName = lawFirmResult.rows[0]?.firm_name || 'Law Firm';
+
+    const notificationQuery = `
+      INSERT INTO notifications (
+        sender_type, sender_id, sender_name, recipient_type, recipient_id,
+        type, priority, title, body, action_url, action_data
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `;
+    const notificationResult = await pool.query(notificationQuery, [
+      'law_firm', lawFirmId, senderName, 'user', clientId,
+      type, priority, title, body, actionUrl, JSON.stringify(actionData || {})
+    ]);
+
+    const deviceQuery = `
+      SELECT expo_push_token FROM user_devices 
+      WHERE user_id = $1 AND is_active = true
+    `;
+    const deviceResult = await pool.query(deviceQuery, [clientId]);
+
+    const notification = notificationResult.rows[0];
+    const safeActionData = actionData || {};
+    const pushPromises = deviceResult.rows.map(device =>
+      pushNotificationService.sendPushNotification({
+        expoPushToken: device.expo_push_token,
+        title,
+        body,
+        data: {
+          notificationId: notification.id,
+          type,
+          actionUrl,
+          ...safeActionData
+        },
+        priority: priority === 'urgent' ? 'high' : 'default'
+      })
+    );
+
+    const pushResults = await Promise.allSettled(pushPromises);
+    const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
+
+    if (pushResults.length > 0 && sentSuccessfully) {
+      await pool.query(
+        'UPDATE notifications SET delivery_status = $1 WHERE id = $2',
+        ['sent', notification.id]
+      );
+    }
+
+    res.status(200).json({
+      message: 'Notification sent successfully',
+      notification,
+      devicesReached: pushResults.filter(r => r.status === 'fulfilled').length
+    });
+  } catch (error) {
+    console.error('Send to client error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+exports.sendToAllPatients = async (req, res) => {
+  const { title, body, type, priority = 'medium', actionUrl, actionData } = req.body;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (entityInfo.userType !== 'medical_provider') {
+    return res.status(403).json({ error: 'Only medical providers can use this endpoint' });
+  }
+
+  const medicalProviderId = entityInfo.entityId;
+
+  if (!title || !body) {
+    return res.status(400).json({ error: 'Title and body are required' });
+  }
+
+  try {
+    const patientsQuery = `
+      SELECT u.id, u.email 
+      FROM users u
+      JOIN medical_provider_patients mpp ON u.id = mpp.user_id
+      WHERE mpp.medical_provider_id = $1
+    `;
+    const patientsResult = await pool.query(patientsQuery, [medicalProviderId]);
+
+    if (patientsResult.rows.length === 0) {
+      return res.status(404).json({ error: 'No patients found' });
+    }
+
+    const providerQuery = 'SELECT provider_name FROM medical_providers WHERE id = $1';
+    const providerResult = await pool.query(providerQuery, [medicalProviderId]);
+    const senderName = providerResult.rows[0]?.provider_name || 'Medical Provider';
+
+    const notificationPromises = patientsResult.rows.map(async (patient) => {
+      try {
+        const notificationQuery = `
+          INSERT INTO notifications (
+            sender_type, sender_id, sender_name, recipient_type, recipient_id,
+            type, priority, title, body, action_url, action_data
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          RETURNING *
+        `;
+        const notificationResult = await pool.query(notificationQuery, [
+          'medical_provider', medicalProviderId, senderName, 'user', patient.id,
+          type, priority, title, body, actionUrl, JSON.stringify(actionData || {})
+        ]);
+
+        const deviceQuery = `
+          SELECT expo_push_token FROM user_devices 
+          WHERE user_id = $1 AND is_active = true
+        `;
+        const deviceResult = await pool.query(deviceQuery, [patient.id]);
+
+        const safeActionData = actionData || {};
+        const pushPromises = deviceResult.rows.map(device =>
+          pushNotificationService.sendPushNotification({
+            expoPushToken: device.expo_push_token,
+            title,
+            body,
+            data: {
+              notificationId: notificationResult.rows[0].id,
+              type,
+              actionUrl,
+              ...safeActionData
+            },
+            priority: priority === 'urgent' ? 'high' : 'default'
+          })
+        );
+
+        await Promise.allSettled(pushPromises);
+        return { success: true, patientId: patient.id };
+      } catch (error) {
+        console.error(`Failed to send notification to patient ${patient.id}:`, error);
+        return { success: false, patientId: patient.id, error: error.message };
+      }
+    });
+
+    const results = await Promise.allSettled(notificationPromises);
+    const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+
+    res.status(200).json({
+      message: `Notifications sent to ${successCount} of ${patientsResult.rows.length} patients`,
+      totalPatients: patientsResult.rows.length,
+      successCount
+    });
+  } catch (error) {
+    console.error('Send to all patients error:', error);
+    res.status(500).json({ error: 'Failed to send notifications' });
+  }
+};
+
+exports.sendToPatient = async (req, res) => {
+  const { patientId, title, body, type, priority = 'medium', actionUrl, actionData } = req.body;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (entityInfo.userType !== 'medical_provider') {
+    return res.status(403).json({ error: 'Only medical providers can use this endpoint' });
+  }
+
+  const medicalProviderId = entityInfo.entityId;
+
+  if (!patientId || !title || !body) {
+    return res.status(400).json({ error: 'Patient ID, title, and body are required' });
+  }
+
+  try {
+    const verifyQuery = `
+      SELECT 1 FROM medical_provider_patients 
+      WHERE medical_provider_id = $1 AND user_id = $2
+    `;
+    const verifyResult = await pool.query(verifyQuery, [medicalProviderId, patientId]);
+
+    if (verifyResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Patient not associated with your practice' });
+    }
+
+    const providerQuery = 'SELECT provider_name FROM medical_providers WHERE id = $1';
+    const providerResult = await pool.query(providerQuery, [medicalProviderId]);
+    const senderName = providerResult.rows[0]?.provider_name || 'Medical Provider';
+
+    const notificationQuery = `
+      INSERT INTO notifications (
+        sender_type, sender_id, sender_name, recipient_type, recipient_id,
+        type, priority, title, body, action_url, action_data
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *
+    `;
+    const notificationResult = await pool.query(notificationQuery, [
+      'medical_provider', medicalProviderId, senderName, 'user', patientId,
+      type, priority, title, body, actionUrl, JSON.stringify(actionData || {})
+    ]);
+
+    const deviceQuery = `
+      SELECT expo_push_token FROM user_devices 
+      WHERE user_id = $1 AND is_active = true
+    `;
+    const deviceResult = await pool.query(deviceQuery, [patientId]);
+
+    const notification = notificationResult.rows[0];
+    const safeActionData = actionData || {};
+    const pushPromises = deviceResult.rows.map(device =>
+      pushNotificationService.sendPushNotification({
+        expoPushToken: device.expo_push_token,
+        title,
+        body,
+        data: {
+          notificationId: notification.id,
+          type,
+          actionUrl,
+          ...safeActionData
+        },
+        priority: priority === 'urgent' ? 'high' : 'default'
+      })
+    );
+
+    const pushResults = await Promise.allSettled(pushPromises);
+    const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
+
+    if (pushResults.length > 0 && sentSuccessfully) {
+      await pool.query(
+        'UPDATE notifications SET delivery_status = $1 WHERE id = $2',
+        ['sent', notification.id]
+      );
+    }
+
+    res.status(200).json({
+      message: 'Notification sent successfully',
+      notification,
+      devicesReached: pushResults.filter(r => r.status === 'fulfilled').length
+    });
+  } catch (error) {
+    console.error('Send to patient error:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
