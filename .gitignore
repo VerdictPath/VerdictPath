@@ -166,8 +166,9 @@ yarn-error.*
 backend/uploads/
 uploads/
 
-# Compiled Expo web bundle (regenerate with: npx expo export --platform web --output-dir backend/public/app)
-backend/public/app/
+# Compiled Expo web bundle - INCLUDED for Railway deployment
+# Regenerate with: npx expo export --platform web --output-dir backend/public/app
+# NOTE: We commit this to Git so Railway can serve it (static frontend)
 
 # Temporary logs
 /tmp/

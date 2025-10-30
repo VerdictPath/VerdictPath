@@ -17,7 +17,7 @@ const subscriptionRoutes = require('./routes/subscription');
 const diagnosticRoutes = require('./routes/diagnostic');
 
 const app = express();
-const PORT = 5000; // Replit only exposes port 5000
+const PORT = process.env.PORT || 5000; // Railway sets PORT automatically, Replit uses 5000
 
 app.use(cors());
 app.use(express.json());
