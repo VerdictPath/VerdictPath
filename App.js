@@ -34,6 +34,7 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
+import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
@@ -1190,6 +1191,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'medicalprovider-notification-analytics' && (
         <LawFirmNotificationAnalyticsScreen
+          user={user}
+          onBack={handleBackToMedicalProviderDashboard}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-event-requests' && (
+        <MedicalProviderEventRequestsScreen
           user={user}
           onBack={handleBackToMedicalProviderDashboard}
         />

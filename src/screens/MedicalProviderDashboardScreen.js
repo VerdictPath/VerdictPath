@@ -256,6 +256,22 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('medicalprovider-event-requests')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>📅</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Treatment Date Requests</Text>
+              <Text style={styles.notificationActionDescription}>
+                Request appointments, consultations, and follow-ups from patients
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
