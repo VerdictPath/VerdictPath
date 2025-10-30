@@ -1,6 +1,6 @@
 # Verdict Path Backend API
 
-**HIPAA-compliant REST API for Georgia Civil Litigation case management platform**
+**HIPAA-compliant REST API for civil litigation case management platform**
 
 ## Overview
 

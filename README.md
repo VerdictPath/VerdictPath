@@ -1,10 +1,10 @@
 # Verdict Path
 
-**A HIPAA-compliant React Native mobile application for Georgia Civil Litigation case management and education.**
+**A HIPAA-compliant React Native mobile application for civil litigation case management and education.**
 
 ## Overview
 
-Verdict Path is a comprehensive legal case management platform designed to assist individuals, law firms, and medical providers in navigating Georgia Civil Litigation processes. The application features a gamified 9-stage litigation roadmap, educational resources, and secure document management.
+Verdict Path is a comprehensive legal case management platform designed to assist individuals, law firms, and medical providers in navigating civil litigation processes. The application features a gamified 9-stage litigation roadmap, educational resources, and secure document management.
 
 ## Features
 
@@ -214,4 +214,4 @@ For support or inquiries:
 
 ---
 
-**Built with ⚓ for justice and accessibility in Georgia Civil Litigation**
+**Built with ⚓ for justice and accessibility in civil litigation**

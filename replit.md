@@ -1,7 +1,7 @@
 # Verdict Path - React Native Mobile App
 
 ## Overview
-Verdict Path is a React Native mobile application designed as a legal case management and education platform for Georgia Civil Litigation. It provides an interactive case roadmap, gamification elements, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to offer an engaging and informative tool to support justice.
+Verdict Path is a React Native mobile application designed as a legal case management and education platform for civil litigation. It provides an interactive case roadmap, gamification elements, educational video tutorials, and secure medical document storage. The platform aims to assist individuals, law firms, and medical providers in navigating legal processes, supported by tiered subscription models. The project's vision is to offer an engaging and informative tool to support justice.
 
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
@@ -24,13 +24,14 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Positioned prominently within substage descriptions
 
 **Onboarding Experience**:
-- 5-slide visual onboarding flow for first-time users with pirate theme
-- Swipeable horizontal slides covering: Welcome, Navigation, Rewards, Secure Documents, Get Started
+- 6-slide visual onboarding flow for first-time users with pirate theme
+- Swipeable horizontal slides covering: Welcome, Roadmap Summary, Audio/Video Tutorials, Rewards, Secure Documents, Get Started
 - Progress dots indicating current slide position
 - Skip option on all slides except final
 - "Get Started" button on final slide in green
 - AsyncStorage persists completion status - only shows once per user
 - Smooth transition to landing screen after completion
+- Educational focus on roadmap stages and importance of audio/video learning resources
 
 **Progress Tracking & Gamification UI**:
 - Animated progress percentage bar (0-100%) on roadmap screen with smooth fill animation
