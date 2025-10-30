@@ -127,9 +127,9 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
     
     // Get patient count based on selected size
     const patientCountBySize = {
-      [PROVIDER_SIZES.SMALL]: 'Up to 100 patients',
-      [PROVIDER_SIZES.MEDIUM]: '101-500 patients',
-      [PROVIDER_SIZES.LARGE]: '501-1,000 patients',
+      [PROVIDER_SIZES.SMALL]: 'Up to 99 patients',
+      [PROVIDER_SIZES.MEDIUM]: '100-499 patients',
+      [PROVIDER_SIZES.LARGE]: '500-999 patients',
       [PROVIDER_SIZES.ENTERPRISE]: '1,000+ patients'
     };
     const patientCount = selectedSize ? patientCountBySize[selectedSize] : 'Based on practice size';
@@ -196,9 +196,9 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
   const renderSizeCard = (size) => {
     const isSelected = selectedSize === size;
     const sizeInfo = {
-      [PROVIDER_SIZES.SMALL]: { title: 'Small Practice', limit: 'Up to 100 patients', desc: 'Individual practitioners or small clinics' },
-      [PROVIDER_SIZES.MEDIUM]: { title: 'Medium Practice', limit: '101-500 patients', desc: 'Multi-provider practices or specialty clinics' },
-      [PROVIDER_SIZES.LARGE]: { title: 'Large Practice', limit: '501-1,000 patients', desc: 'Regional medical centers or group practices' },
+      [PROVIDER_SIZES.SMALL]: { title: 'Small Practice', limit: 'Up to 99 patients', desc: 'Individual practitioners or small clinics' },
+      [PROVIDER_SIZES.MEDIUM]: { title: 'Medium Practice', limit: '100-499 patients', desc: 'Multi-provider practices or specialty clinics' },
+      [PROVIDER_SIZES.LARGE]: { title: 'Large Practice', limit: '500-999 patients', desc: 'Regional medical centers or group practices' },
       [PROVIDER_SIZES.ENTERPRISE]: { title: 'Enterprise', limit: '1,000+ patients', desc: 'Hospital systems or large-scale healthcare networks' }
     };
 
