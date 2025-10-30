@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getStageCoins, getSubstageCoins } = require('../config/litigationRewards');
+const { checkTreasureChestCapacity, MAX_TOTAL_COINS } = require('./coinsController');
 
 // Helper function to check and update phase transitions based on stage completion
 const updatePhaseOnStageCompletion = async (userId, completedStageId) => {
@@ -134,7 +135,18 @@ const completeSubstage = async (req, res) => {
     // Check if coins were previously earned for this substage
     // This prevents coin farming - coins can only be earned once ever
     const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
-    const coinsToAward = coinsAlreadyEarned ? 0 : canonicalCoins;
+    
+    // Check treasure chest capacity before awarding coins
+    let coinsToAward = 0;
+    let treasureChestFull = false;
+    let treasureChestMessage = null;
+    
+    if (!coinsAlreadyEarned && canonicalCoins > 0) {
+      const capacity = await checkTreasureChestCapacity(userId, canonicalCoins);
+      coinsToAward = capacity.canAward;
+      treasureChestFull = capacity.isFull;
+      treasureChestMessage = capacity.message;
+    }
 
     let result;
     if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
@@ -188,15 +200,21 @@ const completeSubstage = async (req, res) => {
       );
     }
 
-    const message = coinsAlreadyEarned 
+    let message = coinsAlreadyEarned 
       ? 'Substage completed successfully (coins already earned previously)'
       : 'Substage completed successfully';
+    
+    if (treasureChestMessage) {
+      message += `\n${treasureChestMessage}`;
+    }
 
     res.json({
       message: message,
       completion: result.rows[0],
       coinsEarned: coinsToAward,
-      coinsAlreadyEarnedBefore: coinsAlreadyEarned
+      coinsAlreadyEarnedBefore: coinsAlreadyEarned,
+      treasureChestFull: treasureChestFull,
+      maxCoins: MAX_TOTAL_COINS
     });
   } catch (error) {
     console.error('Error completing substage:', error);
@@ -239,7 +257,18 @@ const completeStage = async (req, res) => {
 
     // Check if coins were previously earned for this stage
     const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
-    const coinsToAward = coinsAlreadyEarned ? 0 : canonicalCoins;
+    
+    // Check treasure chest capacity before awarding coins
+    let coinsToAward = 0;
+    let treasureChestFull = false;
+    let treasureChestMessage = null;
+    
+    if (!coinsAlreadyEarned && canonicalCoins > 0) {
+      const capacity = await checkTreasureChestCapacity(userId, canonicalCoins);
+      coinsToAward = capacity.canAward;
+      treasureChestFull = capacity.isFull;
+      treasureChestMessage = capacity.message;
+    }
 
     let result;
     if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
@@ -308,16 +337,22 @@ const completeStage = async (req, res) => {
     // Check for phase transition based on stage completion
     const newPhase = await updatePhaseOnStageCompletion(userId, stageId);
 
-    const message = coinsAlreadyEarned 
+    let message = coinsAlreadyEarned 
       ? 'Stage completed successfully (coins already earned previously)'
       : 'Stage completed successfully';
+    
+    if (treasureChestMessage) {
+      message += `\n${treasureChestMessage}`;
+    }
 
     res.json({
       message: message,
       completion: result.rows[0],
       coinsEarned: coinsToAward,
       coinsAlreadyEarnedBefore: coinsAlreadyEarned,
-      phaseTransition: newPhase ? { newPhase } : null
+      phaseTransition: newPhase ? { newPhase } : null,
+      treasureChestFull: treasureChestFull,
+      maxCoins: MAX_TOTAL_COINS
     });
   } catch (error) {
     console.error('Error completing stage:', error);

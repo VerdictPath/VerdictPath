@@ -3,7 +3,42 @@ const auditLogger = require('../services/auditLogger');
 
 const COINS_PER_CREDIT = 5000; // 5,000 coins = $1
 const MAX_LIFETIME_CREDITS = 5; // $5 lifetime cap per user account
+const MAX_TOTAL_COINS = 25000; // Maximum coins a user can accumulate (treasure chest capacity)
 const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30]; // Daily streak bonus tiers
+
+// Helper function to check if user's treasure chest is full and calculate coins that can be awarded
+const checkTreasureChestCapacity = async (userId, coinsToAward) => {
+  const userResult = await pool.query(
+    'SELECT total_coins FROM users WHERE id = $1',
+    [userId]
+  );
+  
+  if (userResult.rows.length === 0) {
+    return { canAward: 0, isFull: false, currentCoins: 0 };
+  }
+  
+  const currentCoins = userResult.rows[0].total_coins || 0;
+  
+  if (currentCoins >= MAX_TOTAL_COINS) {
+    return { 
+      canAward: 0, 
+      isFull: true, 
+      currentCoins: currentCoins,
+      message: '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 coins reached)'
+    };
+  }
+  
+  const availableSpace = MAX_TOTAL_COINS - currentCoins;
+  const actualCoinsToAward = Math.min(coinsToAward, availableSpace);
+  const willBeFull = (currentCoins + actualCoinsToAward) >= MAX_TOTAL_COINS;
+  
+  return {
+    canAward: actualCoinsToAward,
+    isFull: willBeFull,
+    currentCoins: currentCoins,
+    message: willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 coins reached)' : null
+  };
+};
 
 const updateCoins = async (req, res) => {
   try {
@@ -372,7 +407,25 @@ const claimDailyReward = async (req, res) => {
 
       // Calculate bonus based on streak (max out at 7 days)
       const streakIndex = Math.min(currentStreak - 1, DAILY_BONUSES.length - 1);
-      const bonus = DAILY_BONUSES[streakIndex];
+      const baseBonus = DAILY_BONUSES[streakIndex];
+      
+      // Check treasure chest capacity (inline to avoid connection pool issues within transaction)
+      let bonus = baseBonus;
+      let treasureChestFull = false;
+      let treasureChestMessage = null;
+      
+      if (currentCoins >= MAX_TOTAL_COINS) {
+        bonus = 0;
+        treasureChestFull = true;
+        treasureChestMessage = '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 coins reached)';
+      } else {
+        const availableSpace = MAX_TOTAL_COINS - currentCoins;
+        bonus = Math.min(baseBonus, availableSpace);
+        const willBeFull = (currentCoins + bonus) >= MAX_TOTAL_COINS;
+        treasureChestFull = willBeFull;
+        treasureChestMessage = willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 coins reached)' : null;
+      }
+      
       const newCoinTotal = currentCoins + bonus;
 
       // Update user with new coins, streak, and last claim time
@@ -404,12 +457,25 @@ const claimDailyReward = async (req, res) => {
 
       await client.query('COMMIT');
 
+      let message;
+      if (treasureChestFull) {
+        if (bonus === 0) {
+          message = `${treasureChestMessage} You have ${currentStreak} day streak but cannot earn more coins.`;
+        } else {
+          message = `Daily bonus claimed! You earned ${bonus} coins! ${currentStreak} day streak! 🎉\n${treasureChestMessage}`;
+        }
+      } else {
+        message = `Daily bonus claimed! You earned ${bonus} coins! ${currentStreak} day streak! 🎉`;
+      }
+
       res.json({ 
         success: true,
         bonus: bonus,
         newStreak: currentStreak,
         totalCoins: newCoinTotal,
-        message: `Daily bonus claimed! You earned ${bonus} coins! ${currentStreak} day streak! 🎉`
+        treasureChestFull: treasureChestFull,
+        maxCoins: MAX_TOTAL_COINS,
+        message: message
       });
 
     } catch (error) {
@@ -433,5 +499,7 @@ module.exports = {
   convertCoinsToCredits,
   getBalance,
   getConversionHistory,
-  claimDailyReward
+  claimDailyReward,
+  checkTreasureChestCapacity, // Export for use in other controllers
+  MAX_TOTAL_COINS // Export constant for use in other controllers
 };

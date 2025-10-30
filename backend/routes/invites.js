@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { checkTreasureChestCapacity, MAX_TOTAL_COINS } = require('../controllers/coinsController');
 
 // Generate a random invite code
 function generateInviteCode() {
@@ -177,7 +178,17 @@ router.post('/process', async (req, res) => {
     // Only award coins to individual users, not law firms or medical providers
     const REFERRAL_REWARD_COINS = 500;
     const shouldAwardCoins = invite.user_type === 'individual';
-    const coinsToAward = shouldAwardCoins ? REFERRAL_REWARD_COINS : 0;
+    let coinsToAward = 0;
+    let treasureChestFull = false;
+    let treasureChestMessage = null;
+    
+    // Check treasure chest capacity before awarding coins
+    if (shouldAwardCoins) {
+      const capacity = await checkTreasureChestCapacity(invite.referrer_user_id, REFERRAL_REWARD_COINS);
+      coinsToAward = capacity.canAward;
+      treasureChestFull = capacity.isFull;
+      treasureChestMessage = capacity.message;
+    }
 
     // Update invite status
     await db.query(
@@ -190,21 +201,31 @@ router.post('/process', async (req, res) => {
       [newUserId, coinsToAward, invite.id]
     );
 
-    // Award coins only to individual users
-    if (shouldAwardCoins) {
+    // Award coins only to individual users and only if treasure chest has space
+    if (shouldAwardCoins && coinsToAward > 0) {
       await db.query(
         'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
-        [REFERRAL_REWARD_COINS, invite.referrer_user_id]
+        [coinsToAward, invite.referrer_user_id]
       );
-      console.log(`✅ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. ${REFERRAL_REWARD_COINS} coins awarded.`);
+      console.log(`✅ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. ${coinsToAward} coins awarded.`);
+    } else if (shouldAwardCoins && coinsToAward === 0) {
+      console.log(`⚠️ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. No coins awarded - treasure chest is full!`);
     } else {
       console.log(`✅ Invite processed: User ${newUserId} accepted invite from ${invite.user_type} User ${invite.referrer_user_id}. No coins awarded (business account).`);
     }
 
+    let message = shouldAwardCoins 
+      ? (coinsToAward > 0 
+        ? `Your friend earned ${coinsToAward} coins for inviting you!${treasureChestMessage ? ' ' + treasureChestMessage : ''}` 
+        : treasureChestMessage || 'Invite accepted successfully!')
+      : 'Invite accepted successfully!';
+
     res.json({
       success: true,
       coinsAwarded: coinsToAward,
-      message: shouldAwardCoins ? `Your friend earned ${REFERRAL_REWARD_COINS} coins for inviting you!` : 'Invite accepted successfully!'
+      treasureChestFull: treasureChestFull,
+      maxCoins: MAX_TOTAL_COINS,
+      message: message
     });
   } catch (error) {
     console.error('Error processing invite:', error);
