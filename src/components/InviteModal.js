@@ -173,21 +173,21 @@ const InviteModal = ({ visible, onClose, user }) => {
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>💰</Text>
                   <Text style={styles.infoText}>
-                    Share your journey! Invite friends, law firms, or medical providers to join Verdict Path. Earn 500 coins for each person who signs up using your invite code!
+                    Invite your friends, peers, medical providers and even your lawyer to join Verdict Path! Earn 500 coins for each person who signs up using your invite code!
                   </Text>
                 </View>
               ) : user?.userType === 'lawfirm' ? (
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>⚓</Text>
                   <Text style={styles.infoText}>
-                    Invite clients and colleagues to join your firm on Verdict Path!
+                    Invite your clients, your friends and your peers to join Verdict Path!
                   </Text>
                 </View>
               ) : (
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>⚕️</Text>
                   <Text style={styles.infoText}>
-                    Invite patients and medical professionals to join Verdict Path!
+                    Invite your patients and other medical providers to join Verdict Path!
                   </Text>
                 </View>
               )}
