@@ -9,6 +9,44 @@ import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, form
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
+const ProgressBar = ({ progressPercentage, completedSubstages, totalSubstages }) => {
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    progressAnim.setValue(0);
+    Animated.timing(progressAnim, {
+      toValue: progressPercentage,
+      duration: 800,
+      useNativeDriver: false,
+    }).start();
+  }, [progressPercentage]);
+
+  const widthInterpolated = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
+  return (
+    <View style={styles.progressContainer}>
+      <View style={styles.progressHeader}>
+        <Text style={styles.progressTitle}>⚓ Your Journey Progress</Text>
+        <Text style={styles.progressPercentage}>{progressPercentage}%</Text>
+      </View>
+      <View style={styles.progressBarBackground}>
+        <Animated.View 
+          style={[
+            styles.progressBarFill, 
+            { width: widthInterpolated }
+          ]} 
+        />
+      </View>
+      <Text style={styles.progressSubtext}>
+        {completedSubstages} of {totalSubstages} milestones completed
+      </Text>
+    </View>
+  );
+};
+
 const RoadmapScreen = ({ 
   litigationStages, 
   onCompleteStage, 
@@ -728,6 +766,16 @@ const RoadmapScreen = ({
         );
       })()}
 
+      {selectedAvatar && !readOnly && (() => {
+        const totalSubstages = litigationStages.reduce((sum, stage) => sum + stage.subStages.length, 0);
+        const completedSubstages = litigationStages.reduce((sum, stage) => 
+          sum + stage.subStages.filter(s => s.completed).length, 0
+        );
+        const progressPercentage = totalSubstages > 0 ? Math.round((completedSubstages / totalSubstages) * 100) : 0;
+
+        return <ProgressBar progressPercentage={progressPercentage} completedSubstages={completedSubstages} totalSubstages={totalSubstages} />;
+      })()}
+
       {!selectedAvatar && !readOnly ? (
         <View style={styles.avatarSelectorContainer}>
           <AvatarSelector 
@@ -860,6 +908,56 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  progressContainer: {
+    backgroundColor: '#f9f6f0',
+    padding: 20,
+    marginHorizontal: 15,
+    marginTop: 15,
+    marginBottom: 10,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  progressTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  progressPercentage: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#d4a574',
+  },
+  progressBarBackground: {
+    height: 20,
+    backgroundColor: '#e0d9cc',
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#8b4513',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#d4a574',
+    borderRadius: 10,
+  },
+  progressSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
+    textAlign: 'center',
   },
   headerTitle: {
     fontSize: 20,
