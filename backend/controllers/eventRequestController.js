@@ -1,5 +1,4 @@
-const pool = require('../db');
-const notificationController = require('./notificationController');
+const { pool } = require('../config/db');
 
 const eventRequestController = {
   // Law firm creates an event request for a client

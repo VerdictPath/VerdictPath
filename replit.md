@@ -52,6 +52,16 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Achievement progress tracking API with automatic reward distribution
   - Leaderboard system (total coins, achievements, login streak)
   - User stats dashboard showing completion rates and totals
+- **Calendar Event Requests** (Complete - October 30, 2025):
+  - Law firms can request calendar events (depositions, mediations, consultations) from clients
+  - Automated notification system alerts clients of new event requests
+  - Clients select 3 available dates/times via mobile UI with cross-platform date picker
+  - Law firms receive client's proposed dates and confirm one
+  - Confirmed events automatically added to both parties' calendars with sharing enabled
+  - LawFirmEventRequestsScreen for creating and managing event requests
+  - ClientEventRequestsScreen for viewing requests and selecting dates
+  - Complete workflow with status tracking (pending, dates_submitted, confirmed, cancelled)
+  - Transaction-safe date submission and confirmation process
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
