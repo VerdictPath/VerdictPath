@@ -85,24 +85,53 @@ const InviteModal = ({ visible, onClose, user }) => {
     if (!inviteData) return;
     
     const subject = encodeURIComponent('Join Verdict Path - Legal Case Management');
-    const body = encodeURIComponent(
-      `Hi there!\n\nI've been using Verdict Path to navigate my legal case and wanted to invite you to join.\n\n` +
-      `Verdict Path is an interactive legal journey platform that helps you:\n` +
-      `• Track your litigation progress\n` +
-      `• Earn rewards for completing tasks\n` +
-      `• Store medical records securely\n` +
-      `• Learn about the legal process\n\n` +
-      `Use my invite code: ${inviteData.inviteCode}\n` +
-      `Or click here: ${inviteData.shareUrl}\n\n` +
-      `You'll get started on your path to justice, and I'll earn some bonus coins too!\n\n` +
-      `Best regards`
-    );
+    
+    let emailBody;
+    if (user?.userType === 'individual' || user?.userType === 'client') {
+      emailBody = encodeURIComponent(
+        `Hi there!\n\nI've been using Verdict Path to navigate my legal journey and wanted to invite you to join.\n\n` +
+        `Verdict Path is an interactive legal case management platform for individuals, law firms, and medical providers that helps you:\n` +
+        `• Track litigation progress step-by-step\n` +
+        `• Earn rewards for completing milestones\n` +
+        `• Store medical records securely (HIPAA-compliant)\n` +
+        `• Connect with legal and medical professionals\n` +
+        `• Learn about the legal process\n\n` +
+        `Use my invite code: ${inviteData.inviteCode}\n` +
+        `Or click here: ${inviteData.shareUrl}\n\n` +
+        `Whether you're navigating a case, providing legal services, or managing patient records, Verdict Path has the tools you need!\n\n` +
+        `Best regards`
+      );
+    } else if (user?.userType === 'lawfirm') {
+      emailBody = encodeURIComponent(
+        `Hi there!\n\nI'm inviting you to join our firm on Verdict Path - a comprehensive legal case management platform.\n\n` +
+        `Verdict Path helps law firms:\n` +
+        `• Manage client cases efficiently\n` +
+        `• Track litigation progress\n` +
+        `• Access secure client records\n` +
+        `• Connect with clients and medical providers\n\n` +
+        `Use my invite code: ${inviteData.inviteCode}\n` +
+        `Or click here: ${inviteData.shareUrl}\n\n` +
+        `Best regards`
+      );
+    } else {
+      emailBody = encodeURIComponent(
+        `Hi there!\n\nI'm inviting you to join our practice on Verdict Path - a HIPAA-compliant platform for medical providers.\n\n` +
+        `Verdict Path helps medical providers:\n` +
+        `• Manage patient records securely\n` +
+        `• Coordinate with law firms\n` +
+        `• Track case-related medical information\n` +
+        `• Streamline legal-medical collaboration\n\n` +
+        `Use my invite code: ${inviteData.inviteCode}\n` +
+        `Or click here: ${inviteData.shareUrl}\n\n` +
+        `Best regards`
+      );
+    }
     
     if (Platform.OS === 'web') {
-      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+      window.open(`mailto:?subject=${subject}&body=${emailBody}`, '_blank');
     } else {
       Share.share({
-        message: decodeURIComponent(body),
+        message: decodeURIComponent(emailBody),
         title: decodeURIComponent(subject)
       });
     }
@@ -139,11 +168,11 @@ const InviteModal = ({ visible, onClose, user }) => {
             </View>
           ) : inviteData ? (
             <View style={styles.content}>
-              {user?.userType === 'individual' ? (
+              {user?.userType === 'individual' || user?.userType === 'client' ? (
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>💰</Text>
                   <Text style={styles.infoText}>
-                    Earn 500 coins for each friend who joins using your invite code!
+                    Share your journey! Invite friends, law firms, or medical providers to join Verdict Path. Earn 500 coins for each person who signs up using your invite code!
                   </Text>
                 </View>
               ) : user?.userType === 'lawfirm' ? (
