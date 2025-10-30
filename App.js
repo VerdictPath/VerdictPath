@@ -107,22 +107,29 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         // Setup notification listeners
         const cleanup = NotificationService.setupNotificationListeners(
           // On notification received while app is open
-          (notification) => {
-            console.log('📬 Notification received:', notification);
+          async (notification) => {
+            // Refresh badge count when new notification arrives
+            if (user?.token) {
+              const unreadCount = await NotificationService.fetchUnreadCount(user.token);
+              await NotificationService.setBadgeCount(unreadCount);
+            }
+            
             if (notificationContext?.refreshNotifications) {
               notificationContext.refreshNotifications();
             }
           },
           // On notification tapped
           async (response) => {
-            console.log('👆 Notification tapped:', response);
-            
             const { notificationId, actionUrl, type, taskId } = response.notification.request.content.data || {};
             
             // Mark as read and clicked
             if (notificationId && user?.token) {
               await NotificationService.markNotificationAsRead(notificationId, user.token);
               await NotificationService.markNotificationAsClicked(notificationId, user.token);
+              
+              // Refresh badge count after marking as read
+              const unreadCount = await NotificationService.fetchUnreadCount(user.token);
+              await NotificationService.setBadgeCount(unreadCount);
             }
             
             // Handle deep linking based on notification type
@@ -570,9 +577,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   const handleLogout = async () => {
     try {
+      if (user?.token && user?.id) {
+        await NotificationService.unregisterDeviceFromBackend(user.token, user.id);
+      }
       await notificationContext.logout();
     } catch (error) {
-      console.error('Error logging out notifications:', error);
+      console.error('Error logging out:', error);
     }
     
     setIsLoggedIn(false);
