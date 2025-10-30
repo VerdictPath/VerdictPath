@@ -315,6 +315,53 @@ class NotificationService {
       return [];
     }
   }
+
+  async getPreferences(authToken) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/preferences`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch preferences');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching notification preferences:', error);
+      throw error;
+    }
+  }
+
+  async updatePreferences(authToken, preferences) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(preferences),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update preferences');
+      }
+
+      return data.preferences;
+    } catch (error) {
+      console.error('Error updating notification preferences:', error);
+      throw error;
+    }
+  }
 }
 
 export default new NotificationService();
