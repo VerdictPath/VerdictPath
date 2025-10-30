@@ -563,6 +563,13 @@ exports.sendToAllClients = async (req, res) => {
 
     const notificationPromises = clientsResult.rows.map(async (client) => {
       try {
+        // Check user preferences for this client
+        const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
+        if (!prefCheck.allowed) {
+          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
+          return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
+        }
+
         const notificationQuery = `
           INSERT INTO notifications (
             sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -801,6 +808,23 @@ exports.sendToClient = async (req, res) => {
     const lawFirmResult = await pool.query(lawFirmQuery, [lawFirmId]);
     const senderName = lawFirmResult.rows[0]?.firm_name || 'Law Firm';
 
+    // Check if notification should be sent based on user preferences and quiet hours
+    const prefCheck = await checkNotificationPreferences('user', clientId, type, priority);
+    
+    if (!prefCheck.allowed) {
+      if (prefCheck.queue) {
+        // TODO: Implement notification queuing for quiet hours
+        return res.status(202).json({ 
+          message: 'Notification queued for later delivery during non-quiet hours',
+          reason: prefCheck.reason
+        });
+      }
+      return res.status(403).json({ 
+        error: 'Notification blocked by user preferences',
+        reason: prefCheck.reason
+      });
+    }
+
     const notificationQuery = `
       INSERT INTO notifications (
         sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -904,6 +928,13 @@ exports.sendToAllPatients = async (req, res) => {
 
     const notificationPromises = patientsResult.rows.map(async (patient) => {
       try {
+        // Check user preferences for this patient
+        const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
+        if (!prefCheck.allowed) {
+          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
+          return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
+        }
+
         const notificationQuery = `
           INSERT INTO notifications (
             sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -1026,6 +1057,13 @@ exports.sendToPatients = async (req, res) => {
 
     const notificationPromises = verifyResult.rows.map(async (patient) => {
       try {
+        // Check user preferences for this patient
+        const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
+        if (!prefCheck.allowed) {
+          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
+          return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
+        }
+
         const notificationQuery = `
           INSERT INTO notifications (
             sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -1134,6 +1172,23 @@ exports.sendToPatient = async (req, res) => {
     const providerQuery = 'SELECT provider_name FROM medical_providers WHERE id = $1';
     const providerResult = await pool.query(providerQuery, [medicalProviderId]);
     const senderName = providerResult.rows[0]?.provider_name || 'Medical Provider';
+
+    // Check if notification should be sent based on user preferences and quiet hours
+    const prefCheck = await checkNotificationPreferences('user', patientId, type, priority);
+    
+    if (!prefCheck.allowed) {
+      if (prefCheck.queue) {
+        // TODO: Implement notification queuing for quiet hours
+        return res.status(202).json({ 
+          message: 'Notification queued for later delivery during non-quiet hours',
+          reason: prefCheck.reason
+        });
+      }
+      return res.status(403).json({ 
+        error: 'Notification blocked by user preferences',
+        reason: prefCheck.reason
+      });
+    }
 
     const notificationQuery = `
       INSERT INTO notifications (
