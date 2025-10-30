@@ -220,6 +220,16 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
+          onPress={() => onNavigate('event-requests')}
+        >
+          <View style={styles.iconBadgeEmoji}>
+            <Text style={styles.emojiIcon}>📅</Text>
+          </View>
+          <Text style={styles.menuText}>Event Requests</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
           onPress={onConvertCoins}
         >
           <View style={styles.iconBadgeCoin}>
