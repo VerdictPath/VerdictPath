@@ -23,4 +23,7 @@ router.get('/history', authenticateToken, notificationsController.getNotificatio
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.put('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
 
+router.get('/preferences', authenticateToken, notificationsController.getPreferences);
+router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
+
 module.exports = router;

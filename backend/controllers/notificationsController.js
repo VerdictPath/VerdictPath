@@ -6,6 +6,118 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// Helper function to check if notification should be sent based on preferences and quiet hours
+async function checkNotificationPreferences(recipientType, recipientId, notificationType, priority) {
+  try {
+    let idField;
+    if (recipientType === 'user') {
+      idField = 'user_id';
+    } else if (recipientType === 'law_firm') {
+      idField = 'law_firm_id';
+    } else {
+      idField = 'medical_provider_id';
+    }
+
+    const query = `SELECT * FROM notification_preferences WHERE ${idField} = $1`;
+    const result = await pool.query(query, [recipientId]);
+
+    if (result.rows.length === 0) {
+      return { allowed: true, reason: null };
+    }
+
+    const prefs = result.rows[0];
+
+    // Check if push notifications are enabled globally
+    if (!prefs.push_notifications_enabled) {
+      return { allowed: false, reason: 'Push notifications disabled by user' };
+    }
+
+    // Check urgent notification preference first
+    if (priority === 'urgent' && !prefs.urgent_notifications) {
+      return { allowed: false, reason: 'Urgent notifications disabled by user' };
+    }
+
+    // Urgent notifications bypass other checks but respect the urgent toggle
+    if (priority === 'urgent') {
+      return { allowed: true, reason: null };
+    }
+
+    // Check notification type preferences for non-urgent notifications
+    const typeMapping = {
+      'task_assigned': 'task_notifications',
+      'task_reminder': 'task_notifications',
+      'task_completed': 'task_notifications',
+      'daily_streak': 'system_notifications',
+      'milestone_update': 'system_notifications',
+      'coin_reward': 'system_notifications',
+      'marketing': 'marketing_notifications',
+      'promotional': 'marketing_notifications',
+      'product_update': 'marketing_notifications'
+    };
+
+    const prefField = typeMapping[notificationType];
+    if (prefField && !prefs[prefField]) {
+      return { allowed: false, reason: `${notificationType} notifications disabled by user` };
+    }
+
+    // Default to checking if type contains keywords
+    if (notificationType.includes('system') && !prefs.system_notifications) {
+      return { allowed: false, reason: 'System notifications disabled by user' };
+    }
+    if (notificationType.includes('task') && !prefs.task_notifications) {
+      return { allowed: false, reason: 'Task notifications disabled by user' };
+    }
+    if ((notificationType.includes('marketing') || notificationType.includes('promotion')) && !prefs.marketing_notifications) {
+      return { allowed: false, reason: 'Marketing notifications disabled by user' };
+    }
+
+    // Check quiet hours
+    if (prefs.quiet_hours_enabled && priority !== 'urgent') {
+      const isQuietTime = checkIfQuietHours(
+        prefs.quiet_hours_start,
+        prefs.quiet_hours_end,
+        prefs.timezone
+      );
+
+      if (isQuietTime) {
+        return { allowed: false, reason: 'Quiet hours active', queue: true };
+      }
+    }
+
+    return { allowed: true, reason: null };
+  } catch (error) {
+    console.error('Error checking notification preferences:', error);
+    return { allowed: true, reason: null };
+  }
+}
+
+// Helper function to check if current time is in quiet hours
+function checkIfQuietHours(startTime, endTime, timezone) {
+  try {
+    const now = new Date();
+    const userTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    const currentHour = userTime.getHours();
+    const currentMinute = userTime.getMinutes();
+
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+
+    const currentTimeMinutes = currentHour * 60 + currentMinute;
+    const startTimeMinutes = startHour * 60 + startMin;
+    const endTimeMinutes = endHour * 60 + endMin;
+
+    // Handle quiet hours that span midnight
+    if (startTimeMinutes < endTimeMinutes) {
+      return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes < endTimeMinutes;
+    } else {
+      return currentTimeMinutes >= startTimeMinutes || currentTimeMinutes < endTimeMinutes;
+    }
+  } catch (error) {
+    console.error('Error checking quiet hours:', error);
+    return false;
+  }
+}
+
 function getEntityInfo(req) {
   const userType = req.user?.userType;
   const entityId = req.user?.id;
@@ -177,6 +289,23 @@ exports.sendNotification = async (req, res) => {
   }
 
   try {
+    // Check if notification should be sent based on user preferences and quiet hours
+    const prefCheck = await checkNotificationPreferences(recipientType, recipientId, type, priority);
+    
+    if (!prefCheck.allowed) {
+      if (prefCheck.queue) {
+        // TODO: Implement notification queuing for quiet hours
+        return res.status(202).json({ 
+          message: 'Notification queued for later delivery during non-quiet hours',
+          reason: prefCheck.reason
+        });
+      }
+      return res.status(403).json({ 
+        error: 'Notification blocked by user preferences',
+        reason: prefCheck.reason
+      });
+    }
+
     const deviceQuery = `
       SELECT expo_push_token FROM user_devices 
       WHERE ${recipientType}_id = $1 AND is_active = true
@@ -556,6 +685,13 @@ exports.sendToClients = async (req, res) => {
 
     const notificationPromises = verifyResult.rows.map(async (client) => {
       try {
+        // Check user preferences for this client
+        const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
+        if (!prefCheck.allowed) {
+          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
+          return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
+        }
+
         const notificationQuery = `
           INSERT INTO notifications (
             sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -1245,5 +1381,204 @@ exports.getNotificationHistory = async (req, res) => {
   } catch (error) {
     console.error('Get notification history error:', error);
     res.status(500).json({ error: 'Failed to get notification history' });
+  }
+};
+
+exports.getPreferences = async (req, res) => {
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { deviceType, entityId } = entityInfo;
+
+  try {
+    let query, idField;
+    
+    if (deviceType === 'user') {
+      idField = 'user_id';
+    } else if (deviceType === 'law_firm') {
+      idField = 'law_firm_id';
+    } else {
+      idField = 'medical_provider_id';
+    }
+
+    query = `SELECT * FROM notification_preferences WHERE ${idField} = $1`;
+    let result = await pool.query(query, [entityId]);
+
+    if (result.rows.length === 0) {
+      const insertQuery = `
+        INSERT INTO notification_preferences (${idField})
+        VALUES ($1)
+        RETURNING *
+      `;
+      result = await pool.query(insertQuery, [entityId]);
+    }
+
+    const prefs = result.rows[0];
+
+    res.json({
+      pushNotificationsEnabled: prefs.push_notifications_enabled,
+      emailNotificationsEnabled: prefs.email_notifications_enabled,
+      quietHoursEnabled: prefs.quiet_hours_enabled,
+      quietHoursStart: prefs.quiet_hours_start,
+      quietHoursEnd: prefs.quiet_hours_end,
+      timezone: prefs.timezone,
+      urgentNotifications: prefs.urgent_notifications,
+      taskNotifications: prefs.task_notifications,
+      systemNotifications: prefs.system_notifications,
+      marketingNotifications: prefs.marketing_notifications
+    });
+  } catch (error) {
+    console.error('Error fetching preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch notification preferences' });
+  }
+};
+
+exports.updatePreferences = async (req, res) => {
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { deviceType, entityId } = entityInfo;
+  const {
+    pushNotificationsEnabled,
+    emailNotificationsEnabled,
+    quietHoursEnabled,
+    quietHoursStart,
+    quietHoursEnd,
+    timezone,
+    urgentNotifications,
+    taskNotifications,
+    systemNotifications,
+    marketingNotifications
+  } = req.body;
+
+  try {
+    let idField;
+    
+    if (deviceType === 'user') {
+      idField = 'user_id';
+    } else if (deviceType === 'law_firm') {
+      idField = 'law_firm_id';
+    } else {
+      idField = 'medical_provider_id';
+    }
+
+    const checkQuery = `SELECT id FROM notification_preferences WHERE ${idField} = $1`;
+    const checkResult = await pool.query(checkQuery, [entityId]);
+
+    let result;
+    
+    if (checkResult.rows.length === 0) {
+      const insertQuery = `
+        INSERT INTO notification_preferences (
+          ${idField},
+          push_notifications_enabled,
+          email_notifications_enabled,
+          quiet_hours_enabled,
+          quiet_hours_start,
+          quiet_hours_end,
+          timezone,
+          urgent_notifications,
+          task_notifications,
+          system_notifications,
+          marketing_notifications
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *
+      `;
+      result = await pool.query(insertQuery, [
+        entityId,
+        pushNotificationsEnabled !== undefined ? pushNotificationsEnabled : true,
+        emailNotificationsEnabled !== undefined ? emailNotificationsEnabled : true,
+        quietHoursEnabled !== undefined ? quietHoursEnabled : false,
+        quietHoursStart || '22:00:00',
+        quietHoursEnd || '08:00:00',
+        timezone || 'America/New_York',
+        urgentNotifications !== undefined ? urgentNotifications : true,
+        taskNotifications !== undefined ? taskNotifications : true,
+        systemNotifications !== undefined ? systemNotifications : true,
+        marketingNotifications !== undefined ? marketingNotifications : false
+      ]);
+    } else {
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (pushNotificationsEnabled !== undefined) {
+        updates.push(`push_notifications_enabled = $${paramIndex++}`);
+        values.push(pushNotificationsEnabled);
+      }
+      if (emailNotificationsEnabled !== undefined) {
+        updates.push(`email_notifications_enabled = $${paramIndex++}`);
+        values.push(emailNotificationsEnabled);
+      }
+      if (quietHoursEnabled !== undefined) {
+        updates.push(`quiet_hours_enabled = $${paramIndex++}`);
+        values.push(quietHoursEnabled);
+      }
+      if (quietHoursStart !== undefined) {
+        updates.push(`quiet_hours_start = $${paramIndex++}`);
+        values.push(quietHoursStart);
+      }
+      if (quietHoursEnd !== undefined) {
+        updates.push(`quiet_hours_end = $${paramIndex++}`);
+        values.push(quietHoursEnd);
+      }
+      if (timezone !== undefined) {
+        updates.push(`timezone = $${paramIndex++}`);
+        values.push(timezone);
+      }
+      if (urgentNotifications !== undefined) {
+        updates.push(`urgent_notifications = $${paramIndex++}`);
+        values.push(urgentNotifications);
+      }
+      if (taskNotifications !== undefined) {
+        updates.push(`task_notifications = $${paramIndex++}`);
+        values.push(taskNotifications);
+      }
+      if (systemNotifications !== undefined) {
+        updates.push(`system_notifications = $${paramIndex++}`);
+        values.push(systemNotifications);
+      }
+      if (marketingNotifications !== undefined) {
+        updates.push(`marketing_notifications = $${paramIndex++}`);
+        values.push(marketingNotifications);
+      }
+
+      updates.push(`updated_at = CURRENT_TIMESTAMP`);
+      values.push(entityId);
+
+      const updateQuery = `
+        UPDATE notification_preferences
+        SET ${updates.join(', ')}
+        WHERE ${idField} = $${paramIndex}
+        RETURNING *
+      `;
+      
+      result = await pool.query(updateQuery, values);
+    }
+
+    const prefs = result.rows[0];
+
+    res.json({
+      message: 'Notification preferences updated successfully',
+      preferences: {
+        pushNotificationsEnabled: prefs.push_notifications_enabled,
+        emailNotificationsEnabled: prefs.email_notifications_enabled,
+        quietHoursEnabled: prefs.quiet_hours_enabled,
+        quietHoursStart: prefs.quiet_hours_start,
+        quietHoursEnd: prefs.quiet_hours_end,
+        timezone: prefs.timezone,
+        urgentNotifications: prefs.urgent_notifications,
+        taskNotifications: prefs.task_notifications,
+        systemNotifications: prefs.system_notifications,
+        marketingNotifications: prefs.marketing_notifications
+      }
+    });
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    res.status(500).json({ error: 'Failed to update notification preferences' });
   }
 };
