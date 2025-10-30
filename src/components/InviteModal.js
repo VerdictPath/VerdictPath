@@ -99,7 +99,7 @@ const InviteModal = ({ visible, onClose, user }) => {
         `• Learn about the legal process\n\n` +
         `Use my invite code: ${inviteData.inviteCode}\n` +
         `Or click here: ${inviteData.shareUrl}\n\n` +
-        `Whether you're navigating a case, providing legal services, or managing patient records, Verdict Path has the tools you need!\n\n` +
+        `Whether you're learning about litigation and navigating your case, providing legal services, or treating your patients, Verdict Path has the tools you need!\n\n` +
         `Best regards`
       );
     } else if (user?.userType === 'lawfirm') {
