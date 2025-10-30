@@ -1,0 +1,894 @@
+# Verdict Path UI/UX Improvements - Replit Agent Prompt
+
+## 🎯 Task Overview
+Implement four key UI/UX improvements to the Verdict Path mobile app:
+1. Progress percentage bar on roadmap screen
+2. Celebration animations for milestone completions
+3. Bottom navigation for mobile
+4. Visual onboarding flow (3-5 screens)
+
+## 📋 Prerequisites
+- App uses React Native with Expo SDK 52
+- Main app entry: `App.js`
+- Screens located in: `src/screens/`
+- Components in: `src/components/`
+- Styles in: `src/styles/`
+- Backend API base URL: `https://verdictpath.up.railway.app/`
+- Theme: Pirate treasure map aesthetic with tan/beige (#d4a574) and navy (#2c3e50)
+
+---
+
+## 🎨 Task 1: Add Progress Percentage Bar to Roadmap Screen
+
+### Location
+File: `src/screens/RoadmapScreen.js`
+
+### Requirements
+1. Calculate overall completion percentage based on completed substages
+2. Display a visual progress bar at the top of the roadmap screen
+3. Show percentage text (e.g., "32% Complete")
+4. Use pirate-themed styling (treasure chest or compass visual)
+5. Animate the progress bar fill smoothly
+
+### Implementation Details
+```javascript
+// Add to RoadmapScreen.js component
+
+// Calculate progress
+const totalSubstages = roadmapData.reduce((sum, stage) => sum + stage.substages.length, 0);
+const completedSubstages = roadmapData.reduce((sum, stage) => 
+  sum + stage.substages.filter(s => s.completed).length, 0
+);
+const progressPercentage = Math.round((completedSubstages / totalSubstages) * 100);
+
+// Progress Bar Component
+<View style={styles.progressContainer}>
+  <View style={styles.progressHeader}>
+    <Text style={styles.progressTitle}>⚓ Your Journey Progress</Text>
+    <Text style={styles.progressPercentage}>{progressPercentage}%</Text>
+  </View>
+  <View style={styles.progressBarBackground}>
+    <Animated.View 
+      style={[
+        styles.progressBarFill, 
+        { width: `${progressPercentage}%` }
+      ]} 
+    />
+  </View>
+  <Text style={styles.progressSubtext}>
+    {completedSubstages} of {totalSubstages} milestones completed
+  </Text>
+</View>
+```
+
+### Styling
+```javascript
+progressContainer: {
+  backgroundColor: '#f9f6f0',
+  padding: 20,
+  marginHorizontal: 15,
+  marginTop: 15,
+  marginBottom: 10,
+  borderRadius: 15,
+  borderWidth: 2,
+  borderColor: '#d4a574',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+progressHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+},
+progressTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#2c3e50',
+},
+progressPercentage: {
+  fontSize: 24,
+  fontWeight: 'bold',
+  color: '#d4a574',
+},
+progressBarBackground: {
+  height: 20,
+  backgroundColor: '#e0d9cc',
+  borderRadius: 10,
+  overflow: 'hidden',
+  borderWidth: 1,
+  borderColor: '#8b4513',
+},
+progressBarFill: {
+  height: '100%',
+  backgroundColor: '#d4a574',
+  borderRadius: 10,
+},
+progressSubtext: {
+  fontSize: 12,
+  color: '#666',
+  marginTop: 5,
+  textAlign: 'center',
+},
+```
+
+---
+
+## 🎉 Task 2: Create Celebration Animations for Milestone Completions
+
+### Location
+Create new file: `src/components/CelebrationAnimation.js`
+
+### Requirements
+1. Trigger animation when a substage is marked complete
+2. Show confetti/treasure chest animation
+3. Display congratulatory message with pirate theme
+4. Play for 2-3 seconds then auto-dismiss
+5. Optional: Add sound effect (coin clink)
+
+### Implementation
+
+#### CelebrationAnimation.js Component
+```javascript
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Modal, Animated, StyleSheet, Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
+
+const CelebrationAnimation = ({ visible, onComplete, milestone }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const confettiAnims = useRef(
+    Array.from({ length: 20 }, () => ({
+      x: new Animated.Value(Math.random() * width),
+      y: new Animated.Value(-50),
+      rotation: new Animated.Value(0),
+    }))
+  ).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Start main animation
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Confetti animation
+      const confettiAnimations = confettiAnims.map((anim) =>
+        Animated.parallel([
+          Animated.timing(anim.y, {
+            toValue: height + 100,
+            duration: 2000 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim.rotation, {
+            toValue: Math.random() * 720,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      Animated.parallel(confettiAnimations).start();
+
+      // Auto-dismiss after 2.5 seconds
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => onComplete());
+      }, 2500);
+    }
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="none">
+      <View style={styles.overlay}>
+        {/* Confetti */}
+        {confettiAnims.map((anim, index) => (
+          <Animated.View
+            key={index}
+            style={[
+              styles.confetti,
+              {
+                left: anim.x,
+                transform: [
+                  { translateY: anim.y },
+                  { rotate: anim.rotation.interpolate({
+                      inputRange: [0, 360],
+                      outputRange: ['0deg', '360deg'],
+                    })
+                  },
+                ],
+                backgroundColor: ['#d4a574', '#2c3e50', '#8b4513', '#f39c12'][index % 4],
+              },
+            ]}
+          />
+        ))}
+
+        {/* Main celebration card */}
+        <Animated.View
+          style={[
+            styles.celebrationCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <Text style={styles.treasure}>💰</Text>
+          <Text style={styles.congratsText}>Ahoy, Matey!</Text>
+          <Text style={styles.milestoneText}>Milestone Complete!</Text>
+          {milestone && (
+            <Text style={styles.milestoneName}>{milestone}</Text>
+          )}
+          <Text style={styles.coinsText}>⚓ +100 Coins Earned! ⚓</Text>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confetti: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  celebrationCard: {
+    backgroundColor: '#f9f6f0',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#d4a574',
+    width: width * 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  treasure: {
+    fontSize: 60,
+    marginBottom: 10,
+  },
+  congratsText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  milestoneText: {
+    fontSize: 18,
+    color: '#8b4513',
+    marginBottom: 10,
+  },
+  milestoneName: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 15,
+    fontStyle: 'italic',
+  },
+  coinsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#d4a574',
+  },
+});
+
+export default CelebrationAnimation;
+```
+
+#### Integration into RoadmapScreen.js
+```javascript
+// Add to imports
+import CelebrationAnimation from '../components/CelebrationAnimation';
+
+// Add state
+const [showCelebration, setShowCelebration] = useState(false);
+const [completedMilestone, setCompletedMilestone] = useState('');
+
+// Modify the completeSubstage function
+const completeSubstage = async (stageIndex, substageIndex) => {
+  try {
+    // ... existing API call ...
+    
+    // Trigger celebration
+    const milestone = roadmapData[stageIndex].substages[substageIndex].title;
+    setCompletedMilestone(milestone);
+    setShowCelebration(true);
+    
+    // ... rest of existing code ...
+  } catch (error) {
+    // ... error handling ...
+  }
+};
+
+// Add to JSX before closing tag
+<CelebrationAnimation 
+  visible={showCelebration}
+  milestone={completedMilestone}
+  onComplete={() => setShowCelebration(false)}
+/>
+```
+
+---
+
+## 🧭 Task 3: Implement Bottom Navigation for Mobile
+
+### Location
+Modify: `App.js` and create `src/components/BottomNavigation.js`
+
+### Requirements
+1. Sticky bottom navigation bar with 4-5 main tabs
+2. Icons: Home, Roadmap, Medical Hub, Coins, Profile
+3. Highlight active tab with pirate theme
+4. Smooth transitions between screens
+5. Hide on keyboard open (mobile optimization)
+
+### Implementation
+
+#### BottomNavigation.js Component
+```javascript
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+
+const BottomNavigation = ({ navigation, currentRoute }) => {
+  const tabs = [
+    { name: 'Dashboard', icon: '🏠', route: 'Dashboard' },
+    { name: 'Roadmap', icon: '🗺️', route: 'Roadmap' },
+    { name: 'Medical', icon: '⚕️', route: 'MedicalHub' },
+    { name: 'Coins', icon: '💰', route: 'Coins' },
+    { name: 'Profile', icon: '👤', route: 'Profile' },
+  ];
+
+  return (
+    <View style={styles.container}>
+      {tabs.map((tab) => {
+        const isActive = currentRoute === tab.route;
+        return (
+          <TouchableOpacity
+            key={tab.route}
+            style={styles.tab}
+            onPress={() => navigation.navigate(tab.route)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+              <Text style={styles.icon}>{tab.icon}</Text>
+            </View>
+            <Text style={[styles.label, isActive && styles.activeLabel]}>
+              {tab.name}
+            </Text>
+            {isActive && <View style={styles.activeIndicator} />}
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    backgroundColor: '#2c3e50',
+    borderTopWidth: 2,
+    borderTopColor: '#d4a574',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    paddingTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  activeIconContainer: {
+    backgroundColor: '#d4a574',
+  },
+  icon: {
+    fontSize: 22,
+  },
+  label: {
+    fontSize: 10,
+    color: '#95a5a6',
+    marginTop: 2,
+  },
+  activeLabel: {
+    color: '#d4a574',
+    fontWeight: 'bold',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    top: 0,
+    width: 30,
+    height: 3,
+    backgroundColor: '#d4a574',
+    borderRadius: 2,
+  },
+});
+
+export default BottomNavigation;
+```
+
+#### Update App.js to include BottomNavigation
+```javascript
+// Add to imports
+import BottomNavigation from './src/components/BottomNavigation';
+import { NavigationContainer, useNavigationState } from '@react-navigation/native';
+
+// Wrap your Stack.Navigator with a container that tracks route
+function AppNavigator() {
+  const [currentRoute, setCurrentRoute] = React.useState('Dashboard');
+  
+  return (
+    <NavigationContainer
+      onStateChange={(state) => {
+        const route = state?.routes[state.index]?.name;
+        if (route) setCurrentRoute(route);
+      }}
+    >
+      <Stack.Navigator>
+        {/* ... existing screens ... */}
+      </Stack.Navigator>
+      
+      {/* Add bottom navigation - only show on main screens */}
+      {['Dashboard', 'Roadmap', 'MedicalHub', 'Coins', 'Profile'].includes(currentRoute) && (
+        <BottomNavigation currentRoute={currentRoute} />
+      )}
+    </NavigationContainer>
+  );
+}
+```
+
+---
+
+## 🎓 Task 4: Create Visual Onboarding Flow (3-5 Screens)
+
+### Location
+Create new file: `src/screens/OnboardingScreen.js`
+
+### Requirements
+1. 5 swipeable screens introducing key features
+2. Pirate theme with illustrations/icons
+3. Skip button on all screens
+4. "Get Started" button on final screen
+5. Store completion in AsyncStorage (don't show again)
+
+### Implementation
+
+#### OnboardingScreen.js
+```javascript
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+  FlatList,
+  Animated,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width, height } = Dimensions.get('window');
+
+const onboardingData = [
+  {
+    id: '1',
+    icon: '🗺️',
+    title: 'Chart Your Course to Justice',
+    description: 'Navigate your legal journey with our interactive roadmap. Track every step from consultation to verdict.',
+    color: '#2c3e50',
+  },
+  {
+    id: '2',
+    icon: '💰',
+    title: 'Earn Treasure Along the Way',
+    description: 'Complete milestones and earn coins! Convert your progress into real credits for premium features.',
+    color: '#d4a574',
+  },
+  {
+    id: '3',
+    icon: '⚕️',
+    title: 'Your Medical Records, Secure',
+    description: 'HIPAA-compliant storage for all your medical documents. Share securely with your legal team.',
+    color: '#8b4513',
+  },
+  {
+    id: '4',
+    icon: '🤝',
+    title: 'Stay Connected',
+    description: 'Your law firm and medical providers can track your progress and provide real-time support.',
+    color: '#2c3e50',
+  },
+  {
+    id: '5',
+    icon: '🏴‍☠️',
+    title: 'Ready to Set Sail?',
+    description: 'Join thousands navigating their legal journey. Your path to justice starts now!',
+    color: '#d4a574',
+  },
+];
+
+const OnboardingScreen = ({ navigation }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef(null);
+
+  const completeOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      navigation.replace('Landing');
+    } catch (error) {
+      console.error('Error saving onboarding status:', error);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIndex < onboardingData.length - 1) {
+      flatListRef.current?.scrollToIndex({
+        index: currentIndex + 1,
+        animated: true,
+      });
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      completeOnboarding();
+    }
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.slide, { backgroundColor: item.color }]}>
+      <Text style={styles.icon}>{item.icon}</Text>
+      <Text style={styles.title}>{item.title}</Text>
+      <Text style={styles.description}>{item.description}</Text>
+    </View>
+  );
+
+  const Pagination = () => {
+    return (
+      <View style={styles.paginationContainer}>
+        {onboardingData.map((_, index) => {
+          const inputRange = [
+            (index - 1) * width,
+            index * width,
+            (index + 1) * width,
+          ];
+
+          const dotWidth = scrollX.interpolate({
+            inputRange,
+            outputRange: [10, 30, 10],
+            extrapolate: 'clamp',
+          });
+
+          const opacity = scrollX.interpolate({
+            inputRange,
+            outputRange: [0.3, 1, 0.3],
+            extrapolate: 'clamp',
+          });
+
+          return (
+            <Animated.View
+              key={index}
+              style={[
+                styles.dot,
+                { width: dotWidth, opacity },
+              ]}
+            />
+          );
+        })}
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Skip Button */}
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={completeOnboarding}
+      >
+        <Text style={styles.skipText}>Skip ⚓</Text>
+      </TouchableOpacity>
+
+      {/* Slides */}
+      <FlatList
+        ref={flatListRef}
+        data={onboardingData}
+        renderItem={renderItem}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item.id}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
+        onMomentumScrollEnd={(event) => {
+          const index = Math.round(event.nativeEvent.contentOffset.x / width);
+          setCurrentIndex(index);
+        }}
+        scrollEventThrottle={16}
+      />
+
+      {/* Pagination & Navigation */}
+      <View style={styles.footer}>
+        <Pagination />
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            currentIndex === onboardingData.length - 1 && styles.getStartedButton,
+          ]}
+          onPress={handleNext}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentIndex === onboardingData.length - 1 ? '🏴‍☠️ Get Started!' : 'Next →'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#2c3e50',
+  },
+  skipButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  skipText: {
+    color: '#d4a574',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  slide: {
+    width,
+    height: height * 0.75,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  icon: {
+    fontSize: 100,
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#f9f6f0',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  description: {
+    fontSize: 16,
+    color: '#ecf0f1',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 50,
+    width: '100%',
+    alignItems: 'center',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  dot: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#d4a574',
+    marginHorizontal: 5,
+  },
+  nextButton: {
+    backgroundColor: '#d4a574',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#8b4513',
+  },
+  getStartedButton: {
+    backgroundColor: '#27ae60',
+    borderColor: '#229954',
+  },
+  nextButtonText: {
+    color: '#2c3e50',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+});
+
+export default OnboardingScreen;
+```
+
+#### Update App.js to Check Onboarding Status
+```javascript
+// Add to imports
+import OnboardingScreen from './src/screens/OnboardingScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Add check in App component
+function App() {
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
+
+  useEffect(() => {
+    checkOnboarding();
+  }, []);
+
+  const checkOnboarding = async () => {
+    try {
+      const completed = await AsyncStorage.getItem('hasCompletedOnboarding');
+      setHasCompletedOnboarding(completed === 'true');
+    } catch (error) {
+      console.error('Error checking onboarding:', error);
+      setHasCompletedOnboarding(false);
+    }
+  };
+
+  if (hasCompletedOnboarding === null) {
+    return null; // or loading screen
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName={hasCompletedOnboarding ? 'Landing' : 'Onboarding'}>
+        <Stack.Screen 
+          name="Onboarding" 
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+        {/* ... rest of your screens ... */}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+```
+
+---
+
+## ✅ Testing Checklist
+
+After implementation, test the following:
+
+### Progress Bar
+- [ ] Calculates percentage correctly
+- [ ] Updates in real-time when substages are completed
+- [ ] Displays properly on different screen sizes
+- [ ] Animation is smooth
+
+### Celebration Animation
+- [ ] Triggers when substage is marked complete
+- [ ] Confetti animates correctly
+- [ ] Auto-dismisses after 2.5 seconds
+- [ ] Doesn't block other UI interactions
+- [ ] Works on both iOS and Android
+
+### Bottom Navigation
+- [ ] All tabs navigate correctly
+- [ ] Active tab is highlighted
+- [ ] Icons are visible and clear
+- [ ] Works on different screen sizes
+- [ ] Hidden on non-main screens (login, register, etc.)
+
+### Onboarding Flow
+- [ ] All 5 screens swipe smoothly
+- [ ] Pagination dots update correctly
+- [ ] Skip button works on all screens
+- [ ] "Get Started" navigates to Landing screen
+- [ ] Only shows once (stored in AsyncStorage)
+- [ ] Can be reset by clearing AsyncStorage for testing
+
+---
+
+## 📦 Dependencies to Install
+
+Run these commands in your project root:
+
+```bash
+npm install @react-native-async-storage/async-storage
+npm install react-native-reanimated
+```
+
+Make sure `react-navigation` is installed (should already be in the project):
+```bash
+npm install @react-navigation/native @react-navigation/stack
+```
+
+---
+
+## 🚀 Deployment Notes
+
+1. After making changes, rebuild the Expo app:
+   ```bash
+   npx expo export --platform web --output-dir backend/public/app
+   ```
+
+2. Test locally first:
+   ```bash
+   npx expo start
+   ```
+
+3. Commit changes and push to Railway for production deployment
+
+---
+
+## 🎨 Design Consistency Notes
+
+All new components follow the Verdict Path design system:
+- **Primary Color**: Navy blue (#2c3e50)
+- **Secondary Color**: Warm tan/beige (#d4a574)
+- **Accent Color**: Mahogany (#8b4513)
+- **Success Color**: Green (#27ae60)
+- **Background**: Light parchment (#f9f6f0)
+- **Font**: System default (works across platforms)
+- **Border Radius**: 10-20px for cards
+- **Shadow**: Subtle elevation for depth
+
+---
+
+## 💡 Additional Enhancements (Optional)
+
+If time permits, consider:
+- Add haptic feedback on button presses (Expo Haptics)
+- Add sound effects for celebrations (Expo AV)
+- Implement smooth page transitions
+- Add loading states for async operations
+- Create a debug menu to reset onboarding for testing
+
+---
+
+## 📞 Support
+
+If you encounter issues:
+1. Check Expo logs: `npx expo start`
+2. Verify all dependencies are installed
+3. Clear Metro bundler cache: `npx expo start -c`
+4. Check Railway logs for backend errors
+5. Verify API endpoints are responding correctly
+
+Good luck with the implementation! 🏴‍☠️
