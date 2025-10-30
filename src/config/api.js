@@ -50,7 +50,9 @@ export const API_ENDPOINTS = {
   CONNECTIONS: {
     MY_CONNECTIONS: '/api/connections/my-connections',
     UPDATE_LAWFIRM: '/api/connections/update-lawfirm',
-    UPDATE_MEDICALPROVIDER: '/api/connections/update-medicalprovider'
+    DISCONNECT_LAWFIRM: '/api/connections/disconnect-lawfirm',
+    ADD_MEDICALPROVIDER: '/api/connections/add-medical-provider',
+    REMOVE_MEDICALPROVIDER: '/api/connections/remove-medical-provider'
   },
   LITIGATION: {
     PROGRESS: '/api/litigation/progress',

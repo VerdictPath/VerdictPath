@@ -29,7 +29,6 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
         const data = await response.json();
         setCurrentConnections(data);
         setLawFirmCode(data.lawFirmCode || '');
-        setMedicalProviderCode(data.medicalProviderCode || '');
       }
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -72,7 +71,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
     }
   };
 
-  const handleUpdateMedicalProvider = async () => {
+  const handleAddMedicalProvider = async () => {
     if (!medicalProviderCode.trim()) {
       Alert.alert('Error', 'Please enter a medical provider code');
       return;
@@ -80,7 +79,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
 
     try {
       setSaving(true);
-      const response = await fetch(`${API_BASE_URL}/api/connections/update-medical-provider`, {
+      const response = await fetch(`${API_BASE_URL}/api/connections/add-medical-provider`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -92,15 +91,45 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', data.message || 'Medical provider connection updated successfully');
+        Alert.alert('Success', data.message || 'Medical provider added successfully');
+        setMedicalProviderCode('');
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
-        Alert.alert('Error', data.error || 'Failed to update medical provider connection');
+        Alert.alert('Error', data.error || 'Failed to add medical provider');
       }
     } catch (error) {
-      console.error('Error updating medical provider:', error);
-      Alert.alert('Error', 'Failed to update medical provider connection');
+      console.error('Error adding medical provider:', error);
+      Alert.alert('Error', 'Failed to add medical provider');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveMedicalProvider = async (providerId) => {
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/remove-medical-provider`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ providerId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', data.message || 'Medical provider removed successfully');
+        fetchCurrentConnections();
+        if (onConnectionsUpdated) onConnectionsUpdated();
+      } else {
+        Alert.alert('Error', data.error || 'Failed to remove medical provider');
+      }
+    } catch (error) {
+      console.error('Error removing medical provider:', error);
+      Alert.alert('Error', 'Failed to remove medical provider');
     } finally {
       setSaving(false);
     }
@@ -178,17 +207,31 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🏥 Medical Provider Connection</Text>
-                {currentConnections?.medicalProvider ? (
-                  <View style={styles.currentConnection}>
-                    <Text style={styles.connectedLabel}>Currently Connected:</Text>
-                    <Text style={styles.connectedName}>{currentConnections.medicalProvider.facility_name || currentConnections.medicalProvider.email}</Text>
-                    <Text style={styles.connectedEmail}>{currentConnections.medicalProvider.email}</Text>
+                <Text style={styles.sectionTitle}>🏥 Medical Provider Connections</Text>
+                {currentConnections?.medicalProviders?.length > 0 ? (
+                  <View style={styles.providersList}>
+                    <Text style={styles.connectedLabel}>Connected Providers:</Text>
+                    {currentConnections.medicalProviders.map((provider) => (
+                      <View key={provider.id} style={styles.providerItem}>
+                        <View style={styles.providerInfo}>
+                          <Text style={styles.providerName}>{provider.provider_name || provider.email}</Text>
+                          <Text style={styles.providerEmail}>{provider.email}</Text>
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.removeButton}
+                          onPress={() => handleRemoveMedicalProvider(provider.id)}
+                          disabled={saving}
+                        >
+                          <Text style={styles.removeButtonText}>Remove</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
                   </View>
                 ) : (
-                  <Text style={styles.notConnected}>Not connected to a medical provider</Text>
+                  <Text style={styles.notConnected}>No medical providers connected</Text>
                 )}
                 
+                <Text style={styles.addLabel}>Add Medical Provider:</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter medical provider code"
@@ -199,16 +242,14 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
                 />
                 
                 <TouchableOpacity 
-                  style={[styles.updateButton, saving && styles.updateButtonDisabled]}
-                  onPress={handleUpdateMedicalProvider}
+                  style={[styles.addButton, saving && styles.addButtonDisabled]}
+                  onPress={handleAddMedicalProvider}
                   disabled={saving}
                 >
                   {saving ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.updateButtonText}>
-                      {currentConnections?.medicalProvider ? 'Change Medical Provider' : 'Connect Medical Provider'}
-                    </Text>
+                    <Text style={styles.addButtonText}>Add Medical Provider</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -216,7 +257,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
               <View style={styles.infoBox}>
                 <Text style={styles.infoIcon}>ℹ️</Text>
                 <Text style={styles.infoText}>
-                  Ask your law firm or medical provider for their connection code. This allows you to share medical records and case information securely with them.
+                  You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.
                 </Text>
               </View>
             </View>
@@ -354,6 +395,66 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   updateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  providersList: {
+    marginBottom: 15,
+  },
+  providerItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: theme.colors.cream,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.warmGold,
+  },
+  providerInfo: {
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.navy,
+    marginBottom: 2,
+  },
+  providerEmail: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  removeButton: {
+    backgroundColor: '#e74c3c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  addLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginTop: 15,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  addButton: {
+    backgroundColor: '#27ae60',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  addButtonDisabled: {
+    opacity: 0.6,
+  },
+  addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

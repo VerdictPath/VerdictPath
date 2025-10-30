@@ -20,7 +20,7 @@ const DashboardScreen = ({
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [connections, setConnections] = useState({
     lawFirm: null,
-    medicalProvider: null
+    medicalProviders: []
   });
   const [loadingConnections, setLoadingConnections] = useState(true);
 
@@ -43,7 +43,7 @@ const DashboardScreen = ({
         const data = await response.json();
         setConnections({
           lawFirm: data.lawFirm,
-          medicalProvider: data.medicalProvider
+          medicalProviders: data.medicalProviders || []
         });
       }
     } catch (error) {
@@ -65,7 +65,7 @@ const DashboardScreen = ({
           <View style={styles.headerLeft}>
             <Text style={styles.welcomeText}>Welcome back! 👋</Text>
             <Text style={styles.emailText}>{user?.email}</Text>
-            {!loadingConnections && (connections.lawFirm || connections.medicalProvider) && (
+            {!loadingConnections && (connections.lawFirm || connections.medicalProviders?.length > 0) && (
               <View style={styles.connectionsInfo}>
                 {connections.lawFirm && (
                   <View style={styles.connectionItem}>
@@ -73,10 +73,12 @@ const DashboardScreen = ({
                     <Text style={styles.connectionValue}>{connections.lawFirm.firm_name || connections.lawFirm.email}</Text>
                   </View>
                 )}
-                {connections.medicalProvider && (
+                {connections.medicalProviders?.length > 0 && (
                   <View style={styles.connectionItem}>
-                    <Text style={styles.connectionLabel}>🏥 Medical Provider:</Text>
-                    <Text style={styles.connectionValue}>{connections.medicalProvider.facility_name || connections.medicalProvider.email}</Text>
+                    <Text style={styles.connectionLabel}>🏥 Medical Providers:</Text>
+                    <Text style={styles.connectionValue}>
+                      {connections.medicalProviders.map(p => p.provider_name || p.email).join(', ')}
+                    </Text>
                   </View>
                 )}
               </View>
