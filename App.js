@@ -33,6 +33,8 @@ import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
+import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
+import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1084,6 +1086,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onBack={() => setCurrentScreen('achievements')}
         />
       )}
+
+      {currentScreen === 'event-requests' && (
+        <ClientEventRequestsScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
       
       {currentScreen === 'hipaaForms' && (
         <HIPAAFormsScreen onNavigate={handleNavigateInternal} user={user} />
@@ -1116,6 +1125,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'lawfirm-notification-analytics' && (
         <LawFirmNotificationAnalyticsScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-event-requests' && (
+        <LawFirmEventRequestsScreen
           user={user}
           onBack={handleBackToLawFirmDashboard}
         />
