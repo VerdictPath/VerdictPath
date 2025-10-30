@@ -1,0 +1,55 @@
+# Railway Ignore File - Exclude unnecessary files from deployment
+
+# Development files
+*.md
+.git
+.gitignore
+.replit
+.upm
+replit.nix
+
+# Documentation
+BACKEND_FRONTEND_STATUS_REPORT.md
+CODEBASE_OVERVIEW.md
+DEPLOYMENT*.md
+GITHUB-PUSH-CHECKLIST.md
+HIPAA*.md
+MANUAL_RAILWAY_FIX.md
+PHASE-*.md
+RAILWAY*.md
+REGISTRATION_FIXES.md
+SECURITY_DIAGNOSTIC.md
+SIMPLE_RAILWAY_FIX_GUIDE.md
+
+# Testing and diagnostic scripts
+diagnose-railway.js
+fix-railway-database.js
+migrate-railway-db.sh
+test_daily_claim.sh
+verify_security.js
+*.sql
+
+# React Native / Expo (not needed for backend deployment)
+src/
+App.js
+app.json
+babel.config.js
+eas.json
+attached_assets/
+
+# Standalone backend (if you have a separate backend folder)
+backend-standalone/
+
+# Node modules (will be installed fresh)
+node_modules/
+*/node_modules/
+
+# Logs and temp files
+*.log
+.DS_Store
+*.tmp
+
+# Environment files (Railway provides these via UI)
+.env
+.env.local
+.env.production

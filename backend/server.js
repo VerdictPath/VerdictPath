@@ -21,7 +21,50 @@ const tasksRoutes = require('./routes/tasks');
 const app = express();
 const PORT = process.env.PORT || 5000; // Railway sets PORT automatically, Replit uses 5000
 
-app.use(cors());
+// Get the base URL for the server (for self-referencing API calls)
+const getBaseUrl = () => {
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  if (process.env.RAILWAY_STATIC_URL) {
+    return process.env.RAILWAY_STATIC_URL;
+  }
+  return `http://localhost:${PORT}`;
+};
+
+const BASE_URL = getBaseUrl();
+
+// CORS configuration - allow Railway domains and Replit
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:5000',
+      'http://localhost:19006', // Expo web dev
+      /\.railway\.app$/,
+      /\.replit\.dev$/,
+      /\.repl\.co$/
+    ];
+    
+    const isAllowed = allowedOrigins.some(pattern => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(origin);
+      }
+      return pattern === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for now (can restrict later)
+    }
+  },
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -142,7 +185,7 @@ app.get('/portal/client/:clientId', async (req, res) => {
       return res.redirect('/portal');
     }
     
-    const response = await fetch(`http://localhost:${PORT}/api/lawfirm/client/${req.params.clientId}`, {
+    const response = await fetch(`${BASE_URL}/api/lawfirm/client/${req.params.clientId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
