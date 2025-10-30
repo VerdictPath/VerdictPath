@@ -16,6 +16,7 @@ const connectionsRoutes = require('./routes/connections');
 const subscriptionRoutes = require('./routes/subscription');
 const diagnosticRoutes = require('./routes/diagnostic');
 const notificationsRoutes = require('./routes/notifications');
+const tasksRoutes = require('./routes/tasks');
 
 const app = express();
 const PORT = process.env.PORT || 5000; // Railway sets PORT automatically, Replit uses 5000
@@ -66,6 +67,7 @@ app.use('/api/connections', connectionsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Serve mobile app at root
 app.get('/', (req, res) => {

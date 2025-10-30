@@ -20,12 +20,14 @@ export const API_ENDPOINTS = {
   },
   LAWFIRM: {
     DASHBOARD: '/api/lawfirm/dashboard',
+    CLIENTS: '/api/lawfirm/clients',
     CLIENT_DETAILS: (clientId) => `/api/lawfirm/client/${clientId}`,
     UPDATE_STAGE: '/api/lawfirm/litigation-stage',
     ALL_DOCUMENTS: '/api/lawfirm/documents/all'
   },
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',
+    PATIENTS: '/api/medicalprovider/patients',
     PATIENT_DETAILS: (patientId) => `/api/medicalprovider/patient/${patientId}`
   },
   COINS: {
@@ -68,7 +70,17 @@ export const API_ENDPOINTS = {
     MY_NOTIFICATIONS: '/api/notifications/my-notifications',
     UNREAD_COUNT: '/api/notifications/unread-count',
     MARK_READ: (id) => `/api/notifications/${id}/read`,
-    MARK_CLICKED: (id) => `/api/notifications/${id}/clicked`
+    MARK_CLICKED: (id) => `/api/notifications/${id}/clicked`,
+    SEND_TO_CLIENTS: '/api/notifications/send-to-clients',
+    SEND_TO_PATIENTS: '/api/notifications/send-to-patients'
+  },
+  TASKS: {
+    MY_TASKS: '/api/tasks/my-tasks',
+    CREATE: '/api/tasks/create',
+    UPDATE_STATUS: (taskId) => `/api/tasks/${taskId}/status`,
+    CLIENT_TASKS: (clientId) => `/api/tasks/client/${clientId}`,
+    DELETE: (taskId) => `/api/tasks/${taskId}`,
+    TEMPLATES: '/api/tasks/templates'
   }
 };
 

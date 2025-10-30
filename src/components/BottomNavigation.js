@@ -10,7 +10,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
     { name: 'Roadmap', icon: '🗺️', screen: 'roadmap' },
     { name: 'Medical', icon: '⚕️', screen: 'medical' },
     { name: 'Videos', icon: '🎬', screen: 'videos' },
-    { name: 'Forms', icon: '📋', screen: 'hipaaForms' },
+    { name: 'Actions', icon: '⚓', screen: 'actions' },
   ];
 
   return (

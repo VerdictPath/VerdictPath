@@ -66,6 +66,16 @@ const NOTIFICATION_TEMPLATES = [
   },
 ];
 
+const getPriorityColor = (priority) => {
+  switch (priority) {
+    case 'urgent': return '#e74c3c';
+    case 'high': return '#e67e22';
+    case 'medium': return '#3498db';
+    case 'low': return '#95a5a6';
+    default: return '#999';
+  }
+};
+
 const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [clients, setClients] = useState([]);
   const [selectedClients, setSelectedClients] = useState([]);
@@ -76,6 +86,12 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [actionScreen, setActionScreen] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [createTask, setCreateTask] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskPriority, setTaskPriority] = useState('medium');
+  const [taskDueDate, setTaskDueDate] = useState('');
+  const [taskCoinsReward, setTaskCoinsReward] = useState('50');
 
   useEffect(() => {
     fetchClients();
@@ -108,6 +124,12 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
     setNotificationBody(template.defaultBody);
     setActionButtonText(template.actionButton);
     setActionScreen(template.actionScreen);
+    
+    if (template.id === 'task_reminder' || template.id === 'document_request') {
+      setCreateTask(true);
+      setTaskTitle(template.defaultTitle);
+      setTaskDescription(template.defaultBody);
+    }
   };
 
   const toggleClientSelection = (clientId) => {
@@ -160,10 +182,35 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
         }),
       });
 
+      if (createTask && taskTitle.trim()) {
+        const taskPromises = selectedClients.map(clientId =>
+          apiRequest(API_ENDPOINTS.TASKS.CREATE, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${user.token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              clientId,
+              taskTitle,
+              taskDescription,
+              taskType: selectedTemplate?.id || 'general',
+              priority: taskPriority,
+              dueDate: taskDueDate || null,
+              coinsReward: parseInt(taskCoinsReward) || 0,
+              actionUrl: `verdictpath://${actionScreen}`,
+              sendNotification: false
+            }),
+          })
+        );
+
+        await Promise.all(taskPromises);
+      }
+
       if (response.success) {
         Alert.alert(
           'Success',
-          `Notification sent to ${response.results?.successful || selectedClients.length} client(s)`,
+          `Notification ${createTask ? 'and task ' : ''}sent to ${response.results?.successful || selectedClients.length} client(s)`,
           [
             {
               text: 'OK',
@@ -174,6 +221,12 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
                 setNotificationBody('');
                 setActionButtonText('View Dashboard');
                 setActionScreen('dashboard');
+                setCreateTask(false);
+                setTaskTitle('');
+                setTaskDescription('');
+                setTaskPriority('medium');
+                setTaskDueDate('');
+                setTaskCoinsReward('50');
               },
             },
           ]
@@ -322,6 +375,91 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
             placeholder="View Dashboard"
             placeholderTextColor="#999"
           />
+        </View>
+
+        {/* Step 4: Optional Task Assignment */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Step 4: Assign Task (Optional)</Text>
+            <TouchableOpacity
+              style={[styles.toggleButton, createTask && styles.toggleButtonActive]}
+              onPress={() => setCreateTask(!createTask)}
+            >
+              <Text style={[styles.toggleButtonText, createTask && styles.toggleButtonTextActive]}>
+                {createTask ? '✓ Enabled' : 'Enable'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {createTask && (
+            <View style={styles.taskForm}>
+              <Text style={styles.taskFormHint}>
+                💡 Create an actionable task for clients to complete
+              </Text>
+
+              <Text style={styles.inputLabel}>Task Title *</Text>
+              <TextInput
+                style={styles.input}
+                value={taskTitle}
+                onChangeText={setTaskTitle}
+                placeholder="e.g., Upload Insurance Card"
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.inputLabel}>Task Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={taskDescription}
+                onChangeText={setTaskDescription}
+                placeholder="Provide detailed instructions..."
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <Text style={styles.inputLabel}>Priority</Text>
+              <View style={styles.priorityButtons}>
+                {['urgent', 'high', 'medium', 'low'].map(priority => (
+                  <TouchableOpacity
+                    key={priority}
+                    style={[
+                      styles.priorityButton,
+                      taskPriority === priority && styles.priorityButtonActive,
+                      { borderColor: getPriorityColor(priority) }
+                    ]}
+                    onPress={() => setTaskPriority(priority)}
+                  >
+                    <Text style={[
+                      styles.priorityButtonText,
+                      taskPriority === priority && { color: getPriorityColor(priority) }
+                    ]}>
+                      {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Due Date (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={taskDueDate}
+                onChangeText={setTaskDueDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#999"
+              />
+
+              <Text style={styles.inputLabel}>Coin Reward</Text>
+              <TextInput
+                style={styles.input}
+                value={taskCoinsReward}
+                onChangeText={setTaskCoinsReward}
+                placeholder="50"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+              />
+            </View>
+          )}
         </View>
 
         {/* Send Button */}
@@ -532,6 +670,61 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
+    color: '#666',
+  },
+  toggleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  toggleButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  toggleButtonTextActive: {
+    color: '#fff',
+  },
+  taskForm: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  taskFormHint: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  priorityButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  priorityButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  priorityButtonActive: {
+    backgroundColor: '#f8f9fa',
+  },
+  priorityButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
     color: '#666',
   },
 });
