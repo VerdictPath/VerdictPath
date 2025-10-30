@@ -10,6 +10,11 @@ export const commonStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+  containerWithNav: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingBottom: 80,
+  },
   primaryButton: {
     backgroundColor: theme.colors.primary,
     padding: 18,

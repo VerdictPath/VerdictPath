@@ -20,6 +20,7 @@ import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
+import BottomNavigation from './src/components/BottomNavigation';
 
 const CaseCompassApp = () => {
   const [currentScreen, setCurrentScreen] = useState('landing');
@@ -957,6 +958,14 @@ const CaseCompassApp = () => {
             setSelectedPatientId(null);
             setCurrentScreen('medicalprovider-dashboard');
           }}
+        />
+      )}
+      
+      {/* Bottom Navigation - only show for individual user screens */}
+      {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms'].includes(currentScreen) && (
+        <BottomNavigation 
+          currentScreen={currentScreen}
+          onNavigate={handleNavigate}
         />
       )}
     </SafeAreaView>
