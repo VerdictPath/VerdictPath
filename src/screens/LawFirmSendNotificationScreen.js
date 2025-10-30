@@ -82,6 +82,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationBody, setNotificationBody] = useState('');
+  const [notificationPriority, setNotificationPriority] = useState('medium');
   const [actionButtonText, setActionButtonText] = useState('View Dashboard');
   const [actionScreen, setActionScreen] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
@@ -174,7 +175,9 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
           clientIds: selectedClients,
           title: notificationTitle,
           body: notificationBody,
-          notificationType: selectedTemplate?.type || 'general',
+          type: selectedTemplate?.type || 'general',
+          priority: notificationPriority,
+          actionUrl: actionScreen ? `verdictpath://${actionScreen}` : undefined,
           actionData: {
             buttonText: actionButtonText,
             screen: actionScreen,
