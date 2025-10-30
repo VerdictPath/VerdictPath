@@ -25,6 +25,8 @@ import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboa
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
+import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
+import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -952,6 +954,20 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           clientId={selectedClientId}
           onBack={handleBackToLawFirmDashboard}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-send-notification' && (
+        <LawFirmSendNotificationScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-notification-analytics' && (
+        <LawFirmNotificationAnalyticsScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
         />
       )}
       
