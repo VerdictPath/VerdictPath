@@ -1,5 +1,5 @@
 // APP VERSION 1.0.3 - Notifications & Action Dashboard
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
@@ -8,6 +8,7 @@ import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
+import NotificationService from './src/services/NotificationService';
 
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
@@ -65,6 +66,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedNotificationId, setSelectedNotificationId] = useState(null);
 
   const authToken = user?.token || null;
+  const notificationCleanupRef = useRef(null);
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -79,6 +81,105 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
     checkOnboardingStatus();
   }, []);
+
+  // Initialize push notifications
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        // Register for push notifications
+        const token = await NotificationService.registerForPushNotifications();
+        if (token) {
+          console.log('Push token obtained:', token);
+        }
+
+        // If user is logged in, register device with backend
+        if (user?.token && user?.id) {
+          const registered = await NotificationService.registerDeviceWithBackend(user.token, user.id);
+          if (registered) {
+            console.log('Device registered with backend successfully');
+            
+            // Update badge count from server
+            const unreadCount = await NotificationService.fetchUnreadCount(user.token);
+            await NotificationService.setBadgeCount(unreadCount);
+          }
+        }
+
+        // Setup notification listeners
+        const cleanup = NotificationService.setupNotificationListeners(
+          // On notification received while app is open
+          (notification) => {
+            console.log('📬 Notification received:', notification);
+            if (notificationContext?.refreshNotifications) {
+              notificationContext.refreshNotifications();
+            }
+          },
+          // On notification tapped
+          async (response) => {
+            console.log('👆 Notification tapped:', response);
+            
+            const { notificationId, actionUrl, type, taskId } = response.notification.request.content.data || {};
+            
+            // Mark as read and clicked
+            if (notificationId && user?.token) {
+              await NotificationService.markNotificationAsRead(notificationId, user.token);
+              await NotificationService.markNotificationAsClicked(notificationId, user.token);
+            }
+            
+            // Handle deep linking based on notification type
+            if (type === 'task_assigned' && taskId) {
+              setCurrentScreen('actions');
+            } else if (actionUrl) {
+              handleDeepLink(actionUrl);
+            } else {
+              // Default to notifications inbox
+              setCurrentScreen('notifications');
+            }
+            
+            // Refresh notifications
+            if (notificationContext?.refreshNotifications) {
+              notificationContext.refreshNotifications();
+            }
+          }
+        );
+
+        notificationCleanupRef.current = cleanup;
+
+      } catch (error) {
+        console.error('Error initializing notifications:', error);
+      }
+    };
+
+    initializeNotifications();
+
+    // Cleanup on unmount
+    return () => {
+      if (notificationCleanupRef.current) {
+        notificationCleanupRef.current();
+      }
+    };
+  }, [user?.token, user?.id]);
+
+  // Handle deep links
+  const handleDeepLink = (url) => {
+    console.log('Deep link:', url);
+    
+    // Parse deep link URLs like "verdictpath://screen/action"
+    if (typeof url === 'string') {
+      if (url.includes('roadmap')) {
+        setCurrentScreen('roadmap');
+      } else if (url.includes('task') || url.includes('action')) {
+        setCurrentScreen('actions');
+      } else if (url.includes('notification')) {
+        setCurrentScreen('notifications');
+      } else if (url.includes('medical')) {
+        setCurrentScreen('medical');
+      } else if (url.includes('video')) {
+        setCurrentScreen('videos');
+      } else if (url.includes('dashboard')) {
+        setCurrentScreen('dashboard');
+      }
+    }
+  };
 
   const handleOnboardingComplete = () => {
     setHasSeenOnboarding(true);
