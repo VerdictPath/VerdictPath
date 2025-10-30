@@ -59,7 +59,7 @@ const DashboardScreen = ({
   };
 
   return (
-    <ScrollView style={commonStyles.container}>
+    <ScrollView style={commonStyles.containerWithNav}>
       <View style={styles.dashboardHeader}>
         <View style={styles.headerTopRow}>
           <View style={styles.headerLeft}>

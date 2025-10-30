@@ -747,7 +747,7 @@ const RoadmapScreen = ({
   };
 
   return (
-    <View style={commonStyles.container}>
+    <View style={commonStyles.containerWithNav}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress}>
           <Text style={commonStyles.backButton}>← Back</Text>

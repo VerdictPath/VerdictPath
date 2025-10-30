@@ -9,7 +9,7 @@ const VideosScreen = ({ onNavigate }) => {
   };
 
   return (
-    <ScrollView style={commonStyles.container}>
+    <ScrollView style={commonStyles.containerWithNav}>
       <View style={commonStyles.header}>
         <TouchableOpacity onPress={() => onNavigate('dashboard')}>
           <Text style={commonStyles.backButton}>← Back</Text>
