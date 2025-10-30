@@ -223,13 +223,13 @@ exports.sendNotification = async (req, res) => {
     
     if (sentSuccessfully) {
       await pool.query(
-        'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['sent', notification.id]
+        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
+        ['sent', 'sent', notification.id]
       );
     } else {
       await pool.query(
-        'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
-        ['failed', 'All push notifications failed to send', notification.id]
+        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+        ['failed', 'failed', 'All push notifications failed to send', notification.id]
       );
     }
 
@@ -468,7 +468,26 @@ exports.sendToAllClients = async (req, res) => {
           })
         );
 
-        await Promise.allSettled(pushPromises);
+        const pushResults = await Promise.allSettled(pushPromises);
+        const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
+
+        if (pushResults.length === 0) {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+          );
+        } else if (sentSuccessfully) {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
+            ['sent', 'sent', notificationResult.rows[0].id]
+          );
+        } else {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+          );
+        }
+
         return { success: true, clientId: client.id };
       } catch (error) {
         console.error(`Failed to send notification to client ${client.id}:`, error);
@@ -561,10 +580,20 @@ exports.sendToClient = async (req, res) => {
     const pushResults = await Promise.allSettled(pushPromises);
     const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
-    if (pushResults.length > 0 && sentSuccessfully) {
+    if (pushResults.length === 0) {
       await pool.query(
-        'UPDATE notifications SET delivery_status = $1 WHERE id = $2',
-        ['sent', notification.id]
+        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+        ['failed', 'failed', 'No registered devices found', notification.id]
+      );
+    } else if (sentSuccessfully) {
+      await pool.query(
+        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
+        ['sent', 'sent', notification.id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+        ['failed', 'failed', 'All push notifications failed to send', notification.id]
       );
     }
 
@@ -650,7 +679,26 @@ exports.sendToAllPatients = async (req, res) => {
           })
         );
 
-        await Promise.allSettled(pushPromises);
+        const pushResults = await Promise.allSettled(pushPromises);
+        const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
+
+        if (pushResults.length === 0) {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+          );
+        } else if (sentSuccessfully) {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
+            ['sent', 'sent', notificationResult.rows[0].id]
+          );
+        } else {
+          await pool.query(
+            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+          );
+        }
+
         return { success: true, patientId: patient.id };
       } catch (error) {
         console.error(`Failed to send notification to patient ${patient.id}:`, error);
@@ -743,10 +791,20 @@ exports.sendToPatient = async (req, res) => {
     const pushResults = await Promise.allSettled(pushPromises);
     const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
-    if (pushResults.length > 0 && sentSuccessfully) {
+    if (pushResults.length === 0) {
       await pool.query(
-        'UPDATE notifications SET delivery_status = $1 WHERE id = $2',
-        ['sent', notification.id]
+        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+        ['failed', 'failed', 'No registered devices found', notification.id]
+      );
+    } else if (sentSuccessfully) {
+      await pool.query(
+        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
+        ['sent', 'sent', notification.id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
+        ['failed', 'failed', 'All push notifications failed to send', notification.id]
       );
     }
 
@@ -758,5 +816,188 @@ exports.sendToPatient = async (req, res) => {
   } catch (error) {
     console.error('Send to patient error:', error);
     res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+exports.getMyNotificationStats = async (req, res) => {
+  const { startDate, endDate } = req.query;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const { recipientType, entityId } = entityInfo;
+
+  if (recipientType === 'user') {
+    return res.status(403).json({ error: 'This endpoint is only for law firms and medical providers' });
+  }
+
+  try {
+    let dateFilter = '';
+    const queryParams = [recipientType, entityId];
+    
+    if (startDate) {
+      queryParams.push(startDate);
+      dateFilter += ` AND created_at >= $${queryParams.length}`;
+    }
+    
+    if (endDate) {
+      queryParams.push(endDate);
+      dateFilter += ` AND created_at <= $${queryParams.length}`;
+    }
+
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total_sent,
+        COUNT(CASE WHEN delivery_status = 'sent' THEN 1 END) as delivered,
+        COUNT(CASE WHEN delivery_status = 'failed' THEN 1 END) as failed,
+        COUNT(CASE WHEN status = 'read' THEN 1 END) as read_count,
+        COUNT(CASE WHEN clicked = true THEN 1 END) as click_count,
+        COUNT(CASE WHEN priority = 'urgent' THEN 1 END) as urgent_count,
+        COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_count,
+        COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_count,
+        COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_count
+      FROM notifications
+      WHERE sender_type = $1 AND sender_id = $2${dateFilter}
+    `;
+
+    const statsResult = await pool.query(statsQuery, queryParams);
+    const stats = statsResult.rows[0];
+
+    const typeBreakdownQuery = `
+      SELECT 
+        type,
+        COUNT(*) as count,
+        COUNT(CASE WHEN status = 'read' THEN 1 END) as read_count,
+        COUNT(CASE WHEN clicked = true THEN 1 END) as click_count
+      FROM notifications
+      WHERE sender_type = $1 AND sender_id = $2${dateFilter}
+      GROUP BY type
+      ORDER BY count DESC
+    `;
+
+    const typeBreakdownResult = await pool.query(typeBreakdownQuery, queryParams);
+
+    const totalSent = parseInt(stats.total_sent);
+    const delivered = parseInt(stats.delivered);
+    const readCount = parseInt(stats.read_count);
+    const clickCount = parseInt(stats.click_count);
+
+    res.status(200).json({
+      overview: {
+        totalSent,
+        delivered,
+        failed: parseInt(stats.failed),
+        deliveryRate: totalSent > 0 ? ((delivered / totalSent) * 100).toFixed(2) + '%' : '0%',
+        readRate: delivered > 0 ? ((readCount / delivered) * 100).toFixed(2) + '%' : '0%',
+        clickThroughRate: readCount > 0 ? ((clickCount / readCount) * 100).toFixed(2) + '%' : '0%'
+      },
+      priorityDistribution: {
+        urgent: parseInt(stats.urgent_count),
+        high: parseInt(stats.high_count),
+        medium: parseInt(stats.medium_count),
+        low: parseInt(stats.low_count)
+      },
+      typeBreakdown: typeBreakdownResult.rows.map(row => ({
+        type: row.type,
+        count: parseInt(row.count),
+        readCount: parseInt(row.read_count),
+        clickCount: parseInt(row.click_count),
+        readRate: parseInt(row.count) > 0 ? ((parseInt(row.read_count) / parseInt(row.count)) * 100).toFixed(2) + '%' : '0%',
+        clickRate: parseInt(row.read_count) > 0 ? ((parseInt(row.click_count) / parseInt(row.read_count)) * 100).toFixed(2) + '%' : '0%'
+      }))
+    });
+  } catch (error) {
+    console.error('Get notification stats error:', error);
+    res.status(500).json({ error: 'Failed to get notification statistics' });
+  }
+};
+
+exports.getNotificationHistory = async (req, res) => {
+  const { recipientId, startDate, endDate, type, priority, deliveryStatus, limit = 100, offset = 0 } = req.query;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const { recipientType, entityId } = entityInfo;
+
+  if (recipientType === 'user') {
+    return res.status(403).json({ error: 'This endpoint is only for law firms and medical providers' });
+  }
+
+  try {
+    const filters = [];
+    const queryParams = [recipientType, entityId];
+    
+    filters.push(`sender_type = $1 AND sender_id = $2`);
+    
+    if (recipientId) {
+      queryParams.push(recipientId);
+      filters.push(`recipient_id = $${queryParams.length}`);
+    }
+    
+    if (startDate) {
+      queryParams.push(startDate);
+      filters.push(`created_at >= $${queryParams.length}`);
+    }
+    
+    if (endDate) {
+      queryParams.push(endDate);
+      filters.push(`created_at <= $${queryParams.length}`);
+    }
+    
+    if (type) {
+      queryParams.push(type);
+      filters.push(`type = $${queryParams.length}`);
+    }
+    
+    if (priority) {
+      queryParams.push(priority);
+      filters.push(`priority = $${queryParams.length}`);
+    }
+    
+    if (deliveryStatus) {
+      queryParams.push(deliveryStatus);
+      filters.push(`delivery_status = $${queryParams.length}`);
+    }
+
+    queryParams.push(limit);
+    const limitParam = `$${queryParams.length}`;
+    
+    queryParams.push(offset);
+    const offsetParam = `$${queryParams.length}`;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM notifications
+      WHERE ${filters.join(' AND ')}
+    `;
+    
+    const countResult = await pool.query(countQuery, queryParams.slice(0, -2));
+
+    const historyQuery = `
+      SELECT 
+        id, recipient_id, recipient_type, type, priority, title, body,
+        delivery_status, status, clicked, created_at, read_at, clicked_at
+      FROM notifications
+      WHERE ${filters.join(' AND ')}
+      ORDER BY created_at DESC
+      LIMIT ${limitParam} OFFSET ${offsetParam}
+    `;
+
+    const historyResult = await pool.query(historyQuery, queryParams);
+
+    res.status(200).json({
+      total: parseInt(countResult.rows[0].total),
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      notifications: historyResult.rows
+    });
+  } catch (error) {
+    console.error('Get notification history error:', error);
+    res.status(500).json({ error: 'Failed to get notification history' });
   }
 };
