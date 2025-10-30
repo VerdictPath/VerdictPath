@@ -6,9 +6,7 @@ const getMyConnections = async (req, res) => {
     const userId = req.user.id;
 
     const result = await db.query(
-      `SELECT 
-        law_firm_code,
-        medical_provider_code
+      `SELECT law_firm_code
       FROM users
       WHERE id = $1`,
       [userId]
@@ -21,9 +19,8 @@ const getMyConnections = async (req, res) => {
     const user = result.rows[0];
     const connections = {
       lawFirmCode: user.law_firm_code,
-      medicalProviderCode: user.medical_provider_code,
       lawFirm: null,
-      medicalProvider: null
+      medicalProviders: []
     };
 
     if (user.law_firm_code) {
@@ -38,17 +35,16 @@ const getMyConnections = async (req, res) => {
       }
     }
 
-    if (user.medical_provider_code) {
-      const providerResult = await db.query(
-        `SELECT id, email, provider_name
-        FROM medical_providers
-        WHERE provider_code = $1`,
-        [user.medical_provider_code]
-      );
-      if (providerResult.rows.length > 0) {
-        connections.medicalProvider = providerResult.rows[0];
-      }
-    }
+    const providersResult = await db.query(
+      `SELECT mp.id, mp.email, mp.provider_name, mp.provider_code
+      FROM medical_providers mp
+      INNER JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
+      WHERE mpp.patient_id = $1
+      ORDER BY mpp.registered_date DESC`,
+      [userId]
+    );
+
+    connections.medicalProviders = providersResult.rows;
 
     res.json(connections);
   } catch (error) {
@@ -176,7 +172,7 @@ const updateLawFirm = async (req, res) => {
   }
 };
 
-const updateMedicalProvider = async (req, res) => {
+const addMedicalProvider = async (req, res) => {
   try {
     const userId = req.user.id;
     const userType = req.user.userType;
@@ -195,7 +191,7 @@ const updateMedicalProvider = async (req, res) => {
     const trimmedCode = medicalProviderCode.trim().toUpperCase();
 
     const providerResult = await db.query(
-      `SELECT id, email, provider_name, subscription_tier
+      `SELECT id, email, provider_name, subscription_tier, provider_code
       FROM medical_providers
       WHERE provider_code = $1`,
       [trimmedCode]
@@ -207,27 +203,28 @@ const updateMedicalProvider = async (req, res) => {
 
     const provider = providerResult.rows[0];
 
-    const userResult = await db.query(
-      'SELECT medical_provider_code FROM users WHERE id = $1',
-      [userId]
+    const existingConnectionResult = await db.query(
+      `SELECT id FROM medical_provider_patients
+      WHERE medical_provider_id = $1 AND patient_id = $2`,
+      [provider.id, userId]
     );
-    const currentProviderCode = userResult.rows[0]?.medical_provider_code;
 
-    if (currentProviderCode && currentProviderCode === trimmedCode) {
+    if (existingConnectionResult.rows.length > 0) {
       return res.json({
         success: true,
         message: 'Already connected to this medical provider',
         medicalProvider: {
           id: provider.id,
           email: provider.email,
-          provider_name: provider.provider_name
+          provider_name: provider.provider_name,
+          provider_code: provider.provider_code
         }
       });
     }
     
     if (provider.subscription_tier === 'free') {
       const patientCountResult = await db.query(
-        'SELECT COUNT(*) as count FROM medical_provider_patients WHERE provider_id = $1',
+        'SELECT COUNT(*) as count FROM medical_provider_patients WHERE medical_provider_id = $1',
         [provider.id]
       );
       
@@ -239,54 +236,25 @@ const updateMedicalProvider = async (req, res) => {
       }
     }
 
-    if (currentProviderCode) {
-      const oldProviderResult = await db.query(
-        'SELECT id FROM medical_providers WHERE provider_code = $1',
-        [currentProviderCode]
-      );
-      
-      if (oldProviderResult.rows.length > 0) {
-        await db.query(
-          'DELETE FROM medical_provider_patients WHERE provider_id = $1 AND patient_id = $2',
-          [oldProviderResult.rows[0].id, userId]
-        );
-      }
-    }
-
     await db.query(
-      `UPDATE users
-      SET medical_provider_code = $1,
-          updated_at = NOW()
-      WHERE id = $2`,
-      [trimmedCode, userId]
-    );
-
-    const patientResult = await db.query(
-      `SELECT id FROM medical_provider_patients
-      WHERE provider_id = $1 AND patient_id = $2`,
+      `INSERT INTO medical_provider_patients (medical_provider_id, patient_id, registered_date)
+      VALUES ($1, $2, NOW())`,
       [provider.id, userId]
     );
 
-    if (patientResult.rows.length === 0) {
-      await db.query(
-        `INSERT INTO medical_provider_patients (provider_id, patient_id, created_at)
-        VALUES ($1, $2, NOW())`,
-        [provider.id, userId]
-      );
-    }
-
     res.json({
       success: true,
-      message: `Ahoy! Successfully charted course with ${provider.provider_name || provider.email}!`,
+      message: `Ahoy! Successfully added ${provider.provider_name || provider.email} to your medical team!`,
       medicalProvider: {
         id: provider.id,
         email: provider.email,
-        provider_name: provider.provider_name
+        provider_name: provider.provider_name,
+        provider_code: provider.provider_code
       }
     });
   } catch (error) {
-    console.error('Error updating medical provider connection:', error);
-    res.status(500).json({ error: 'Failed to update medical provider connection' });
+    console.error('Error adding medical provider connection:', error);
+    res.status(500).json({ error: 'Failed to add medical provider connection' });
   }
 };
 
@@ -344,10 +312,11 @@ const disconnectLawFirm = async (req, res) => {
   }
 };
 
-const disconnectMedicalProvider = async (req, res) => {
+const removeMedicalProvider = async (req, res) => {
   try {
     const userId = req.user.id;
     const userType = req.user.userType;
+    const { providerId } = req.body;
 
     if (userType !== 'individual' && userType !== 'client') {
       return res.status(403).json({ 
@@ -355,53 +324,42 @@ const disconnectMedicalProvider = async (req, res) => {
       });
     }
 
-    const userResult = await db.query(
-      'SELECT medical_provider_code FROM users WHERE id = $1',
-      [userId]
-    );
-
-    const currentProviderCode = userResult.rows[0]?.medical_provider_code;
-
-    if (!currentProviderCode) {
+    if (!providerId) {
       return res.status(400).json({ 
-        error: 'No medical provider connection to disconnect from.' 
+        error: 'Medical provider ID is required.' 
       });
     }
 
-    const providerResult = await db.query(
-      'SELECT id, provider_name, email FROM medical_providers WHERE provider_code = $1',
-      [currentProviderCode]
+    const existingConnectionResult = await db.query(
+      'SELECT id FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2',
+      [providerId, userId]
     );
 
-    if (providerResult.rows.length > 0) {
-      await db.query(
-        'DELETE FROM medical_provider_patients WHERE provider_id = $1 AND patient_id = $2',
-        [providerResult.rows[0].id, userId]
-      );
+    if (existingConnectionResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'No connection found with this medical provider.' 
+      });
     }
 
     await db.query(
-      `UPDATE users
-      SET medical_provider_code = NULL,
-          updated_at = NOW()
-      WHERE id = $1`,
-      [userId]
+      'DELETE FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2',
+      [providerId, userId]
     );
 
     res.json({
       success: true,
-      message: 'Successfully disconnected from medical provider. You can now connect with a different medical provider if you have their code.'
+      message: 'Successfully removed medical provider from your connections.'
     });
   } catch (error) {
-    console.error('Error disconnecting from medical provider:', error);
-    res.status(500).json({ error: 'Failed to disconnect from medical provider' });
+    console.error('Error removing medical provider:', error);
+    res.status(500).json({ error: 'Failed to remove medical provider' });
   }
 };
 
 module.exports = {
   getMyConnections,
   updateLawFirm,
-  updateMedicalProvider,
+  addMedicalProvider,
   disconnectLawFirm,
-  disconnectMedicalProvider
+  removeMedicalProvider
 };

@@ -5,8 +5,8 @@ const { authenticateToken } = require('../middleware/auth');
 
 router.get('/my-connections', authenticateToken, connectionsController.getMyConnections);
 router.post('/update-lawfirm', authenticateToken, connectionsController.updateLawFirm);
-router.post('/update-medical-provider', authenticateToken, connectionsController.updateMedicalProvider);
+router.post('/add-medical-provider', authenticateToken, connectionsController.addMedicalProvider);
 router.post('/disconnect-lawfirm', authenticateToken, connectionsController.disconnectLawFirm);
-router.post('/disconnect-medical-provider', authenticateToken, connectionsController.disconnectMedicalProvider);
+router.post('/remove-medical-provider', authenticateToken, connectionsController.removeMedicalProvider);
 
 module.exports = router;
