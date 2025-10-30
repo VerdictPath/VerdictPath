@@ -27,6 +27,7 @@ import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
+import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -825,6 +826,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setCurrentScreen('lawfirm-dashboard');
   };
 
+  const handleBackToMedicalProviderDashboard = () => {
+    setSelectedPatientId(null);
+    setCurrentScreen('medicalprovider-dashboard');
+  };
+
   if (hasSeenOnboarding === null) {
     return null;
   }
@@ -1012,6 +1018,20 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             setSelectedPatientId(null);
             setCurrentScreen('medicalprovider-dashboard');
           }}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-send-notification' && (
+        <MedicalProviderSendNotificationScreen
+          user={user}
+          onBack={handleBackToMedicalProviderDashboard}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-notification-analytics' && (
+        <LawFirmNotificationAnalyticsScreen
+          user={user}
+          onBack={handleBackToMedicalProviderDashboard}
         />
       )}
 
