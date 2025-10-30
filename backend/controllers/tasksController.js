@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { checkTreasureChestCapacity, MAX_TOTAL_COINS } = require('./coinsController');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -300,29 +301,48 @@ const tasksController = {
         ]
       );
 
+      let coinsAwarded = 0;
+      let treasureChestFull = false;
+      let treasureChestMessage = null;
+      
       if (status === 'completed' && task.coins_reward > 0 && (userType === 'individual' || userType === 'client')) {
-        await pool.query(
-          'UPDATE users SET coins = coins + $1 WHERE id = $2',
-          [task.coins_reward, userId]
-        );
+        // Check treasure chest capacity before awarding coins
+        const capacity = await checkTreasureChestCapacity(userId, task.coins_reward);
+        coinsAwarded = capacity.canAward;
+        treasureChestFull = capacity.isFull;
+        treasureChestMessage = capacity.message;
+        
+        if (coinsAwarded > 0) {
+          await pool.query(
+            'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
+            [coinsAwarded, userId]
+          );
 
-        await pool.query(
-          `INSERT INTO coin_transactions (user_id, amount, transaction_type, description, metadata)
-          VALUES ($1, $2, $3, $4, $5)`,
-          [
-            userId,
-            task.coins_reward,
-            'task_completion',
-            `Task completed: ${task.task_title}`,
-            JSON.stringify({ taskId: task.id, taskType: task.task_type })
-          ]
-        );
+          await pool.query(
+            `INSERT INTO coin_transactions (user_id, amount, transaction_type, description, metadata)
+            VALUES ($1, $2, $3, $4, $5)`,
+            [
+              userId,
+              coinsAwarded,
+              'task_completion',
+              `Task completed: ${task.task_title}`,
+              JSON.stringify({ taskId: task.id, taskType: task.task_type })
+            ]
+          );
+        }
+      }
+
+      let message = `Task ${status}`;
+      if (treasureChestMessage) {
+        message += `\n${treasureChestMessage}`;
       }
 
       res.json({
         success: true,
-        message: `Task ${status}`,
-        coinsAwarded: status === 'completed' ? task.coins_reward : 0
+        message: message,
+        coinsAwarded: coinsAwarded,
+        treasureChestFull: treasureChestFull,
+        maxCoins: MAX_TOTAL_COINS
       });
     } catch (error) {
       console.error('Error updating task status:', error);
