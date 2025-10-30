@@ -23,6 +23,8 @@ import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
+import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
+import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -56,6 +58,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [clientRoadmapData, setClientRoadmapData] = useState(null);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const [selectedNotificationId, setSelectedNotificationId] = useState(null);
 
   const authToken = user?.token || null;
 
@@ -995,9 +998,33 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           }}
         />
       )}
+
+      {/* Notification Screens */}
+      {currentScreen === 'notifications' && (
+        <NotificationInboxScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onNotificationPress={(notificationId) => {
+            setSelectedNotificationId(notificationId);
+            setCurrentScreen('notification-detail');
+          }}
+        />
+      )}
+
+      {currentScreen === 'notification-detail' && (
+        <NotificationDetailScreen
+          user={user}
+          notificationId={selectedNotificationId}
+          onBack={() => {
+            setSelectedNotificationId(null);
+            setCurrentScreen('notifications');
+          }}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
       
         {/* Bottom Navigation - only show for individual user screens */}
-        {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms'].includes(currentScreen) && (
+        {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms', 'notifications'].includes(currentScreen) && (
           <BottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
