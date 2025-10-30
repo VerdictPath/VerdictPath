@@ -36,9 +36,4 @@ CREATE INDEX IF NOT EXISTS idx_event_requests_client ON event_requests(client_id
 CREATE INDEX IF NOT EXISTS idx_event_requests_status ON event_requests(status);
 CREATE INDEX IF NOT EXISTS idx_event_request_proposed_dates_request ON event_request_proposed_dates(event_request_id);
 
--- Seed some event types for reference
-INSERT INTO event_requests (id, law_firm_id, client_id, event_type, title, description, status)
-VALUES (0, 1, 1, 'system', 'System Event Request', 'Initial seed data', 'cancelled')
-ON CONFLICT (id) DO NOTHING;
-
 SELECT 'Event requests schema created successfully!' as status;
