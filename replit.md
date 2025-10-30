@@ -41,7 +41,8 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Pirate-themed colors and styling throughout
 
 **Bottom Navigation (Individual Users)**:
-- Sticky 5-tab navigation bar: Home (🏠), Roadmap (🗺️), Medical Hub (📋), Videos (📺), Profile (👤)
+- Sticky 5-tab navigation bar: Home (🏠), Roadmap (🗺️), Actions (⚓), Videos (📺), Profile (👤)
+- Actions tab replaced Forms tab - displays attorney-assigned tasks from connected law firm
 - Position: absolute at bottom with platform-aware padding for iOS notches
 - Active tab highlighting with solid blue background and white icons/text
 - All individual user screens have 80px bottom padding to prevent content overlap
@@ -53,6 +54,7 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - Separate invite and connections functionality for clear user workflows
 - **Roadmap Screen**: File upload functionality completely disabled - substages with upload requirements display "🏴‍☠️ File upload coming soon!" banners
 - **Medical Hub Screen**: Upload functionality completely disabled with pirate-themed "Coming Soon" messaging
+- **Action Dashboard** (accessed via Actions tab): View attorney-assigned tasks with summary cards (To Do, In Progress, Completed, Overdue), filter by status/priority, tap tasks to update status (Start, Mark Complete), pull-to-refresh for real-time updates, overdue tasks highlighted in red
 
 **Medical Provider Portal**:
 - **Upload functionality COMPLETELY DISABLED across all screens** - no active upload pathways remain
@@ -61,12 +63,16 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - All upload handler functions disabled to prevent any document uploads until feature is fully implemented
 - "Manage Law Firm Connections" link added to dashboard for future law firm connection management
 - Connections tab displays pirate-themed coming soon message explaining future feature to connect with cooperating law firms
+- **Send Notifications** screen: Healthcare-focused notification system with 6 medical templates, multi-patient selection, and message personalization capabilities
+- **Analytics Dashboard**: Track patient notification engagement with healthcare-specific metrics
 
 **Law Firm Portal**:
 - "Invite" button in header for inviting new users via unique firm code
 - "My Connections" link added to dashboard menu for managing client and provider connections
 - Both invite and connections functionality clearly separated for streamlined workflows
 - Client Details view is read-only for Medical Hub (no upload capabilities)
+- **Send Notifications** screen: Multi-step wizard for sending push notifications to clients with template selection, client selection, message customization, and optional task assignment
+- **Analytics Dashboard**: Track notification engagement metrics (sent, delivered, clicked) with date range filtering
 
 ### Technical Implementations
 - **Framework**: Expo SDK 52 with React Native 0.76.9.
@@ -92,6 +98,13 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
 - **Universal Invite/Referral System**: Allows all user types to generate unique invite codes, with coin rewards for individual users whose invitees sign up.
 - **Cross-Platform Compatibility**: Extensive support for iOS, Android, mobile web, and desktop web.
+- **Phase 2: Smart Notifications & Attorney-Controlled Action Dashboard** (October 2025):
+  - **Push Notification System**: Law firms and medical providers can send targeted push notifications to connected clients/patients with 16 professional templates, multi-recipient selection, scheduling capabilities, and comprehensive analytics tracking (sent, delivered, clicked rates).
+  - **Attorney-Assigned Task System**: Law firms create actionable tasks for clients through LawFirmSendNotificationScreen with optional task assignment. Tasks include titles, descriptions, priorities (urgent/high/medium/low), due dates, and coin rewards. Individual users access tasks via ActionDashboardScreen with filtering by status/priority, pull-to-refresh, and tap-to-update functionality.
+  - **Notification Templates**: 10 law firm templates (court_reminder, deposition_notice, document_request, settlement_update, case_milestone, deadline_reminder, appointment_confirmation, task_reminder, status_update, general_communication) and 6 medical provider templates (appointment_reminder, test_results, prescription_ready, billing_notice, health_tip, general_update).
+  - **Security & Compliance**: Zero AI-generated legal advice - all task content controlled by attorneys. Law firms can only create tasks for connected clients (verified via law_firm_clients junction table). Task audit logging tracks all status changes.
+  - **Database Schema**: New tables include push_notifications, push_devices, notification_analytics, notification_templates, law_firm_tasks, medical_provider_tasks, task_templates, and task_audit.
+  - **API Integration**: Centralized API configuration in src/config/api.js with Railway backend URL. All API calls use apiRequest helper with proper error handling and authentication headers.
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
