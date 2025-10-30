@@ -60,10 +60,17 @@ const getMyConnections = async (req, res) => {
 const updateLawFirm = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
     const { lawFirmCode } = req.body;
 
     if (!lawFirmCode || typeof lawFirmCode !== 'string') {
       return res.status(400).json({ error: 'Valid law firm code is required' });
+    }
+
+    if (userType !== 'individual' && userType !== 'client') {
+      return res.status(403).json({ 
+        error: 'Avast! Only individual users can connect with law firms. This feature is for clients to connect with their legal representation.' 
+      });
     }
 
     const trimmedCode = lawFirmCode.trim().toUpperCase();
@@ -140,10 +147,17 @@ const updateLawFirm = async (req, res) => {
 const updateMedicalProvider = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
     const { medicalProviderCode } = req.body;
 
     if (!medicalProviderCode || typeof medicalProviderCode !== 'string') {
       return res.status(400).json({ error: 'Valid medical provider code is required' });
+    }
+
+    if (userType !== 'individual' && userType !== 'client') {
+      return res.status(403).json({ 
+        error: 'Ahoy! Only individual users can connect with medical providers. This feature is for patients to connect with their healthcare providers.' 
+      });
     }
 
     const trimmedCode = medicalProviderCode.trim().toUpperCase();
