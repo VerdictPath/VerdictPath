@@ -1,4 +1,4 @@
-// APP VERSION 1.0.2 - 3-Phase Analytics System
+// APP VERSION 1.0.3 - Notifications & Action Dashboard
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,6 +7,7 @@ import { theme } from './src/styles/theme';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
+import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
@@ -24,12 +25,11 @@ import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboa
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
-const CaseCompassApp = () => {
+const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
+  const notificationContext = useNotifications();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('landing');
   const [userType, setUserType] = useState(USER_TYPES.INDIVIDUAL);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
   const [coins, setCoins] = useState(0);
   const [loginStreak, setLoginStreak] = useState(0);
 
@@ -460,7 +460,13 @@ const CaseCompassApp = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await notificationContext.logout();
+    } catch (error) {
+      console.error('Error logging out notifications:', error);
+    }
+    
     setIsLoggedIn(false);
     setUser(null);
     setCurrentScreen('landing');
@@ -796,7 +802,7 @@ const CaseCompassApp = () => {
     });
   };
 
-  const handleNavigate = (screen, data) => {
+  const handleNavigateInternal = (screen, data) => {
     if (screen === 'client-roadmap' && data) {
       setSelectedClientId(data.clientId);
       setClientRoadmapData(data.clientData);
@@ -824,15 +830,15 @@ const CaseCompassApp = () => {
 
   return (
     <SafeAreaView style={commonStyles.safeArea}>
-      <StatusBar 
-        barStyle="dark-content" 
-        backgroundColor={theme.colors.background}
-        translucent={false}
-      />
-      
-      {currentScreen === 'landing' && (
-        <LandingScreen onNavigate={handleNavigate} />
-      )}
+        <StatusBar 
+          barStyle="dark-content" 
+          backgroundColor={theme.colors.background}
+          translucent={false}
+        />
+        
+        {currentScreen === 'landing' && (
+          <LandingScreen onNavigate={handleNavigateInternal} />
+        )}
       
       {currentScreen === 'register' && (
         <RegisterScreen
@@ -857,7 +863,7 @@ const CaseCompassApp = () => {
           inviteCode={inviteCode}
           setInviteCode={setInviteCode}
           onRegister={handleRegister}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
         />
       )}
       
@@ -865,7 +871,7 @@ const CaseCompassApp = () => {
         <SubscriptionSelectionScreen
           userType={userType}
           onSelectSubscription={handleSelectSubscription}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
         />
       )}
       
@@ -876,7 +882,7 @@ const CaseCompassApp = () => {
           password={password}
           setPassword={setPassword}
           onLogin={handleLogin}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           userType={userType}
           setUserType={setUserType}
         />
@@ -889,7 +895,7 @@ const CaseCompassApp = () => {
           loginStreak={loginStreak}
           onClaimBonus={handleClaimDailyBonus}
           onConvertCoins={handleConvertCoinsToCredits}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           onLogout={handleLogout}
         />
       )}
@@ -899,7 +905,7 @@ const CaseCompassApp = () => {
           litigationStages={litigationStages}
           onCompleteStage={handleCompleteStage}
           onUncompleteStage={handleUncompleteStage}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
           onCompleteSubStage={handleCompleteSubStage}
@@ -912,12 +918,12 @@ const CaseCompassApp = () => {
       )}
       
       {currentScreen === 'videos' && (
-        <VideosScreen onNavigate={handleNavigate} />
+        <VideosScreen onNavigate={handleNavigateInternal} />
       )}
       
       {currentScreen === 'medical' && (
         <MedicalHubScreen 
-          onNavigate={handleNavigate} 
+          onNavigate={handleNavigateInternal} 
           onUploadMedicalDocument={handleMedicalHubUpload}
           medicalHubUploads={medicalHubUploads}
           authToken={authToken}
@@ -925,14 +931,14 @@ const CaseCompassApp = () => {
       )}
       
       {currentScreen === 'hipaaForms' && (
-        <HIPAAFormsScreen onNavigate={handleNavigate} user={user} />
+        <HIPAAFormsScreen onNavigate={handleNavigateInternal} user={user} />
       )}
       
       {currentScreen === 'lawfirm-dashboard' && (
         <LawFirmDashboardScreen
           user={user}
           onNavigateToClient={handleNavigateToClient}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           onLogout={handleLogout}
         />
       )}
@@ -942,14 +948,14 @@ const CaseCompassApp = () => {
           user={user}
           clientId={selectedClientId}
           onBack={handleBackToLawFirmDashboard}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
         />
       )}
       
       {currentScreen === 'client-roadmap' && (
         <RoadmapScreen
           litigationStages={mergeCompletedSubstages(clientRoadmapData)}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           selectedAvatar={selectedAvatar}
           onSelectAvatar={setSelectedAvatar}
           onCompleteStage={() => {}} // Read-only mode
@@ -974,7 +980,7 @@ const CaseCompassApp = () => {
             setSelectedPatientId(patientId);
             setCurrentScreen('medicalprovider-patient-details');
           }}
-          onNavigate={handleNavigate}
+          onNavigate={handleNavigateInternal}
           onLogout={handleLogout}
         />
       )}
@@ -990,14 +996,34 @@ const CaseCompassApp = () => {
         />
       )}
       
-      {/* Bottom Navigation - only show for individual user screens */}
-      {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms'].includes(currentScreen) && (
-        <BottomNavigation 
-          currentScreen={currentScreen}
-          onNavigate={handleNavigate}
-        />
-      )}
+        {/* Bottom Navigation - only show for individual user screens */}
+        {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms'].includes(currentScreen) && (
+          <BottomNavigation 
+            currentScreen={currentScreen}
+            onNavigate={handleNavigateInternal}
+          />
+        )}
     </SafeAreaView>
+  );
+};
+
+const CaseCompassApp = () => {
+  const [user, setUser] = useState(null);
+  const [currentScreen, setCurrentScreen] = useState('landing');
+
+  const handleNavigate = (screen) => {
+    setCurrentScreen(screen);
+  };
+
+  return (
+    <NotificationProvider user={user} onNavigate={handleNavigate}>
+      <AppContent 
+        user={user} 
+        setUser={setUser} 
+        currentScreen={currentScreen}
+        setCurrentScreen={setCurrentScreen}
+      />
+    </NotificationProvider>
   );
 };
 

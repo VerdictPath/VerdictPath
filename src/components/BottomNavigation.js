@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const BottomNavigation = ({ currentScreen, onNavigate }) => {
+  const { unreadCount } = useNotifications();
+  
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'dashboard' },
+    { name: 'Dashboard', icon: '🏠', screen: 'dashboard', badge: unreadCount },
     { name: 'Roadmap', icon: '🗺️', screen: 'roadmap' },
     { name: 'Medical', icon: '⚕️', screen: 'medical' },
     { name: 'Videos', icon: '🎬', screen: 'videos' },
@@ -14,6 +17,8 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
     <View style={styles.container}>
       {tabs.map((tab) => {
         const isActive = currentScreen === tab.screen;
+        const showBadge = tab.badge && tab.badge > 0;
+        
         return (
           <TouchableOpacity
             key={tab.screen}
@@ -23,6 +28,13 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
           >
             <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
               <Text style={styles.icon}>{tab.icon}</Text>
+              {showBadge && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {tab.badge > 99 ? '99+' : tab.badge}
+                  </Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.label, isActive && styles.activeLabel]}>
               {tab.name}
@@ -89,6 +101,25 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: '#d4a574',
     borderRadius: 2,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: '#2c3e50',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
 

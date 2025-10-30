@@ -61,6 +61,14 @@ export const API_ENDPOINTS = {
     COMPLETE_STAGE: '/api/litigation/stage/complete',
     REVERT_STAGE: '/api/litigation/stage/revert',
     VIDEO_PROGRESS: '/api/litigation/video/progress'
+  },
+  NOTIFICATIONS: {
+    REGISTER_DEVICE: '/api/notifications/register-device',
+    UNREGISTER_DEVICE: '/api/notifications/unregister-device',
+    MY_NOTIFICATIONS: '/api/notifications/my-notifications',
+    UNREAD_COUNT: '/api/notifications/unread-count',
+    MARK_READ: (id) => `/api/notifications/${id}/read`,
+    MARK_CLICKED: (id) => `/api/notifications/${id}/clicked`
   }
 };
 
