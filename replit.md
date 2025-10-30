@@ -62,6 +62,7 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - ClientEventRequestsScreen for viewing requests and selecting dates
   - Complete workflow with status tracking (pending, dates_submitted, confirmed, cancelled)
   - Transaction-safe date submission and confirmation process
+  - Navigation buttons added to law firm dashboard (Notifications tab) and individual user dashboard (main menu)
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
