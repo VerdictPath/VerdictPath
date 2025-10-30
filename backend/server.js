@@ -70,6 +70,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
+app.use('/api/event-requests', require('./routes/eventRequests'));
 
 // Serve mobile app at root
 app.get('/', (req, res) => {
