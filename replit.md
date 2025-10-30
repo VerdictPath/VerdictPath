@@ -78,12 +78,15 @@ The design is centered on a "pirate treasure map" theme with a warm tan/beige co
 - **Client/Patient Management**: Includes real-time search functionality by name or email, restructured portals with tab-based navigation (Overview, Roadmap, Medical Hub, Evidence Locker) for individual client/patient details, and robust connection management for users.
 - **Connection Management**: ONLY individual users (userType: 'individual' or 'client') can manage connections with law firms or medical providers. Law firms and medical providers are completely blocked from using connection features. Individual users can:
   - Connect with ONE law firm at a time via connection code
-  - Connect with ONE medical provider at a time via connection code
+  - Connect with MULTIPLE medical providers simultaneously via connection codes (no limit)
   - Disconnect from their current law firm (sets law_firm_code to NULL, removes law_firm_clients relationship)
-  - Disconnect from their current medical provider (sets medical_provider_code to NULL, removes medical_provider_patients relationship)
-  - Switch to a different law firm/provider (automatically removes old relationship before creating new one)
+  - Remove specific medical providers by ID from their list of connections
+  - Switch to a different law firm (automatically removes old relationship before creating new one)
+  - Add additional medical providers to their existing list without replacing previous connections
   - Backend enforces 403 Forbidden for non-individual users on all connection endpoints
-  - Endpoints: POST /connections/update-lawfirm, POST /connections/update-medical-provider, POST /connections/disconnect-lawfirm, POST /connections/disconnect-medical-provider
+  - Endpoints: POST /connections/update-lawfirm, POST /connections/add-medical-provider, POST /connections/disconnect-lawfirm, POST /connections/remove-medical-provider
+  - GET /connections/my-connections returns lawFirm (single object) and medicalProviders (array)
+  - Medical provider connections stored in medical_provider_patients junction table
   - All connection operations prevent orphaned database relationships and maintain data integrity
 - **Subscription Management**: Implements a complete system for individual, law firm, and medical provider subscriptions with Free, Basic, and Premium tiers. This includes automatic unique code generation, free trial limits, expanded law firm and medical provider size tiers, and a full upgrade/downgrade protocol with validation.
 - **Gamification Logic**: Coin system for milestones and daily streaks with a fraud-prevented coin-to-credit conversion (lifetime cap of $5 credit).
