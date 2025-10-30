@@ -4,6 +4,7 @@ import { commonStyles } from '../styles/commonStyles';
 import { calculateDailyBonus } from '../utils/gamification';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
+import { useNotifications } from '../contexts/NotificationContext';
 import InviteModal from '../components/InviteModal';
 import ConnectionsModal from '../components/ConnectionsModal';
 
@@ -16,6 +17,7 @@ const DashboardScreen = ({
   onNavigate, 
   onLogout 
 }) => {
+  const { unreadCount } = useNotifications();
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [connections, setConnections] = useState({
@@ -84,13 +86,28 @@ const DashboardScreen = ({
               </View>
             )}
           </View>
-          <TouchableOpacity 
-            style={styles.inviteButton}
-            onPress={() => setInviteModalVisible(true)}
-          >
-            <Text style={styles.inviteIcon}>👍</Text>
-            <Text style={styles.inviteButtonText}>Invite Friends</Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.notificationButton}
+              onPress={() => onNavigate && onNavigate('notifications')}
+            >
+              <Text style={styles.bellIcon}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.inviteButton}
+              onPress={() => setInviteModalVisible(true)}
+            >
+              <Text style={styles.inviteIcon}>👍</Text>
+              <Text style={styles.inviteButtonText}>Invite Friends</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.statsContainer}>
@@ -289,6 +306,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.text,
     fontWeight: '500',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  notificationButton: {
+    position: 'relative',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 48,
+  },
+  bellIcon: {
+    fontSize: 22,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   inviteButton: {
     backgroundColor: theme.colors.primary,

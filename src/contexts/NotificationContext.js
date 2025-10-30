@@ -105,7 +105,9 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       const success = await NotificationService.markNotificationAsRead(notificationId, token);
       if (success) {
         setNotifications(prev =>
-          prev.map(n => n.id === notificationId ? { ...n, status: 'read' } : n)
+          prev.map(n => n.id === notificationId 
+            ? { ...n, is_read: true, read_at: new Date().toISOString() } 
+            : n)
         );
         await refreshUnreadCount(token);
       }
@@ -124,7 +126,9 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       const success = await NotificationService.markNotificationAsClicked(notificationId, token);
       if (success) {
         setNotifications(prev =>
-          prev.map(n => n.id === notificationId ? { ...n, clicked: true } : n)
+          prev.map(n => n.id === notificationId 
+            ? { ...n, is_clicked: true, clicked_at: new Date().toISOString() } 
+            : n)
         );
       }
       return success;
@@ -189,7 +193,7 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
     isLoading,
     initializeNotifications,
     refreshUnreadCount,
-    fetchNotifications,
+    refreshNotifications: fetchNotifications,
     markAsRead,
     markAsClicked,
     logout,
