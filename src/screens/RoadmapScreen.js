@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
+import CelebrationAnimation from '../components/CelebrationAnimation';
 import Svg, { Path } from 'react-native-svg';
 import { API_URL } from '../config/api';
 import alert from '../utils/alert';
@@ -75,6 +76,9 @@ const RoadmapScreen = ({
   const [dataEntrySubStage, setDataEntrySubStage] = useState(null);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
   const [confirmModalData, setConfirmModalData] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [completedMilestone, setCompletedMilestone] = useState('');
+  const [celebrationCoins, setCelebrationCoins] = useState(100);
 
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
@@ -280,21 +284,30 @@ const RoadmapScreen = ({
         const actualCoinsEarned = data.coinsEarned || 0;
         onCompleteSubStage(selectedStage.id, subStageId, actualCoinsEarned);
         
-        // Show celebration if phase transition occurred
-        if (phaseTransition) {
-          const celebrationMessage = getPhaseCelebrationMessage(phaseTransition);
-          alert('🎉 Major Milestone!', celebrationMessage);
+        // Trigger celebration animation for new completions
+        if (!data.coinsAlreadyEarnedBefore && actualCoinsEarned > 0) {
+          setCompletedMilestone(subStage.name);
+          setCelebrationCoins(actualCoinsEarned);
+          setShowCelebration(true);
+          
+          // If phase transition, show additional alert after celebration
+          if (phaseTransition) {
+            setTimeout(() => {
+              const celebrationMessage = getPhaseCelebrationMessage(phaseTransition);
+              alert('🎉 Major Milestone!', celebrationMessage);
+            }, 2800);
+          }
         } else {
-          // Show different message if coins were already earned before
+          // Show alert for already-completed tasks
           if (data.coinsAlreadyEarnedBefore) {
             alert(
               '✅ Task Completed!',
               `Progress updated! (Coins were already earned previously - cannot earn them again)`
             );
-          } else {
+          } else if (actualCoinsEarned === 0) {
             alert(
               '✅ Task Completed!',
-              `You earned ${actualCoinsEarned} coins! Your progress has been updated.`
+              'Your progress has been updated.'
             );
           }
         }
@@ -881,6 +894,13 @@ const RoadmapScreen = ({
           </View>
         </View>
       </Modal>
+
+      <CelebrationAnimation 
+        visible={showCelebration}
+        milestone={completedMilestone}
+        coinsEarned={celebrationCoins}
+        onComplete={() => setShowCelebration(false)}
+      />
     </View>
   );
 };
