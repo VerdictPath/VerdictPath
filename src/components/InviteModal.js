@@ -90,7 +90,8 @@ const InviteModal = ({ visible, onClose, user }) => {
     if (user?.userType === 'individual' || user?.userType === 'client') {
       emailBody = encodeURIComponent(
         `Hi there!\n\nI've been using Verdict Path to navigate my legal journey and wanted to invite you to join.\n\n` +
-        `Verdict Path is an interactive legal case management platform for individuals, law firms, and medical providers that helps you:\n` +
+        `Verdict Path is an interactive legal case management platform for individuals who are not familiar with the litigation process, law firms who want their clients informed, and medical providers who want to stay in the loop.\n\n` +
+        `Key features:\n` +
         `• Track litigation progress step-by-step\n` +
         `• Earn rewards for completing milestones\n` +
         `• Store medical records securely (HIPAA-compliant)\n` +
