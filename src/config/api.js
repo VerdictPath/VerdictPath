@@ -1,17 +1,27 @@
 // API Configuration - Environment-aware backend URL selection
+import Constants from 'expo-constants';
+
 const getApiBaseUrl = () => {
-  // Priority 1: Explicit environment variable (set during build/deployment)
+  // Priority 1: Explicit environment variable override (for testing/staging)
   if (process.env.EXPO_PUBLIC_API_BASE_URL) {
     return process.env.EXPO_PUBLIC_API_BASE_URL;
   }
   
-  // Priority 2: Auto-detect Railway production environment
-  // (This ensures the app works with Railway backend when deployed)
-  if (process.env.NODE_ENV === 'production') {
+  // Priority 2: Production environment (Railway deployment)
+  if (!__DEV__) {
     return 'https://verdictpath.up.railway.app';
   }
   
-  // Priority 3: Local development (default)
+  // Priority 3: Development environment
+  // Check if running on a physical device (iOS/Android) via tunnel mode
+  // Physical devices can't access localhost, so use Replit public URL
+  const platform = Constants.platform;
+  if (platform && (platform.ios || platform.android)) {
+    // Running on physical device - use Replit public URL
+    return 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+  }
+  
+  // Priority 4: Web browser or Expo web (localhost works here)
   return 'http://localhost:5000';
 };
 
