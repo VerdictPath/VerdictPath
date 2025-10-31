@@ -171,48 +171,41 @@ const RegisterScreen = ({
         )}
 
         <View style={styles.privacyContainer}>
-          <TouchableOpacity 
-            style={styles.checkboxContainer}
-            onPress={() => setPrivacyAccepted(!privacyAccepted)}
-          >
-            <View style={[styles.checkbox, privacyAccepted && styles.checkboxChecked]}>
-              {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
-            </View>
+          <View style={styles.checkboxRow}>
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => setPrivacyAccepted(!privacyAccepted)}
+            >
+              <View style={[styles.checkboxBox, privacyAccepted && styles.checkboxChecked]}>
+                {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+            </TouchableOpacity>
             <View style={styles.privacyTextContainer}>
               <Text style={styles.privacyText}>
                 I agree to the{' '}
                 <Text 
                   style={styles.privacyLink}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onNavigate('privacy-policy');
-                  }}
+                  onPress={() => onNavigate('privacy-policy')}
                 >
                   Privacy Policy
                 </Text>
                 {', '}
                 <Text 
                   style={styles.privacyLink}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onNavigate('terms-of-service');
-                  }}
+                  onPress={() => onNavigate('terms-of-service')}
                 >
                   Terms of Service
                 </Text>
                 {', and '}
                 <Text 
                   style={styles.privacyLink}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onNavigate('eula');
-                  }}
+                  onPress={() => onNavigate('eula')}
                 >
                   EULA
                 </Text>
               </Text>
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity 
@@ -300,17 +293,19 @@ const styles = StyleSheet.create({
   privacyContainer: {
     marginVertical: 15,
   },
-  checkboxContainer: {
+  checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   checkbox: {
+    marginRight: 10,
+  },
+  checkboxBox: {
     width: 24,
     height: 24,
     borderWidth: 2,
     borderColor: '#8B4513',
     borderRadius: 4,
-    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
