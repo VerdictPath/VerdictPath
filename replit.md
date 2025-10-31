@@ -91,3 +91,12 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - .railwayignore file created to exclude unnecessary files
   - Server listens on 0.0.0.0 for Railway networking compatibility
   - Complete deployment guide available in RAILWAY_DEPLOYMENT_GUIDE.md
+
+- **Multi-Environment API Configuration** (October 31, 2025): Environment-aware URL selection
+  - Frontend API configuration uses priority cascade for automatic environment detection
+  - Priority 1: EXPO_PUBLIC_API_BASE_URL environment variable (explicit override)
+  - Priority 2: NODE_ENV=production automatically uses Railway backend URL
+  - Priority 3: Defaults to localhost:5000 for local development
+  - No code changes required when switching between environments
+  - Backend auto-detects Railway vs Replit via RAILWAY_PUBLIC_DOMAIN
+  - Full multi-environment guide in DEPLOYMENT_ENVIRONMENT_GUIDE.md
