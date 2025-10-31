@@ -175,62 +175,10 @@ const RegisterScreen = ({
             )}
           </>
         )}
-      </View>
 
-      <View style={styles.debugContainer}>
-        <Text style={styles.debugText}>⚠️ SCROLL DOWN TO SEE CHECKBOX ⚠️</Text>
-      </View>
-
-      <View style={styles.privacyContainer}>
-        <Text style={styles.privacyHeader}>Required: Accept Legal Documents</Text>
-        <View style={styles.checkboxRow}>
-          <TouchableOpacity 
-            style={styles.checkbox}
-            onPress={() => {
-              console.log('Checkbox clicked! Current value:', privacyAccepted);
-              setPrivacyAccepted(!privacyAccepted);
-            }}
-          >
-            <View style={[styles.checkboxBox, privacyAccepted && styles.checkboxChecked]}>
-              {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-          </TouchableOpacity>
-          <View style={styles.privacyTextContainer}>
-            <Text style={styles.privacyText}>
-              I agree to the{' '}
-              <Text 
-                style={styles.privacyLink}
-                onPress={() => onNavigate('privacy-policy')}
-              >
-                Privacy Policy
-              </Text>
-              {', '}
-              <Text 
-                style={styles.privacyLink}
-                onPress={() => onNavigate('terms-of-service')}
-              >
-                Terms of Service
-              </Text>
-              {', and '}
-              <Text 
-                style={styles.privacyLink}
-                onPress={() => onNavigate('eula')}
-              >
-                EULA
-              </Text>
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.formContainer}>
         <TouchableOpacity 
-          style={[
-            commonStyles.primaryButton, 
-            !privacyAccepted && styles.buttonDisabled
-          ]} 
+          style={commonStyles.primaryButton} 
           onPress={onRegister}
-          disabled={!privacyAccepted}
         >
           <Text style={commonStyles.buttonText}>Create Account</Text>
         </TouchableOpacity>
@@ -309,75 +257,6 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 10,
     textAlign: 'center',
-  },
-  debugContainer: {
-    backgroundColor: '#ff0000',
-    padding: 20,
-    marginVertical: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  debugText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  privacyContainer: {
-    marginVertical: 15,
-    backgroundColor: '#fffacd',
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 3,
-    borderColor: '#ff6347',
-  },
-  privacyHeader: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ff0000',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkbox: {
-    marginRight: 10,
-  },
-  checkboxBox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: '#8B4513',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-  },
-  checkboxChecked: {
-    backgroundColor: '#8B4513',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  privacyTextContainer: {
-    flex: 1,
-  },
-  privacyText: {
-    fontSize: 14,
-    color: '#2c3e50',
-    lineHeight: 20,
-  },
-  privacyLink: {
-    color: '#3498db',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
   },
 });
 

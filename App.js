@@ -15,6 +15,7 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import PrivacyAcceptanceScreen from './src/screens/PrivacyAcceptanceScreen';
 import SubscriptionSelectionScreen from './src/screens/SubscriptionSelectionScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import RoadmapScreen from './src/screens/RoadmapScreen';
@@ -254,8 +255,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return;
     }
     
-    console.log('[Registration] ✓ Validation passed! Navigating to subscription screen...');
-    setCurrentScreen('subscription');
+    console.log('[Registration] ✓ Validation passed! Navigating to Privacy Policy acceptance...');
+    setCurrentScreen('privacy-acceptance');
   };
 
   const handleSelectSubscription = async (tier, size) => {
@@ -1016,23 +1017,39 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
       
+      {currentScreen === 'privacy-acceptance' && (
+        <PrivacyAcceptanceScreen
+          onAccept={() => {
+            console.log('[Privacy Acceptance] User accepted legal documents');
+            setPrivacyAccepted(true);
+            setCurrentScreen('subscription');
+          }}
+          onDecline={() => {
+            console.log('[Privacy Acceptance] User declined - returning to register');
+            setPrivacyAccepted(false);
+            setCurrentScreen('register');
+          }}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+      
       {currentScreen === 'privacy-policy' && (
         <PrivacyPolicyScreen
-          onBack={() => setCurrentScreen('register')}
+          onBack={() => setCurrentScreen('privacy-acceptance')}
           onNavigate={handleNavigateInternal}
         />
       )}
       
       {currentScreen === 'terms-of-service' && (
         <TermsOfServiceScreen
-          onBack={() => setCurrentScreen('register')}
+          onBack={() => setCurrentScreen('privacy-acceptance')}
           onNavigate={handleNavigateInternal}
         />
       )}
       
       {currentScreen === 'eula' && (
         <EULAScreen
-          onBack={() => setCurrentScreen('register')}
+          onBack={() => setCurrentScreen('privacy-acceptance')}
           onNavigate={handleNavigateInternal}
         />
       )}
