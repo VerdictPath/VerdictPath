@@ -128,9 +128,9 @@ outputType = "console"
 name = "Expo Mobile App"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd /home/runner/workspace && npx expo start --lan --clear"
-
-[workflows.workflow.metadata]
-outputType = "console"
