@@ -82,16 +82,18 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
 - **Privacy Policy & Terms Acceptance** (Complete - October 31, 2025):
   - Comprehensive privacy policy document (assets/privacy-policy.txt) covering all data collection and usage
   - Comprehensive terms of service document (assets/terms-of-service.txt) covering service usage, user conduct, and legal agreements
-  - PrivacyPolicyScreen and TermsOfServiceScreen components with formatted, scrollable document displays
+  - Comprehensive EULA document (assets/eula.txt) covering software licensing, intellectual property, and usage rights
+  - PrivacyPolicyScreen, TermsOfServiceScreen, and EULAScreen components with formatted, scrollable document displays
   - Required checkbox acceptance during registration for all user types
-  - "Create Account" button disabled until both privacy policy and terms are accepted
-  - Clickable links in registration flow for both Privacy Policy and Terms of Service
-  - Database tracking of privacy_accepted_at timestamp for users, law_firms, and medical_providers (single timestamp covers both documents)
-  - Backend validation ensures accounts cannot be created without accepting both documents
-  - Privacy/terms acceptance state properly reset after successful registration to prevent session leaking
+  - "Create Account" button disabled until all three documents are accepted
+  - Clickable links in registration flow for Privacy Policy, Terms of Service, and EULA
+  - Database tracking of privacy_accepted_at timestamp for users, law_firms, and medical_providers (single timestamp covers all three documents)
+  - Backend validation ensures accounts cannot be created without accepting all documents
+  - Privacy/terms/EULA acceptance state properly reset after successful registration to prevent session leaking
   - CCPA, GDPR, and state-specific privacy rights documented
   - Payment terms, refund policy, and subscription details clearly outlined
   - Legal disclaimers: Service provides educational content, not legal or medical advice
+  - Software licensing terms, usage restrictions, and intellectual property protections
   - Dispute resolution and arbitration procedures with class action waiver
   - Contact information and support procedures included
 

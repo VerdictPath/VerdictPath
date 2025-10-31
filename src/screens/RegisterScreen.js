@@ -190,7 +190,7 @@ const RegisterScreen = ({
                 >
                   Privacy Policy
                 </Text>
-                {' '}and{' '}
+                {', '}
                 <Text 
                   style={styles.privacyLink}
                   onPress={(e) => {
@@ -199,6 +199,16 @@ const RegisterScreen = ({
                   }}
                 >
                   Terms of Service
+                </Text>
+                {', and '}
+                <Text 
+                  style={styles.privacyLink}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onNavigate('eula');
+                  }}
+                >
+                  EULA
                 </Text>
               </Text>
             </View>
