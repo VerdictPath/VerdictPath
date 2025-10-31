@@ -11,7 +11,11 @@ const { checkLawFirmLimit } = require('../utils/subscriptionLimits');
 
 exports.registerClient = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice } = req.body;
+    const { firstName, lastName, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice, privacyAccepted } = req.body;
+    
+    if (!privacyAccepted) {
+      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -56,8 +60,8 @@ exports.registerClient = async (req, res) => {
     const userResult = await db.query(
       `INSERT INTO users (first_name, last_name, email, email_hash, password, user_type, law_firm_code, 
        connected_law_firm_id, avatar_type, subscription_tier, subscription_price,
-       first_name_encrypted, last_name_encrypted) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+       first_name_encrypted, last_name_encrypted, privacy_accepted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP) 
        RETURNING id, email, first_name, last_name, user_type`,
       [firstName, lastName, email.toLowerCase(), emailHash, hashedPassword, 'client', 
        lawFirmCode ? lawFirmCode.toUpperCase() : null, connectedLawFirmId, 
@@ -128,7 +132,11 @@ exports.registerClient = async (req, res) => {
 
 exports.registerLawFirm = async (req, res) => {
   try {
-    const { firmName, email, password, barNumber, phoneNumber, address, subscriptionTier, firmSize } = req.body;
+    const { firmName, email, password, barNumber, phoneNumber, address, subscriptionTier, firmSize, privacyAccepted } = req.body;
+    
+    if (!privacyAccepted) {
+      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
+    }
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -140,8 +148,8 @@ exports.registerLawFirm = async (req, res) => {
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
-       street, city, state, zip_code, subscription_tier, firm_size) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+       street, city, state, zip_code, subscription_tier, firm_size, privacy_accepted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP) 
        RETURNING id, firm_name, firm_code, email, subscription_tier, firm_size`,
       [firmName, firmCode, email.toLowerCase(), hashedPassword, barNumber || null, 
        phoneNumber || null, address?.street || null, address?.city || null, 
@@ -186,13 +194,18 @@ exports.registerMedicalProvider = async (req, res) => {
       specialty,
       phoneNumber,
       address,
-      licenseNumber
+      licenseNumber,
+      privacyAccepted
     } = req.body;
 
     if (!providerName || !email || !password) {
       return res.status(400).json({ 
         message: 'Provider name, email, and password are required' 
       });
+    }
+    
+    if (!privacyAccepted) {
+      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -203,8 +216,8 @@ exports.registerMedicalProvider = async (req, res) => {
     const result = await db.query(
       `INSERT INTO medical_providers 
        (provider_name, provider_code, email, password, npi_number, specialty, phone_number, 
-        street, city, state, zip_code, license_number, subscription_tier) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        street, city, state, zip_code, license_number, subscription_tier, privacy_accepted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP) 
        RETURNING id, provider_name, provider_code, email, subscription_tier`,
       [
         providerName,
