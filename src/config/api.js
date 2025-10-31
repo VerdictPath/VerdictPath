@@ -1,13 +1,10 @@
 // API Configuration
 const getApiBaseUrl = () => {
-  // LOCAL DEVELOPMENT: Backend running on localhost:5000
-  return 'http://localhost:5000';
-  
-  // PRODUCTION: When deployed to Railway, change to:
-  // return 'https://verdictpath.up.railway.app';
-  
-  // MOBILE TESTING: If testing on physical device with Expo Go, use:
-  // return 'https://workspace.parsonslawfirm.repl.co';
+  // Use environment variable if set, otherwise default to localhost
+  // For Replit: Set EXPO_PUBLIC_API_BASE_URL to your Replit domain
+  // For Production: Set to https://verdictpath.up.railway.app
+  // For Local: Defaults to http://localhost:5000
+  return process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

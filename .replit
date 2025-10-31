@@ -91,32 +91,31 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Server"
+args = "Backend API"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Expo"
+args = "Expo Mobile App"
 
 [[workflows.workflow]]
-name = "Server"
+name = "Backend API"
 author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && node server.js"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Expo Mobile App"
+author = "agent"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node backend/server.js"
-waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Expo"
-author = "agent"
+args = "cd /home/runner/workspace && npx expo start --clear"
 
 [workflows.workflow.metadata]
 outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd /home/runner/workspace && EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0 npx expo start --port 8080"
-waitForPort = 8080
