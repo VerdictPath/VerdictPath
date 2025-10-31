@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/screens/PaymentScreen.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,71 +10,83 @@ import {
   SafeAreaView,
   ScrollView
 } from 'react-native';
-import { useStripe } from '@stripe/stripe-react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
 
+// IMPORTANT: Replace with your actual publishable key
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_YOUR_PUBLISHABLE_KEY_HERE';
+
+// IMPORTANT: Replace with your Replit URL
+const API_URL = 'https://your-replit-url.repl.co/api/payment';
+
+/**
+ * Payment Checkout Component
+ * Handles the actual payment flow
+ */
 function PaymentCheckout({ amount, caseId, userId, onSuccess, onCancel }) {
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
 
+  // Initialize payment sheet when component mounts
   const initializePaymentSheet = async () => {
     try {
       setLoading(true);
 
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Error', 'Please login to continue');
-        return false;
-      }
-
+      // 1. Fetch payment intent from backend
       console.log('Creating payment intent...');
-      const response = await fetch(`${API_BASE_URL}/api/payment/create-payment-intent`, {
+      const response = await fetch(`${API_URL}/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          amount: amount / 100,
-          description: `Verdict Path Payment - Case ${caseId || 'N/A'}`
+          amount: amount, // Amount in cents
+          currency: 'usd',
+          caseId: caseId,
+          userId: userId,
+          description: `Verdict Path Payment - Case ${caseId}`
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create payment intent');
+        throw new Error('Failed to create payment intent');
       }
 
       const { clientSecret, paymentIntentId } = await response.json();
       console.log('Payment intent created:', paymentIntentId);
 
+      // 2. Initialize the payment sheet
       const { error } = await initPaymentSheet({
         merchantDisplayName: 'Verdict Path',
         paymentIntentClientSecret: clientSecret,
         
+        // Enable Apple Pay
         applePay: {
           merchantCountryCode: 'US',
+          // cartItems: [{ label: 'Case Payment', amount: (amount / 100).toFixed(2) }],
         },
         
+        // Enable Google Pay
         googlePay: {
           merchantCountryCode: 'US',
-          testEnv: __DEV__,
+          testEnv: true, // Set to false in production
           currencyCode: 'usd',
         },
         
+        // Customize appearance
         appearance: {
           colors: {
-            primary: '#8B4513',
-            background: '#F5E6D3',
-            componentBackground: '#FFFFFF',
+            primary: '#007AFF',
+            background: '#ffffff',
+            componentBackground: '#f8f9fa',
           },
         },
         
+        // Default billing details
         defaultBillingDetails: {
-          name: 'Customer',
+          name: 'Customer Name', // Replace with actual user name
         },
         
+        // Return URL for web redirects
         returnURL: 'verdictpath://payment-return',
       });
 
@@ -88,16 +101,18 @@ function PaymentCheckout({ amount, caseId, userId, onSuccess, onCancel }) {
 
     } catch (error) {
       console.error('Payment initialization error:', error);
-      Alert.alert('Error', error.message || 'Failed to initialize payment. Please try again.');
+      Alert.alert('Error', 'Failed to initialize payment. Please try again.');
       return false;
     } finally {
       setLoading(false);
     }
   };
 
+  // Present the payment sheet to user
   const openPaymentSheet = async () => {
     setLoading(true);
 
+    // Initialize if not already done
     const initialized = await initializePaymentSheet();
     
     if (!initialized) {
@@ -105,11 +120,13 @@ function PaymentCheckout({ amount, caseId, userId, onSuccess, onCancel }) {
       return;
     }
 
+    // Show the payment sheet
     const { error } = await presentPaymentSheet();
 
     setLoading(false);
 
     if (error) {
+      // User canceled or payment failed
       console.log('Payment sheet error:', error);
       
       if (error.code === 'Canceled') {
@@ -119,6 +136,7 @@ function PaymentCheckout({ amount, caseId, userId, onSuccess, onCancel }) {
         Alert.alert('Payment Failed', error.message);
       }
     } else {
+      // Payment succeeded
       console.log('Payment successful!');
       Alert.alert(
         'Success!',
@@ -162,22 +180,23 @@ function PaymentCheckout({ amount, caseId, userId, onSuccess, onCancel }) {
         <Text style={styles.cancelButtonText}>Cancel</Text>
       </TouchableOpacity>
 
-      <View style={styles.testInfo}>
-        <Text style={styles.testTitle}>Test Mode</Text>
-        <Text style={styles.testText}>This is a test payment</Text>
-        <Text style={styles.testText}>No real charges will be made</Text>
-      </View>
-
       <Text style={styles.secureText}>🔒 Secure payment powered by Stripe</Text>
     </View>
   );
 }
 
+/**
+ * Main Payment Screen
+ * Wraps the checkout in StripeProvider
+ */
 export default function PaymentScreen({ route, navigation }) {
-  const { amount = 2999, caseId, userId, description } = route?.params || {};
+  // Get parameters from navigation
+  const { amount = 5000, caseId, userId } = route?.params || {};
 
   const handlePaymentSuccess = () => {
+    // Navigate to success screen or back to previous screen
     navigation.goBack();
+    // Or: navigation.navigate('PaymentSuccess');
   };
 
   const handlePaymentCancel = () => {
@@ -185,36 +204,42 @@ export default function PaymentScreen({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Complete Payment</Text>
-          <Text style={styles.subtitle}>{description || 'Secure payment processing'}</Text>
-        </View>
+    <StripeProvider
+      publishableKey={STRIPE_PUBLISHABLE_KEY}
+      merchantIdentifier="merchant.com.verdictpath" // For Apple Pay
+      urlScheme="verdictpath" // For deep linking
+    >
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Payment</Text>
+            <Text style={styles.subtitle}>Complete your payment securely</Text>
+          </View>
 
-        <PaymentCheckout
-          amount={amount}
-          caseId={caseId}
-          userId={userId}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-        />
+          <PaymentCheckout
+            amount={amount}
+            caseId={caseId}
+            userId={userId}
+            onSuccess={handlePaymentSuccess}
+            onCancel={handlePaymentCancel}
+          />
 
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>Payment Methods Accepted</Text>
-          <Text style={styles.infoText}>• Credit and Debit Cards</Text>
-          <Text style={styles.infoText}>• Apple Pay (iOS)</Text>
-          <Text style={styles.infoText}>• Google Pay (Android)</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoTitle}>Payment Methods Accepted</Text>
+            <Text style={styles.infoText}>• Credit and Debit Cards</Text>
+            <Text style={styles.infoText}>• Apple Pay</Text>
+            <Text style={styles.infoText}>• Google Pay</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </StripeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5E6D3',
+    backgroundColor: '#f5f5f5',
   },
   scrollContent: {
     padding: 20,
@@ -226,16 +251,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#3E2723',
+    color: '#333',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-    textAlign: 'center',
   },
   checkoutContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 20,
     shadowColor: '#000',
@@ -249,7 +273,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#D3C5A5',
+    borderBottomColor: '#e0e0e0',
   },
   amountLabel: {
     fontSize: 16,
@@ -257,34 +281,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   amountValue: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#007AFF',
   },
   payButton: {
-    backgroundColor: '#8B4513',
-    borderRadius: 12,
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
     padding: 16,
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
   payButtonDisabled: {
-    backgroundColor: '#BCAAA4',
-    shadowOpacity: 0.1,
+    backgroundColor: '#a0c4ff',
   },
   payButtonText: {
-    color: '#FFFFFF',
+    color: '#ffffff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   cancelButton: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
     padding: 16,
     alignItems: 'center',
     marginBottom: 12,
@@ -293,26 +311,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 16,
     fontWeight: '600',
-  },
-  testInfo: {
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#FFE0B2',
-  },
-  testTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#E65100',
-    marginBottom: 4,
-  },
-  testText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
   },
   secureText: {
     textAlign: 'center',
@@ -323,18 +321,13 @@ const styles = StyleSheet.create({
   infoContainer: {
     marginTop: 30,
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   infoTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#3E2723',
+    color: '#333',
     marginBottom: 12,
   },
   infoText: {
