@@ -29,6 +29,9 @@ const RegisterScreen = ({
   onRegister, 
   onNavigate 
 }) => {
+  console.log('RegisterScreen rendering - privacyAccepted:', privacyAccepted);
+  console.log('RegisterScreen rendering - userType:', userType);
+  
   return (
     <ScrollView 
       style={commonStyles.container}
@@ -172,53 +175,55 @@ const RegisterScreen = ({
             )}
           </>
         )}
+      </View>
 
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>⚠️ SCROLL DOWN TO SEE CHECKBOX ⚠️</Text>
-        </View>
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugText}>⚠️ SCROLL DOWN TO SEE CHECKBOX ⚠️</Text>
+      </View>
 
-        <View style={styles.privacyContainer}>
-          <Text style={styles.privacyHeader}>Required: Accept Legal Documents</Text>
-          <View style={styles.checkboxRow}>
-            <TouchableOpacity 
-              style={styles.checkbox}
-              onPress={() => {
-                console.log('Checkbox clicked! Current value:', privacyAccepted);
-                setPrivacyAccepted(!privacyAccepted);
-              }}
-            >
-              <View style={[styles.checkboxBox, privacyAccepted && styles.checkboxChecked]}>
-                {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-            </TouchableOpacity>
-            <View style={styles.privacyTextContainer}>
-              <Text style={styles.privacyText}>
-                I agree to the{' '}
-                <Text 
-                  style={styles.privacyLink}
-                  onPress={() => onNavigate('privacy-policy')}
-                >
-                  Privacy Policy
-                </Text>
-                {', '}
-                <Text 
-                  style={styles.privacyLink}
-                  onPress={() => onNavigate('terms-of-service')}
-                >
-                  Terms of Service
-                </Text>
-                {', and '}
-                <Text 
-                  style={styles.privacyLink}
-                  onPress={() => onNavigate('eula')}
-                >
-                  EULA
-                </Text>
-              </Text>
+      <View style={styles.privacyContainer}>
+        <Text style={styles.privacyHeader}>Required: Accept Legal Documents</Text>
+        <View style={styles.checkboxRow}>
+          <TouchableOpacity 
+            style={styles.checkbox}
+            onPress={() => {
+              console.log('Checkbox clicked! Current value:', privacyAccepted);
+              setPrivacyAccepted(!privacyAccepted);
+            }}
+          >
+            <View style={[styles.checkboxBox, privacyAccepted && styles.checkboxChecked]}>
+              {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
             </View>
+          </TouchableOpacity>
+          <View style={styles.privacyTextContainer}>
+            <Text style={styles.privacyText}>
+              I agree to the{' '}
+              <Text 
+                style={styles.privacyLink}
+                onPress={() => onNavigate('privacy-policy')}
+              >
+                Privacy Policy
+              </Text>
+              {', '}
+              <Text 
+                style={styles.privacyLink}
+                onPress={() => onNavigate('terms-of-service')}
+              >
+                Terms of Service
+              </Text>
+              {', and '}
+              <Text 
+                style={styles.privacyLink}
+                onPress={() => onNavigate('eula')}
+              >
+                EULA
+              </Text>
+            </Text>
           </View>
         </View>
+      </View>
 
+      <View style={styles.formContainer}>
         <TouchableOpacity 
           style={[
             commonStyles.primaryButton, 
