@@ -255,7 +255,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return;
     }
     
-    console.log('[Registration] ✓ Validation passed! Navigating to Privacy Policy acceptance...');
+    console.log('[Registration] ✓ Validation passed! Navigating to Privacy Policy acceptance... VERSION 2.0');
+    console.log('[DEBUG] Setting screen to privacy-acceptance');
     setCurrentScreen('privacy-acceptance');
   };
 
