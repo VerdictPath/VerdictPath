@@ -24,6 +24,8 @@ const RegisterScreen = ({
   setFirmName,
   providerName,
   setProviderName,
+  privacyAccepted,
+  setPrivacyAccepted,
   onRegister, 
   onNavigate 
 }) => {
@@ -168,7 +170,40 @@ const RegisterScreen = ({
           </>
         )}
 
-        <TouchableOpacity style={commonStyles.primaryButton} onPress={onRegister}>
+        <View style={styles.privacyContainer}>
+          <TouchableOpacity 
+            style={styles.checkboxContainer}
+            onPress={() => setPrivacyAccepted(!privacyAccepted)}
+          >
+            <View style={[styles.checkbox, privacyAccepted && styles.checkboxChecked]}>
+              {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
+            </View>
+            <View style={styles.privacyTextContainer}>
+              <Text style={styles.privacyText}>
+                I agree to the{' '}
+                <Text 
+                  style={styles.privacyLink}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onNavigate('privacy-policy');
+                  }}
+                >
+                  Privacy Policy
+                </Text>
+                {' '}and Terms of Service
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity 
+          style={[
+            commonStyles.primaryButton, 
+            !privacyAccepted && styles.buttonDisabled
+          ]} 
+          onPress={onRegister}
+          disabled={!privacyAccepted}
+        >
           <Text style={commonStyles.buttonText}>Create Account</Text>
         </TouchableOpacity>
 
@@ -242,6 +277,48 @@ const styles = StyleSheet.create({
     marginTop: -10,
     marginBottom: 10,
     textAlign: 'center',
+  },
+  privacyContainer: {
+    marginVertical: 15,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#8B4513',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  checkboxChecked: {
+    backgroundColor: '#8B4513',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  privacyTextContainer: {
+    flex: 1,
+  },
+  privacyText: {
+    fontSize: 14,
+    color: '#2c3e50',
+    lineHeight: 20,
+  },
+  privacyLink: {
+    color: '#3498db',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });
 

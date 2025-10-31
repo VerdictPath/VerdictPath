@@ -38,6 +38,7 @@ import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -57,6 +58,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [providerName, setProviderName] = useState('');
   const [firmCode, setFirmCode] = useState('');
   const [inviteCode, setInviteCode] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   const [subscriptionTier, setSubscriptionTier] = useState('free');
   const [firmSize, setFirmSize] = useState('small');
@@ -272,7 +274,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               email: email,
               password: password,
               subscriptionTier: tier,
-              firmSize: size || null
+              firmSize: size || null,
+              privacyAccepted: privacyAccepted
             })
           });
           
@@ -297,7 +300,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             body: JSON.stringify({
               providerName: providerName,
               email: email,
-              password: password
+              password: password,
+              privacyAccepted: privacyAccepted
             })
           });
           
@@ -331,7 +335,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               lawFirmCode: firmCode || null,
               avatarType: 'captain',
               subscriptionTier: tier,
-              subscriptionPrice: 0
+              subscriptionPrice: 0,
+              privacyAccepted: privacyAccepted
             })
           });
           
@@ -376,6 +381,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setCoins(0);
         setLoginStreak(0);
         setIsLoggedIn(true);
+        setPrivacyAccepted(false);
         
         let welcomeMessage = 'Your free account has been created successfully!';
         if (userType === USER_TYPES.LAW_FIRM && userData.firmCode) {
@@ -409,7 +415,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               email: email,
               password: password,
               subscriptionTier: tier,
-              firmSize: size || null
+              firmSize: size || null,
+              privacyAccepted: privacyAccepted
             })
           });
           
@@ -432,7 +439,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             body: JSON.stringify({
               providerName: providerName,
               email: email,
-              password: password
+              password: password,
+              privacyAccepted: privacyAccepted
             })
           });
           
@@ -483,6 +491,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setCoins(0);
         setLoginStreak(0);
         setIsLoggedIn(true);
+        setPrivacyAccepted(false);
         
         Alert.alert(
           '🎉 Welcome to Verdict Path!',
@@ -993,7 +1002,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           setFirmCode={setFirmCode}
           inviteCode={inviteCode}
           setInviteCode={setInviteCode}
+          privacyAccepted={privacyAccepted}
+          setPrivacyAccepted={setPrivacyAccepted}
           onRegister={handleRegister}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+      
+      {currentScreen === 'privacy-policy' && (
+        <PrivacyPolicyScreen
+          onBack={() => setCurrentScreen('register')}
           onNavigate={handleNavigateInternal}
         />
       )}

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS law_firms (
   zip_code VARCHAR(20),
   subscription_tier VARCHAR(50) DEFAULT 'free',
   firm_size VARCHAR(20) CHECK (firm_size IN ('shingle', 'boutique', 'small', 'medium', 'large', 'enterprise')),
+  privacy_accepted_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS medical_providers (
   zip_code VARCHAR(20),
   license_number VARCHAR(100),
   subscription_tier VARCHAR(50) DEFAULT 'free',
+  privacy_accepted_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -61,6 +63,7 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_date DATE,
   current_tier VARCHAR(50) DEFAULT 'bronze',
   current_phase VARCHAR(50) DEFAULT 'pre_litigation' CHECK (current_phase IN ('pre_litigation', 'litigation', 'trial')),
+  privacy_accepted_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
