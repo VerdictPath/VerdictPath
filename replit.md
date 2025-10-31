@@ -67,7 +67,7 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
 - **Stripe Payment Integration** (Complete - October 31, 2025):
   - Full Stripe payment processing with @stripe/stripe-react-native SDK (v0.38.6 - Expo SDK 52 compatible)
   - Backend payment API with routes for payment intents, subscriptions, cancellation, and webhooks
-  - PaymentScreen component with CardField integration and payment confirmation
+  - PaymentScreen component with Payment Sheet API supporting Apple Pay, Google Pay, and credit/debit cards
   - Reusable PayButton component with loading states and pirate-themed styling
   - StripeProvider wrapper integrated into App.js for global Stripe context
   - Test mode enabled for safe development (pk_test_ and sk_test_ keys)
@@ -77,7 +77,19 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Graceful degradation: Backend deploys successfully without Stripe keys (returns 503 for payment routes until configured)
   - Railway deployment ready: No crashes when STRIPE_SECRET_KEY is missing
   - Comprehensive documentation in STRIPE_INTEGRATION_GUIDE.md, STRIPE_PAYMENT_USAGE_GUIDE.md, and RAILWAY_STRIPE_DEPLOYMENT.md
+  - "Upgrade to Premium" button on Dashboard for Free tier users
   - Ready for subscription-based revenue model with dynamic amount and tier support
+- **Privacy Policy & Terms Acceptance** (Complete - October 31, 2025):
+  - Comprehensive privacy policy document (assets/privacy-policy.txt) covering all data collection and usage
+  - PrivacyPolicyScreen component with formatted, scrollable privacy policy display
+  - Required checkbox acceptance during registration for all user types
+  - "Create Account" button disabled until privacy policy is accepted
+  - Privacy policy link in registration flow allows users to read full policy before accepting
+  - Database tracking of privacy_accepted_at timestamp for users, law_firms, and medical_providers
+  - Backend validation ensures accounts cannot be created without privacy acceptance
+  - Privacy acceptance state properly reset after successful registration to prevent session leaking
+  - CCPA, GDPR, and state-specific privacy rights documented
+  - Contact information and data breach notification procedures included
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
