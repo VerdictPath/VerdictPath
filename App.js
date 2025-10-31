@@ -38,6 +38,7 @@ import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import CoinStoreScreen from './src/screens/CoinStoreScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
@@ -1276,6 +1277,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             navigate: handleNavigateInternal,
             goBack: () => setCurrentScreen('dashboard')
           }}
+        />
+      )}
+      
+      {currentScreen === 'coin-store' && (
+        <CoinStoreScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          setCoins={setCoins}
         />
       )}
       

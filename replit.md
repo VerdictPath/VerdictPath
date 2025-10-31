@@ -79,6 +79,15 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Comprehensive documentation in STRIPE_INTEGRATION_GUIDE.md, STRIPE_PAYMENT_USAGE_GUIDE.md, and RAILWAY_STRIPE_DEPLOYMENT.md
   - "Upgrade to Premium" button on Dashboard for Free tier users
   - Ready for subscription-based revenue model with dynamic amount and tier support
+- **Coin Purchase System** (Complete - October 31, 2025):
+  - Database table (coin_purchases) tracks all Stripe coin purchases with payment intent IDs
+  - Four coin packages: Small (1000 coins/$4.99), Medium (2500/$9.99), Large (5000/$18.99), Mega (10000/$34.99)
+  - Backend API endpoints: /api/coin-purchases/packages, create-payment-intent, confirm-purchase, history
+  - Stripe Payment Sheet integration with Apple Pay and Google Pay support
+  - CoinStoreScreen displays packages, processes purchases, and shows purchase history
+  - Transaction-safe coin awarding with 25,000 coin cap enforcement
+  - Duplicate purchase prevention via unique payment_intent_id constraint
+  - Purchase history tracking for audit trail
 - **Privacy Policy & Terms Acceptance** (Complete - October 31, 2025):
   - Comprehensive privacy policy document (assets/privacy-policy.txt) covering all data collection and usage
   - Comprehensive terms of service document (assets/terms-of-service.txt) covering service usage, user conduct, and legal agreements
