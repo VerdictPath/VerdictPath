@@ -1,7 +1,8 @@
-// APP VERSION 1.0.3 - Notifications & Action Dashboard
+// APP VERSION 1.0.4 - Stripe Payment Integration
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { commonStyles } from './src/styles/commonStyles';
 import { theme } from './src/styles/theme';
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
@@ -36,6 +37,7 @@ import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
+import PaymentScreen from './src/screens/PaymentScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1226,6 +1228,22 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onNavigate={handleNavigateInternal}
         />
       )}
+
+      {currentScreen === 'payment' && (
+        <PaymentScreen
+          route={{
+            params: {
+              amount: 29.99,
+              description: 'Premium Subscription - 1 Month',
+              subscriptionTier: 'Premium'
+            }
+          }}
+          navigation={{
+            navigate: handleNavigateInternal,
+            goBack: () => setCurrentScreen('dashboard')
+          }}
+        />
+      )}
       
         {/* Bottom Navigation - only show for individual user screens */}
         {['dashboard', 'roadmap', 'medical', 'videos', 'hipaaForms', 'notifications'].includes(currentScreen) && (
@@ -1247,14 +1265,16 @@ const CaseCompassApp = () => {
   };
 
   return (
-    <NotificationProvider user={user} onNavigate={handleNavigate}>
-      <AppContent 
-        user={user} 
-        setUser={setUser} 
-        currentScreen={currentScreen}
-        setCurrentScreen={setCurrentScreen}
-      />
-    </NotificationProvider>
+    <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
+      <NotificationProvider user={user} onNavigate={handleNavigate}>
+        <AppContent 
+          user={user} 
+          setUser={setUser} 
+          currentScreen={currentScreen}
+          setCurrentScreen={setCurrentScreen}
+        />
+      </NotificationProvider>
+    </StripeProvider>
   );
 };
 
