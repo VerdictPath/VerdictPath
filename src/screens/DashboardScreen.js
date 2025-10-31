@@ -110,6 +110,20 @@ const DashboardScreen = ({
           </View>
         </View>
         
+        {user?.subscription_tier === 'Free' && (
+          <TouchableOpacity 
+            style={styles.upgradeButton}
+            onPress={() => onNavigate && onNavigate('payment')}
+          >
+            <Text style={styles.upgradeIcon}>⭐</Text>
+            <View style={styles.upgradeTextContainer}>
+              <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+              <Text style={styles.upgradeSubtitle}>Unlock all features - $29.99/mo</Text>
+            </View>
+            <Text style={styles.upgradeArrow}>→</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <View style={styles.statIconContainer}>
@@ -1095,6 +1109,42 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 7,
     left: 7,
+  },
+  // Upgrade Button
+  upgradeButton: {
+    backgroundColor: '#8B4513',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  upgradeIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  upgradeTextContainer: {
+    flex: 1,
+  },
+  upgradeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  upgradeSubtitle: {
+    fontSize: 14,
+    color: '#F5E6D3',
+  },
+  upgradeArrow: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
 
