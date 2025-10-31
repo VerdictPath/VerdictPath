@@ -1,10 +1,18 @@
-// API Configuration
+// API Configuration - Environment-aware backend URL selection
 const getApiBaseUrl = () => {
-  // Use environment variable if set, otherwise default to localhost
-  // For Replit: Set EXPO_PUBLIC_API_BASE_URL to your Replit domain
-  // For Production: Set to https://verdictpath.up.railway.app
-  // For Local: Defaults to http://localhost:5000
-  return process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+  // Priority 1: Explicit environment variable (set during build/deployment)
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+    return process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
+  
+  // Priority 2: Auto-detect Railway production environment
+  // (This ensures the app works with Railway backend when deployed)
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://verdictpath.up.railway.app';
+  }
+  
+  // Priority 3: Local development (default)
+  return 'http://localhost:5000';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
