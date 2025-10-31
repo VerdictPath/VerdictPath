@@ -1,11 +1,13 @@
 // API Configuration
-// Backend deployed on Railway, frontend on Replit
 const getApiBaseUrl = () => {
-  // PRODUCTION: Railway backend URL
-  const railwayBackendUrl = 'https://verdictpath.up.railway.app';
+  // LOCAL DEVELOPMENT: Backend running on localhost:5000
+  return 'http://localhost:5000';
   
-  // Always use Railway backend for all environments
-  return railwayBackendUrl;
+  // PRODUCTION: When deployed to Railway, change to:
+  // return 'https://verdictpath.up.railway.app';
+  
+  // MOBILE TESTING: If testing on physical device with Expo Go, use:
+  // return 'https://workspace.parsonslawfirm.repl.co';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
