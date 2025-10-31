@@ -191,6 +191,20 @@ CREATE TABLE IF NOT EXISTS coin_conversions (
 CREATE INDEX idx_coin_conversions_user_id ON coin_conversions(user_id);
 CREATE INDEX idx_coin_conversions_converted_at ON coin_conversions(converted_at);
 
+-- Step 9b: Coin Purchases table (depends on users) - For Stripe coin purchases
+CREATE TABLE IF NOT EXISTS coin_purchases (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  payment_intent_id VARCHAR(255) UNIQUE NOT NULL,
+  package_id VARCHAR(50) NOT NULL,
+  coins_purchased INTEGER NOT NULL,
+  amount_paid INTEGER NOT NULL,
+  purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_coin_purchases_user_id ON coin_purchases(user_id);
+CREATE INDEX idx_coin_purchases_payment_intent_id ON coin_purchases(payment_intent_id);
+
 -- Step 10: User Invites table (depends on users) - For referral system and rewards
 CREATE TABLE IF NOT EXISTS user_invites (
   id SERIAL PRIMARY KEY,
