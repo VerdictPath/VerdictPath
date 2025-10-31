@@ -3,12 +3,13 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/db');
 
-// Coin packages configuration
+// Coin packages configuration - Pirate treasure chests!
 const COIN_PACKAGES = {
-  small: { coins: 1000, price: 499 }, // $4.99
-  medium: { coins: 2500, price: 999 }, // $9.99
-  large: { coins: 5000, price: 1899 }, // $18.99
-  mega: { coins: 10000, price: 3499 } // $34.99
+  small_chest: { coins: 4950, price: 99 }, // $0.99
+  medium_chest: { coins: 9950, price: 199 }, // $1.99
+  large_chest: { coins: 14950, price: 299 }, // $2.99
+  treasure_chest: { coins: 19950, price: 399 }, // $3.99
+  pirates_bounty: { coins: 24950, price: 499 } // $4.99
 };
 
 // Get available coin packages

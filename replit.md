@@ -81,13 +81,19 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Ready for subscription-based revenue model with dynamic amount and tier support
 - **Coin Purchase System** (Complete - October 31, 2025):
   - Database table (coin_purchases) tracks all Stripe coin purchases with payment intent IDs
-  - Four coin packages: Small (1000 coins/$4.99), Medium (2500/$9.99), Large (5000/$18.99), Mega (10000/$34.99)
+  - Five pirate-themed coin packages with value pricing (1 coin = $0.0002):
+    - Small Chest: 4,950 coins / $0.99
+    - Medium Chest: 9,950 coins / $1.99
+    - Large Chest: 14,950 coins / $2.99 (Most Popular)
+    - Treasure Chest: 19,950 coins / $3.99
+    - Pirate's Bounty: 24,950 coins / $4.99
   - Backend API endpoints: /api/coin-purchases/packages, create-payment-intent, confirm-purchase, history
   - Stripe Payment Sheet integration with Apple Pay and Google Pay support
-  - CoinStoreScreen displays packages, processes purchases, and shows purchase history
+  - TreasureChestScreen with pirate theme displaying packages, current balance, and value propositions
   - Transaction-safe coin awarding with 25,000 coin cap enforcement
   - Duplicate purchase prevention via unique payment_intent_id constraint
   - Purchase history tracking for audit trail
+  - Real-time coin balance display with formatted numbers
 - **Privacy Policy & Terms Acceptance** (Complete - October 31, 2025):
   - Comprehensive privacy policy document (assets/privacy-policy.txt) covering all data collection and usage
   - Comprehensive terms of service document (assets/terms-of-service.txt) covering service usage, user conduct, and legal agreements
