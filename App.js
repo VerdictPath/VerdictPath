@@ -1,4 +1,4 @@
-// APP VERSION 1.0.4 - Stripe Payment Integration
+// APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
