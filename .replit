@@ -115,7 +115,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && npx expo start --clear"
+args = "cd /home/runner/workspace && npx expo start --tunnel --clear"
 
 [workflows.workflow.metadata]
 outputType = "console"
