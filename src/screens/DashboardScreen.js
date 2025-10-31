@@ -114,12 +114,9 @@ const DashboardScreen = ({
           style={styles.treasureButton}
           onPress={() => onNavigate && onNavigate('treasure-chest')}
         >
-          <Text style={styles.upgradeIcon}>⚓</Text>
-          <View style={styles.upgradeTextContainer}>
-            <Text style={styles.upgradeTitle}>Treasure Chest</Text>
-            <Text style={styles.upgradeSubtitle}>Purchase coins to unlock progress</Text>
-          </View>
-          <Text style={styles.upgradeArrow}>→</Text>
+          <Text style={styles.treasureButtonIcon}>💰</Text>
+          <Text style={styles.treasureButtonText}>Treasure Chest</Text>
+          <Text style={styles.treasureButtonSubtext}>Purchase Coins</Text>
         </TouchableOpacity>
 
         <View style={styles.statsContainer}>
@@ -1123,17 +1120,32 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   treasureButton: {
-    backgroundColor: '#8B4513',
+    backgroundColor: '#FFD700',
     borderRadius: 12,
     padding: 16,
-    marginVertical: 12,
-    flexDirection: 'row',
     alignItems: 'center',
+    marginVertical: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: '#CD7F32',
+  },
+  treasureButtonIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  treasureButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3E2723',
+    marginBottom: 4,
+  },
+  treasureButtonSubtext: {
+    fontSize: 14,
+    color: '#8B4513',
   },
   upgradeIcon: {
     fontSize: 32,
