@@ -128,9 +128,10 @@ outputType = "console"
 name = "Expo Mobile App"
 author = "agent"
 
-[workflows.workflow.metadata]
-outputType = "console"
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && npx expo start --lan --clear"
+args = "cd /home/runner/workspace && npx expo start --clear --port 8080"
+waitForPort = 8080
+
+[workflows.workflow.metadata]
+outputType = "console"
