@@ -5,6 +5,16 @@ const db = require('../config/db');
 
 const router = express.Router();
 
+/**
+ * PAYMENT ROUTES - For Subscription Management
+ * 
+ * These routes handle Premium tier subscriptions.
+ * For coin purchases, see /api/coin-purchases routes.
+ * 
+ * Note: Currently deprecated in favor of coin-based system.
+ * Kept for future subscription feature implementation.
+ */
+
 // Stripe is optional - if not configured, payment routes will return 503
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {

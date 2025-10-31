@@ -3,6 +3,22 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/db');
 
+/**
+ * TREASURE CHEST ROUTES - Coin Purchase System
+ * 
+ * Handles all pirate-themed coin purchases through Stripe Payment Sheet.
+ * Supports Apple Pay, Google Pay, and credit/debit cards.
+ * 
+ * Endpoints:
+ * - GET  /api/coin-purchases/packages - Get available treasure chest packages
+ * - POST /api/coin-purchases/create-payment-intent - Create Stripe payment intent
+ * - POST /api/coin-purchases/confirm-purchase - Confirm purchase and award coins
+ * - GET  /api/coin-purchases/history - Get purchase history
+ * 
+ * Coin Value: 1 coin = $0.0002
+ * Max Coins: 25,000 per user
+ */
+
 // Coin packages configuration - Pirate treasure chests!
 const COIN_PACKAGES = {
   small_chest: { coins: 4950, price: 99 }, // $0.99
@@ -12,7 +28,12 @@ const COIN_PACKAGES = {
   pirates_bounty: { coins: 24950, price: 499 } // $4.99
 };
 
-// Get available coin packages
+/**
+ * GET /api/coin-purchases/packages
+ * Get all available treasure chest packages
+ * @requires Authentication
+ * @returns {Array} packages - List of available coin packages
+ */
 router.get('/packages', authenticateToken, (req, res) => {
   try {
     const packages = Object.keys(COIN_PACKAGES).map(id => ({
@@ -26,7 +47,13 @@ router.get('/packages', authenticateToken, (req, res) => {
   }
 });
 
-// Create payment intent for coin purchase
+/**
+ * POST /api/coin-purchases/create-payment-intent
+ * Create a Stripe payment intent for treasure chest purchase
+ * @requires Authentication
+ * @body {string} packageId - ID of the treasure chest package
+ * @returns {object} clientSecret, amount, coins
+ */
 router.post('/create-payment-intent', authenticateToken, async (req, res) => {
   try {
     const { packageId } = req.body;
@@ -48,6 +75,15 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
 
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+    // Determine package name for description
+    const packageNames = {
+      small_chest: 'Small Chest',
+      medium_chest: 'Medium Chest',
+      large_chest: 'Large Chest',
+      treasure_chest: 'Treasure Chest',
+      pirates_bounty: "Pirate's Bounty"
+    };
+
     // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: package.price,
@@ -55,9 +91,10 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
       metadata: {
         userId: userId.toString(),
         packageId,
-        coinsToAward: package.coins.toString()
+        coinsToAward: package.coins.toString(),
+        packageName: packageNames[packageId] || 'Treasure Chest'
       },
-      description: `Verdict Path - ${package.coins} Coins`
+      description: `Verdict Path - ${packageNames[packageId]} (${package.coins.toLocaleString()} coins)`
     });
 
     res.json({
@@ -71,7 +108,13 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
   }
 });
 
-// Confirm coin purchase and award coins
+/**
+ * POST /api/coin-purchases/confirm-purchase
+ * Verify payment and award coins to user
+ * @requires Authentication
+ * @body {string} paymentIntentId - Stripe payment intent ID
+ * @returns {object} success, coinsAwarded, totalCoins, cappedAt25000
+ */
 router.post('/confirm-purchase', authenticateToken, async (req, res) => {
   const client = await pool.connect();
   
@@ -162,7 +205,12 @@ router.post('/confirm-purchase', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user's coin purchase history
+/**
+ * GET /api/coin-purchases/history
+ * Get user's treasure chest purchase history
+ * @requires Authentication
+ * @returns {Array} purchases - Last 50 purchases
+ */
 router.get('/history', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
