@@ -5,13 +5,22 @@ const db = require('../config/db');
 
 const router = express.Router();
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+// Stripe is optional - if not configured, payment routes will return 503
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe configured successfully');
+} else {
+  console.warn('⚠️  STRIPE_SECRET_KEY not found - payment routes will be disabled');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 router.post('/create-payment-intent', authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: 'Payment service not configured. Please add STRIPE_SECRET_KEY to environment variables.' 
+    });
+  }
+  
   try {
     const { amount, description } = req.body;
     
@@ -41,6 +50,12 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
 });
 
 router.post('/create-subscription', authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: 'Payment service not configured. Please add STRIPE_SECRET_KEY to environment variables.' 
+    });
+  }
+  
   try {
     const { priceId, subscriptionTier } = req.body;
     const userId = req.user.id;
@@ -104,6 +119,12 @@ router.post('/create-subscription', authenticateToken, async (req, res) => {
 });
 
 router.post('/cancel-subscription', authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: 'Payment service not configured. Please add STRIPE_SECRET_KEY to environment variables.' 
+    });
+  }
+  
   try {
     const userId = req.user.id;
 
@@ -140,6 +161,12 @@ router.post('/cancel-subscription', authenticateToken, async (req, res) => {
 });
 
 router.get('/subscription-status', authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      error: 'Payment service not configured. Please add STRIPE_SECRET_KEY to environment variables.' 
+    });
+  }
+  
   try {
     const userId = req.user.id;
 

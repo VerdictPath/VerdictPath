@@ -74,7 +74,9 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Environment-aware configuration using EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY
   - Complete payment flow: card input → payment intent creation → payment confirmation → success handling
   - Backend endpoints: /api/payment/create-payment-intent, /api/payment/create-subscription, /api/payment/cancel-subscription, /api/payment/webhook
-  - Comprehensive documentation in STRIPE_INTEGRATION_GUIDE.md and STRIPE_PAYMENT_USAGE_GUIDE.md
+  - Graceful degradation: Backend deploys successfully without Stripe keys (returns 503 for payment routes until configured)
+  - Railway deployment ready: No crashes when STRIPE_SECRET_KEY is missing
+  - Comprehensive documentation in STRIPE_INTEGRATION_GUIDE.md, STRIPE_PAYMENT_USAGE_GUIDE.md, and RAILWAY_STRIPE_DEPLOYMENT.md
   - Ready for subscription-based revenue model with dynamic amount and tier support
 
 ### Feature Specifications
