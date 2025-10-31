@@ -12,6 +12,12 @@ import { theme } from '../styles/theme';
 import { useStripe } from '@stripe/stripe-react-native';
 import PayButton from '../components/PayButton';
 
+// API Configuration
+const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://verdictpath.up.railway.app' 
+    : 'http://localhost:5000');
+
 const COIN_PACKAGES = [
   {
     id: 'small_chest',
@@ -80,12 +86,7 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
     try {
       setLoading(true);
 
-      const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
-        (process.env.NODE_ENV === 'production' 
-          ? 'https://verdictpath.up.railway.app' 
-          : 'http://localhost:5000');
-
-      const response = await fetch(`${API_BASE_URL}/api/coins/balance`, {
+      const response = await fetch(`${API_URL}/api/coins/balance`, {
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json',
@@ -107,12 +108,7 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
     try {
       setPurchasing(true);
 
-      const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
-        (process.env.NODE_ENV === 'production' 
-          ? 'https://verdictpath.up.railway.app' 
-          : 'http://localhost:5000');
-
-      const response = await fetch(`${API_BASE_URL}/api/coins/create-payment-intent`, {
+      const response = await fetch(`${API_URL}/api/coins/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,13 +170,8 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
 
       setPurchasing(true);
 
-      const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
-        (process.env.NODE_ENV === 'production' 
-          ? 'https://verdictpath.up.railway.app' 
-          : 'http://localhost:5000');
-
       // Extract package details for purchase confirmation
-      const confirmResponse = await fetch(`${API_BASE_URL}/api/coins/purchase`, {
+      const confirmResponse = await fetch(`${API_URL}/api/coins/purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
