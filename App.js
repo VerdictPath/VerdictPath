@@ -40,6 +40,7 @@ import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
+import EULAScreen from './src/screens/EULAScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1019,6 +1020,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       
       {currentScreen === 'terms-of-service' && (
         <TermsOfServiceScreen
+          onBack={() => setCurrentScreen('register')}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+      
+      {currentScreen === 'eula' && (
+        <EULAScreen
           onBack={() => setCurrentScreen('register')}
           onNavigate={handleNavigateInternal}
         />
