@@ -17,6 +17,7 @@ const subscriptionRoutes = require('./routes/subscription');
 const diagnosticRoutes = require('./routes/diagnostic');
 const notificationsRoutes = require('./routes/notifications');
 const tasksRoutes = require('./routes/tasks');
+const paymentRoutes = require('./routes/payment');
 
 const app = express();
 const PORT = process.env.PORT || 5000; // Railway sets PORT automatically, Replit uses 5000
@@ -111,6 +112,7 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
 app.use('/api/event-requests', require('./routes/eventRequests'));
