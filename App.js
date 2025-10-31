@@ -259,6 +259,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const handleSelectSubscription = async (tier, size) => {
+    console.log('[SUBSCRIPTION] Privacy Accepted value:', privacyAccepted);
+    console.log('[SUBSCRIPTION] User type:', userType);
+    
     setSubscriptionTier(tier);
     setFirmSize(size);
     
@@ -327,6 +330,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           
           setCurrentScreen('medicalprovider-dashboard');
         } else {
+          console.log('[INDIVIDUAL] Sending registration with privacyAccepted:', privacyAccepted);
+          
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_CLIENT, {
             method: 'POST',
             body: JSON.stringify({
