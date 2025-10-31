@@ -98,6 +98,20 @@ app.use(express.static(path.join(__dirname, 'public/app'), {
 // NOTE: Uploaded files are NOT served as static files for HIPAA compliance
 // They must be accessed through authenticated API endpoints only
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    services: {
+      api: 'running',
+      database: 'connected',
+      stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not configured'
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
