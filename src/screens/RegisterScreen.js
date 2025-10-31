@@ -190,7 +190,16 @@ const RegisterScreen = ({
                 >
                   Privacy Policy
                 </Text>
-                {' '}and Terms of Service
+                {' '}and{' '}
+                <Text 
+                  style={styles.privacyLink}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onNavigate('terms-of-service');
+                  }}
+                >
+                  Terms of Service
+                </Text>
               </Text>
             </View>
           </TouchableOpacity>

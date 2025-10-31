@@ -81,15 +81,19 @@ The application uses Expo SDK 52 with React Native 0.76.9. The project has a mod
   - Ready for subscription-based revenue model with dynamic amount and tier support
 - **Privacy Policy & Terms Acceptance** (Complete - October 31, 2025):
   - Comprehensive privacy policy document (assets/privacy-policy.txt) covering all data collection and usage
-  - PrivacyPolicyScreen component with formatted, scrollable privacy policy display
+  - Comprehensive terms of service document (assets/terms-of-service.txt) covering service usage, user conduct, and legal agreements
+  - PrivacyPolicyScreen and TermsOfServiceScreen components with formatted, scrollable document displays
   - Required checkbox acceptance during registration for all user types
-  - "Create Account" button disabled until privacy policy is accepted
-  - Privacy policy link in registration flow allows users to read full policy before accepting
-  - Database tracking of privacy_accepted_at timestamp for users, law_firms, and medical_providers
-  - Backend validation ensures accounts cannot be created without privacy acceptance
-  - Privacy acceptance state properly reset after successful registration to prevent session leaking
+  - "Create Account" button disabled until both privacy policy and terms are accepted
+  - Clickable links in registration flow for both Privacy Policy and Terms of Service
+  - Database tracking of privacy_accepted_at timestamp for users, law_firms, and medical_providers (single timestamp covers both documents)
+  - Backend validation ensures accounts cannot be created without accepting both documents
+  - Privacy/terms acceptance state properly reset after successful registration to prevent session leaking
   - CCPA, GDPR, and state-specific privacy rights documented
-  - Contact information and data breach notification procedures included
+  - Payment terms, refund policy, and subscription details clearly outlined
+  - Legal disclaimers: Service provides educational content, not legal or medical advice
+  - Dispute resolution and arbitration procedures with class action waiver
+  - Contact information and support procedures included
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
