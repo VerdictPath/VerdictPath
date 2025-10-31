@@ -110,19 +110,17 @@ const DashboardScreen = ({
           </View>
         </View>
         
-        {user?.subscription_tier === 'Free' && (
-          <TouchableOpacity 
-            style={styles.upgradeButton}
-            onPress={() => onNavigate && onNavigate('payment')}
-          >
-            <Text style={styles.upgradeIcon}>⭐</Text>
-            <View style={styles.upgradeTextContainer}>
-              <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
-              <Text style={styles.upgradeSubtitle}>Unlock all features - $29.99/mo</Text>
-            </View>
-            <Text style={styles.upgradeArrow}>→</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity 
+          style={styles.treasureButton}
+          onPress={() => onNavigate && onNavigate('treasure-chest')}
+        >
+          <Text style={styles.upgradeIcon}>⚓</Text>
+          <View style={styles.upgradeTextContainer}>
+            <Text style={styles.upgradeTitle}>Treasure Chest</Text>
+            <Text style={styles.upgradeSubtitle}>Purchase coins to unlock progress</Text>
+          </View>
+          <Text style={styles.upgradeArrow}>→</Text>
+        </TouchableOpacity>
 
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -1112,6 +1110,19 @@ const styles = StyleSheet.create({
   },
   // Upgrade Button
   upgradeButton: {
+    backgroundColor: '#8B4513',
+    borderRadius: 12,
+    padding: 16,
+    marginVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  treasureButton: {
     backgroundColor: '#8B4513',
     borderRadius: 12,
     padding: 16,

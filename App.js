@@ -37,7 +37,6 @@ import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
-import PaymentScreen from './src/screens/PaymentScreen';
 import TreasureChestScreen from './src/screens/TreasureChestScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
@@ -1264,22 +1263,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'payment' && (
-        <PaymentScreen
-          route={{
-            params: {
-              amount: 29.99,
-              description: 'Premium Subscription - 1 Month',
-              subscriptionTier: 'Premium'
-            }
-          }}
-          navigation={{
-            navigate: handleNavigateInternal,
-            goBack: () => setCurrentScreen('dashboard')
-          }}
-        />
-      )}
-      
       {currentScreen === 'treasure-chest' && (
         <TreasureChestScreen
           user={user}
