@@ -173,11 +173,19 @@ const RegisterScreen = ({
           </>
         )}
 
+        <View style={styles.debugContainer}>
+          <Text style={styles.debugText}>⚠️ SCROLL DOWN TO SEE CHECKBOX ⚠️</Text>
+        </View>
+
         <View style={styles.privacyContainer}>
+          <Text style={styles.privacyHeader}>Required: Accept Legal Documents</Text>
           <View style={styles.checkboxRow}>
             <TouchableOpacity 
               style={styles.checkbox}
-              onPress={() => setPrivacyAccepted(!privacyAccepted)}
+              onPress={() => {
+                console.log('Checkbox clicked! Current value:', privacyAccepted);
+                setPrivacyAccepted(!privacyAccepted);
+              }}
             >
               <View style={[styles.checkboxBox, privacyAccepted && styles.checkboxChecked]}>
                 {privacyAccepted && <Text style={styles.checkmark}>✓</Text>}
@@ -297,8 +305,33 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
+  debugContainer: {
+    backgroundColor: '#ff0000',
+    padding: 20,
+    marginVertical: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  debugText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   privacyContainer: {
     marginVertical: 15,
+    backgroundColor: '#fffacd',
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 3,
+    borderColor: '#ff6347',
+  },
+  privacyHeader: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff0000',
+    marginBottom: 10,
+    textAlign: 'center',
   },
   checkboxRow: {
     flexDirection: 'row',
