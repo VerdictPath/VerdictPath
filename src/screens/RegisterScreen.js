@@ -30,7 +30,10 @@ const RegisterScreen = ({
   onNavigate 
 }) => {
   return (
-    <ScrollView style={commonStyles.container}>
+    <ScrollView 
+      style={commonStyles.container}
+      contentContainerStyle={styles.scrollContent}
+    >
       <View style={styles.formContainer}>
         <Text style={styles.formTitle}>Create Your Account</Text>
         
@@ -233,6 +236,10 @@ const RegisterScreen = ({
 };
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
   formContainer: {
     padding: 20,
   },
