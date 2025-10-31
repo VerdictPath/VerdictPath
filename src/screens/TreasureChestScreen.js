@@ -112,7 +112,7 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           ? 'https://verdictpath.up.railway.app' 
           : 'http://localhost:5000');
 
-      const response = await fetch(`${API_BASE_URL}/api/coin-purchases/create-payment-intent`, {
+      const response = await fetch(`${API_BASE_URL}/api/coins/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,13 +179,19 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           ? 'https://verdictpath.up.railway.app' 
           : 'http://localhost:5000');
 
-      const confirmResponse = await fetch(`${API_BASE_URL}/api/coin-purchases/confirm-purchase`, {
+      // Extract package details for purchase confirmation
+      const confirmResponse = await fetch(`${API_BASE_URL}/api/coins/purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.token}`
         },
-        body: JSON.stringify({ paymentIntentId })
+        body: JSON.stringify({ 
+          paymentIntentId,
+          packageId: packageData.id,
+          coins: packageData.coins,
+          amountPaid: packageData.price
+        })
       });
 
       if (!confirmResponse.ok) {
