@@ -1,0 +1,462 @@
+# TERMS OF SERVICE FOR VERDICT PATH
+
+**Last Updated: October 31, 2025**
+
+---
+
+## 1. ACCEPTANCE OF TERMS
+
+Welcome to Verdict Path. These Terms of Service ("Terms," "Agreement") are a legal agreement between you ("you," "your," or "User") and Verdict Path ("we," "us," "our," or "Company") governing your use of the Verdict Path mobile application and related services (collectively, the "Service").
+
+**BY CREATING AN ACCOUNT, ACCESSING, OR USING THE SERVICE, YOU AGREE TO BE BOUND BY THESE TERMS. IF YOU DO NOT AGREE TO THESE TERMS, DO NOT USE THE SERVICE.**
+
+These Terms apply to all users of the Service, including individual users, law firms, medical providers, and any other visitors or users of the Service.
+
+We reserve the right to modify these Terms at any time. We will notify you of material changes by posting the updated Terms in the app and updating the "Last Updated" date. Your continued use of the Service after changes become effective constitutes your acceptance of the modified Terms.
+
+---
+
+## 2. DESCRIPTION OF SERVICE
+
+Verdict Path is a mobile application designed to help users manage civil litigation cases. The Service provides:
+
+**For Individual Users:**
+- Interactive 9-stage litigation roadmap with 60 substages
+- Case progress tracking
+- Task management assigned by law firms
+- Calendar integration for court dates and appointments
+- Push notifications and alerts
+- Connection to one law firm and multiple medical providers
+- Gamification features (achievements, badges, coin system)
+- Educational video library
+- Notification preferences and quiet hours
+
+**For Law Firms:**
+- Client management portal
+- Ability to update client litigation progress
+- Push notification sending to clients
+- Task assignment to clients
+- Calendar event requests from clients
+- Subscription management
+- Client search and analytics
+
+**For Medical Providers:**
+- Patient management portal
+- Appointment scheduling and event requests
+- Push notification sending to patients
+- Calendar integration
+- Patient connection management
+- Subscription management
+
+**Payment Processing:**
+- Subscription plans (Free, Basic, Premium)
+- Secure payment processing through Stripe
+- Multiple payment methods (credit cards, Apple Pay, Google Pay)
+
+---
+
+## 3. ELIGIBILITY AND ACCOUNT REGISTRATION
+
+### 3.1 Eligibility
+
+You must be at least 18 years old to use the Service. By using the Service, you represent and warrant that:
+- You are at least 18 years of age
+- You have the legal capacity to enter into these Terms
+- You are not prohibited from using the Service under applicable laws
+- All information you provide is accurate and truthful
+
+### 3.2 Account Registration
+
+To use certain features of the Service, you must create an account. When creating an account, you agree to:
+- Provide accurate, current, and complete information
+- Maintain and promptly update your account information
+- Maintain the security of your password and account
+- Notify us immediately of any unauthorized access or security breach
+- Accept responsibility for all activities under your account
+
+### 3.3 Account Types
+
+**Individual Users:**
+- Free tier: Basic access to litigation roadmap and notifications
+- Basic tier: Enhanced features and priority support
+- Premium tier: Full access to all features and premium content
+
+**Law Firms:**
+- Free tier: Limited client connections
+- Basic tier ($49/month): Expanded client management
+- Premium tier ($149/month): Unlimited clients and advanced features
+
+**Medical Providers:**
+- Free tier: Limited patient connections
+- Basic tier ($49/month): Expanded patient management
+- Premium tier ($149/month): Unlimited patients and advanced features
+
+### 3.4 Account Security
+
+You are responsible for:
+- Keeping your password confidential
+- All activities that occur under your account
+- Notifying us immediately of unauthorized use
+- Logging out from your account at the end of each session
+
+We are not liable for any loss or damage arising from your failure to protect your account credentials.
+
+---
+
+## 4. USER CONTENT AND CONDUCT
+
+### 4.1 Your Content
+
+You retain ownership of all content you submit, post, or display through the Service ("User Content"), including:
+- Case information and notes
+- Calendar events
+- Messages and communications
+- Profile information
+- Any other content you create
+
+By submitting User Content, you grant us a worldwide, non-exclusive, royalty-free license to use, store, display, reproduce, and distribute your User Content solely for the purpose of providing and improving the Service.
+
+### 4.2 Prohibited Content and Conduct
+
+You agree NOT to use the Service to:
+
+**Prohibited Content:**
+- Post false, misleading, or fraudulent information
+- Share content that is illegal, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, or otherwise objectionable
+- Impersonate any person or entity
+- Post content that violates intellectual property rights
+- Share private information of others without consent
+- Post spam, advertisements, or unauthorized solicitations
+
+**Prohibited Conduct:**
+- Violate any local, state, national, or international law
+- Interfere with or disrupt the Service or servers
+- Attempt to gain unauthorized access to the Service
+- Use automated systems (bots, scrapers, etc.) without permission
+- Reverse engineer, decompile, or disassemble the Service
+- Remove or modify any copyright or proprietary notices
+- Use the Service for any unauthorized commercial purpose
+- Collect user information without consent
+- Engage in any activity that could harm or exploit minors
+
+### 4.3 Content Monitoring
+
+While we are not obligated to monitor User Content, we reserve the right to:
+- Review, monitor, or remove User Content at our discretion
+- Investigate violations of these Terms
+- Take appropriate legal action against violators
+- Cooperate with law enforcement
+
+### 4.4 Medical and Legal Disclaimer
+
+**NOT LEGAL ADVICE:** Verdict Path is an educational and organizational tool. The Service does not provide legal advice, and nothing in the Service should be construed as legal advice. You should consult with a licensed attorney regarding your specific legal matters.
+
+**NOT MEDICAL ADVICE:** The Service does not provide medical advice, diagnosis, or treatment. Always seek the advice of qualified healthcare providers with questions regarding medical conditions.
+
+**ATTORNEY-CLIENT RELATIONSHIP:** Use of the Service does not create an attorney-client relationship between you and Verdict Path or any law firm using the Service.
+
+---
+
+## 5. INTELLECTUAL PROPERTY RIGHTS
+
+### 5.1 Our Intellectual Property
+
+The Service and its entire contents, features, and functionality (including but not limited to all information, software, text, displays, images, video, audio, design, selection, and arrangement) are owned by Verdict Path, its licensors, or other content providers and are protected by United States and international copyright, trademark, patent, trade secret, and other intellectual property laws.
+
+### 5.2 Trademarks
+
+"Verdict Path" and our logos, service marks, and trade names are trademarks of Verdict Path (the "Marks"). You may not use the Marks without our prior written permission.
+
+### 5.3 Limited License
+
+We grant you a limited, non-exclusive, non-transferable, revocable license to access and use the Service for your personal or internal business purposes, subject to these Terms.
+
+You may not:
+- Copy, modify, or create derivative works of the Service
+- Distribute, sell, lease, or sublicense the Service
+- Use the Service for any commercial purpose without authorization
+- Remove or alter any copyright, trademark, or proprietary notices
+
+### 5.4 Feedback
+
+If you provide us with feedback, suggestions, or ideas about the Service ("Feedback"), you grant us an unrestricted, perpetual, irrevocable, worldwide, royalty-free license to use, modify, and commercialize the Feedback without attribution or compensation.
+
+---
+
+## 6. PAYMENT TERMS
+
+### 6.1 Subscription Plans
+
+**Individual Users:**
+- Free Plan: $0/month - Basic features
+- Basic Plan: Price varies - Enhanced features
+- Premium Plan: $29.99/month - Full feature access
+
+**Law Firms and Medical Providers:**
+- Free Plan: $0/month - Limited connections
+- Basic Plan: $49/month - Expanded client/patient management
+- Premium Plan: $149/month - Unlimited connections and features
+
+### 6.2 Payment Processing
+
+- Payments are processed securely through Stripe
+- You authorize Stripe to charge your payment method for all fees incurred
+- All fees are in U.S. Dollars unless otherwise specified
+- You must provide current, complete, and accurate payment information
+- You must promptly update payment information if it changes
+
+### 6.3 Billing and Renewal
+
+- Subscription fees are billed in advance on a monthly basis
+- Subscriptions automatically renew unless cancelled before the renewal date
+- Your payment method will be charged on each renewal date
+- Renewal prices may change with 30 days' notice
+
+### 6.4 Free Trials
+
+We may offer free trials for certain subscription plans:
+- Free trial eligibility and duration are at our discretion
+- You may be required to provide payment information to start a trial
+- We will notify you before charging your payment method
+- Cancel before the trial ends to avoid charges
+
+### 6.5 Refund Policy
+
+**General Policy:**
+- All subscription fees are non-refundable except as required by law
+- No refunds for partial months or unused portions of subscription periods
+- No refunds if your account is terminated for violating these Terms
+
+**Exceptions:**
+- If we terminate your account without cause, we will refund the prorated unused portion
+- If you are unsatisfied within the first 7 days, contact support@verdictpath.com for a potential refund
+
+### 6.6 Price Changes
+
+We reserve the right to change subscription prices:
+- We will provide at least 30 days' notice of price increases
+- Price changes will take effect on your next renewal date
+- Continued use after a price change constitutes acceptance
+- You may cancel your subscription to avoid a price increase
+
+### 6.7 Cancellation
+
+You may cancel your subscription at any time:
+- Access account settings in the app to cancel
+- Cancellation takes effect at the end of the current billing period
+- You will retain access until the end of the paid period
+- No refunds for the remaining time in the billing period
+- You may downgrade to the free tier instead of canceling
+
+### 6.8 Taxes
+
+- Subscription fees do not include applicable taxes
+- You are responsible for all sales, use, and other taxes
+- We will collect taxes where required by law
+
+---
+
+## 7. PRIVACY AND DATA PROTECTION
+
+Your privacy is important to us. Our collection, use, and disclosure of your personal information is governed by our Privacy Policy, which is incorporated into these Terms by reference.
+
+By using the Service, you consent to our collection and use of your information as described in the Privacy Policy.
+
+Key privacy practices:
+- We do not sell your personal information
+- We use industry-standard security measures
+- You have rights to access, correct, and delete your data
+- We comply with applicable data protection laws (GDPR, CCPA, etc.)
+
+Please review our complete Privacy Policy in the app.
+
+---
+
+## 8. THIRD-PARTY SERVICES
+
+### 8.1 Third-Party Integrations
+
+The Service integrates with third-party services, including:
+- **Stripe** for payment processing
+- **Expo** for push notifications
+- **Device calendars** for event synchronization
+
+Your use of third-party services is subject to their respective terms and privacy policies. We are not responsible for the practices of third parties.
+
+### 8.2 Third-Party Links
+
+The Service may contain links to third-party websites or services. We do not endorse or control these third parties and are not responsible for their content, privacy practices, or terms of service.
+
+---
+
+## 9. DISCLAIMERS AND WARRANTIES
+
+### 9.1 Service "As Is"
+
+THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, TITLE, ACCURACY OR RELIABILITY OF CONTENT, OR UNINTERRUPTED OR ERROR-FREE OPERATION.
+
+### 9.2 No Professional Services
+
+WE DO NOT PROVIDE LEGAL, MEDICAL, FINANCIAL, OR OTHER PROFESSIONAL ADVICE. THE SERVICE IS FOR INFORMATIONAL AND ORGANIZATIONAL PURPOSES ONLY. YOU ARE SOLELY RESPONSIBLE FOR YOUR DECISIONS AND SHOULD CONSULT WITH QUALIFIED PROFESSIONALS.
+
+### 9.3 No Guarantees
+
+WE DO NOT GUARANTEE:
+- That the Service will meet your requirements
+- That the Service will be uninterrupted, timely, secure, or error-free
+- The accuracy, reliability, or completeness of any content
+- That defects will be corrected
+- That the Service is free of viruses or harmful components
+
+---
+
+## 10. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, VERDICT PATH AND ITS AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, AGENTS, AND LICENSORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM:
+- Your use or inability to use the Service
+- Unauthorized access to or alteration of your data
+- Statements or conduct of any third party on the Service
+- Any other matter relating to the Service
+
+IN NO EVENT SHALL OUR TOTAL LIABILITY EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE EVENT GIVING RISE TO LIABILITY, OR $100, WHICHEVER IS GREATER.
+
+---
+
+## 11. INDEMNIFICATION
+
+You agree to indemnify, defend, and hold harmless Verdict Path and its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising from:
+- Your use of the Service
+- Your violation of these Terms
+- Your violation of any rights of another party
+- Your User Content
+- Your violation of any applicable laws or regulations
+
+---
+
+## 12. TERMINATION
+
+### 12.1 Termination by You
+
+You may terminate your account at any time by:
+- Accessing account settings in the app
+- Contacting support@verdictpath.com
+
+Upon termination, your access to the Service will cease.
+
+### 12.2 Termination by Us
+
+We may suspend or terminate your account immediately, without prior notice or liability, for any reason, including:
+- Violation of these Terms
+- Fraudulent activity or suspected fraud
+- Request by law enforcement or government agencies
+- Extended periods of inactivity
+- Technical or security issues
+- Discontinuation of the Service
+
+### 12.3 Effect of Termination
+
+Upon termination:
+- Your right to use the Service will cease immediately
+- We may delete your account and User Content
+- You will not be entitled to any refunds
+- Certain provisions of these Terms will survive termination
+
+---
+
+## 13. DISPUTE RESOLUTION AND ARBITRATION
+
+### 13.1 Informal Resolution
+
+Before filing a claim, you agree to contact us at support@verdictpath.com to attempt to resolve the dispute informally. We will attempt to resolve disputes in good faith.
+
+### 13.2 Binding Arbitration
+
+If informal resolution fails, you agree that any dispute arising out of or relating to these Terms or the Service will be resolved through binding arbitration in accordance with the American Arbitration Association's rules, rather than in court, except that you may assert claims in small claims court if your claims qualify.
+
+### 13.3 Class Action Waiver
+
+YOU AGREE THAT DISPUTES WILL BE RESOLVED INDIVIDUALLY, NOT AS PART OF A CLASS, CONSOLIDATED, OR REPRESENTATIVE ACTION. YOU WAIVE YOUR RIGHT TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION.
+
+### 13.4 Exceptions
+
+Notwithstanding the arbitration provisions:
+- Either party may seek injunctive or equitable relief in court
+- Disputes about intellectual property rights may be brought in court
+
+---
+
+## 14. GOVERNING LAW AND JURISDICTION
+
+These Terms shall be governed by and construed in accordance with the laws of the United States and the State of [Your State], without regard to conflict of law principles.
+
+Any legal action arising from these Terms or the Service shall be brought exclusively in the federal or state courts located in [Your County, State], and you consent to the jurisdiction of such courts.
+
+---
+
+## 15. MISCELLANEOUS
+
+### 15.1 Entire Agreement
+
+These Terms, together with our Privacy Policy and any other agreements expressly incorporated by reference, constitute the entire agreement between you and Verdict Path regarding the Service.
+
+### 15.2 Waiver
+
+Our failure to enforce any provision of these Terms shall not constitute a waiver of that provision or any other provision.
+
+### 15.3 Severability
+
+If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions will remain in full force and effect.
+
+### 15.4 Assignment
+
+You may not assign or transfer these Terms or your rights under these Terms without our prior written consent. We may assign these Terms without restriction.
+
+### 15.5 No Agency
+
+These Terms do not create any agency, partnership, joint venture, or employment relationship between you and Verdict Path.
+
+### 15.6 Force Majeure
+
+We shall not be liable for any failure or delay in performance due to causes beyond our reasonable control, including acts of God, war, terrorism, labor disputes, or internet service failures.
+
+### 15.7 Survival
+
+Provisions that by their nature should survive termination will survive, including ownership provisions, warranty disclaimers, indemnity, and limitations of liability.
+
+---
+
+## 16. CONTACT INFORMATION
+
+If you have questions about these Terms, please contact us:
+
+**Email:** support@verdictpath.com
+
+**Response Time:** We will respond within 30 days.
+
+---
+
+## 17. CHANGES TO TERMS
+
+We reserve the right to modify these Terms at any time. When we make material changes:
+- We will update the "Last Updated" date
+- We will notify you through the Service or via email
+- Your continued use constitutes acceptance of the modified Terms
+- If you do not agree to the changes, you must stop using the Service
+
+---
+
+## 18. ACKNOWLEDGMENT
+
+BY USING THE SERVICE, YOU ACKNOWLEDGE THAT YOU HAVE READ THESE TERMS, UNDERSTAND THEM, AND AGREE TO BE BOUND BY THEM.
+
+If you do not agree to these Terms, you must not access or use the Service.
+
+---
+
+**Effective Date:** October 31, 2025
+
+**Version:** 1.0
+
+---
+
+© 2025 Verdict Path. All rights reserved.
