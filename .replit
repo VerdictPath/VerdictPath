@@ -16,19 +16,11 @@ publicDir = "dist"
 
 [[ports]]
 localPort = 3000
-externalPort = 4200
-
-[[ports]]
-localPort = 3001
-externalPort = 8008
+externalPort = 3000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34017
-externalPort = 8099
 
 [[ports]]
 localPort = 34871
@@ -91,27 +83,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Backend API"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "LocalTunnel"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Expo Mobile App"
-
-[[workflows.workflow]]
-name = "Backend API"
-author = "agent"
+args = "Backend API"
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd backend && node server.js"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
+task = "workflow.run"
+args = "Expo Mobile App"
 
 [[workflows.workflow]]
 name = "LocalTunnel"
@@ -125,13 +105,25 @@ args = "npx localtunnel --port 8081 --subdomain verdictpath"
 outputType = "console"
 
 [[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && node server.js"
+waitForPort = 3000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
 name = "Expo Mobile App"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && npx expo start --clear --port 8080"
-waitForPort = 8080
+args = "cd /home/runner/workspace && npx expo start --clear --port 5000"
+waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "console"
+outputType = "webview"
