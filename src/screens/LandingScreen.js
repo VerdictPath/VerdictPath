@@ -43,12 +43,12 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Interactive case roadmap</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeCoin}>
-            <View style={styles.iconCoin}>
-              <View style={styles.coinOuter} />
-              <View style={styles.coinInner} />
-              <View style={styles.coinShine} />
-            </View>
+          <View style={styles.iconBadgeTreasure}>
+            <Image 
+              source={require('../../attached_assets/Treasure Chest Full Cartoon_1762017505115.png')}
+              style={styles.treasureChestThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.featureItem}>Earn treasure as you progress</Text>
         </View>
@@ -144,49 +144,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  iconBadgeCoin: {
+  iconBadgeTreasure: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: theme.colors.charcoal,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
+    overflow: 'hidden',
   },
-  iconCoin: {
-    width: 18,
-    height: 18,
-    position: 'relative',
-  },
-  coinOuter: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: theme.colors.paleGold,
-    borderWidth: 1.5,
-    borderColor: theme.colors.darkGold,
-  },
-  coinInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: theme.colors.darkGold,
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 4,
-    left: 4,
-  },
-  coinShine: {
-    width: 4,
-    height: 2,
-    backgroundColor: theme.colors.lightGold,
-    borderRadius: 2,
-    position: 'absolute',
-    top: 5,
-    left: 5,
+  treasureChestThumbnail: {
+    width: 40,
+    height: 40,
   },
   iconBadgeVideoCamera: {
     width: 40,

@@ -114,7 +114,11 @@ const DashboardScreen = ({
           style={styles.treasureButton}
           onPress={() => onNavigate && onNavigate('treasure-chest')}
         >
-          <Text style={styles.treasureButtonIcon}>💰</Text>
+          <Image 
+            source={require('../../attached_assets/Treasure Chest Full Cartoon_1762017505115.png')}
+            style={styles.treasureButtonIcon}
+            resizeMode="contain"
+          />
           <Text style={styles.treasureButtonText}>Treasure Chest</Text>
           <Text style={styles.treasureButtonSubtext}>Purchase Coins</Text>
         </TouchableOpacity>
@@ -1090,7 +1094,8 @@ const styles = StyleSheet.create({
     borderColor: '#CD7F32',
   },
   treasureButtonIcon: {
-    fontSize: 32,
+    width: 60,
+    height: 60,
     marginBottom: 8,
   },
   treasureButtonText: {
