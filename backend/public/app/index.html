@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verdict Path - Civil Litigation Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+        
+        .tagline {
+            color: #7f8c8d;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        
+        .features {
+            text-align: left;
+            margin: 30px 0;
+            padding: 0 20px;
+        }
+        
+        .feature {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            color: #555;
+        }
+        
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            width: 30px;
+        }
+        
+        .buttons {
+            margin-top: 40px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .status-label {
+            color: #7f8c8d;
+        }
+        
+        .status-value {
+            font-weight: 600;
+            color: #27ae60;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">⚖️🗺️</div>
+        <h1>Verdict Path</h1>
+        <p class="tagline">Navigate Your Legal Journey with Confidence</p>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">🏴‍☠️</span>
+                <span>Interactive pirate-themed litigation roadmap</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🔒</span>
+                <span>HIPAA-compliant medical document storage</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">💰</span>
+                <span>Gamified learning with coin rewards</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <span>Mobile app for iOS and Android</span>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <a href="/portal" class="btn btn-primary">Law Firm Portal</a>
+            <a href="/health" class="btn btn-secondary">API Status</a>
+        </div>
+        
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">API Status:</span>
+                <span class="status-value" id="api-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Database:</span>
+                <span class="status-value" id="db-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Version:</span>
+                <span class="status-value">1.0.0</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Download the mobile app to get started</p>
+            <p style="margin-top: 10px;">Available on iOS and Android via Expo Go</p>
+        </div>
+    </div>
+    
+    <script>
+        // Fetch health status
+        fetch('/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('api-status').textContent = data.status === 'ok' || data.status === 'healthy' ? '✓ Online' : '✗ Offline';
+                document.getElementById('db-status').textContent = data.database === 'configured' || data.services?.database === 'connected' ? '✓ Connected' : '✗ Not Connected';
+            })
+            .catch(() => {
+                document.getElementById('api-status').textContent = '✗ Error';
+                document.getElementById('db-status').textContent = '✗ Error';
+            });
+    </script>
+</body>
+</html>
