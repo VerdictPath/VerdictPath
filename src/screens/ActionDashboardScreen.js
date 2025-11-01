@@ -313,8 +313,18 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>⚓ Action Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Tasks assigned by your attorney</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>⚓ Action Dashboard</Text>
+            <Text style={styles.headerSubtitle}>Tasks assigned by your attorney</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => onNavigate('dashboard')}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {renderSummaryCards()}
@@ -369,6 +379,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderBottomColor: theme.colors.secondary,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -378,6 +396,19 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: theme.colors.textSecondary,
+  },
+  backButton: {
+    backgroundColor: theme.colors.mahogany,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   summaryContainer: {
     flexDirection: 'row',
