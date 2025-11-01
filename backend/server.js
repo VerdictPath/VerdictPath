@@ -132,9 +132,35 @@ app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
 app.use('/api/event-requests', require('./routes/eventRequests'));
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not configured',
+    database: process.env.DATABASE_URL ? 'configured' : 'not configured'
+  });
+});
+
 // Serve mobile app at root
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/app/index.html'));
+  const indexPath = path.join(__dirname, 'public/app/index.html');
+  // Check if static build exists
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Return API info if static build doesn't exist
+    res.json({
+      message: 'VerdictPath API Server',
+      version: '1.0.0',
+      endpoints: {
+        api: '/api',
+        portal: '/portal',
+        health: '/health'
+      }
+    });
+  }
 });
 
 app.get('/portal', (req, res) => {
@@ -148,7 +174,7 @@ app.post('/portal/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const response = await fetch(`http://localhost:${PORT}/api/auth/login`, {
+    const response = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, userType: 'lawfirm' })
@@ -180,7 +206,7 @@ app.get('/portal/dashboard', async (req, res) => {
       return res.redirect('/portal');
     }
     
-    const response = await fetch(`http://localhost:${PORT}/api/lawfirm/dashboard`, {
+    const response = await fetch(`${BASE_URL}/api/lawfirm/dashboard`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     
@@ -231,10 +257,12 @@ app.get('/portal/forms', async (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('❌ ERROR:', err.stack);
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    path: req.path,
+    timestamp: new Date().toISOString()
   });
 });
 
