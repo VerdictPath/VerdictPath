@@ -1,17 +1,24 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let Notifications = null;
+let Device = null;
+let Constants = null;
+
+if (Platform.OS !== 'web') {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+  Constants = require('expo-constants').default;
+  
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 class NotificationService {
   constructor() {
@@ -21,6 +28,10 @@ class NotificationService {
   }
 
   async requestPermissions() {
+    if (Platform.OS === 'web') {
+      return false;
+    }
+    
     try {
       if (!Device.isDevice) {
         console.log('Notifications only work on physical devices');
@@ -57,6 +68,10 @@ class NotificationService {
   }
 
   async registerForPushNotifications() {
+    if (Platform.OS === 'web') {
+      return null;
+    }
+    
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
@@ -80,6 +95,10 @@ class NotificationService {
   }
 
   async registerDeviceWithBackend(authToken, userId) {
+    if (Platform.OS === 'web') {
+      return false;
+    }
+    
     try {
       if (!this.expoPushToken) {
         console.log('No push token available');
@@ -88,9 +107,9 @@ class NotificationService {
 
       const deviceInfo = {
         expoPushToken: this.expoPushToken,
-        deviceName: Device.deviceName || 'Unknown Device',
+        deviceName: Device?.deviceName || 'Unknown Device',
         platform: Platform.OS,
-        appVersion: Constants.expoConfig?.version || '1.0.0',
+        appVersion: Constants?.expoConfig?.version || '1.0.0',
       };
 
       const response = await fetch(`${API_BASE_URL}/api/notifications/register-device`, {
@@ -120,6 +139,10 @@ class NotificationService {
   }
 
   async unregisterDeviceFromBackend(authToken, userId) {
+    if (Platform.OS === 'web') {
+      return false;
+    }
+    
     try {
       if (!this.expoPushToken) {
         return false;
@@ -154,6 +177,10 @@ class NotificationService {
   }
 
   setupNotificationListeners(onNotificationReceived, onNotificationTapped) {
+    if (Platform.OS === 'web') {
+      return () => {};
+    }
+    
     this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
       if (onNotificationReceived) {
@@ -179,6 +206,10 @@ class NotificationService {
   }
 
   async setBadgeCount(count) {
+    if (Platform.OS === 'web') {
+      return;
+    }
+    
     try {
       await Notifications.setBadgeCountAsync(count);
     } catch (error) {
@@ -187,6 +218,10 @@ class NotificationService {
   }
 
   async getBadgeCount() {
+    if (Platform.OS === 'web') {
+      return 0;
+    }
+    
     try {
       return await Notifications.getBadgeCountAsync();
     } catch (error) {
@@ -196,6 +231,10 @@ class NotificationService {
   }
 
   async clearBadge() {
+    if (Platform.OS === 'web') {
+      return;
+    }
+    
     try {
       await Notifications.setBadgeCountAsync(0);
     } catch (error) {
@@ -204,6 +243,10 @@ class NotificationService {
   }
 
   async dismissAllNotifications() {
+    if (Platform.OS === 'web') {
+      return;
+    }
+    
     try {
       await Notifications.dismissAllNotificationsAsync();
     } catch (error) {

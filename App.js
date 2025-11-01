@@ -1,10 +1,15 @@
 // APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, Alert } from 'react-native';
+import { SafeAreaView, StatusBar, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StripeProvider } from '@stripe/stripe-react-native';
 import { commonStyles } from './src/styles/commonStyles';
 import { theme } from './src/styles/theme';
+
+let StripeProvider = null;
+if (Platform.OS !== 'web') {
+  const StripeModule = require('@stripe/stripe-react-native');
+  StripeProvider = StripeModule.StripeProvider;
+}
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
@@ -1312,16 +1317,24 @@ const CaseCompassApp = () => {
     setCurrentScreen(screen);
   };
 
+  const appContent = (
+    <NotificationProvider user={user} onNavigate={handleNavigate}>
+      <AppContent 
+        user={user} 
+        setUser={setUser} 
+        currentScreen={currentScreen}
+        setCurrentScreen={setCurrentScreen}
+      />
+    </NotificationProvider>
+  );
+
+  if (Platform.OS === 'web') {
+    return appContent;
+  }
+
   return (
     <StripeProvider publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY}>
-      <NotificationProvider user={user} onNavigate={handleNavigate}>
-        <AppContent 
-          user={user} 
-          setUser={setUser} 
-          currentScreen={currentScreen}
-          setCurrentScreen={setCurrentScreen}
-        />
-      </NotificationProvider>
+      {appContent}
     </StripeProvider>
   );
 };
