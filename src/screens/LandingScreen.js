@@ -34,12 +34,11 @@ const LandingScreen = ({ onNavigate }) => {
         <Text style={styles.featureTitle}>What You'll Get:</Text>
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeMap}>
-            <View style={styles.iconCompass}>
-              <View style={styles.compassOuter} />
-              <View style={styles.compassInner} />
-              <View style={styles.compassNeedleNorth} />
-              <View style={styles.compassNeedleSouth} />
-            </View>
+            <Image 
+              source={require('../../attached_assets/Treasure Map_1762016241708.png')}
+              style={styles.treasureMapThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.featureItem}>Interactive case roadmap</Text>
         </View>
@@ -139,54 +138,11 @@ const styles = StyleSheet.create({
     marginRight: 14,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
+    overflow: 'hidden',
   },
-  iconCompass: {
-    width: 20,
-    height: 20,
-    position: 'relative',
-  },
-  compassOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.brightGold,
-    backgroundColor: 'transparent',
-  },
-  compassInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: theme.colors.warmBlue,
-    position: 'absolute',
-    top: 4,
-    left: 4,
-  },
-  compassNeedleNorth: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 3,
-    borderRightWidth: 3,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: theme.colors.deepMaroon,
-    position: 'absolute',
-    top: 2,
-    left: 7,
-  },
-  compassNeedleSouth: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 3,
-    borderRightWidth: 3,
-    borderTopWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: theme.colors.brightGold,
-    position: 'absolute',
-    bottom: 2,
-    left: 7,
+  treasureMapThumbnail: {
+    width: 40,
+    height: 40,
   },
   iconBadgeCoin: {
     width: 40,
