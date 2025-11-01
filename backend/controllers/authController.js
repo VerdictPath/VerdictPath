@@ -13,9 +13,10 @@ exports.registerClient = async (req, res) => {
   try {
     const { firstName, lastName, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice, privacyAccepted } = req.body;
     
-    if (!privacyAccepted) {
-      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    }
+    // Privacy policy acceptance check temporarily disabled
+    // if (!privacyAccepted) {
+    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -134,9 +135,10 @@ exports.registerLawFirm = async (req, res) => {
   try {
     const { firmName, email, password, barNumber, phoneNumber, address, subscriptionTier, firmSize, privacyAccepted } = req.body;
     
-    if (!privacyAccepted) {
-      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    }
+    // Privacy policy acceptance check temporarily disabled
+    // if (!privacyAccepted) {
+    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
+    // }
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -204,9 +206,10 @@ exports.registerMedicalProvider = async (req, res) => {
       });
     }
     
-    if (!privacyAccepted) {
-      return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    }
+    // Privacy policy acceptance check temporarily disabled
+    // if (!privacyAccepted) {
+    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
+    // }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
