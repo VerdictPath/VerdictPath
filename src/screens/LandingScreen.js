@@ -55,7 +55,7 @@ const LandingScreen = ({ onNavigate }) => {
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeVideoCamera}>
             <Image 
-              source={require('../../attached_assets/Video Camera_1762018510944.jpeg')}
+              source={require('../../attached_assets/video_1762018822588.jpeg')}
               style={styles.videoCameraThumbnail}
               resizeMode="cover"
             />
