@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import { calculateDailyBonus } from '../utils/gamification';
 import { theme } from '../styles/theme';
@@ -184,12 +184,11 @@ const DashboardScreen = ({
           onPress={() => onNavigate('roadmap')}
         >
           <View style={styles.iconBadgeMap}>
-            <View style={styles.iconCompass}>
-              <View style={styles.compassOuter} />
-              <View style={styles.compassInner} />
-              <View style={styles.compassNeedleNorth} />
-              <View style={styles.compassNeedleSouth} />
-            </View>
+            <Image 
+              source={require('../../attached_assets/Treasure Map_1762016241708.png')}
+              style={styles.treasureMapThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.menuText}>Case Roadmap</Text>
         </TouchableOpacity>
@@ -642,54 +641,11 @@ const styles = StyleSheet.create({
     marginRight: 15,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
+    overflow: 'hidden',
   },
-  iconCompass: {
-    width: 24,
-    height: 24,
-    position: 'relative',
-  },
-  compassOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.brightGold,
-    backgroundColor: 'transparent',
-  },
-  compassInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: theme.colors.warmBlue,
-    position: 'absolute',
-    top: 5,
-    left: 5,
-  },
-  compassNeedleNorth: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 3,
-    borderRightWidth: 3,
-    borderBottomWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: theme.colors.deepMaroon,
-    position: 'absolute',
-    top: 3,
-    left: 9,
-  },
-  compassNeedleSouth: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 3,
-    borderRightWidth: 3,
-    borderTopWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: theme.colors.brightGold,
-    position: 'absolute',
-    bottom: 3,
-    left: 9,
+  treasureMapThumbnail: {
+    width: 48,
+    height: 48,
   },
   iconBadgeTreasureChest: {
     width: 48,
