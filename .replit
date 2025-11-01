@@ -91,26 +91,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "LocalTunnel"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Backend API"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Expo Mobile App"
-
-[[workflows.workflow]]
-name = "LocalTunnel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx localtunnel --port 8081 --subdomain verdictpath"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [[workflows.workflow]]
 name = "Backend API"
@@ -120,18 +101,6 @@ author = "agent"
 task = "shell.exec"
 args = "cd backend && node server.js"
 waitForPort = 3000
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "Expo Mobile App"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd /home/runner/workspace && npx expo start --clear --tunnel --port 8080"
-waitForPort = 8080
 
 [workflows.workflow.metadata]
 outputType = "console"
