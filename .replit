@@ -78,10 +78,6 @@ externalPort = 8000
 localPort = 46817
 externalPort = 3000
 
-[[ports]]
-localPort = 8080
-externalPort = 8080
-
 [agent]
 expertMode = true
 
@@ -134,7 +130,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd /home/runner/workspace && npx expo start --clear --lan --port 8080"
+args = "cd /home/runner/workspace && npx expo start --clear --tunnel --port 8080"
 waitForPort = 8080
 
 [workflows.workflow.metadata]
