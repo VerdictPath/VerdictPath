@@ -43,10 +43,10 @@
       ]
     },
     "web": {
-      "bundler": "metro",
-      "build": {
-        "pwa": false
-      }
+      "bundler": "metro"
+    },
+    "experiments": {
+      "baseUrl": "/"
     }
   }
 }
