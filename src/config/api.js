@@ -22,7 +22,7 @@ const getApiBaseUrl = () => {
   }
   
   // Priority 4: Web browser or Expo web (localhost works here)
-  return 'http://localhost:5000';
+  return 'http://localhost:3000';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

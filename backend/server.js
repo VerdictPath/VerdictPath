@@ -21,7 +21,7 @@ const paymentRoutes = require('./routes/payment');
 // Coin purchase routes merged into coins.js
 
 const app = express();
-const PORT = process.env.PORT || 5000; // Railway sets PORT automatically, Replit uses 5000
+const PORT = process.env.PORT || 3000; // Railway sets PORT automatically, Expo uses 5000 for webview
 
 // Get the base URL for the server (for self-referencing API calls)
 const getBaseUrl = () => {
