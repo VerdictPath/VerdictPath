@@ -256,6 +256,20 @@ app.get('/portal/forms', async (req, res) => {
   }
 });
 
+// Catch-all route for client-side routing - serve index.html for any unmatched routes
+// This must be AFTER all API and portal routes
+app.get('*', (req, res) => {
+  const indexPath = path.join(__dirname, 'public/app/index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ 
+      message: 'Web app not built yet. Run: npm run build:web',
+      error: 'Static files not found'
+    });
+  }
+});
+
 app.use((err, req, res, next) => {
   console.error('❌ ERROR:', err.stack);
   res.status(500).json({ 
