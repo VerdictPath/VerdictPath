@@ -54,14 +54,11 @@ const LandingScreen = ({ onNavigate }) => {
         </View>
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeVideoCamera}>
-            <View style={styles.iconVideoCamera}>
-              <View style={styles.videoCameraBody} />
-              <View style={styles.videoCameraLens} />
-              <View style={styles.videoCameraLensOuter} />
-              <View style={styles.videoCameraLensInner} />
-              <View style={styles.videoCameraViewfinder} />
-              <View style={styles.videoCameraMic} />
-            </View>
+            <Image 
+              source={require('../../attached_assets/Video Camera_1762018510944.jpeg')}
+              style={styles.videoCameraThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.featureItem}>Educational audio/video tutorials</Text>
         </View>
@@ -166,69 +163,11 @@ const styles = StyleSheet.create({
     marginRight: 14,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
+    overflow: 'hidden',
   },
-  iconVideoCamera: {
-    width: 22,
-    height: 17,
-    position: 'relative',
-  },
-  videoCameraBody: {
-    width: 16,
-    height: 13,
-    backgroundColor: theme.colors.navy,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: theme.colors.charcoal,
-    position: 'absolute',
-    left: 0,
-    top: 2,
-  },
-  videoCameraLens: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.charcoal,
-    position: 'absolute',
-    left: 2,
-    top: 4.5,
-  },
-  videoCameraLensOuter: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: theme.colors.warmGray,
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    left: 2,
-    top: 4.5,
-  },
-  videoCameraLensInner: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: theme.colors.warmBlue,
-    position: 'absolute',
-    left: 4.5,
-    top: 7,
-  },
-  videoCameraViewfinder: {
-    width: 4,
-    height: 3,
-    backgroundColor: theme.colors.warmGreen,
-    borderRadius: 1,
-    position: 'absolute',
-    right: 7,
-    top: 2.5,
-  },
-  videoCameraMic: {
-    width: 2.5,
-    height: 5,
-    backgroundColor: theme.colors.warmGray,
-    borderRadius: 1.25,
-    position: 'absolute',
-    left: 6.5,
-    bottom: 0,
+  videoCameraThumbnail: {
+    width: 40,
+    height: 40,
   },
   iconBadgeHospital: {
     width: 40,
