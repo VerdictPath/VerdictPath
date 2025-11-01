@@ -201,8 +201,12 @@ const DashboardScreen = ({
           style={styles.menuItem}
           onPress={() => onNavigate('videos')}
         >
-          <View style={styles.iconBadgeEmoji}>
-            <Text style={styles.emojiIcon}>🎥</Text>
+          <View style={styles.iconBadgeVideoCamera}>
+            <Image 
+              source={require('../../attached_assets/Video Camera_1762018510944.jpeg')}
+              style={styles.videoCameraThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.menuText}>Video Library</Text>
         </TouchableOpacity>
@@ -648,6 +652,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   treasureMapThumbnail: {
+    width: 48,
+    height: 48,
+  },
+  iconBadgeVideoCamera: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.charcoal,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    overflow: 'hidden',
+  },
+  videoCameraThumbnail: {
     width: 48,
     height: 48,
   },
