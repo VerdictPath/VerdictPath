@@ -246,20 +246,6 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.menuItem}
-          onPress={onConvertCoins}
-        >
-          <View style={styles.iconBadgeCoin}>
-            <View style={styles.iconCoin}>
-              <View style={styles.coinOuter} />
-              <View style={styles.coinInner} />
-              <View style={styles.coinShine} />
-            </View>
-          </View>
-          <Text style={styles.menuText}>Convert Coins</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.menuItem}
           onPress={onLogout}
         >
           <View style={styles.iconBadgePower}>
@@ -1039,51 +1025,6 @@ const styles = StyleSheet.create({
   },
   emojiIcon: {
     fontSize: 28,
-  },
-  // Coin Icon Badge for Convert Coins
-  iconBadgeCoin: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.mahogany,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-  },
-  iconCoin: {
-    width: 24,
-    height: 24,
-    position: 'relative',
-  },
-  coinOuter: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.colors.paleGold,
-    borderWidth: 2,
-    borderColor: theme.colors.darkGold,
-  },
-  coinInner: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: theme.colors.darkGold,
-    backgroundColor: 'transparent',
-    position: 'absolute',
-    top: 5,
-    left: 5,
-  },
-  coinShine: {
-    width: 5,
-    height: 2.5,
-    backgroundColor: theme.colors.lightGold,
-    borderRadius: 2.5,
-    position: 'absolute',
-    top: 7,
-    left: 7,
   },
   // Upgrade Button
   upgradeButton: {
