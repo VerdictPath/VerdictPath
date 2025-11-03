@@ -15,6 +15,14 @@ router.get('/dashboard',
   lawfirmController.getDashboard
 );
 
+// Get all clients list (for notifications, tasks, etc.)
+router.get('/clients',
+  authenticateToken,
+  isLawFirm,
+  requirePermission('VIEW_CLIENT_PHI'),
+  lawfirmController.getClients
+);
+
 // Client details - requires VIEW_CLIENT_PHI permission AND patient consent
 router.get('/client/:clientId',
   authenticateToken,

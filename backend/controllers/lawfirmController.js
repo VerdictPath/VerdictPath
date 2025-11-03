@@ -3,6 +3,41 @@ const auditLogger = require('../services/auditLogger');
 const encryption = require('../services/encryption');
 const formsService = require('../services/formsService');
 
+exports.getClients = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    
+    const clientsResult = await db.query(
+      `SELECT u.id, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted, u.email
+       FROM users u
+       JOIN law_firm_clients lfc ON u.id = lfc.client_id
+       WHERE lfc.law_firm_id = $1
+       ORDER BY u.last_name ASC, u.first_name ASC`,
+      [lawFirmId]
+    );
+    
+    const clients = clientsResult.rows.map(client => {
+      // HIPAA: Use encrypted fields if available, fall back to plaintext during migration
+      const firstName = client.first_name_encrypted ? 
+        encryption.decrypt(client.first_name_encrypted) : client.first_name;
+      const lastName = client.last_name_encrypted ? 
+        encryption.decrypt(client.last_name_encrypted) : client.last_name;
+      
+      return {
+        id: client.id,
+        first_name: firstName,
+        last_name: lastName,
+        email: client.email
+      };
+    });
+    
+    res.json({ clients });
+  } catch (error) {
+    console.error('Error fetching clients:', error);
+    res.status(500).json({ message: 'Error fetching clients', error: error.message });
+  }
+};
+
 exports.getDashboard = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
