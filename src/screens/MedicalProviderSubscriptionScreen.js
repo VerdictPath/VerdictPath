@@ -152,9 +152,11 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
         patientCount,
         'Everything in Basic',
         'Advanced patient analytics',
-        'Automated HIPAA forms',
-        'Dedicated support',
-        'API access'
+        'API access',
+        'Push Notifications to Patient',
+        'Full Notifications Access',
+        'Notification templates including appointment reminders',
+        'Patient Calendar Access'
       ]
     };
 
