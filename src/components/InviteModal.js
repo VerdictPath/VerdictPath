@@ -178,9 +178,9 @@ const InviteModal = ({ visible, onClose, user }) => {
                 </View>
               ) : user?.userType === 'lawfirm' ? (
                 <View style={styles.infoSection}>
-                  <Text style={styles.infoIcon}>⚓</Text>
+                  <Text style={styles.infoIcon}>⚖️</Text>
                   <Text style={styles.infoText}>
-                    Invite your clients, your friends and your peers to join Verdict Path!
+                    Invite your clients, colleagues, and peers to join Verdict Path! Help them navigate their legal journey with our interactive case management platform. Share your invite code to connect and collaborate seamlessly.
                   </Text>
                 </View>
               ) : (
