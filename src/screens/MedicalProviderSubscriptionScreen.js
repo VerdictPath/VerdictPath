@@ -143,10 +143,10 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
       ],
       [TIER_LEVELS.BASIC]: [
         patientCount,
-        'HIPAA-compliant storage',
+        'Everything in Free',
         'Patient consent management',
-        'Priority email support',
-        'Evidence sharing with law firms'
+        'Non-Work Product Evidence Viewing',
+        'Access to view Patient Roadmap'
       ],
       [TIER_LEVELS.PREMIUM]: [
         patientCount,
