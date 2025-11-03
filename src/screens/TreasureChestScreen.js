@@ -73,6 +73,14 @@ const COIN_PACKAGES = [
 
 const TreasureChestScreen = ({ onBack, user, setCoins }) => {
   const [currentCoins, setCurrentCoins] = useState(0);
+  const [coinDetails, setCoinDetails] = useState({
+    totalCoins: 0,
+    availableCoins: 0,
+    coinsSpent: 0,
+    lifetimeCredits: 0,
+    maxLifetimeCredits: 0,
+    remainingLifetimeCredits: 0
+  });
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -95,7 +103,15 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setCurrentCoins(data.coins || 0);
+        setCurrentCoins(data.totalCoins || 0);
+        setCoinDetails({
+          totalCoins: data.totalCoins || 0,
+          availableCoins: data.availableCoins || 0,
+          coinsSpent: data.coinsSpent || 0,
+          lifetimeCredits: data.lifetimeCredits || 0,
+          maxLifetimeCredits: data.maxLifetimeCredits || 0,
+          remainingLifetimeCredits: data.remainingLifetimeCredits || 0
+        });
       }
     } catch (error) {
       console.error('Error fetching coins:', error);
@@ -254,7 +270,22 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
             <Text style={styles.balanceIcon}>💰</Text>
           </View>
           <Text style={styles.balanceAmount}>{formatNumber(currentCoins)}</Text>
-          <Text style={styles.balanceSubtext}>coins</Text>
+          <Text style={styles.balanceSubtext}>total coins</Text>
+          
+          <View style={styles.balanceDetails}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Available to Use:</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.availableCoins)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Coins Spent:</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.coinsSpent)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Treasure Chest Cap:</Text>
+              <Text style={styles.detailValue}>25,000</Text>
+            </View>
+          </View>
           
           <View style={styles.balanceInfo}>
             <Text style={styles.infoText}>
@@ -458,6 +489,29 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontWeight: '600',
     marginTop: -8,
+  },
+  balanceDetails: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.secondary,
+    width: '100%',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 16,
+    color: theme.colors.text,
+    fontWeight: 'bold',
   },
   balanceInfo: {
     marginTop: 16,
