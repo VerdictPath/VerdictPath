@@ -157,19 +157,21 @@ router.post('/purchase', authenticateToken, async (req, res) => {
       [userId, paymentIntentId, packageId, coins, amountPaid]
     );
 
-    // Award coins to user (with 25,000 cap)
+    // Award purchased coins to user (NO CAP - purchased coins bypass the 25,000 treasure chest limit)
     const userResult = await client.query(
-      'SELECT total_coins FROM users WHERE id = $1',
+      'SELECT total_coins, purchased_coins FROM users WHERE id = $1',
       [userId]
     );
 
-    const currentCoins = userResult.rows[0].total_coins || 0;
-    const newTotal = Math.min(currentCoins + coins, 25000);
-    const actualCoinsAwarded = newTotal - currentCoins;
+    const currentTotalCoins = userResult.rows[0].total_coins || 0;
+    const currentPurchasedCoins = userResult.rows[0].purchased_coins || 0;
+    
+    const newTotalCoins = currentTotalCoins + coins;
+    const newPurchasedCoins = currentPurchasedCoins + coins;
 
     await client.query(
-      'UPDATE users SET total_coins = $1 WHERE id = $2',
-      [newTotal, userId]
+      'UPDATE users SET total_coins = $1, purchased_coins = $2 WHERE id = $3',
+      [newTotalCoins, newPurchasedCoins, userId]
     );
 
     await client.query('COMMIT');
@@ -177,9 +179,10 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       message: 'Coins purchased successfully!',
-      coinsAwarded: actualCoinsAwarded,
-      totalCoins: newTotal,
-      cappedAt25000: actualCoinsAwarded < coins
+      coinsAwarded: coins,
+      totalCoins: newTotalCoins,
+      purchasedCoins: newPurchasedCoins,
+      cappedAt25000: false
     });
   } catch (error) {
     await client.query('ROLLBACK');
