@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     fontSize: 16,
-    color: theme.colors.text,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     flex: 1,
   },
   iconBadgeMap: {
