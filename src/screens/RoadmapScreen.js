@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator, Image, ImageBackground } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
 import CelebrationAnimation from '../components/CelebrationAnimation';
@@ -805,27 +805,33 @@ const RoadmapScreen = ({
           style={styles.mapScrollView}
           contentContainerStyle={[styles.mapContainer, dynamicStyles.mapContainer]}
         >
-          <View style={[styles.pirateMap, dynamicStyles.pirateMap]}>
-            <Text style={[styles.mapDecor, { top: '5%', left: '5%' }]}>⚓</Text>
-            <Text style={[styles.mapDecor, { top: '10%', right: '8%' }]}>🦜</Text>
-            <Text style={[styles.mapDecor, { top: '30%', left: '85%' }]}>🏴‍☠️</Text>
-            <Text style={[styles.mapDecor, { top: '55%', left: '5%' }]}>🗡️</Text>
-            <Text style={[styles.mapDecor, { top: '70%', right: '10%' }]}>🌊</Text>
-            <Text style={[styles.mapDecor, { bottom: '8%', left: '15%' }]}>🧭</Text>
+          <ImageBackground 
+            source={require('../../attached_assets/Treasure Map_1762016241708.png')}
+            style={[styles.pirateMap, dynamicStyles.pirateMap]}
+            resizeMode="cover"
+          >
+            <View style={styles.mapOverlay}>
+              <Text style={[styles.mapDecor, { top: '5%', left: '5%' }]}>⚓</Text>
+              <Text style={[styles.mapDecor, { top: '10%', right: '8%' }]}>🦜</Text>
+              <Text style={[styles.mapDecor, { top: '30%', left: '85%' }]}>🏴‍☠️</Text>
+              <Text style={[styles.mapDecor, { top: '55%', left: '5%' }]}>🗡️</Text>
+              <Text style={[styles.mapDecor, { top: '70%', right: '10%' }]}>🌊</Text>
+              <Text style={[styles.mapDecor, { bottom: '8%', left: '15%' }]}>🧭</Text>
 
-            <View style={styles.treasurePath} />
+              <View style={styles.treasurePath} />
 
-            {renderAnimatedPaths()}
+              {renderAnimatedPaths()}
 
-            {litigationStages.map((stage, index) => renderTreasure(stage, index))}
+              {litigationStages.map((stage, index) => renderTreasure(stage, index))}
 
-            <View style={styles.legend}>
-              <Text style={styles.legendTitle}>🗺️ Map Legend</Text>
-              <Text style={styles.legendItem}>💰 = Treasure to Claim</Text>
-              <Text style={styles.legendItem}>🏆 = Treasure Found!</Text>
-              {!readOnly && <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>}
+              <View style={styles.legend}>
+                <Text style={styles.legendTitle}>🗺️ Map Legend</Text>
+                <Text style={styles.legendItem}>💰 = Treasure to Claim</Text>
+                <Text style={styles.legendItem}>🏆 = Treasure Found!</Text>
+                {!readOnly && <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>}
+              </View>
             </View>
-          </View>
+          </ImageBackground>
         </ScrollView>
       )}
 
@@ -1014,13 +1020,19 @@ const styles = StyleSheet.create({
   },
   pirateMap: {
     flex: 1,
-    backgroundColor: '#c9a86a',
     margin: 10,
     borderRadius: 15,
     borderWidth: 5,
     borderColor: '#8b7355',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  mapOverlay: {
+    flex: 1,
+    position: 'relative',
     padding: 20,
+    minHeight: '100%',
+    minWidth: '100%',
   },
   treasurePath: {
     position: 'absolute',
