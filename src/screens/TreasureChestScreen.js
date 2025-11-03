@@ -77,6 +77,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
     totalCoins: 0,
     availableCoins: 0,
     coinsSpent: 0,
+    purchasedCoins: 0,
+    freeCoins: 0,
+    treasureChestCapacity: 25000,
+    freeCoinsCapRemaining: 25000,
     lifetimeCredits: 0,
     maxLifetimeCredits: 0,
     remainingLifetimeCredits: 0
@@ -107,6 +111,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           totalCoins: data.totalCoins || 0,
           availableCoins: data.availableCoins || 0,
           coinsSpent: data.coinsSpent || 0,
+          purchasedCoins: data.purchasedCoins || 0,
+          freeCoins: data.freeCoins || 0,
+          treasureChestCapacity: data.treasureChestCapacity || 25000,
+          freeCoinsCapRemaining: data.freeCoinsCapRemaining || 25000,
           lifetimeCredits: data.lifetimeCredits || 0,
           maxLifetimeCredits: data.maxLifetimeCredits || 0,
           remainingLifetimeCredits: data.remainingLifetimeCredits || 0
@@ -176,6 +184,14 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           
           <View style={styles.balanceDetails}>
             <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>💰 Purchased Coins:</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.purchasedCoins)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>🎁 Free Coins Earned:</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.freeCoins)}</Text>
+            </View>
+            <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Available to Use:</Text>
               <Text style={styles.detailValue}>{formatNumber(coinDetails.availableCoins)}</Text>
             </View>
@@ -184,14 +200,17 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
               <Text style={styles.detailValue}>{formatNumber(coinDetails.coinsSpent)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Treasure Chest Cap:</Text>
-              <Text style={styles.detailValue}>25,000</Text>
+              <Text style={styles.detailLabel}>Free Coins Cap Remaining:</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.freeCoinsCapRemaining)}</Text>
             </View>
           </View>
           
           <View style={styles.balanceInfo}>
             <Text style={styles.infoText}>
-              💡 Coins help you progress through your case journey
+              💡 Treasure chest cap (25,000) only applies to free coins earned
+            </Text>
+            <Text style={styles.infoText}>
+              ⚓ Purchased coins have NO LIMIT and never expire!
             </Text>
           </View>
         </View>
