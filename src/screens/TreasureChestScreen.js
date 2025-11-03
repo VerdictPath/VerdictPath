@@ -282,34 +282,22 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
         </View>
 
         <View style={styles.valueSection}>
-          <Text style={styles.valueTitle}>Why Purchase Coins?</Text>
+          <Text style={styles.valueTitle}>⚓ Why Purchase Coins? ⚓</Text>
           
           <View style={styles.valueItem}>
-            <Text style={styles.valueIcon}>⚡</Text>
+            <Text style={styles.valueIcon}>🎥</Text>
             <View style={styles.valueTextContainer}>
-              <Text style={styles.valueItemTitle}>Fast Progress</Text>
               <Text style={styles.valueItemText}>
-                Advance through your litigation roadmap quickly
+                Gain Access to Premium Video Tutorials.
               </Text>
             </View>
           </View>
 
           <View style={styles.valueItem}>
-            <Text style={styles.valueIcon}>🎯</Text>
+            <Text style={styles.valueIcon}>🔊</Text>
             <View style={styles.valueTextContainer}>
-              <Text style={styles.valueItemTitle}>Unlock Achievements</Text>
               <Text style={styles.valueItemText}>
-                Earn exclusive badges and rewards
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.valueItem}>
-            <Text style={styles.valueIcon}>🏆</Text>
-            <View style={styles.valueTextContainer}>
-              <Text style={styles.valueItemTitle}>Climb the Leaderboard</Text>
-              <Text style={styles.valueItemText}>
-                Compete with other users for top rankings
+                Gain Access to Audio Clips Explaining Each Stage in Litigation.
               </Text>
             </View>
           </View>
@@ -569,27 +557,38 @@ const styles = StyleSheet.create({
     color: theme.colors.white,
   },
   valueSection: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors.cream,
     borderRadius: 12,
-    padding: 20,
+    padding: 24,
     marginBottom: 24,
+    borderWidth: 2,
+    borderColor: theme.colors.gold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   valueTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: theme.colors.primary,
-    marginBottom: 16,
+    marginBottom: 20,
     textAlign: 'center',
   },
   valueItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: theme.colors.white,
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.gold,
   },
   valueIcon: {
-    fontSize: 28,
-    marginRight: 12,
-    marginTop: 2,
+    fontSize: 32,
+    marginRight: 16,
   },
   valueTextContainer: {
     flex: 1,
@@ -601,9 +600,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   valueItemText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: 15,
+    color: theme.colors.text,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   securityNotice: {
     backgroundColor: '#E8F5E9',
