@@ -79,6 +79,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
     coinsSpent: 0,
     purchasedCoins: 0,
     freeCoins: 0,
+    availablePurchasedCoins: 0,
+    availableFreeCoins: 0,
+    purchasedCoinsSpent: 0,
+    freeCoinsSpent: 0,
     treasureChestCapacity: 25000,
     freeCoinsCapRemaining: 25000,
     lifetimeCredits: 0,
@@ -113,6 +117,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           coinsSpent: data.coinsSpent || 0,
           purchasedCoins: data.purchasedCoins || 0,
           freeCoins: data.freeCoins || 0,
+          availablePurchasedCoins: data.availablePurchasedCoins || 0,
+          availableFreeCoins: data.availableFreeCoins || 0,
+          purchasedCoinsSpent: data.purchasedCoinsSpent || 0,
+          freeCoinsSpent: data.freeCoinsSpent || 0,
           treasureChestCapacity: data.treasureChestCapacity || 25000,
           freeCoinsCapRemaining: data.freeCoinsCapRemaining || 25000,
           lifetimeCredits: data.lifetimeCredits || 0,
@@ -184,23 +192,23 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           
           <View style={styles.balanceDetails}>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>💰 Purchased Coins:</Text>
-              <Text style={styles.detailValue}>{formatNumber(coinDetails.purchasedCoins)}</Text>
+              <Text style={styles.detailLabel}>💰 Purchased (Available):</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.availablePurchasedCoins)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>🎁 Free Coins Earned:</Text>
-              <Text style={styles.detailValue}>{formatNumber(coinDetails.freeCoins)}</Text>
+              <Text style={styles.detailLabel}>🎁 Free (Available):</Text>
+              <Text style={styles.detailValue}>{formatNumber(coinDetails.availableFreeCoins)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Available to Use:</Text>
+              <Text style={styles.detailLabel}>✨ Total Available:</Text>
               <Text style={styles.detailValue}>{formatNumber(coinDetails.availableCoins)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Coins Spent:</Text>
+              <Text style={styles.detailLabel}>📊 Total Spent:</Text>
               <Text style={styles.detailValue}>{formatNumber(coinDetails.coinsSpent)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Free Coins Cap Remaining:</Text>
+              <Text style={styles.detailLabel}>🏴‍☠️ Free Cap Remaining:</Text>
               <Text style={styles.detailValue}>{formatNumber(coinDetails.freeCoinsCapRemaining)}</Text>
             </View>
           </View>
