@@ -629,7 +629,7 @@ const RoadmapScreen = ({
                           onPress={() => handlePlayAudio(subStage)}
                         >
                           <Image 
-                            source={require('../../attached_assets/RedAudioWave_1762018714157.jpg')}
+                            source={require('../../attached_assets/Speaker_1762189140530.png')}
                             style={styles.audioIcon}
                             resizeMode="contain"
                           />
