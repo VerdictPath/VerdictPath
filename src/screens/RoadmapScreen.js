@@ -550,8 +550,14 @@ const RoadmapScreen = ({
         >
           {isCurrent && selectedAvatar && !stage.completed && !readOnly ? (
             <Text style={styles.avatarIcon}>{selectedAvatar.emoji}</Text>
+          ) : stage.completed ? (
+            <Text style={styles.treasureIcon}>🏆</Text>
           ) : (
-            <Text style={styles.treasureIcon}>{stage.completed ? '🏆' : '💰'}</Text>
+            <Image 
+              source={require('../../attached_assets/X marks the Spot_1762186694664.png')}
+              style={styles.xMarksSpotImage}
+              resizeMode="contain"
+            />
           )}
           {stage.completed && (
             <View style={styles.completeBadge}>
@@ -1089,6 +1095,10 @@ const styles = StyleSheet.create({
   },
   treasureIcon: {
     fontSize: 35,
+  },
+  xMarksSpotImage: {
+    width: 40,
+    height: 40,
   },
   avatarIcon: {
     fontSize: 32,
