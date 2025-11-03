@@ -808,7 +808,7 @@ const RoadmapScreen = ({
           <ImageBackground 
             source={require('../../attached_assets/Treasure Map_1762016241708.png')}
             style={[styles.pirateMap, dynamicStyles.pirateMap]}
-            resizeMode="contain"
+            resizeMode="cover"
             imageStyle={styles.treasureMapImage}
           >
             <View style={styles.mapOverlay}>
@@ -1028,18 +1028,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#c9a86a',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   treasureMapImage: {
     borderRadius: 10,
   },
   mapOverlay: {
-    flex: 1,
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: 20,
-    minHeight: '100%',
-    minWidth: '100%',
   },
   treasurePath: {
     position: 'absolute',
