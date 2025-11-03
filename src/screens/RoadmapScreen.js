@@ -298,26 +298,16 @@ const RoadmapScreen = ({
             }, 2800);
           }
         } else {
-          // Show alert for already-completed tasks
-          if (data.coinsAlreadyEarnedBefore) {
-            alert(
-              '✅ Task Completed!',
-              `Progress updated! (Coins were already earned previously - cannot earn them again)`
-            );
-          } else if (actualCoinsEarned === 0) {
-            alert(
-              '✅ Task Completed!',
-              'Your progress has been updated.'
-            );
-          }
+          // Silently handle already-completed tasks - no need to alert for re-completions
+          // The UI update (checkmark appearing) is feedback enough
         }
       } else {
         console.error('[RoadmapScreen] API error:', data.error);
         // Handle duplicate completion gracefully
         if (data.error && data.error.includes('already completed')) {
-          // Update UI to reflect that it's already completed
+          // Silently update UI to reflect that it's already completed - no annoying alerts!
           onCompleteSubStage(selectedStage.id, subStageId, 0); // 0 coins since already awarded
-          alert('Already Completed', 'This task has already been completed. Your progress has been updated.');
+          // The checkmark will appear, button will disappear - clean UX
         } else {
           alert('Error', data.error || 'Failed to complete task.');
         }
