@@ -1,10 +1,14 @@
-# Verdict Path
+# 🏴‍☠️ Verdict Path - React Native Mobile App
 
-**A HIPAA-compliant React Native mobile application for civil litigation case management and education.**
+**Navigate Your Legal Journey with Confidence**
 
-## Overview
+A HIPAA-compliant React Native mobile application (Expo SDK 52) for civil litigation case management featuring three user portals, pirate-themed gamification, and secure document storage.
 
-Verdict Path is a comprehensive legal case management platform designed to assist individuals, law firms, and medical providers in navigating civil litigation processes. The application features a gamified 9-stage litigation roadmap, educational resources, and secure document management.
+---
+
+## 🎯 What is Verdict Path?
+
+Verdict Path is a comprehensive legal tech platform that helps individuals navigate civil litigation through an interactive pirate-themed treasure map, secure document storage, and professional collaboration tools.
 
 ## Features
 
