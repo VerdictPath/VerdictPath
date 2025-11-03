@@ -86,6 +86,38 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
 
+  // Load user's litigation progress when they log in
+  useEffect(() => {
+    const loadUserProgress = async () => {
+      if (!user || !user.token || user.type !== USER_TYPES.INDIVIDUAL) {
+        return;
+      }
+
+      try {
+        console.log('[App] Loading user litigation progress...');
+        const progressData = await apiRequest(API_ENDPOINTS.LITIGATION.PROGRESS, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        console.log('[App] Progress loaded:', progressData);
+        
+        // Merge backend progress with static LITIGATION_STAGES
+        const mergedStages = mergeCompletedSubstages(progressData);
+        setLitigationStages(mergedStages);
+        
+        console.log('[App] Litigation stages updated with user progress');
+      } catch (error) {
+        console.error('[App] Error loading litigation progress:', error);
+        // On error, keep using default LITIGATION_STAGES
+      }
+    };
+
+    loadUserProgress();
+  }, [user?.token, user?.id]);
+
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
