@@ -7,36 +7,42 @@ const MAX_TOTAL_COINS = 25000; // Maximum coins a user can accumulate (treasure 
 const DAILY_BONUSES = [5, 7, 10, 12, 15, 20, 30]; // Daily streak bonus tiers
 
 // Helper function to check if user's treasure chest is full and calculate coins that can be awarded
+// IMPORTANT: The 25,000 coin cap ONLY applies to FREE coins earned (not purchased coins)
 const checkTreasureChestCapacity = async (userId, coinsToAward) => {
   const userResult = await pool.query(
-    'SELECT total_coins FROM users WHERE id = $1',
+    'SELECT total_coins, purchased_coins FROM users WHERE id = $1',
     [userId]
   );
   
   if (userResult.rows.length === 0) {
-    return { canAward: 0, isFull: false, currentCoins: 0 };
+    return { canAward: 0, isFull: false, currentCoins: 0, currentFreeCoins: 0 };
   }
   
-  const currentCoins = userResult.rows[0].total_coins || 0;
+  const currentTotalCoins = userResult.rows[0].total_coins || 0;
+  const currentPurchasedCoins = userResult.rows[0].purchased_coins || 0;
+  const currentFreeCoins = currentTotalCoins - currentPurchasedCoins;
   
-  if (currentCoins >= MAX_TOTAL_COINS) {
+  // Check if FREE coins have reached the cap (purchased coins don't count toward cap)
+  if (currentFreeCoins >= MAX_TOTAL_COINS) {
     return { 
       canAward: 0, 
       isFull: true, 
-      currentCoins: currentCoins,
-      message: '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 coins reached)'
+      currentCoins: currentTotalCoins,
+      currentFreeCoins: currentFreeCoins,
+      message: '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 free coins reached). You can still purchase more coins!'
     };
   }
   
-  const availableSpace = MAX_TOTAL_COINS - currentCoins;
+  const availableSpace = MAX_TOTAL_COINS - currentFreeCoins;
   const actualCoinsToAward = Math.min(coinsToAward, availableSpace);
-  const willBeFull = (currentCoins + actualCoinsToAward) >= MAX_TOTAL_COINS;
+  const willBeFull = (currentFreeCoins + actualCoinsToAward) >= MAX_TOTAL_COINS;
   
   return {
     canAward: actualCoinsToAward,
     isFull: willBeFull,
-    currentCoins: currentCoins,
-    message: willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 coins reached)' : null
+    currentCoins: currentTotalCoins,
+    currentFreeCoins: currentFreeCoins,
+    message: willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 free coins reached). You can still purchase more coins!' : null
   };
 };
 
@@ -283,7 +289,7 @@ const getBalance = async (req, res) => {
     const userId = req.user.id;
 
     const userResult = await pool.query(
-      'SELECT total_coins, coins_spent FROM users WHERE id = $1',
+      'SELECT total_coins, coins_spent, purchased_coins FROM users WHERE id = $1',
       [userId]
     );
 
@@ -293,7 +299,10 @@ const getBalance = async (req, res) => {
 
     const totalCoins = userResult.rows[0].total_coins || 0;
     const coinsSpent = userResult.rows[0].coins_spent || 0;
+    const purchasedCoins = userResult.rows[0].purchased_coins || 0;
+    const freeCoins = totalCoins - purchasedCoins;
     const availableCoins = totalCoins - coinsSpent;
+    const availableFreeCoins = freeCoins - coinsSpent;
 
     // Get lifetime conversions
     const lifetimeResult = await pool.query(
@@ -308,6 +317,11 @@ const getBalance = async (req, res) => {
       totalCoins,
       coinsSpent,
       availableCoins,
+      purchasedCoins,
+      freeCoins,
+      availableFreeCoins,
+      treasureChestCapacity: MAX_TOTAL_COINS,
+      freeCoinsCapRemaining: Math.max(0, MAX_TOTAL_COINS - freeCoins),
       lifetimeCredits,
       maxLifetimeCredits: MAX_LIFETIME_CREDITS,
       remainingLifetimeCredits
@@ -409,21 +423,29 @@ const claimDailyReward = async (req, res) => {
       const streakIndex = Math.min(currentStreak - 1, DAILY_BONUSES.length - 1);
       const baseBonus = DAILY_BONUSES[streakIndex];
       
-      // Check treasure chest capacity (inline to avoid connection pool issues within transaction)
+      // Check treasure chest capacity for FREE coins only (inline to avoid connection pool issues within transaction)
+      // Get purchased coins to calculate free coins
+      const purchasedCoinsResult = await client.query(
+        'SELECT purchased_coins FROM users WHERE id = $1',
+        [userId]
+      );
+      const purchasedCoins = purchasedCoinsResult.rows[0].purchased_coins || 0;
+      const freeCoins = currentCoins - purchasedCoins;
+      
       let bonus = baseBonus;
       let treasureChestFull = false;
       let treasureChestMessage = null;
       
-      if (currentCoins >= MAX_TOTAL_COINS) {
+      if (freeCoins >= MAX_TOTAL_COINS) {
         bonus = 0;
         treasureChestFull = true;
-        treasureChestMessage = '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 coins reached)';
+        treasureChestMessage = '🏴‍☠️ Your treasure chest is full! (Maximum 25,000 free coins reached). You can still purchase more coins!';
       } else {
-        const availableSpace = MAX_TOTAL_COINS - currentCoins;
+        const availableSpace = MAX_TOTAL_COINS - freeCoins;
         bonus = Math.min(baseBonus, availableSpace);
-        const willBeFull = (currentCoins + bonus) >= MAX_TOTAL_COINS;
+        const willBeFull = (freeCoins + bonus) >= MAX_TOTAL_COINS;
         treasureChestFull = willBeFull;
-        treasureChestMessage = willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 coins reached)' : null;
+        treasureChestMessage = willBeFull ? '🏴‍☠️ Your treasure chest is now full! (Maximum 25,000 free coins reached). You can still purchase more coins!' : null;
       }
       
       const newCoinTotal = currentCoins + bonus;
