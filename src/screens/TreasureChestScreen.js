@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { theme } from '../styles/theme';
-import { useStripe } from '@stripe/stripe-react-native';
-import PayButton from '../components/PayButton';
+import alert from '../utils/alert';
 
 // API Configuration
 const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
@@ -84,7 +84,6 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   useEffect(() => {
     fetchCoinBalance();
@@ -120,116 +119,19 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
     }
   };
 
-  const initializePaymentSheet = async (packageData) => {
-    try {
-      setPurchasing(true);
-
-      const response = await fetch(`${API_URL}/api/coins/create-payment-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: JSON.stringify({ packageId: packageData.id })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create payment intent');
-      }
-
-      const { clientSecret } = await response.json();
-
-      const { error } = await initPaymentSheet({
-        paymentIntentClientSecret: clientSecret,
-        merchantDisplayName: 'Verdict Path',
-        style: 'automatic',
-        googlePay: {
-          merchantCountryCode: 'US',
-          testEnv: true,
-          currencyCode: 'USD',
-        },
-        applePay: {
-          merchantCountryCode: 'US',
-        },
-        returnURL: 'verdictpath://stripe-redirect',
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setPurchasing(false);
-      return clientSecret;
-    } catch (error) {
-      setPurchasing(false);
-      Alert.alert('Error', error.message);
-      return null;
-    }
-  };
-
   const handlePurchase = async (packageData) => {
-    try {
-      setSelectedPackage(packageData);
-
-      const clientSecret = await initializePaymentSheet(packageData);
-      if (!clientSecret) return;
-
-      const { error } = await presentPaymentSheet();
-
-      if (error) {
-        Alert.alert('Payment cancelled', error.message);
-        return;
-      }
-
-      const paymentIntentId = clientSecret.split('_secret_')[0];
-
-      setPurchasing(true);
-
-      // Extract package details for purchase confirmation
-      const confirmResponse = await fetch(`${API_URL}/api/coins/purchase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: JSON.stringify({ 
-          paymentIntentId,
-          packageId: packageData.id,
-          coins: packageData.coins,
-          amountPaid: packageData.price
-        })
-      });
-
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json();
-        throw new Error(errorData.message || 'Failed to confirm purchase');
-      }
-
-      const result = await confirmResponse.json();
-
-      setPurchasing(false);
-
-      if (setCoins) {
-        setCoins(result.totalCoins);
-      }
-      setCurrentCoins(result.totalCoins);
-
-      let message = `🎉 You've received ${result.coinsAwarded.toLocaleString()} coins!`;
-      if (result.cappedAt25000) {
-        message += `\n\nNote: Some coins were not added due to the 25,000 coin cap.`;
-      }
-
-      Alert.alert('⚓ Treasure Acquired!', message, [
-        { 
-          text: 'Aye Aye!', 
-          onPress: () => setSelectedPackage(null)
-        }
-      ]);
-    } catch (error) {
-      setPurchasing(false);
-      Alert.alert('Purchase Failed', error.message);
+    if (Platform.OS === 'web') {
+      alert(
+        '🏴‍☠️ Mobile Only Feature',
+        'Coin purchases are only available on the mobile app. Please use the Verdict Path mobile app to purchase coins.\n\nYou can still view your coin balance and use coins you\'ve earned!'
+      );
+      return;
     }
+    
+    alert(
+      '🏴‍☠️ Coming Soon!',
+      'Coin purchases will be available soon! Stay tuned, matey! ⚓'
+    );
   };
 
   const formatNumber = (num) => {
@@ -293,6 +195,16 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
             </Text>
           </View>
         </View>
+
+        {Platform.OS === 'web' && (
+          <View style={styles.webNotice}>
+            <Text style={styles.webNoticeTitle}>📱 Mobile App Required</Text>
+            <Text style={styles.webNoticeText}>
+              Coin purchases are only available on the Verdict Path mobile app. 
+              You can still view your coin balance here!
+            </Text>
+          </View>
+        )}
 
         <View style={styles.packagesSection}>
           <Text style={styles.sectionTitle}>Choose Your Treasure</Text>
@@ -682,6 +594,25 @@ const styles = StyleSheet.create({
   securitySubtext: {
     fontSize: 12,
     color: '#4CAF50',
+  },
+  webNotice: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: '#FFA726',
+  },
+  webNoticeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E65100',
+    marginBottom: 8,
+  },
+  webNoticeText: {
+    fontSize: 14,
+    color: '#E65100',
+    lineHeight: 20,
   },
 });
 
