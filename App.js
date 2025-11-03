@@ -932,20 +932,27 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
     // Deep clone LITIGATION_STAGES to avoid state contamination
     return JSON.parse(JSON.stringify(LITIGATION_STAGES)).map(stage => {
+      // Map substages with completion status
+      const mappedSubStages = stage.subStages?.map((subStage, index) => {
+        // Backend uses format like '1-0', '1-1', '2-0', '2-1'
+        // Frontend uses format like 'pre-1', 'pre-2', 'cf-1', 'cf-2'
+        // We need to convert frontend index to backend format: `${stageId}-${index}`
+        const backendId = `${stage.id}-${index}`;
+        
+        return {
+          ...subStage,
+          completed: completedIds.has(backendId)
+        };
+      }) || [];
+      
+      // A stage is completed when ALL of its substages are completed
+      const allSubstagesCompleted = mappedSubStages.length > 0 && 
+        mappedSubStages.every(subStage => subStage.completed);
+      
       return {
         ...stage,
-        completed: completedSubstagesData.completedStages?.some(s => s.stage_id === stage.id) || false,
-        subStages: stage.subStages?.map((subStage, index) => {
-          // Backend uses format like '1-0', '1-1', '2-0', '2-1'
-          // Frontend uses format like 'pre-1', 'pre-2', 'cf-1', 'cf-2'
-          // We need to convert frontend index to backend format: `${stageId}-${index}`
-          const backendId = `${stage.id}-${index}`;
-          
-          return {
-            ...subStage,
-            completed: completedIds.has(backendId)
-          };
-        }) || []
+        completed: allSubstagesCompleted,
+        subStages: mappedSubStages
       };
     });
   };
