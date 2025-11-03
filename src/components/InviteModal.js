@@ -187,7 +187,7 @@ const InviteModal = ({ visible, onClose, user }) => {
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>⚕️</Text>
                   <Text style={styles.infoText}>
-                    Invite your patients and other medical providers to join Verdict Path!
+                    Invite your patients and colleagues to join Verdict Path! Help your patients stay informed about their legal cases with our HIPAA-compliant platform. Share your invite code to connect and collaborate with law firms seamlessly.
                   </Text>
                 </View>
               )}

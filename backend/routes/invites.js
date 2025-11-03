@@ -18,7 +18,35 @@ function generateInviteCode() {
 router.get('/my-code', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
 
+    // Get the domain from request headers or environment
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
+    const baseUrl = `${protocol}://${host}`;
+
+    // For law firms and medical providers, use their unique codes
+    if (userType === 'lawfirm') {
+      const firmCode = req.user.firmCode;
+      return res.json({
+        success: true,
+        inviteCode: firmCode,
+        shareText: `Join our law firm on Verdict Path! Use our firm code: ${firmCode}`,
+        shareUrl: `${baseUrl}/?lawfirm=${firmCode}`
+      });
+    }
+
+    if (userType === 'medical_provider') {
+      const providerCode = req.user.providerCode;
+      return res.json({
+        success: true,
+        inviteCode: providerCode,
+        shareText: `Connect with our medical practice on Verdict Path! Use our provider code: ${providerCode}`,
+        shareUrl: `${baseUrl}/?provider=${providerCode}`
+      });
+    }
+
+    // For individual users, use the traditional invite system
     // Check if user already has an active invite code
     let result = await db.query(
       `SELECT invite_code FROM user_invites 
@@ -51,11 +79,6 @@ router.get('/my-code', authenticateToken, async (req, res) => {
         [userId, inviteCode]
       );
     }
-
-    // Get the domain from request headers or environment
-    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-    const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
-    const baseUrl = `${protocol}://${host}`;
 
     res.json({
       success: true,
