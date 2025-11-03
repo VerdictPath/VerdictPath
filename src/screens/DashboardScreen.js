@@ -434,8 +434,8 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   iconBadgeCoinStat: {
     width: 32,
