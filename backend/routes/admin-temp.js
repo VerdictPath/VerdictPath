@@ -22,8 +22,8 @@ router.get('/seed-production-data-temp-endpoint-2025', async (req, res) => {
     const userIds = {};
     for (const user of users) {
       const result = await db.query(
-        `INSERT INTO users (email, password, first_name, last_name, subscription_tier, accepted_privacy_policy, accepted_terms, accepted_eula, privacy_policy_accepted_at, terms_accepted_at, eula_accepted_at)
-         VALUES ($1, $2, $3, $4, $5, true, true, true, NOW(), NOW(), NOW())
+        `INSERT INTO users (email, password, first_name, last_name, subscription_tier, privacy_accepted_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())
          ON CONFLICT (email) DO UPDATE 
          SET password = $2, subscription_tier = $5
          RETURNING id`,
