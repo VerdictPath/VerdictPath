@@ -18,6 +18,7 @@ const diagnosticRoutes = require('./routes/diagnostic');
 const notificationsRoutes = require('./routes/notifications');
 const tasksRoutes = require('./routes/tasks');
 const paymentRoutes = require('./routes/payment');
+const adminTempRoutes = require('./routes/admin-temp');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -131,6 +132,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
 app.use('/api/event-requests', require('./routes/eventRequests'));
+app.use('/api/admin', adminTempRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
