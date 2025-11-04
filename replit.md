@@ -31,6 +31,7 @@ Key features implemented include:
 - **Stripe Payment Integration**: Full Stripe payment processing with @stripe/stripe-react-native SDK for subscriptions and one-time payments, supporting Apple Pay and Google Pay.
 - **Coin Purchase System**: Backend API and UI for purchasing pirate-themed coin packages via Stripe, with a 25,000 coin cap.
 - **Privacy Policy & Terms Acceptance**: Integration of Privacy Policy, Terms of Service, and EULA documents with required acceptance during registration and database tracking.
+- **Settlement Disbursement System (November 2025)**: Law firm portal feature for processing settlement disbursements to clients and medical providers. Includes database schema (disbursements, disbursement_recipients tables), authenticated backend API routes, and frontend dashboard screen. PROTOTYPE STATUS: Stripe Connect fund transfers not fully implemented - actual payment processing requires Stripe Connect account setup, transfer API integration, and webhook confirmation handlers.
 
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
