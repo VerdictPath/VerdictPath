@@ -63,9 +63,10 @@ export const API_ENDPOINTS = {
     ALL_DOCUMENTS: '/api/lawfirm/documents/all'
   },
   DISBURSEMENTS: {
+    PROCESS: '/api/disbursements/process',
     GET_HISTORY: '/api/disbursements/history',
     GET_CLIENT_PROVIDERS: '/api/disbursements/client-providers',
-    PROCESS: '/api/disbursements/process'
+    GET_DETAIL: (id) => `/api/disbursements/${id}`
   },
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',
