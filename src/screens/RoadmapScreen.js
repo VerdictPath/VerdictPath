@@ -472,27 +472,27 @@ const RoadmapScreen = ({
           const perpX = -dy / distance;
           const perpY = dx / distance;
           
-          // Even stronger wave amplitude for more dramatic curves
-          const waveAmplitude = Math.min(distance * 0.6, 100);
+          // Gentler wave amplitude for subtle curves
+          const waveAmplitude = Math.min(distance * 0.25, 60);
           
-          // Create a more complex S-curve with multiple control points
-          // Point 1: First curve bends one way
-          const cp1x = x1 + dx * 0.2 + perpX * waveAmplitude;
-          const cp1y = y1 + dy * 0.2 + perpY * waveAmplitude;
+          // Create a subtle S-curve with multiple control points
+          // Point 1: First curve bends one way (gentle)
+          const cp1x = x1 + dx * 0.25 + perpX * waveAmplitude * 0.5;
+          const cp1y = y1 + dy * 0.25 + perpY * waveAmplitude * 0.5;
           
           // Midpoint for the S-curve
           const midX = x1 + dx * 0.5;
           const midY = y1 + dy * 0.5;
           
-          // Point 2: Curve back the other way (stronger)
-          const cp2x = x1 + dx * 0.5 - perpX * waveAmplitude * 0.9;
-          const cp2y = y1 + dy * 0.5 - perpY * waveAmplitude * 0.9;
+          // Point 2: Curve back the other way (gentle)
+          const cp2x = x1 + dx * 0.45 - perpX * waveAmplitude * 0.4;
+          const cp2y = y1 + dy * 0.45 - perpY * waveAmplitude * 0.4;
           
-          // Point 3: Continue the wave
-          const cp3x = x1 + dx * 0.8 + perpX * waveAmplitude * 0.7;
-          const cp3y = y1 + dy * 0.8 + perpY * waveAmplitude * 0.7;
+          // Point 3: Continue the wave (gentle finish)
+          const cp3x = x1 + dx * 0.75 + perpX * waveAmplitude * 0.3;
+          const cp3y = y1 + dy * 0.75 + perpY * waveAmplitude * 0.3;
 
-          // Create snake-like winding path with multiple cubic Bezier curves
+          // Create gentle winding path with subtle cubic Bezier curves
           const wavyPath = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${midX} ${midY} S ${cp3x} ${cp3y}, ${x2} ${y2}`;
           
           // Calculate path length for dash animation (longer due to curves)
