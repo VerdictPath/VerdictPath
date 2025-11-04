@@ -68,6 +68,11 @@ export const API_ENDPOINTS = {
     GET_CLIENT_PROVIDERS: '/api/disbursements/client-providers',
     GET_DETAIL: (id) => `/api/disbursements/${id}`
   },
+  STRIPE_CONNECT: {
+    CREATE_ACCOUNT: '/api/stripe-connect/create-account',
+    ACCOUNT_STATUS: '/api/stripe-connect/account-status',
+    DASHBOARD_LINK: '/api/stripe-connect/create-dashboard-link'
+  },
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',
     PATIENTS: '/api/medicalprovider/patients',

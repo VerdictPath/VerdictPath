@@ -19,6 +19,7 @@ const notificationsRoutes = require('./routes/notifications');
 const tasksRoutes = require('./routes/tasks');
 const paymentRoutes = require('./routes/payment');
 const disbursementsRoutes = require('./routes/disbursements');
+const stripeConnectRoutes = require('./routes/stripe-connect');
 const adminTempRoutes = require('./routes/admin-temp');
 // Coin purchase routes merged into coins.js
 
@@ -131,6 +132,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/disbursements', disbursementsRoutes);
+app.use('/api/stripe-connect', stripeConnectRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
 app.use('/api/event-requests', require('./routes/eventRequests'));
