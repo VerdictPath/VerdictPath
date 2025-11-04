@@ -29,6 +29,7 @@ import MedicalHubScreen from './src/screens/MedicalHubScreen';
 import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
+import DisbursementDashboardScreen from './src/screens/DisbursementDashboardScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
@@ -1234,6 +1235,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <LawFirmEventRequestsScreen
           user={user}
           onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-disbursements' && (
+        <DisbursementDashboardScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+          onNavigate={handleNavigateInternal}
         />
       )}
       

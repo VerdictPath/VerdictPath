@@ -57,9 +57,15 @@ export const API_ENDPOINTS = {
   LAWFIRM: {
     DASHBOARD: '/api/lawfirm/dashboard',
     CLIENTS: '/api/lawfirm/clients',
+    GET_CLIENTS: '/api/lawfirm/clients',
     CLIENT_DETAILS: (clientId) => `/api/lawfirm/client/${clientId}`,
     UPDATE_STAGE: '/api/lawfirm/litigation-stage',
     ALL_DOCUMENTS: '/api/lawfirm/documents/all'
+  },
+  DISBURSEMENTS: {
+    GET_HISTORY: '/api/disbursements/history',
+    GET_CLIENT_PROVIDERS: '/api/disbursements/client-providers',
+    PROCESS: '/api/disbursements/process'
   },
   MEDICALPROVIDER: {
     DASHBOARD: '/api/medicalprovider/dashboard',

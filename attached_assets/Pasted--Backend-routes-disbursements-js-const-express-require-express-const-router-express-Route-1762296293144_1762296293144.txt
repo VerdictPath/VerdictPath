@@ -1,0 +1,385 @@
+// Backend: routes/disbursements.js
+const express = require('express');
+const router = express.Router();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { authenticateToken } = require('../middleware/auth');
+const pool = require('../config/database');
+
+// Platform fee per disbursement transaction
+const PLATFORM_FEE = 200; // $200
+
+/**
+ * GET /api/disbursements/history
+ * Get disbursement history for a law firm
+ */
+router.get('/history', authenticateToken, async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT 
+        d.id,
+        d.client_id,
+        d.client_amount,
+        d.medical_total,
+        d.platform_fee,
+        d.total_amount,
+        d.stripe_transfer_id,
+        d.status,
+        d.created_at,
+        CONCAT(c.first_name, ' ', c.last_name) as client_name
+      FROM disbursements d
+      JOIN users c ON d.client_id = c.id
+      WHERE d.law_firm_id = $1
+      ORDER BY d.created_at DESC`,
+      [lawFirmId]
+    );
+
+    res.json({
+      disbursements: result.rows.map(row => ({
+        id: row.id,
+        clientName: row.client_name,
+        clientAmount: parseFloat(row.client_amount),
+        medicalTotal: parseFloat(row.medical_total),
+        platformFee: parseFloat(row.platform_fee),
+        totalAmount: parseFloat(row.total_amount),
+        stripeTransferId: row.stripe_transfer_id,
+        status: row.status,
+        createdAt: row.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching disbursement history:', error);
+    res.status(500).json({ error: 'Failed to fetch disbursement history' });
+  }
+});
+
+/**
+ * GET /api/disbursements/client-providers
+ * Get medical providers connected to a specific client
+ */
+router.get('/client-providers', authenticateToken, async (req, res) => {
+  try {
+    const { clientId } = req.query;
+    const lawFirmId = req.user.id;
+
+    if (!clientId) {
+      return res.status(400).json({ error: 'Client ID is required' });
+    }
+
+    // Verify client belongs to this law firm
+    const clientCheck = await pool.query(
+      'SELECT id FROM users WHERE id = $1 AND law_firm_id = $2',
+      [clientId, lawFirmId]
+    );
+
+    if (clientCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this client' });
+    }
+
+    // Get medical providers connected to this client
+    const result = await pool.query(
+      `SELECT DISTINCT
+        mp.id,
+        mp.provider_name,
+        mp.email
+      FROM medical_providers mp
+      JOIN medical_records mr ON mp.id = mr.medical_provider_id
+      WHERE mr.user_id = $1
+      ORDER BY mp.provider_name`,
+      [clientId]
+    );
+
+    res.json({
+      providers: result.rows.map(row => ({
+        id: row.id,
+        providerName: row.provider_name,
+        email: row.email
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching client providers:', error);
+    res.status(500).json({ error: 'Failed to fetch medical providers' });
+  }
+});
+
+/**
+ * POST /api/disbursements/process
+ * Process settlement disbursement to client and medical providers
+ */
+router.post('/process', authenticateToken, async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { clientId, clientAmount, medicalPayments, platformFee } = req.body;
+    const lawFirmId = req.user.id;
+
+    // Validation
+    if (!clientId || !clientAmount || clientAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid disbursement data' });
+    }
+
+    if (platformFee !== PLATFORM_FEE) {
+      return res.status(400).json({ error: 'Invalid platform fee' });
+    }
+
+    await client.query('BEGIN');
+
+    // Verify client belongs to this law firm
+    const clientResult = await client.query(
+      `SELECT id, email, first_name, last_name, stripe_account_id 
+       FROM users 
+       WHERE id = $1 AND law_firm_id = $2`,
+      [clientId, lawFirmId]
+    );
+
+    if (clientResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Access denied to this client' });
+    }
+
+    const clientData = clientResult.rows[0];
+
+    // Check if client already received final disbursement
+    const existingDisbursement = await client.query(
+      'SELECT id FROM disbursements WHERE client_id = $1 AND status = $2',
+      [clientId, 'completed']
+    );
+
+    if (existingDisbursement.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Client has already received final settlement disbursement' 
+      });
+    }
+
+    // Get law firm's Stripe account
+    const lawFirmResult = await client.query(
+      'SELECT stripe_account_id FROM law_firms WHERE id = $1',
+      [lawFirmId]
+    );
+
+    const lawFirmStripeAccount = lawFirmResult.rows[0]?.stripe_account_id;
+
+    if (!lawFirmStripeAccount) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Law firm must have a Stripe Connect account set up' 
+      });
+    }
+
+    // Calculate totals
+    const medicalTotal = medicalPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalAmount = clientAmount + medicalTotal + platformFee;
+
+    // Convert to cents for Stripe
+    const totalCents = Math.round(totalAmount * 100);
+    const clientCents = Math.round(clientAmount * 100);
+    const platformFeeCents = Math.round(platformFee * 100);
+
+    // Create Stripe Payment Intent to charge the law firm
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalCents,
+      currency: 'usd',
+      customer: lawFirmStripeAccount, // Assuming law firm is a Stripe customer
+      description: `Settlement disbursement for ${clientData.first_name} ${clientData.last_name}`,
+      metadata: {
+        law_firm_id: lawFirmId,
+        client_id: clientId,
+        client_amount: clientAmount,
+        medical_total: medicalTotal,
+        platform_fee: platformFee
+      },
+      // Platform fee goes to your platform account
+      application_fee_amount: platformFeeCents,
+      // Automatic payment method
+      confirm: true,
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'never'
+      }
+    });
+
+    // If payment successful, create transfers to client and medical providers
+    let clientTransferId = null;
+    let medicalTransferIds = [];
+
+    if (paymentIntent.status === 'succeeded') {
+      // Transfer to client
+      if (clientData.stripe_account_id) {
+        const clientTransfer = await stripe.transfers.create({
+          amount: clientCents,
+          currency: 'usd',
+          destination: clientData.stripe_account_id,
+          description: `Settlement proceeds from case`,
+          metadata: {
+            client_id: clientId,
+            disbursement_type: 'client_settlement'
+          }
+        });
+        clientTransferId = clientTransfer.id;
+      }
+
+      // Transfer to medical providers
+      for (const payment of medicalPayments) {
+        const providerResult = await client.query(
+          'SELECT stripe_account_id FROM medical_providers WHERE id = $1',
+          [payment.providerId]
+        );
+
+        const providerStripeAccount = providerResult.rows[0]?.stripe_account_id;
+
+        if (providerStripeAccount) {
+          const providerTransfer = await stripe.transfers.create({
+            amount: Math.round(payment.amount * 100),
+            currency: 'usd',
+            destination: providerStripeAccount,
+            description: `Medical bill payment for patient ${clientData.first_name} ${clientData.last_name}`,
+            metadata: {
+              provider_id: payment.providerId,
+              client_id: clientId,
+              disbursement_type: 'medical_payment'
+            }
+          });
+          medicalTransferIds.push({
+            providerId: payment.providerId,
+            transferId: providerTransfer.id,
+            amount: payment.amount
+          });
+        }
+      }
+    }
+
+    // Record disbursement in database
+    const disbursementResult = await client.query(
+      `INSERT INTO disbursements (
+        law_firm_id,
+        client_id,
+        client_amount,
+        medical_total,
+        platform_fee,
+        total_amount,
+        stripe_payment_intent_id,
+        stripe_transfer_id,
+        status,
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      RETURNING id`,
+      [
+        lawFirmId,
+        clientId,
+        clientAmount,
+        medicalTotal,
+        platformFee,
+        totalAmount,
+        paymentIntent.id,
+        clientTransferId,
+        'completed'
+      ]
+    );
+
+    const disbursementId = disbursementResult.rows[0].id;
+
+    // Record medical provider payments
+    for (const transfer of medicalTransferIds) {
+      await client.query(
+        `INSERT INTO disbursement_medical_payments (
+          disbursement_id,
+          medical_provider_id,
+          amount,
+          stripe_transfer_id,
+          created_at
+        ) VALUES ($1, $2, $3, $4, NOW())`,
+        [disbursementId, transfer.providerId, transfer.amount, transfer.transferId]
+      );
+    }
+
+    // Mark client as having received disbursement
+    await client.query(
+      'UPDATE users SET disbursement_completed = true WHERE id = $1',
+      [clientId]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      disbursementId,
+      transactionId: paymentIntent.id,
+      clientAmount,
+      medicalTotal,
+      platformFee,
+      totalAmount,
+      message: 'Disbursement processed successfully'
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Disbursement processing error:', error);
+    
+    // Handle Stripe-specific errors
+    if (error.type === 'StripeCardError') {
+      return res.status(400).json({ 
+        error: 'Payment failed: ' + error.message 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: error.message || 'Failed to process disbursement' 
+    });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * GET /api/disbursements/:id
+ * Get detailed information about a specific disbursement
+ */
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lawFirmId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT 
+        d.*,
+        CONCAT(c.first_name, ' ', c.last_name) as client_name,
+        c.email as client_email
+      FROM disbursements d
+      JOIN users c ON d.client_id = c.id
+      WHERE d.id = $1 AND d.law_firm_id = $2`,
+      [id, lawFirmId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Disbursement not found' });
+    }
+
+    const disbursement = result.rows[0];
+
+    // Get medical payments for this disbursement
+    const medicalPayments = await pool.query(
+      `SELECT 
+        dmp.*,
+        mp.provider_name,
+        mp.email
+      FROM disbursement_medical_payments dmp
+      JOIN medical_providers mp ON dmp.medical_provider_id = mp.id
+      WHERE dmp.disbursement_id = $1`,
+      [id]
+    );
+
+    res.json({
+      disbursement: {
+        ...disbursement,
+        medicalPayments: medicalPayments.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching disbursement details:', error);
+    res.status(500).json({ error: 'Failed to fetch disbursement details' });
+  }
+});
+
+module.exports = router;

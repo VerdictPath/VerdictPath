@@ -239,6 +239,22 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('lawfirm-disbursements')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>💵</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Settlement Disbursements</Text>
+              <Text style={styles.notificationActionDescription}>
+                Disburse settlement proceeds to clients and medical providers
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
