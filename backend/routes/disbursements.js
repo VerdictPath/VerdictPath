@@ -107,7 +107,16 @@ router.get('/client-providers', authenticateToken, isLawFirm, async (req, res) =
 /**
  * POST /api/disbursements/process
  * Process settlement disbursement to client and medical providers
- * NOTE: This requires Stripe Connect accounts for law firm, clients, and medical providers
+ * 
+ * PRODUCTION IMPLEMENTATION:
+ * This route will process actual Stripe payments when all Stripe Connect accounts are configured:
+ * 1. Law firm must have a Stripe Customer ID with valid payment method
+ * 2. Client must have a Stripe Connect account (for receiving transfers)
+ * 3. Medical providers must have Stripe Connect accounts (for receiving transfers)
+ * 
+ * CURRENT STATE (Prototype):
+ * Records disbursement data in database without processing actual payments.
+ * Status remains 'pending' until Stripe integration is fully set up.
  */
 router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
   const client = await db.pool.connect();
@@ -150,130 +159,23 @@ router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
       });
     }
 
-    // Get law firm's Stripe account
+    // Get law firm's Stripe customer ID (for charging)
     const lawFirmResult = await client.query(
       'SELECT stripe_account_id FROM law_firms WHERE id = $1',
       [lawFirmId]
     );
 
-    const lawFirmStripeAccount = lawFirmResult.rows[0]?.stripe_account_id;
+    const lawFirmStripeCustomer = lawFirmResult.rows[0]?.stripe_account_id;
 
     // Calculate totals
     const medicalTotal = medicalPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
     const totalAmount = parseFloat(clientAmount) + medicalTotal + parseFloat(platformFee);
 
-    // Convert to cents for Stripe
-    const totalCents = Math.round(totalAmount * 100);
-    const clientCents = Math.round(parseFloat(clientAmount) * 100);
-    const platformFeeCents = Math.round(parseFloat(platformFee) * 100);
-
-    // STRIPE CONNECT IMPLEMENTATION
-    // If Stripe accounts are set up, process actual transfers
-    // Otherwise, create records only (prototype mode)
-    let paymentIntent;
-    let clientTransferId = null;
-    let medicalTransferIds = [];
-    let actualTransfersProcessed = false;
-
-    if (lawFirmStripeAccount) {
-      try {
-        // Create Stripe Payment Intent to charge the law firm
-        paymentIntent = await stripe.paymentIntents.create({
-          amount: totalCents,
-          currency: 'usd',
-          customer: lawFirmStripeAccount,
-          description: `Settlement disbursement for ${clientData.first_name} ${clientData.last_name}`,
-          metadata: {
-            law_firm_id: lawFirmId.toString(),
-            client_id: clientId.toString(),
-            client_amount: clientAmount.toString(),
-            medical_total: medicalTotal.toString(),
-            platform_fee: platformFee.toString()
-          },
-          // Platform fee goes to platform account
-          application_fee_amount: platformFeeCents,
-          confirm: true,
-          automatic_payment_methods: {
-            enabled: true,
-            allow_redirects: 'never'
-          }
-        });
-
-        // If payment successful, create transfers
-        if (paymentIntent.status === 'succeeded') {
-          actualTransfersProcessed = true;
-
-          // Transfer to client
-          if (clientData.stripe_account_id) {
-            const clientTransfer = await stripe.transfers.create({
-              amount: clientCents,
-              currency: 'usd',
-              destination: clientData.stripe_account_id,
-              description: `Settlement proceeds from case`,
-              metadata: {
-                client_id: clientId.toString(),
-                disbursement_type: 'client_settlement'
-              }
-            });
-            clientTransferId = clientTransfer.id;
-          }
-
-          // Transfer to medical providers
-          for (const payment of medicalPayments) {
-            const providerResult = await client.query(
-              'SELECT stripe_account_id FROM medical_providers WHERE id = $1',
-              [payment.providerId]
-            );
-
-            const providerStripeAccount = providerResult.rows[0]?.stripe_account_id;
-
-            if (providerStripeAccount) {
-              const providerTransfer = await stripe.transfers.create({
-                amount: Math.round(parseFloat(payment.amount) * 100),
-                currency: 'usd',
-                destination: providerStripeAccount,
-                description: `Medical bill payment for patient ${clientData.first_name} ${clientData.last_name}`,
-                metadata: {
-                  provider_id: payment.providerId.toString(),
-                  client_id: clientId.toString(),
-                  disbursement_type: 'medical_payment'
-                }
-              });
-              medicalTransferIds.push({
-                providerId: payment.providerId,
-                transferId: providerTransfer.id,
-                amount: payment.amount
-              });
-            }
-          }
-        }
-      } catch (stripeError) {
-        await client.query('ROLLBACK');
-        console.error('Stripe processing error:', stripeError);
-        
-        if (stripeError.type === 'StripeCardError') {
-          return res.status(400).json({ 
-            error: 'Payment failed: ' + stripeError.message 
-          });
-        }
-        
-        return res.status(500).json({ 
-          error: 'Failed to process payment: ' + stripeError.message 
-        });
-      }
-    } else {
-      // Prototype mode: create PaymentIntent without charging
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: totalCents,
-        currency: 'usd',
-        description: `Settlement disbursement for ${clientData.first_name} ${clientData.last_name}`,
-        metadata: {
-          law_firm_id: lawFirmId.toString(),
-          client_id: clientId.toString(),
-          prototype_mode: 'true'
-        }
-      });
-    }
+    // PROTOTYPE MODE: Record disbursement without processing actual payments
+    // In production, Stripe Connect integration would handle actual fund transfers here
+    const disbursementStatus = 'pending'; // Will be 'completed' when Stripe processing is implemented
+    const paymentIntentId = null; // Will contain Stripe PaymentIntent ID in production
+    const clientTransferId = null; // Will contain Stripe Transfer ID in production
 
     // Record disbursement in database
     const disbursementResult = await client.query(`
@@ -297,17 +199,15 @@ router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
       medicalTotal,
       platformFee,
       totalAmount,
-      paymentIntent.id,
+      paymentIntentId,
       clientTransferId,
-      actualTransfersProcessed ? 'completed' : 'pending'
+      disbursementStatus
     ]);
 
     const disbursementId = disbursementResult.rows[0].id;
 
-    // Record medical provider payments
+    // Record medical provider payments (without Stripe transfer IDs in prototype mode)
     for (const payment of medicalPayments) {
-      const transferId = medicalTransferIds.find(t => t.providerId === payment.providerId)?.transferId;
-      
       await client.query(`
         INSERT INTO disbursement_medical_payments (
           disbursement_id,
@@ -316,31 +216,48 @@ router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
           stripe_transfer_id,
           created_at
         ) VALUES ($1, $2, $3, $4, NOW())
-      `, [disbursementId, payment.providerId, payment.amount, transferId]);
+      `, [disbursementId, payment.providerId, payment.amount, null]);
     }
 
-    // Mark client as having received disbursement (only if actually processed)
-    if (actualTransfersProcessed) {
-      await client.query(
-        'UPDATE users SET disbursement_completed = true WHERE id = $1',
-        [clientId]
-      );
-    }
+    // DO NOT mark client as disbursement_completed in prototype mode
+    // This will only be set when actual funds are transferred
 
     await client.query('COMMIT');
+
+    // Build response message
+    const missingAccounts = [];
+    if (!lawFirmStripeCustomer) missingAccounts.push('law firm Stripe customer');
+    if (!clientData.stripe_account_id) missingAccounts.push('client Stripe Connect account');
+    
+    // Check medical providers
+    for (const payment of medicalPayments) {
+      const providerResult = await db.query(
+        'SELECT stripe_account_id, provider_name FROM medical_providers WHERE id = $1',
+        [payment.providerId]
+      );
+      if (!providerResult.rows[0]?.stripe_account_id) {
+        missingAccounts.push(`${providerResult.rows[0]?.provider_name || 'medical provider'} Stripe account`);
+      }
+    }
+
+    let message = 'Disbursement recorded successfully (prototype mode).';
+    if (missingAccounts.length > 0) {
+      message += ` To process actual payments, set up: ${missingAccounts.join(', ')}.`;
+    } else {
+      message += ' All Stripe accounts configured. Ready for production payment processing.';
+    }
 
     res.json({
       success: true,
       disbursementId,
-      transactionId: paymentIntent.id,
       clientAmount: parseFloat(clientAmount),
       medicalTotal,
       platformFee: parseFloat(platformFee),
       totalAmount,
-      actualTransfersProcessed,
-      message: actualTransfersProcessed 
-        ? 'Disbursement processed successfully' 
-        : 'Disbursement recorded. Stripe Connect setup required for actual fund transfers.'
+      status: disbursementStatus,
+      prototypeMode: true,
+      message,
+      nextSteps: missingAccounts.length > 0 ? missingAccounts : ['Implement Stripe payment processing in production']
     });
 
   } catch (error) {
