@@ -24,10 +24,13 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [disbursementHistory, setDisbursementHistory] = useState([]);
   const [activeTab, setActiveTab] = useState('new'); // 'new' or 'history'
+  const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
+  const [checkingStripeStatus, setCheckingStripeStatus] = useState(false);
 
   useEffect(() => {
     loadClients();
     loadDisbursementHistory();
+    checkStripeAccountStatus();
   }, []);
 
   const loadClients = async () => {
@@ -63,6 +66,30 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       setDisbursementHistory(response.disbursements || []);
     } catch (error) {
       console.error('Error loading disbursement history:', error);
+    }
+  };
+
+  const checkStripeAccountStatus = async () => {
+    try {
+      setCheckingStripeStatus(true);
+      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      setStripeAccountStatus(response);
+    } catch (error) {
+      console.error('Error checking Stripe account status:', error);
+    } finally {
+      setCheckingStripeStatus(false);
+    }
+  };
+
+  const handleNavigateToStripeSetup = () => {
+    if (onNavigate) {
+      onNavigate('StripeConnectOnboarding');
     }
   };
 
@@ -478,6 +505,85 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     </View>
   );
 
+  const renderStripeConnectBanner = () => {
+    if (checkingStripeStatus) {
+      return (
+        <View style={styles.stripeConnectBanner}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={styles.stripeConnectText}>Checking payment account...</Text>
+        </View>
+      );
+    }
+
+    if (!stripeAccountStatus?.hasAccount) {
+      return (
+        <View style={[styles.stripeConnectBanner, styles.stripeConnectWarning]}>
+          <View style={styles.stripeConnectContent}>
+            <Text style={styles.stripeConnectIcon}>⚠️</Text>
+            <View style={styles.stripeConnectTextContainer}>
+              <Text style={styles.stripeConnectTitle}>Payment Account Required</Text>
+              <Text style={styles.stripeConnectDescription}>
+                Set up your payment account to process disbursements
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.stripeConnectButton}
+            onPress={handleNavigateToStripeSetup}
+          >
+            <Text style={styles.stripeConnectButtonText}>Set Up Now</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (stripeAccountStatus?.hasAccount && !stripeAccountStatus?.onboardingComplete) {
+      return (
+        <View style={[styles.stripeConnectBanner, styles.stripeConnectWarning]}>
+          <View style={styles.stripeConnectContent}>
+            <Text style={styles.stripeConnectIcon}>⚠️</Text>
+            <View style={styles.stripeConnectTextContainer}>
+              <Text style={styles.stripeConnectTitle}>Complete Payment Setup</Text>
+              <Text style={styles.stripeConnectDescription}>
+                Finish your account setup to enable disbursements
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.stripeConnectButton}
+            onPress={handleNavigateToStripeSetup}
+          >
+            <Text style={styles.stripeConnectButtonText}>Resume Setup</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (stripeAccountStatus?.onboardingComplete) {
+      return (
+        <View style={[styles.stripeConnectBanner, styles.stripeConnectSuccess]}>
+          <View style={styles.stripeConnectContent}>
+            <Text style={styles.stripeConnectIcon}>✓</Text>
+            <View style={styles.stripeConnectTextContainer}>
+              <Text style={styles.stripeConnectTitle}>Payment Account Active</Text>
+              <Text style={styles.stripeConnectDescription}>
+                Ready to process disbursements
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.stripeConnectButtonSecondary}
+            onPress={handleNavigateToStripeSetup}
+          >
+            <Text style={styles.stripeConnectButtonTextSecondary}>Manage</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -487,6 +593,9 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         </TouchableOpacity>
         <Text style={styles.title}>Settlement Disbursements</Text>
       </View>
+
+      {/* Stripe Connect Status Banner */}
+      {renderStripeConnectBanner()}
 
       {/* Tabs */}
       <View style={styles.tabBar}>
@@ -888,6 +997,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#fff'
+  },
+  stripeConnectBanner: {
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  stripeConnectWarning: {
+    backgroundColor: '#FFF3CD',
+    borderBottomColor: '#FFA500'
+  },
+  stripeConnectSuccess: {
+    backgroundColor: '#D4EDDA',
+    borderBottomColor: '#4CAF50'
+  },
+  stripeConnectContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  stripeConnectIcon: {
+    fontSize: 24,
+    marginRight: 12
+  },
+  stripeConnectTextContainer: {
+    flex: 1
+  },
+  stripeConnectTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2
+  },
+  stripeConnectDescription: {
+    fontSize: 13,
+    color: '#666'
+  },
+  stripeConnectText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 12
+  },
+  stripeConnectButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 12
+  },
+  stripeConnectButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  stripeConnectButtonSecondary: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    marginLeft: 12
+  },
+  stripeConnectButtonTextSecondary: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: '600'
   }
 });
 

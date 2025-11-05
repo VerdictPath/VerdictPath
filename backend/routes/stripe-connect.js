@@ -28,48 +28,65 @@ router.post('/create-account', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    // Create Stripe Express Connected Account
-    const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'US',
-      email: email,
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true }
-      },
-      business_type: accountType === 'law_firm' ? 'company' : 'individual'
-    });
+    // Check if user already has a Stripe account
+    let checkQuery;
+    if (userType === 'individual') {
+      checkQuery = 'SELECT stripe_account_id FROM users WHERE id = $1';
+    } else if (userType === 'medical_provider') {
+      checkQuery = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
+    } else if (userType === 'lawfirm') {
+      checkQuery = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
+    }
+
+    const existingResult = await db.query(checkQuery, [userId]);
+    let accountId = existingResult.rows[0]?.stripe_account_id;
+
+    // Only create a new account if one doesn't exist
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'US',
+        email: email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true }
+        },
+        business_type: accountType === 'law_firm' ? 'company' : 'individual'
+      });
+
+      accountId = account.id;
+
+      // Store Stripe account ID in database
+      let updateQuery;
+      let updateParams;
+
+      if (userType === 'individual') {
+        updateQuery = 'UPDATE users SET stripe_account_id = $1 WHERE id = $2';
+        updateParams = [accountId, userId];
+      } else if (userType === 'medical_provider') {
+        updateQuery = 'UPDATE medical_providers SET stripe_account_id = $1 WHERE id = $2';
+        updateParams = [accountId, userId];
+      } else if (userType === 'lawfirm') {
+        updateQuery = 'UPDATE law_firms SET stripe_account_id = $1 WHERE id = $2';
+        updateParams = [accountId, userId];
+      }
+
+      await db.query(updateQuery, updateParams);
+    }
 
     const frontendUrl = getFrontendUrl();
 
-    // Create account link for onboarding
+    // Create account link for onboarding (works for both new and existing accounts)
     const accountLink = await stripe.accountLinks.create({
-      account: account.id,
+      account: accountId,
       refresh_url: `${frontendUrl}/stripe/reauth`,
       return_url: `${frontendUrl}/stripe/complete`,
       type: 'account_onboarding'
     });
 
-    // Store Stripe account ID in database
-    let updateQuery;
-    let updateParams;
-
-    if (userType === 'individual') {
-      updateQuery = 'UPDATE users SET stripe_account_id = $1 WHERE id = $2';
-      updateParams = [account.id, userId];
-    } else if (userType === 'medical_provider') {
-      updateQuery = 'UPDATE medical_providers SET stripe_account_id = $1 WHERE id = $2';
-      updateParams = [account.id, userId];
-    } else if (userType === 'lawfirm') {
-      updateQuery = 'UPDATE law_firms SET stripe_account_id = $1 WHERE id = $2';
-      updateParams = [account.id, userId];
-    }
-
-    await db.query(updateQuery, updateParams);
-
     res.json({
       success: true,
-      accountId: account.id,
+      accountId: accountId,
       onboardingUrl: accountLink.url
     });
 
