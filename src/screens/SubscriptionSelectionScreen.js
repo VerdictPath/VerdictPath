@@ -280,15 +280,18 @@ const MEDICAL_PROVIDER_PRICING = {
       'Everything in Free',
       'Full Access to Push Notifications',
       'Evidence Locker Unlocked',
-      'Medical Hub Unlocked',
-      'Disbursement Payments Unlocked'
+      'Medical Hub Unlocked'
     ]
   },
   premium: {
     name: 'Premium',
     monthly: 19.99,
     annual: 199.99,
-    features: ['Everything in Basic', 'AI document analysis', 'Video consultations', 'Premium content']
+    features: [
+      'Everything in Basic',
+      'Disbursement Payments Unlocked',
+      'Negotiations with Law Firms Unlocked'
+    ]
   }
 };
 
