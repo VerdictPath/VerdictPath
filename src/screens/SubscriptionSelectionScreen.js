@@ -601,11 +601,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         <View style={styles.additionalRevenueBox}>
           <Text style={styles.revenueBoxTitle}>💰 Unlock Disbursements with Premium</Text>
           <Text style={styles.revenueBoxText}>
-            Premium plan unlocks the ability to process settlement disbursements through the app. 
-            Earn $200 per transaction when you pay clients and medical providers.
-          </Text>
-          <Text style={styles.revenueBoxExample}>
-            Example: 10 settlements/month = $2,000 additional revenue
+            Premium plan unlocks the ability to process settlement disbursements and pay clients and participating medical providers through the app.
           </Text>
           <View style={styles.comingSoonBadge}>
             <Text style={styles.comingSoonText}>🚀 COMING SOON</Text>
