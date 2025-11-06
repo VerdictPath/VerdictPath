@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { theme } from '../styles/theme';
 
+// Updated pricing structure - granular tiers based on client count
+// Variable markup strategy: Higher % for small firms (easier upgrade), lower % for large (volume)
 const LAW_FIRM_PRICING = {
   tiers: [
     { 
@@ -264,10 +266,11 @@ const INDIVIDUAL_PRICING = {
 const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate }) => {
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [planType, setPlanType] = useState('standard');
+  const [planType, setPlanType] = useState('standard'); // 'standard' or 'premium'
   const [selectedTier, setSelectedTier] = useState(null);
   const [showCalculator, setShowCalculator] = useState(userType === 'lawfirm');
 
+  // Calculate pricing tier based on client count
   const calculateTier = (count) => {
     const numClients = parseInt(count);
     if (isNaN(numClients) || numClients < 1) return null;
@@ -281,7 +284,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
 
   const getPrice = (tier) => {
     if (!tier) return 0;
-    const pricing = tier[planType];
+    const pricing = tier[planType]; // Get standard or premium pricing
     return billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
   };
 
@@ -331,6 +334,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         ]
       );
     } else {
+      // Individual user
       const tierData = INDIVIDUAL_PRICING[plan];
       const price = billingPeriod === 'monthly' ? tierData.monthly : tierData.annual;
       
@@ -358,6 +362,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   const renderLawFirmPricing = () => {
     return (
       <View style={styles.lawFirmContainer}>
+        {/* Calculator */}
         <View style={styles.calculator}>
           <Text style={styles.calculatorTitle}>💼 Calculate Your Price</Text>
           <Text style={styles.calculatorSubtitle}>
@@ -376,6 +381,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
             />
           </View>
 
+          {/* Plan Type Selector (Standard vs Premium) */}
           <View style={styles.planTypeSelector}>
             <Text style={styles.planTypeSelectorLabel}>Select Plan Type:</Text>
             <View style={styles.planTypeButtons}>
@@ -416,6 +422,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
             </View>
           </View>
 
+          {/* Billing Period Toggle */}
           <View style={styles.billingToggle}>
             <TouchableOpacity
               style={[
@@ -451,6 +458,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
             </TouchableOpacity>
           </View>
 
+          {/* Results */}
           {currentTier && (
             <View style={styles.results}>
               <View style={styles.tierBadgeContainer}>
@@ -489,6 +497,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                 )}
               </View>
 
+              {/* Features */}
               <View style={styles.featuresContainer}>
                 <Text style={styles.featuresTitle}>
                   {planType === 'premium' ? '⭐ Premium Features:' : '📦 Basic Features:'}
@@ -501,6 +510,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                 ))}
               </View>
 
+              {/* Select Button */}
               <TouchableOpacity
                 style={[
                   styles.selectButton,
@@ -513,6 +523,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                 </Text>
               </TouchableOpacity>
 
+              {/* Comparison hint */}
               {planType === 'standard' && (
                 <TouchableOpacity
                   style={styles.upgradeHint}
@@ -524,6 +535,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                 </TouchableOpacity>
               )}
 
+              {/* Next tier hint */}
               {currentTier.max !== Infinity && (
                 <Text style={styles.nextTierHint}>
                   💡 At {currentTier.max + 1} clients, you'll upgrade to {
@@ -536,6 +548,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
             </View>
           )}
 
+          {/* Pricing table for reference */}
           <View style={styles.pricingTableContainer}>
             <View style={styles.pricingTableHeader}>
               <Text style={styles.pricingTableTitle}>All Tiers at a Glance</Text>
@@ -598,6 +611,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </View>
         </View>
 
+        {/* Additional revenue info */}
         <View style={styles.additionalRevenueBox}>
           <Text style={styles.revenueBoxTitle}>💰 Unlock Disbursements with Premium</Text>
           <Text style={styles.revenueBoxText}>
@@ -623,6 +637,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           Navigate your legal journey with confidence
         </Text>
 
+        {/* Billing Period Toggle */}
         <View style={styles.billingToggle}>
           <TouchableOpacity
             style={[
@@ -658,534 +673,133 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </TouchableOpacity>
         </View>
 
-        {Object.keys(INDIVIDUAL_PRICING).map((planKey) => {
-          const plan = INDIVIDUAL_PRICING[planKey];
-          const price = billingPeriod === 'monthly' ? plan.monthly : plan.annual;
-
-          return (
-            <TouchableOpacity
-              key={planKey}
-              style={[
-                styles.planCard,
-                planKey === 'premium' && styles.planCardPremium
-              ]}
-              onPress={() => handleSelectPlan(planKey)}
-            >
-              {planKey === 'premium' && (
-                <View style={styles.premiumBadgeTop}>
-                  <Text style={styles.premiumBadgeTopText}>⭐ BEST VALUE</Text>
+        {/* Pricing Cards */}
+        <ScrollView style={styles.plansContainer}>
+          {/* Free Plan */}
+          <View style={styles.planCard}>
+            <View style={styles.planHeader}>
+              <Text style={styles.planName}>Free</Text>
+              <View style={styles.planPriceContainer}>
+                <Text style={styles.planPrice}>$0</Text>
+                <Text style={styles.planPeriod}>/forever</Text>
+              </View>
+            </View>
+            <View style={styles.planFeatures}>
+              {INDIVIDUAL_PRICING.free.features.map((feature, index) => (
+                <View key={index} style={styles.featureRow}>
+                  <Text style={styles.featureCheck}>✓</Text>
+                  <Text style={styles.featureText}>{feature}</Text>
                 </View>
-              )}
-
-              <Text style={styles.planName}>{plan.name}</Text>
-              <View style={styles.planPrice}>
-                <Text style={styles.planPriceAmount}>${price}</Text>
-                <Text style={styles.planPricePeriod}>
-                  /{billingPeriod === 'monthly' ? 'month' : 'year'}
-                </Text>
-              </View>
-
-              <View style={styles.planFeatures}>
-                {plan.features.map((feature, index) => (
-                  <View key={index} style={styles.featureRow}>
-                    <Text style={styles.featureCheck}>✓</Text>
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.selectButtonContainer}>
-                <Text style={[
-                  styles.selectButtonText,
-                  planKey === 'premium' && styles.selectButtonTextPremium
-                ]}>
-                  Select {plan.name}
-                </Text>
-              </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.planButton}
+              onPress={() => handleSelectPlan('free')}
+            >
+              <Text style={styles.planButtonText}>Get Started Free</Text>
             </TouchableOpacity>
-          );
-        })}
+          </View>
+
+          {/* Basic Plan */}
+          <View style={[styles.planCard, styles.planCardPopular]}>
+            <View style={styles.popularBadge}>
+              <Text style={styles.popularText}>MOST POPULAR</Text>
+            </View>
+            <View style={styles.planHeader}>
+              <Text style={styles.planName}>Basic</Text>
+              <View style={styles.planPriceContainer}>
+                <Text style={styles.planPrice}>
+                  ${billingPeriod === 'monthly' ? 
+                    INDIVIDUAL_PRICING.basic.monthly : 
+                    (INDIVIDUAL_PRICING.basic.annual / 12).toFixed(2)
+                  }
+                </Text>
+                <Text style={styles.planPeriod}>/month</Text>
+              </View>
+              {billingPeriod === 'annual' && (
+                <Text style={styles.billedAnnually}>
+                  Billed ${INDIVIDUAL_PRICING.basic.annual}/year
+                </Text>
+              )}
+            </View>
+            <View style={styles.planFeatures}>
+              {INDIVIDUAL_PRICING.basic.features.map((feature, index) => (
+                <View key={index} style={styles.featureRow}>
+                  <Text style={styles.featureCheck}>✓</Text>
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.planButton, styles.planButtonPrimary]}
+              onPress={() => handleSelectPlan('basic')}
+            >
+              <Text style={[styles.planButtonText, styles.planButtonTextPrimary]}>
+                Select Basic
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Premium Plan */}
+          <View style={styles.planCard}>
+            <View style={styles.planHeader}>
+              <Text style={styles.planName}>Premium</Text>
+              <View style={styles.planPriceContainer}>
+                <Text style={styles.planPrice}>
+                  ${billingPeriod === 'monthly' ? 
+                    INDIVIDUAL_PRICING.premium.monthly : 
+                    (INDIVIDUAL_PRICING.premium.annual / 12).toFixed(2)
+                  }
+                </Text>
+                <Text style={styles.planPeriod}>/month</Text>
+              </View>
+              {billingPeriod === 'annual' && (
+                <Text style={styles.billedAnnually}>
+                  Billed ${INDIVIDUAL_PRICING.premium.annual}/year
+                </Text>
+              )}
+            </View>
+            <View style={styles.planFeatures}>
+              {INDIVIDUAL_PRICING.premium.features.map((feature, index) => (
+                <View key={index} style={styles.featureRow}>
+                  <Text style={styles.featureCheck}>✓</Text>
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.planButton}
+              onPress={() => handleSelectPlan('premium')}
+            >
+              <Text style={styles.planButtonText}>Select Premium</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {userType === 'lawfirm' ? renderLawFirmPricing() : renderIndividualPricing()}
-    </ScrollView>
-  );
-};
+    <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => onNavigate('register')}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {userType === 'lawfirm' ? 'Law Firm Pricing' : 'Select Your Plan'}
+          </Text>
+        </View>
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background
-  },
-  lawFirmContainer: {
-    padding: 20
-  },
-  calculator: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 20
-  },
-  calculatorTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 8,
-    textAlign: 'center'
-  },
-  calculatorSubtitle: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 24
-  },
-  inputGroup: {
-    marginBottom: 24
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 8
-  },
-  input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 18,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    color: theme.colors.text
-  },
-  planTypeSelector: {
-    marginBottom: 24
-  },
-  planTypeSelectorLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 12
-  },
-  planTypeButtons: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  planTypeButton: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent'
-  },
-  planTypeButtonActive: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.primary
-  },
-  planTypeButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 4
-  },
-  planTypeButtonTextActive: {
-    color: theme.colors.primary
-  },
-  planTypeButtonSubtext: {
-    fontSize: 13,
-    color: theme.colors.textSecondary
-  },
-  premiumBadgeSmall: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginBottom: 8
-  },
-  premiumBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  billingToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 24
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-    position: 'relative'
-  },
-  toggleActive: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2
-  },
-  toggleText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: theme.colors.textSecondary
-  },
-  toggleTextActive: {
-    color: theme.colors.primary,
-    fontWeight: '600'
-  },
-  savingsBadge: {
-    position: 'absolute',
-    top: -6,
-    right: 8,
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4
-  },
-  savingsText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#fff'
-  },
-  results: {
-    marginTop: 24,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
-  },
-  tierBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12
-  },
-  tierBadge: {
-    flex: 1
-  },
-  tierName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: 4
-  },
-  tierRange: {
-    fontSize: 14,
-    color: theme.colors.textSecondary
-  },
-  premiumPill: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12
-  },
-  premiumPillText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  tierDescription: {
-    fontSize: 15,
-    color: theme.colors.textSecondary,
-    marginBottom: 16
-  },
-  priceDisplay: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 12
-  },
-  priceAmount: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: theme.colors.primary
-  },
-  pricePeriod: {
-    fontSize: 20,
-    color: theme.colors.textSecondary,
-    marginLeft: 4
-  },
-  priceDetails: {
-    marginBottom: 24
-  },
-  perClientText: {
-    fontSize: 16,
-    color: theme.colors.text,
-    marginBottom: 4
-  },
-  savingsHighlight: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50'
-  },
-  featuresContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20
-  },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 12
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8
-  },
-  featureCheck: {
-    fontSize: 16,
-    color: '#4CAF50',
-    marginRight: 8,
-    marginTop: 2
-  },
-  featureText: {
-    flex: 1,
-    fontSize: 15,
-    color: theme.colors.text,
-    lineHeight: 22
-  },
-  selectButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  selectButtonPremium: {
-    backgroundColor: '#FFD700'
-  },
-  selectButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff'
-  },
-  upgradeHint: {
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  upgradeHintText: {
-    fontSize: 14,
-    color: theme.colors.primary,
-    textDecorationLine: 'underline'
-  },
-  nextTierHint: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic'
-  },
-  pricingTableContainer: {
-    marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
-  },
-  pricingTableHeader: {
-    marginBottom: 16
-  },
-  pricingTableTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 12,
-    textAlign: 'center'
-  },
-  pricingTableToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 4,
-    alignSelf: 'center'
-  },
-  tableToggleButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 6
-  },
-  tableToggleActive: {
-    backgroundColor: '#fff'
-  },
-  tableToggleText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary
-  },
-  tableToggleTextActive: {
-    color: theme.colors.primary,
-    fontWeight: '600'
-  },
-  pricingTable: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  pricingTableColumn: {
-    width: 120,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent'
-  },
-  pricingTableColumnActive: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.primary
-  },
-  tableColumnName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: 4
-  },
-  tableColumnRange: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginBottom: 8
-  },
-  tableColumnPrice: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.primary
-  },
-  tableColumnPeriod: {
-    fontSize: 12,
-    color: theme.colors.textSecondary
-  },
-  additionalRevenueBox: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 2,
-    borderColor: '#4CAF50'
-  },
-  revenueBoxTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    marginBottom: 12
-  },
-  revenueBoxText: {
-    fontSize: 15,
-    color: '#1B5E20',
-    lineHeight: 22,
-    marginBottom: 12
-  },
-  revenueBoxExample: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2E7D32',
-    marginBottom: 12
-  },
-  comingSoonBadge: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start'
-  },
-  comingSoonText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#fff'
-  },
-  individualContainer: {
-    padding: 20
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  subtitle: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32
-  },
-  planCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative'
-  },
-  planCardPremium: {
-    borderColor: '#FFD700',
-    transform: [{ scale: 1.02 }]
-  },
-  premiumBadgeTop: {
-    position: 'absolute',
-    top: -12,
-    right: 20,
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 12
-  },
-  premiumBadgeTopText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333'
-  },
-  planName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: 12
-  },
-  planPrice: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 20
-  },
-  planPriceAmount: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: theme.colors.text
-  },
-  planPricePeriod: {
-    fontSize: 18,
-    color: theme.colors.textSecondary,
-    marginLeft: 4
-  },
-  planFeatures: {
-    marginBottom: 20
-  },
-  selectButtonContainer: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center'
-  },
-  selectButtonTextPremium: {
-    backgroundColor: '#FFD700'
-  }
-});
+        {/* Content */}
+        {userType === 'lawfirm' ? renderLawFirmPricing() : renderIndividualPricing()}
 
-export default SubscriptionSelectionScreen;
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            ✓ No setup fees  ✓ Cancel anytime  ✓ 14-day free trial
+          </Tex
