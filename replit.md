@@ -9,6 +9,12 @@ I want to work with an AI agent that is autonomous and proactive. It should make
 ## System Architecture
 The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme. The backend is a Node.js/Express server with a PostgreSQL database.
 
+### Subscription Pricing Structure (November 2025)
+Comprehensive tiered pricing for law firms and individuals:
+- **Law Firms**: 8 tiers (Solo/Shingle to Enterprise) based on client count (1-24 to 750+ clients), with Standard and Premium plans for each tier. Pricing ranges from $45-$1,800/month with 10% annual savings. Premium plans unlock disbursements, medical hub, and advanced analytics.
+- **Individual Users**: 3 tiers (Free, Basic at $9.99/mo, Premium at $19.99/mo) with 17% annual savings.
+- Calculator-based selection for law firms with real-time per-client cost calculations and tier comparisons.
+
 ### UI/UX Decisions
 The design uses a "pirate treasure map" theme with a warm tan/beige color palette. Key elements include an interactive litigation roadmap displayed on an actual treasure map background image, a compass/ship wheel logo, pirate-themed badges for gamification, and tailored subscription selection screens. The Medical Hub features distinct upload sections and "Coming Soon" messages for all upload functionalities. Visual feedback, enhanced audio icons, and a 6-slide pirate-themed onboarding are implemented. Progress tracking includes an animated progress bar. A sticky 5-tab bottom navigation is present for individual users, with an "Actions" tab for attorney-assigned tasks (with back button for navigation). Law Firm and Medical Provider portals have dedicated functionalities like notification systems and analytics dashboards.
 
