@@ -418,31 +418,40 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
 
   const handleSelectPlan = (plan, tierData = null) => {
     if (userType === 'lawfirm' || userType === 'medicalprovider') {
-      if (!clientCount || !currentTier) {
-        const countLabel = userType === 'medicalprovider' ? 'patients' : 'clients';
-        Alert.alert(`${countLabel.charAt(0).toUpperCase() + countLabel.slice(1)} Count Required`, `Please enter your number of ${countLabel} to continue`);
+      // If tierData is passed, use it; otherwise use currentTier from calculator
+      const selectedTier = tierData || currentTier;
+      
+      if (!selectedTier) {
+        Alert.alert('Selection Required', 'Please select a tier to continue');
         return;
       }
 
       const planLabel = planType === 'premium' ? 'Premium' : (userType === 'medicalprovider' ? 'Basic' : 'Standard');
       const countLabel = userType === 'medicalprovider' ? 'Patients' : 'Clients';
 
+      // Build confirmation message
+      let confirmMessage = `Select ${selectedTier.name} ${planLabel} plan?\n\n` +
+        `Price: $${getPrice(selectedTier)}/${billingPeriod === 'monthly' ? 'month' : 'year'}`;
+      
+      // Add client/patient info if count was entered
+      if (clientCount && parseInt(clientCount) > 0) {
+        confirmMessage += `\n${countLabel}: ${clientCount}\n` +
+          `Per ${countLabel.toLowerCase().slice(0, -1)}: $${getPerClientCost(selectedTier, clientCount)}`;
+      }
+
       Alert.alert(
         'Confirm Selection',
-        `Select ${currentTier.name} ${planLabel} plan?\n\n` +
-        `Price: $${getPrice(currentTier)}/${billingPeriod === 'monthly' ? 'month' : 'year'}\n` +
-        `${countLabel}: ${clientCount}\n` +
-        `Per ${countLabel.toLowerCase().slice(0, -1)}: $${getPerClientCost(currentTier, clientCount)}`,
+        confirmMessage,
         [
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Continue',
             onPress: () => {
               onSelectSubscription(
-                currentTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+                selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
                 {
-                  clientCount: parseInt(clientCount),
-                  tierName: currentTier.name,
+                  clientCount: clientCount ? parseInt(clientCount) : null,
+                  tierName: selectedTier.name,
                   billingPeriod: billingPeriod,
                   planType: planType
                 }
@@ -479,6 +488,13 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   const renderLawFirmPricing = () => {
     return (
       <View style={styles.lawFirmContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => onNavigate('register')}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
         <View style={styles.calculator}>
           <Text style={styles.calculatorTitle}>💼 Calculate Your Price</Text>
           <Text style={styles.calculatorSubtitle}>
@@ -694,12 +710,13 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                   const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
                   
                   return (
-                    <View
+                    <TouchableOpacity
                       key={index}
                       style={[
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
+                      onPress={() => handleSelectPlan('lawfirm', tier)}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
@@ -711,7 +728,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                       <Text style={styles.tableColumnPeriod}>
                         /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -735,6 +752,13 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   const renderMedicalProviderPricing = () => {
     return (
       <View style={styles.lawFirmContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => onNavigate('register')}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
         <View style={styles.calculator}>
           <Text style={styles.calculatorTitle}>🏥 Calculate Your Price</Text>
           <Text style={styles.calculatorSubtitle}>
@@ -950,12 +974,13 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                   const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
                   
                   return (
-                    <View
+                    <TouchableOpacity
                       key={index}
                       style={[
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
+                      onPress={() => handleSelectPlan('medicalprovider', tier)}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
@@ -967,7 +992,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                       <Text style={styles.tableColumnPeriod}>
                         /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -1088,6 +1113,21 @@ const styles = StyleSheet.create({
   },
   lawFirmContainer: {
     padding: 20
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    alignSelf: 'flex-start'
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.primary
   },
   calculator: {
     backgroundColor: '#fff',
