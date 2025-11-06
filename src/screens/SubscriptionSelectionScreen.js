@@ -261,6 +261,37 @@ const INDIVIDUAL_PRICING = {
   }
 };
 
+const MEDICAL_PROVIDER_PRICING = {
+  free: {
+    name: 'Free',
+    monthly: 0,
+    annual: 0,
+    features: [
+      'Access to your Patients\' Interactive Roadmap',
+      'Basic Analytics',
+      'Basic Push Notifications to Patients'
+    ]
+  },
+  basic: {
+    name: 'Basic',
+    monthly: 9.99,
+    annual: 99.99,
+    features: [
+      'Everything in Free',
+      'Full Access to Push Notifications',
+      'Evidence Locker Unlocked',
+      'Medical Hub Unlocked',
+      'Disbursement Payments Unlocked'
+    ]
+  },
+  premium: {
+    name: 'Premium',
+    monthly: 19.99,
+    annual: 199.99,
+    features: ['Everything in Basic', 'AI document analysis', 'Video consultations', 'Premium content']
+  }
+};
+
 const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate }) => {
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
@@ -331,7 +362,8 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         ]
       );
     } else {
-      const tierData = INDIVIDUAL_PRICING[plan];
+      const pricingData = userType === 'medicalprovider' ? MEDICAL_PROVIDER_PRICING : INDIVIDUAL_PRICING;
+      const tierData = pricingData[plan];
       const price = billingPeriod === 'monthly' ? tierData.monthly : tierData.annual;
       
       if (plan === 'free') {
@@ -612,6 +644,8 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   const renderIndividualPricing = () => {
+    const pricingData = userType === 'medicalprovider' ? MEDICAL_PROVIDER_PRICING : INDIVIDUAL_PRICING;
+    
     return (
       <View style={styles.individualContainer}>
         <Text style={styles.title}>Choose Your Plan</Text>
@@ -654,8 +688,8 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </TouchableOpacity>
         </View>
 
-        {Object.keys(INDIVIDUAL_PRICING).map((planKey) => {
-          const plan = INDIVIDUAL_PRICING[planKey];
+        {Object.keys(pricingData).map((planKey) => {
+          const plan = pricingData[planKey];
           const price = billingPeriod === 'monthly' ? plan.monthly : plan.annual;
 
           return (
