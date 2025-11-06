@@ -262,53 +262,138 @@ const INDIVIDUAL_PRICING = {
 };
 
 const MEDICAL_PROVIDER_PRICING = {
-  free: {
-    name: 'Free',
-    monthly: 0,
-    annual: 0,
-    features: [
-      'Access to your Patients\' Interactive Roadmap',
-      'Basic Analytics',
-      'Basic Push Notifications to Patients'
-    ]
-  },
-  basic: {
-    name: 'Basic',
-    monthly: 9.99,
-    annual: 99.99,
-    features: [
-      'Everything in Free',
-      'Full Access to Push Notifications',
-      'Evidence Locker Unlocked',
-      'Medical Hub Unlocked'
-    ]
-  },
-  premium: {
-    name: 'Premium',
-    monthly: 19.99,
-    annual: 199.99,
-    features: [
-      'Everything in Basic',
-      'Disbursement Payments Unlocked',
-      'Negotiations with Law Firms Unlocked'
-    ]
-  }
+  tiers: [
+    {
+      name: 'Shingle Provider',
+      min: 1,
+      max: 49,
+      basic: {
+        monthly: 15,
+        annual: 162,
+        features: [
+          'Up to 49 patients',
+          'Access to your Patients\' Interactive Roadmap',
+          'Basic Analytics',
+          'Full Access to Push Notifications',
+          'Evidence Locker Unlocked',
+          'Medical Hub Unlocked'
+        ]
+      },
+      premium: {
+        monthly: 19,
+        annual: 205,
+        features: [
+          'Everything in Basic',
+          'Disbursement Payments Unlocked',
+          'Negotiations with Law Firms Unlocked'
+        ]
+      },
+      description: 'Perfect for solo practitioners'
+    },
+    {
+      name: 'Boutique Provider',
+      min: 50,
+      max: 99,
+      basic: {
+        monthly: 25,
+        annual: 270,
+        features: [
+          'Up to 99 patients',
+          'Access to your Patients\' Interactive Roadmap',
+          'Basic Analytics',
+          'Full Access to Push Notifications',
+          'Evidence Locker Unlocked',
+          'Medical Hub Unlocked'
+        ]
+      },
+      premium: {
+        monthly: 33,
+        annual: 356,
+        features: [
+          'Everything in Basic',
+          'Disbursement Payments Unlocked',
+          'Negotiations with Law Firms Unlocked'
+        ]
+      },
+      description: 'Small specialized practice'
+    },
+    {
+      name: 'Medium Provider',
+      min: 100,
+      max: 199,
+      basic: {
+        monthly: 38,
+        annual: 410,
+        features: [
+          'Up to 199 patients',
+          'Access to your Patients\' Interactive Roadmap',
+          'Basic Analytics',
+          'Full Access to Push Notifications',
+          'Evidence Locker Unlocked',
+          'Medical Hub Unlocked'
+        ]
+      },
+      premium: {
+        monthly: 48,
+        annual: 518,
+        features: [
+          'Everything in Basic',
+          'Disbursement Payments Unlocked',
+          'Negotiations with Law Firms Unlocked'
+        ]
+      },
+      description: 'Growing practice'
+    },
+    {
+      name: 'Large Provider',
+      min: 200,
+      max: Infinity,
+      basic: {
+        monthly: 50,
+        annual: 540,
+        features: [
+          'Unlimited patients',
+          'Access to your Patients\' Interactive Roadmap',
+          'Basic Analytics',
+          'Full Access to Push Notifications',
+          'Evidence Locker Unlocked',
+          'Medical Hub Unlocked'
+        ]
+      },
+      premium: {
+        monthly: 63,
+        annual: 680,
+        features: [
+          'Everything in Basic',
+          'Disbursement Payments Unlocked',
+          'Negotiations with Law Firms Unlocked'
+        ]
+      },
+      description: 'Large multi-location practice'
+    }
+  ]
 };
 
 const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate }) => {
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [planType, setPlanType] = useState('standard');
+  const [planType, setPlanType] = useState(userType === 'medicalprovider' ? 'basic' : 'standard');
   const [selectedTier, setSelectedTier] = useState(null);
-  const [showCalculator, setShowCalculator] = useState(userType === 'lawfirm');
+  const [showCalculator, setShowCalculator] = useState(userType === 'lawfirm' || userType === 'medicalprovider');
 
   const calculateTier = (count) => {
     const numClients = parseInt(count);
     if (isNaN(numClients) || numClients < 1) return null;
     
-    return LAW_FIRM_PRICING.tiers.find(
-      tier => numClients >= tier.min && numClients <= tier.max
-    );
+    if (userType === 'medicalprovider') {
+      return MEDICAL_PROVIDER_PRICING.tiers.find(
+        tier => numClients >= tier.min && numClients <= tier.max
+      );
+    } else {
+      return LAW_FIRM_PRICING.tiers.find(
+        tier => numClients >= tier.min && numClients <= tier.max
+      );
+    }
   };
 
   const currentTier = calculateTier(clientCount);
@@ -332,20 +417,22 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   const handleSelectPlan = (plan, tierData = null) => {
-    if (userType === 'lawfirm') {
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
       if (!clientCount || !currentTier) {
-        Alert.alert('Client Count Required', 'Please enter your number of clients to continue');
+        const countLabel = userType === 'medicalprovider' ? 'patients' : 'clients';
+        Alert.alert(`${countLabel.charAt(0).toUpperCase() + countLabel.slice(1)} Count Required`, `Please enter your number of ${countLabel} to continue`);
         return;
       }
 
-      const planLabel = planType === 'premium' ? 'Premium' : 'Standard';
+      const planLabel = planType === 'premium' ? 'Premium' : (userType === 'medicalprovider' ? 'Basic' : 'Standard');
+      const countLabel = userType === 'medicalprovider' ? 'Patients' : 'Clients';
 
       Alert.alert(
         'Confirm Selection',
         `Select ${currentTier.name} ${planLabel} plan?\n\n` +
         `Price: $${getPrice(currentTier)}/${billingPeriod === 'monthly' ? 'month' : 'year'}\n` +
-        `Clients: ${clientCount}\n` +
-        `Per client: $${getPerClientCost(currentTier, clientCount)}`,
+        `${countLabel}: ${clientCount}\n` +
+        `Per ${countLabel.toLowerCase().slice(0, -1)}: $${getPerClientCost(currentTier, clientCount)}`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -365,8 +452,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         ]
       );
     } else {
-      const pricingData = userType === 'medicalprovider' ? MEDICAL_PROVIDER_PRICING : INDIVIDUAL_PRICING;
-      const tierData = pricingData[plan];
+      const tierData = INDIVIDUAL_PRICING[plan];
       const price = billingPeriod === 'monthly' ? tierData.monthly : tierData.annual;
       
       if (plan === 'free') {
@@ -646,9 +732,253 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
     );
   };
 
+  const renderMedicalProviderPricing = () => {
+    return (
+      <View style={styles.lawFirmContainer}>
+        <View style={styles.calculator}>
+          <Text style={styles.calculatorTitle}>🏥 Calculate Your Price</Text>
+          <Text style={styles.calculatorSubtitle}>
+            Simple, transparent pricing based on your patient count
+          </Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>How many patients do you have?</Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="number-pad"
+              value={clientCount}
+              onChangeText={setClientCount}
+              placeholder="Enter number of patients"
+              placeholderTextColor="#999"
+            />
+          </View>
+
+          <View style={styles.planTypeSelector}>
+            <Text style={styles.planTypeSelectorLabel}>Select Plan Type:</Text>
+            <View style={styles.planTypeButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.planTypeButton,
+                  planType === 'basic' && styles.planTypeButtonActive
+                ]}
+                onPress={() => setPlanType('basic')}
+              >
+                <Text style={[
+                  styles.planTypeButtonText,
+                  planType === 'basic' && styles.planTypeButtonTextActive
+                ]}>
+                  Basic
+                </Text>
+                <Text style={styles.planTypeButtonSubtext}>Essential features</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.planTypeButton,
+                  planType === 'premium' && styles.planTypeButtonActive
+                ]}
+                onPress={() => setPlanType('premium')}
+              >
+                <View style={styles.premiumBadgeSmall}>
+                  <Text style={styles.premiumBadgeText}>⭐ PREMIUM</Text>
+                </View>
+                <Text style={[
+                  styles.planTypeButtonText,
+                  planType === 'premium' && styles.planTypeButtonTextActive
+                ]}>
+                  Premium
+                </Text>
+                <Text style={styles.planTypeButtonSubtext}>Advanced features</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.billingToggle}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                billingPeriod === 'monthly' && styles.toggleActive
+              ]}
+              onPress={() => setBillingPeriod('monthly')}
+            >
+              <Text style={[
+                styles.toggleText,
+                billingPeriod === 'monthly' && styles.toggleTextActive
+              ]}>
+                Monthly
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                billingPeriod === 'annual' && styles.toggleActive
+              ]}
+              onPress={() => setBillingPeriod('annual')}
+            >
+              <Text style={[
+                styles.toggleText,
+                billingPeriod === 'annual' && styles.toggleTextActive
+              ]}>
+                Annual
+              </Text>
+              <View style={styles.savingsBadge}>
+                <Text style={styles.savingsText}>Save 10%</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {currentTier && (
+            <View style={styles.results}>
+              <View style={styles.tierBadgeContainer}>
+                <View style={styles.tierBadge}>
+                  <Text style={styles.tierName}>{currentTier.name}</Text>
+                  <Text style={styles.tierRange}>
+                    {currentTier.min}-{currentTier.max === Infinity ? '999+' : currentTier.max} patients
+                  </Text>
+                </View>
+                {planType === 'premium' && (
+                  <View style={styles.premiumPill}>
+                    <Text style={styles.premiumPillText}>⭐ PREMIUM</Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.tierDescription}>{currentTier.description}</Text>
+
+              <View style={styles.priceDisplay}>
+                <Text style={styles.priceAmount}>
+                  ${getPrice(currentTier)}
+                </Text>
+                <Text style={styles.pricePeriod}>
+                  /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                </Text>
+              </View>
+
+              <View style={styles.priceDetails}>
+                <Text style={styles.perClientText}>
+                  Just ${getPerClientCost(currentTier, clientCount)} per patient
+                </Text>
+                {billingPeriod === 'annual' && (
+                  <Text style={styles.savingsHighlight}>
+                    💰 Save ${getAnnualSavings(currentTier)}/year
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.featuresContainer}>
+                <Text style={styles.featuresTitle}>
+                  {planType === 'premium' ? '⭐ Premium Features:' : '📦 Basic Features:'}
+                </Text>
+                {currentTier[planType].features.map((feature, index) => (
+                  <View key={index} style={styles.featureRow}>
+                    <Text style={styles.featureCheck}>✓</Text>
+                    <Text style={styles.featureText}>{feature}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.selectButton,
+                  planType === 'premium' && styles.selectButtonPremium
+                ]}
+                onPress={() => handleSelectPlan('medicalprovider', currentTier)}
+              >
+                <Text style={styles.selectButtonText}>
+                  Select {currentTier.name} {planType === 'premium' ? 'Premium' : 'Basic'}
+                </Text>
+              </TouchableOpacity>
+
+              {planType === 'basic' && (
+                <TouchableOpacity
+                  style={styles.upgradeHint}
+                  onPress={() => setPlanType('premium')}
+                >
+                  <Text style={styles.upgradeHintText}>
+                    ⭐ Upgrade to Premium for advanced features
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {currentTier.max !== Infinity && (
+                <Text style={styles.nextTierHint}>
+                  💡 At {currentTier.max + 1} patients, you'll upgrade to {
+                    MEDICAL_PROVIDER_PRICING.tiers[
+                      MEDICAL_PROVIDER_PRICING.tiers.indexOf(currentTier) + 1
+                    ]?.name
+                  }
+                </Text>
+              )}
+            </View>
+          )}
+
+          <View style={styles.pricingTableContainer}>
+            <View style={styles.pricingTableHeader}>
+              <Text style={styles.pricingTableTitle}>All Tiers at a Glance</Text>
+              <View style={styles.pricingTableToggle}>
+                <TouchableOpacity
+                  style={[
+                    styles.tableToggleButton,
+                    planType === 'basic' && styles.tableToggleActive
+                  ]}
+                  onPress={() => setPlanType('basic')}
+                >
+                  <Text style={[
+                    styles.tableToggleText,
+                    planType === 'basic' && styles.tableToggleTextActive
+                  ]}>Basic</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.tableToggleButton,
+                    planType === 'premium' && styles.tableToggleActive
+                  ]}
+                  onPress={() => setPlanType('premium')}
+                >
+                  <Text style={[
+                    styles.tableToggleText,
+                    planType === 'premium' && styles.tableToggleTextActive
+                  ]}>Premium</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.pricingTable}>
+                {MEDICAL_PROVIDER_PRICING.tiers.map((tier, index) => {
+                  const pricing = tier[planType];
+                  const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
+                  
+                  return (
+                    <View
+                      key={index}
+                      style={[
+                        styles.pricingTableColumn,
+                        currentTier?.name === tier.name && styles.pricingTableColumnActive
+                      ]}
+                    >
+                      <Text style={styles.tableColumnName}>{tier.name}</Text>
+                      <Text style={styles.tableColumnRange}>
+                        {tier.min}-{tier.max === Infinity ? '999+' : tier.max}
+                      </Text>
+                      <Text style={styles.tableColumnPrice}>
+                        ${price}
+                      </Text>
+                      <Text style={styles.tableColumnPeriod}>
+                        /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   const renderIndividualPricing = () => {
-    const pricingData = userType === 'medicalprovider' ? MEDICAL_PROVIDER_PRICING : INDIVIDUAL_PRICING;
-    
     return (
       <View style={styles.individualContainer}>
         <Text style={styles.title}>Choose Your Plan</Text>
@@ -691,8 +1021,8 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </TouchableOpacity>
         </View>
 
-        {Object.keys(pricingData).map((planKey) => {
-          const plan = pricingData[planKey];
+        {Object.keys(INDIVIDUAL_PRICING).map((planKey) => {
+          const plan = INDIVIDUAL_PRICING[planKey];
           const price = billingPeriod === 'monthly' ? plan.monthly : plan.annual;
 
           return (
@@ -744,7 +1074,9 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
 
   return (
     <ScrollView style={styles.container}>
-      {userType === 'lawfirm' ? renderLawFirmPricing() : renderIndividualPricing()}
+      {userType === 'lawfirm' ? renderLawFirmPricing() : 
+       userType === 'medicalprovider' ? renderMedicalProviderPricing() :
+       renderIndividualPricing()}
     </ScrollView>
   );
 };

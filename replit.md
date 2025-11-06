@@ -13,7 +13,7 @@ The application is a React Native mobile app built with the Expo framework, feat
 Comprehensive tiered pricing for law firms, individuals, and medical providers:
 - **Law Firms**: 8 tiers (Solo/Shingle to Enterprise) based on client count (1-24 to 750+ clients), with Standard and Premium plans for each tier. Pricing ranges from $45-$1,800/month with 10% annual savings. Premium plans unlock disbursements, medical hub, and advanced analytics.
 - **Individual Users**: 3 tiers (Free, Basic at $9.99/mo, Premium at $19.99/mo) with 17% annual savings.
-- **Medical Providers**: 3 tiers (Free with patient roadmap access and basic analytics, Basic at $9.99/mo unlocking full notifications and Medical Hub, Premium at $19.99/mo unlocking disbursement payments and negotiations with law firms) with 17% annual savings.
+- **Medical Providers**: 4 tiers (Shingle Provider 1-49 patients, Boutique Provider 50-99 patients, Medium Provider 100-199 patients, Large Provider 200+ patients) with Basic and Premium plans. Pricing ranges from $15-$63/month with 10% annual savings. Premium plans unlock disbursement payments and negotiations with law firms. Calculator-based selection with real-time per-patient cost calculations.
 - Calculator-based selection for law firms with real-time per-client cost calculations and tier comparisons.
 
 ### UI/UX Decisions
