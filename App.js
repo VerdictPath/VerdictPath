@@ -94,7 +94,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
     if (prevScreenRef.current !== 'treasure-chest' && currentScreen === 'treasure-chest') {
-      setTreasureChestRefreshKey(prev => prev + 1);
+      console.log('[TreasureChest] Navigating to treasure-chest from', prevScreenRef.current);
+      console.log('[TreasureChest] Incrementing refreshKey to trigger coin balance fetch');
+      setTreasureChestRefreshKey(prev => {
+        console.log('[TreasureChest] RefreshKey:', prev, '→', prev + 1);
+        return prev + 1;
+      });
     }
     prevScreenRef.current = currentScreen;
   }, [currentScreen]);
