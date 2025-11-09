@@ -154,7 +154,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
             <Text style={styles.sectionTitle}>💳 Set Up Your Payment Account</Text>
             <Text style={styles.description}>
               To receive/send settlement disbursements, you need to connect a bank account through Stripe.
-              This secure process ensures you can receive payments directly to your account.
+              This secure process ensures you can receive/send payments directly to your account.
             </Text>
 
             <View style={styles.benefitsList}>
