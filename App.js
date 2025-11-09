@@ -1388,7 +1388,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'subscription' && (
+      {currentScreen === 'manage-subscription' && (
         <IndividualSubscriptionScreen
           user={user}
           onNavigate={handleNavigateInternal}

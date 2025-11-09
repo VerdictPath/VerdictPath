@@ -287,7 +287,7 @@ const DashboardScreen = ({
 
         <TouchableOpacity 
           style={styles.upgradeButton}
-          onPress={() => onNavigate && onNavigate('subscription')}
+          onPress={() => onNavigate && onNavigate('manage-subscription')}
         >
           <View style={styles.upgradeIcon}>
             <Text style={{ fontSize: 24 }}>💎</Text>
@@ -760,6 +760,7 @@ const styles = StyleSheet.create({
   treasureMapThumbnail: {
     width: 48,
     height: 48,
+    transform: [{ scale: 1.5 }],
   },
   iconBadgeVideoCamera: {
     width: 48,
