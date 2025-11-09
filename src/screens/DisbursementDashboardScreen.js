@@ -523,7 +523,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             <View style={styles.stripeConnectTextContainer}>
               <Text style={styles.stripeConnectTitle}>Payment Account Required</Text>
               <Text style={styles.stripeConnectDescription}>
-                Set up your payment account to process disbursements
+                Set up your payment account to receive/send settlement disbursements
               </Text>
             </View>
           </View>
@@ -545,7 +545,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             <View style={styles.stripeConnectTextContainer}>
               <Text style={styles.stripeConnectTitle}>Complete Payment Setup</Text>
               <Text style={styles.stripeConnectDescription}>
-                Finish your account setup to enable disbursements
+                Finish your account setup to receive/send disbursements
               </Text>
             </View>
           </View>
