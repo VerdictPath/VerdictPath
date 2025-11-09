@@ -55,6 +55,16 @@ const checkTreasureChestCapacity = async (userId, coinsToAward) => {
 const updateCoins = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Coin features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        message: 'Coin features are only available for individual users.',
+        userType: userType
+      });
+    }
+    
     const { coinsDelta, source } = req.body;
 
     if (!coinsDelta || isNaN(coinsDelta)) {
@@ -147,6 +157,16 @@ const updateCoins = async (req, res) => {
 const convertCoinsToCredits = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Coin features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        message: 'Coin features are only available for individual users.',
+        userType: userType
+      });
+    }
+    
     const { coinsToConvert } = req.body;
 
     if (!coinsToConvert || isNaN(coinsToConvert) || coinsToConvert <= 0) {
@@ -301,6 +321,15 @@ const convertCoinsToCredits = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Coin features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        message: 'Coin features are only available for individual users.',
+        userType: userType
+      });
+    }
 
     const userResult = await pool.query(
       'SELECT total_coins, coins_spent, purchased_coins, purchased_coins_spent FROM users WHERE id = $1',
@@ -367,6 +396,15 @@ const getBalance = async (req, res) => {
 const getConversionHistory = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Coin features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        message: 'Coin features are only available for individual users.',
+        userType: userType
+      });
+    }
 
     const result = await pool.query(
       `SELECT 
@@ -396,6 +434,16 @@ const getConversionHistory = async (req, res) => {
 const claimDailyReward = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Daily reward features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        message: 'Daily reward features are only available for individual users.',
+        userType: userType
+      });
+    }
+    
     const client = await pool.connect();
 
     try {

@@ -145,22 +145,67 @@ exports.registerLawFirm = async (req, res) => {
     // Generate unique firm code automatically
     const firmCode = await generateUniqueCode('lawfirm');
     
-    const tier = subscriptionTier || 'free';
-    // Map tier names to database-accepted values
-    const tierNameMapping = {
-      'Solo/Shingle': 'shingle',
-      'Boutique': 'boutique',
-      'Small Firm': 'small',
-      'Medium-Small': 'medium',
-      'Medium': 'medium',
-      'Medium-Large': 'medium',
-      'Large': 'large',
-      'Regional': 'large',
-      'Enterprise': 'enterprise'
-    };
-    const size = (tier !== 'free' && firmSize && firmSize.tierName) 
-      ? (tierNameMapping[firmSize.tierName] || firmSize.tierName.toLowerCase()) 
-      : null;
+    // Parse subscription tier to canonical format (free|paid + size)
+    const inputTier = subscriptionTier || 'free';
+    let canonicalTier, canonicalSize;
+    
+    if (inputTier === 'free') {
+      canonicalTier = 'free';
+      canonicalSize = null;
+    } else {
+      // Convert compound tiers like "soloshingle" to canonical format
+      canonicalTier = 'paid';
+      
+      // Map tier names to database-accepted values
+      const tierNameMapping = {
+        'Solo/Shingle': 'shingle',
+        'Boutique': 'boutique',
+        'Small Firm': 'small',
+        'Medium-Small': 'medium',
+        'Medium': 'medium',
+        'Medium-Large': 'medium',
+        'Large': 'large',
+        'Regional': 'large',
+        'Enterprise': 'enterprise'
+      };
+      
+      // Extract firm size - handle both string and object formats
+      if (firmSize) {
+        if (typeof firmSize === 'string') {
+          // Direct string: "medium", "shingle", etc.
+          canonicalSize = (tierNameMapping[firmSize] || firmSize).toLowerCase();
+        } else if (firmSize.tierName) {
+          // Object with tierName property
+          canonicalSize = (tierNameMapping[firmSize.tierName] || firmSize.tierName).toLowerCase();
+        }
+      } 
+      
+      // If size not found from firmSize, try to extract from compound tier name
+      if (!canonicalSize) {
+        const sizeMatch = inputTier.match(/(shingle|boutique|small|medium|large|enterprise)$/i);
+        canonicalSize = sizeMatch ? sizeMatch[1].toLowerCase() : null;
+      }
+      
+      // Validate that paid tiers have a valid size
+      if (!canonicalSize) {
+        return res.status(400).json({ 
+          message: 'Paid subscription requires a valid firm size (shingle, boutique, small, medium, large, or enterprise)',
+          receivedTier: inputTier,
+          receivedSize: firmSize
+        });
+      }
+      
+      // Validate that the extracted size is recognized (same as update)
+      const validSizes = ['shingle', 'boutique', 'small', 'medium', 'large', 'enterprise'];
+      if (!validSizes.includes(canonicalSize)) {
+        return res.status(400).json({ 
+          message: 'Invalid firm size. Must be one of: shingle, boutique, small, medium, large, enterprise',
+          receivedSize: canonicalSize,
+          receivedTier: inputTier,
+          receivedFirmSize: firmSize
+        });
+      }
+    }
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
@@ -169,7 +214,7 @@ exports.registerLawFirm = async (req, res) => {
        RETURNING id, firm_name, firm_code, email, subscription_tier, firm_size`,
       [firmName, firmCode, email.toLowerCase(), hashedPassword, barNumber || null, 
        phoneNumber || null, address?.street || null, address?.city || null, 
-       address?.state || null, address?.zipCode || null, tier, size]
+       address?.state || null, address?.zipCode || null, canonicalTier, canonicalSize]
     );
     
     const lawFirm = result.rows[0];

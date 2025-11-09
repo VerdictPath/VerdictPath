@@ -100,6 +100,16 @@ const getUserProgress = async (req, res) => {
 const completeSubstage = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Roadmap features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        error: 'Roadmap features are only available for individual users. Law firms and medical providers manage their clients/patients who complete the litigation journey.',
+        userType: userType
+      });
+    }
+    
     const { 
       stageId, 
       stageName, 
@@ -226,6 +236,16 @@ const completeSubstage = async (req, res) => {
 const completeStage = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
+    
+    // Roadmap features are only for individual users
+    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+      return res.status(403).json({ 
+        error: 'Roadmap features are only available for individual users.',
+        userType: userType
+      });
+    }
+    
     const { stageId, stageName, allSubstagesCompleted } = req.body;
 
     if (!stageId || !stageName) {

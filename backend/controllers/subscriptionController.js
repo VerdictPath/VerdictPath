@@ -20,8 +20,67 @@ const updateLawFirmSubscription = async (req, res) => {
     }
 
     const lawFirm = lawFirmResult.rows[0];
-    const newTier = subscriptionTier;
-    const newSize = (newTier !== 'free' && firmSize) ? firmSize : null;
+    
+    // Parse compound tiers (e.g., "soloshingle", "basicpremium", etc.)
+    // Expected format: either "free" or compound tiers like "soloshingle"
+    // Convert to canonical format: tier="free"|"paid" + firmSize
+    let canonicalTier, canonicalSize;
+    
+    if (subscriptionTier === 'free') {
+      canonicalTier = 'free';
+      canonicalSize = null;
+    } else {
+      // Compound tier - extract size from the tier name
+      // Common patterns: "soloshingle", "basicshingle", "standardboutique", etc.
+      canonicalTier = 'paid';
+      
+      // Map display tier names to database values (same as registration)
+      const tierNameMapping = {
+        'Solo/Shingle': 'shingle',
+        'Boutique': 'boutique',
+        'Small Firm': 'small',
+        'Medium-Small': 'medium',
+        'Medium': 'medium',
+        'Medium-Large': 'medium',
+        'Large': 'large',
+        'Regional': 'large',
+        'Enterprise': 'enterprise'
+      };
+      
+      // Extract firm size - handle both string and object formats (same as registration)
+      if (firmSize) {
+        if (typeof firmSize === 'string') {
+          // Direct string: normalize using mapping or lowercase
+          canonicalSize = (tierNameMapping[firmSize] || firmSize).toLowerCase();
+        } else if (firmSize.tierName) {
+          // Object with tierName property
+          canonicalSize = (tierNameMapping[firmSize.tierName] || firmSize.tierName).toLowerCase();
+        }
+      } 
+      
+      // If size not found from firmSize, try to extract from compound tier name
+      if (!canonicalSize) {
+        // Try to extract size from tier name (shingle, boutique, small, medium, large, enterprise)
+        const sizeMatch = subscriptionTier.match(/(shingle|boutique|small|medium|large|enterprise)$/i);
+        if (sizeMatch) {
+          canonicalSize = sizeMatch[1].toLowerCase();
+        } else {
+          return res.status(400).json({ 
+            error: 'Invalid subscription tier format. Expected format: "free" or tier with size (e.g., "soloshingle")',
+            receivedTier: subscriptionTier
+          });
+        }
+      }
+      
+      // Validate that the extracted size is recognized
+      const validSizes = ['shingle', 'boutique', 'small', 'medium', 'large', 'enterprise'];
+      if (!validSizes.includes(canonicalSize)) {
+        return res.status(400).json({ 
+          error: 'Invalid firm size. Must be one of: shingle, boutique, small, medium, large, enterprise',
+          receivedSize: canonicalSize
+        });
+      }
+    }
 
     const clientCountResult = await db.query(
       'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
@@ -29,7 +88,7 @@ const updateLawFirmSubscription = async (req, res) => {
     );
 
     const currentClientCount = parseInt(clientCountResult.rows[0].count);
-    const newLimit = getLawFirmClientLimit(newTier, newSize);
+    const newLimit = getLawFirmClientLimit(canonicalTier, canonicalSize);
 
     if (currentClientCount > newLimit) {
       return res.status(400).json({ 
@@ -39,17 +98,18 @@ const updateLawFirmSubscription = async (req, res) => {
       });
     }
 
+    // Store canonical tier and size for consistent limit calculations
     await db.query(
       'UPDATE law_firms SET subscription_tier = $1, firm_size = $2 WHERE id = $3',
-      [newTier, newSize, lawFirmId]
+      [canonicalTier, canonicalSize, lawFirmId]
     );
 
     res.json({
       success: true,
       message: 'Ahoy! Your subscription has been updated successfully!',
       subscription: {
-        tier: newTier,
-        firmSize: newSize,
+        tier: canonicalTier,
+        firmSize: canonicalSize,
         clientLimit: newLimit,
         currentClientCount: currentClientCount
       }
@@ -133,6 +193,23 @@ const getLawFirmSubscription = async (req, res) => {
     }
 
     const lawFirm = lawFirmResult.rows[0];
+    
+    // Defensive parsing for legacy compound tiers (e.g., "soloshingle")
+    let canonicalTier, canonicalSize;
+    
+    if (lawFirm.subscription_tier === 'free') {
+      canonicalTier = 'free';
+      canonicalSize = lawFirm.firm_size || null;
+    } else if (lawFirm.subscription_tier === 'paid') {
+      // Already canonical
+      canonicalTier = 'paid';
+      canonicalSize = lawFirm.firm_size;
+    } else {
+      // Legacy compound tier - extract size and convert
+      canonicalTier = 'paid';
+      const sizeMatch = lawFirm.subscription_tier.match(/(shingle|boutique|small|medium|large|enterprise)$/i);
+      canonicalSize = sizeMatch ? sizeMatch[1].toLowerCase() : (lawFirm.firm_size || null);
+    }
 
     const clientCountResult = await db.query(
       'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
@@ -140,12 +217,12 @@ const getLawFirmSubscription = async (req, res) => {
     );
 
     const currentClientCount = parseInt(clientCountResult.rows[0].count);
-    const currentLimit = getLawFirmClientLimit(lawFirm.subscription_tier, lawFirm.firm_size);
+    const currentLimit = getLawFirmClientLimit(canonicalTier, canonicalSize);
 
     res.json({
       subscription: {
-        tier: lawFirm.subscription_tier,
-        firmSize: lawFirm.firm_size,
+        tier: canonicalTier,
+        firmSize: canonicalSize,
         clientLimit: currentLimit,
         currentClientCount: currentClientCount,
         firmName: lawFirm.firm_name,
