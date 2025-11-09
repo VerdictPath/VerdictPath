@@ -346,6 +346,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               providerName: providerName,
               email: email,
               password: password,
+              subscriptionTier: tier,
+              providerSize: size || null,
               privacyAccepted: privacyAccepted
             })
           });
@@ -487,6 +489,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               providerName: providerName,
               email: email,
               password: password,
+              subscriptionTier: tier,
+              providerSize: size || null,
               privacyAccepted: privacyAccepted
             })
           });
