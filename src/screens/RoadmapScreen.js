@@ -823,7 +823,14 @@ const RoadmapScreen = ({
 
               <View style={styles.legend}>
                 <Text style={styles.legendTitle}>🗺️ Map Legend</Text>
-                <Text style={styles.legendItem}>💰 = Treasure to Claim</Text>
+                <View style={styles.legendItemWithIcon}>
+                  <Image 
+                    source={require('../../attached_assets/X marks the Spot_1762186694664.png')}
+                    style={styles.legendIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.legendItemText}> = Treasure to Claim</Text>
+                </View>
                 <Text style={styles.legendItem}>🏆 = Treasure Found!</Text>
                 {!readOnly && <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>}
               </View>
@@ -1137,6 +1144,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#654321',
     marginBottom: 2,
+  },
+  legendItemWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  legendIcon: {
+    width: 14,
+    height: 14,
+  },
+  legendItemText: {
+    fontSize: 10,
+    color: '#654321',
+    marginLeft: 4,
   },
   modalOverlay: {
     flex: 1,
