@@ -37,10 +37,10 @@ const NOTIFICATION_TEMPLATES = [
   {
     id: 'test_results',
     type: 'general',
-    title: 'Test Results Available',
+    title: 'Scans Available',
     icon: '🔬',
-    defaultTitle: 'Test Results Ready',
-    defaultBody: 'Your recent test results are now available for review. Please check your medical records or contact us for more information.',
+    defaultTitle: 'Scans Ready',
+    defaultBody: 'Your recent scans are now available for review. Please check your medical records or contact us for more information.',
     actionButton: 'View Results',
     actionScreen: 'dashboard',
   },
