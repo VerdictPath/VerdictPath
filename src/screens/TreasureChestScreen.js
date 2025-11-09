@@ -236,7 +236,7 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
         <View style={styles.packagesSection}>
           <Text style={styles.sectionTitle}>Choose Your Treasure</Text>
           <Text style={styles.sectionSubtitle}>
-            1 coin = $0.0002 • Use coins to unlock case stages
+            Use coins to unlock case stages
           </Text>
 
           {COIN_PACKAGES.map((pkg) => (
