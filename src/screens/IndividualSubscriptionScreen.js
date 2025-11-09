@@ -82,13 +82,23 @@ const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
 
   const fetchCurrentSubscription = async () => {
     try {
+      if (!user?.token) {
+        console.log('No auth token available, setting default free subscription');
+        setCurrentSubscription({
+          tier: 'free',
+          price: 0
+        });
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const response = await apiRequest(
         API_ENDPOINTS.SUBSCRIPTION.INDIVIDUAL_CURRENT,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${user?.token}`,
+            'Authorization': `Bearer ${user.token}`,
           },
         }
       );
@@ -98,7 +108,11 @@ const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
-      alert('Error', 'Failed to load subscription details. Please try again.');
+      // Set default free subscription instead of showing error
+      setCurrentSubscription({
+        tier: 'free',
+        price: 0
+      });
     } finally {
       setLoading(false);
     }
