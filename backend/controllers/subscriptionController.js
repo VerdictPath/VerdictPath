@@ -147,7 +147,20 @@ const updateMedicalProviderSubscription = async (req, res) => {
 
     const provider = providerResult.rows[0];
     const newTier = subscriptionTier;
-    const newSize = (newTier !== 'free' && providerSize) ? providerSize : null;
+    
+    let newSize = null;
+    let planType = null;
+    let billingPeriod = null;
+    
+    if (newTier !== 'free' && providerSize) {
+      if (typeof providerSize === 'object') {
+        newSize = newTier;
+        planType = providerSize.planType || null;
+        billingPeriod = providerSize.billingPeriod || null;
+      } else {
+        newSize = providerSize;
+      }
+    }
 
     const patientCountResult = await db.query(
       'SELECT COUNT(*) as count FROM medical_provider_patients WHERE medical_provider_id = $1',
@@ -177,7 +190,9 @@ const updateMedicalProviderSubscription = async (req, res) => {
         tier: newTier,
         providerSize: newSize,
         patientLimit: newLimit,
-        currentPatientCount: currentPatientCount
+        currentPatientCount: currentPatientCount,
+        planType: planType,
+        billingPeriod: billingPeriod
       }
     });
   } catch (error) {

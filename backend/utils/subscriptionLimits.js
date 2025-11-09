@@ -13,6 +13,10 @@ const CLIENT_LIMITS = {
 const PATIENT_LIMITS = {
   free: 10,
   paid: {
+    shingleprovider: 49,
+    boutiqueprovider: 99,
+    mediumprovider: 199,
+    largeprovider: Infinity,
     small: 100,
     medium: 500,
     large: 1000,
