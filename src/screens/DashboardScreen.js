@@ -284,6 +284,20 @@ const DashboardScreen = ({
             </Text>
           </View>
         </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.upgradeButton}
+          onPress={() => onNavigate && onNavigate('subscription')}
+        >
+          <View style={styles.upgradeIcon}>
+            <Text style={{ fontSize: 24 }}>💎</Text>
+          </View>
+          <View style={styles.upgradeTextContainer}>
+            <Text style={styles.upgradeTitle}>Upgrade Subscription</Text>
+            <Text style={styles.upgradeSubtitle}>Unlock premium features</Text>
+          </View>
+          <Text style={styles.upgradeArrow}>→</Text>
+        </TouchableOpacity>
       </View>
 
       {renderPaymentAccountBanner()}
