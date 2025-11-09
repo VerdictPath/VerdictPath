@@ -6,8 +6,10 @@ const { width, height } = Dimensions.get('window');
 const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 100 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
+  const bounceAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const confettiAnims = useRef(
-    Array.from({ length: 20 }, () => ({
+    Array.from({ length: 30 }, () => ({
       x: new Animated.Value(Math.random() * width),
       y: new Animated.Value(-50),
       rotation: new Animated.Value(0),
@@ -18,39 +20,59 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
     if (visible) {
       // Reset animations
       fadeAnim.setValue(0);
-      scaleAnim.setValue(0.5);
+      scaleAnim.setValue(0.3);
+      bounceAnim.setValue(0);
+      rotateAnim.setValue(0);
       confettiAnims.forEach(anim => {
         anim.x.setValue(Math.random() * width);
         anim.y.setValue(-50);
         anim.rotation.setValue(0);
       });
 
-      // Start main animation
+      // Explosive entrance with bounce
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
-          duration: 300,
+          duration: 150,
           useNativeDriver: true,
         }),
         Animated.spring(scaleAnim, {
           toValue: 1,
-          tension: 50,
-          friction: 7,
+          tension: 80,
+          friction: 5,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(bounceAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.spring(bounceAnim, {
+            toValue: 0,
+            tension: 100,
+            friction: 3,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Confetti animation
+      // Faster confetti explosion
       const confettiAnimations = confettiAnims.map((anim) =>
         Animated.parallel([
           Animated.timing(anim.y, {
             toValue: height + 100,
-            duration: 2000 + Math.random() * 1000,
+            duration: 800 + Math.random() * 400,
             useNativeDriver: true,
           }),
           Animated.timing(anim.rotation, {
-            toValue: Math.random() * 720,
-            duration: 2000,
+            toValue: Math.random() * 1080,
+            duration: 1000,
             useNativeDriver: true,
           }),
         ])
@@ -58,14 +80,14 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
 
       Animated.parallel(confettiAnimations).start();
 
-      // Auto-dismiss after 2.5 seconds
+      // Auto-dismiss after 1 second
       setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 200,
           useNativeDriver: true,
         }).start(() => onComplete());
-      }, 2500);
+      }, 1000);
     }
   }, [visible]);
 
@@ -103,17 +125,31 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
             styles.celebrationCard,
             {
               opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
+              transform: [
+                { scale: scaleAnim },
+                { 
+                  translateY: bounceAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -20],
+                  })
+                },
+                {
+                  rotate: rotateAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: ['-5deg', '5deg', '0deg'],
+                  })
+                }
+              ],
             },
           ]}
         >
-          <Text style={styles.treasure}>💰</Text>
-          <Text style={styles.congratsText}>Ahoy, Matey!</Text>
-          <Text style={styles.milestoneText}>Milestone Complete!</Text>
-          {milestone && (
-            <Text style={styles.milestoneName}>{milestone}</Text>
-          )}
-          <Text style={styles.coinsText}>⚓ +{coinsEarned} Coins Earned! ⚓</Text>
+          <Text style={styles.treasure}>🏴‍☠️</Text>
+          <Text style={styles.congratsText}>⚡ TREASURE FOUND! ⚡</Text>
+          <View style={styles.coinsContainer}>
+            <Text style={styles.coinsBig}>💰</Text>
+            <Text style={styles.coinsEarnedText}>+{coinsEarned}</Text>
+            <Text style={styles.coinsBig}>💰</Text>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -134,46 +170,50 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   celebrationCard: {
-    backgroundColor: '#f9f6f0',
+    backgroundColor: '#1a1a1a',
     borderRadius: 20,
-    padding: 30,
+    padding: 25,
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#d4a574',
-    width: width * 0.8,
-    maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    borderWidth: 4,
+    borderColor: '#FFD700',
+    width: width * 0.75,
+    maxWidth: 350,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
+    elevation: 15,
   },
   treasure: {
-    fontSize: 60,
-    marginBottom: 10,
+    fontSize: 70,
+    marginBottom: 8,
   },
   congratsText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  milestoneText: {
-    fontSize: 18,
-    color: '#8b4513',
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFD700',
     marginBottom: 10,
+    textShadowColor: '#FF6B00',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+    letterSpacing: 2,
   },
-  milestoneName: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 15,
-    fontStyle: 'italic',
+  coinsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
   },
-  coinsText: {
-    fontSize: 16,
+  coinsBig: {
+    fontSize: 48,
+  },
+  coinsEarnedText: {
+    fontSize: 42,
     fontWeight: 'bold',
-    color: '#d4a574',
+    color: '#FFD700',
+    textShadowColor: '#FF6B00',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
 });
 
