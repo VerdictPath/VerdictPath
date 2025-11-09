@@ -49,6 +49,7 @@ import TreasureChestScreen from './src/screens/TreasureChestScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
+import IndividualSubscriptionScreen from './src/screens/IndividualSubscriptionScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1373,6 +1374,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
           setCoins={setCoins}
+        />
+      )}
+
+      {currentScreen === 'subscription' && (
+        <IndividualSubscriptionScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
         />
       )}
       

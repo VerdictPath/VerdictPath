@@ -95,7 +95,9 @@ export const API_ENDPOINTS = {
     LAWFIRM_CURRENT: '/api/subscription/lawfirm/current',
     LAWFIRM_UPDATE: '/api/subscription/lawfirm/update',
     MEDICALPROVIDER_CURRENT: '/api/subscription/medicalprovider/current',
-    MEDICALPROVIDER_UPDATE: '/api/subscription/medicalprovider/update'
+    MEDICALPROVIDER_UPDATE: '/api/subscription/medicalprovider/update',
+    INDIVIDUAL_CURRENT: '/api/subscription/individual/current',
+    INDIVIDUAL_UPDATE: '/api/subscription/individual/update'
   },
   CONNECTIONS: {
     MY_CONNECTIONS: '/api/connections/my-connections',

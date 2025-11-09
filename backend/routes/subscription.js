@@ -9,4 +9,7 @@ router.put('/lawfirm/update', authenticateToken, subscriptionController.updateLa
 router.get('/medicalprovider/current', authenticateToken, subscriptionController.getMedicalProviderSubscription);
 router.put('/medicalprovider/update', authenticateToken, subscriptionController.updateMedicalProviderSubscription);
 
+router.get('/individual/current', authenticateToken, subscriptionController.getIndividualSubscription);
+router.put('/individual/update', authenticateToken, subscriptionController.updateIndividualSubscription);
+
 module.exports = router;

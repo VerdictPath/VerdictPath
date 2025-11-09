@@ -1,6 +1,13 @@
 const db = require('../config/db');
 const { getLawFirmClientLimit, getMedicalProviderPatientLimit } = require('../utils/subscriptionLimits');
 
+// Individual subscription pricing
+const INDIVIDUAL_PRICING = {
+  free: { monthly: 0, annual: 0 },
+  basic: { monthly: 9.99, annual: 99.99 },
+  premium: { monthly: 19.99, annual: 199.99 }
+};
+
 const updateLawFirmSubscription = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
@@ -274,9 +281,96 @@ const getMedicalProviderSubscription = async (req, res) => {
   }
 };
 
+const getIndividualSubscription = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const userResult = await db.query(
+      'SELECT id, first_name, last_name, email, subscription_tier, subscription_price FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const tier = user.subscription_tier || 'free';
+    const pricing = INDIVIDUAL_PRICING[tier.toLowerCase()] || INDIVIDUAL_PRICING.free;
+
+    res.json({
+      subscription: {
+        tier: tier,
+        pricing: pricing,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching individual subscription:', error);
+    res.status(500).json({ error: 'Failed to fetch subscription details' });
+  }
+};
+
+const updateIndividualSubscription = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { subscriptionTier, billingCycle } = req.body;
+
+    if (!subscriptionTier) {
+      return res.status(400).json({ error: 'Subscription tier is required' });
+    }
+
+    const normalizedTier = subscriptionTier.toLowerCase();
+    const validTiers = ['free', 'basic', 'premium'];
+
+    if (!validTiers.includes(normalizedTier)) {
+      return res.status(400).json({ 
+        error: `Invalid subscription tier. Must be one of: ${validTiers.join(', ')}`,
+        receivedTier: subscriptionTier
+      });
+    }
+
+    const userResult = await db.query(
+      'SELECT id, subscription_tier FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const pricing = INDIVIDUAL_PRICING[normalizedTier];
+    const cycle = billingCycle && billingCycle.toLowerCase() === 'annual' ? 'annual' : 'monthly';
+    const subscriptionPrice = pricing[cycle];
+
+    await db.query(
+      'UPDATE users SET subscription_tier = $1, subscription_price = $2 WHERE id = $3',
+      [normalizedTier, subscriptionPrice, userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Your subscription has been updated successfully!',
+      subscription: {
+        tier: normalizedTier,
+        billingCycle: cycle,
+        price: subscriptionPrice,
+        pricing: pricing
+      }
+    });
+  } catch (error) {
+    console.error('Error updating individual subscription:', error);
+    res.status(500).json({ error: 'Failed to update subscription' });
+  }
+};
+
 module.exports = {
   updateLawFirmSubscription,
   updateMedicalProviderSubscription,
   getLawFirmSubscription,
-  getMedicalProviderSubscription
+  getMedicalProviderSubscription,
+  getIndividualSubscription,
+  updateIndividualSubscription
 };
