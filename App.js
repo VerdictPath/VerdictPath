@@ -88,6 +88,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
+  const prevScreenRef = useRef(currentScreen);
+  const [treasureChestRefreshKey, setTreasureChestRefreshKey] = useState(0);
+
+  // Increment treasure chest refresh key when navigating to it
+  useEffect(() => {
+    if (prevScreenRef.current !== 'treasure-chest' && currentScreen === 'treasure-chest') {
+      setTreasureChestRefreshKey(prev => prev + 1);
+    }
+    prevScreenRef.current = currentScreen;
+  }, [currentScreen]);
 
   // Load user's litigation progress when they log in
   useEffect(() => {
@@ -1374,6 +1384,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
           setCoins={setCoins}
+          refreshKey={treasureChestRefreshKey}
         />
       )}
 

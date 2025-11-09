@@ -71,7 +71,7 @@ const COIN_PACKAGES = [
   }
 ];
 
-const TreasureChestScreen = ({ onBack, user, setCoins }) => {
+const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
   const [currentCoins, setCurrentCoins] = useState(0);
   const [coinDetails, setCoinDetails] = useState({
     totalCoins: 0,
@@ -94,8 +94,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
   const [selectedPackage, setSelectedPackage] = useState(null);
 
   useEffect(() => {
-    fetchCoinBalance();
-  }, []);
+    if (user?.token) {
+      fetchCoinBalance();
+    }
+  }, [refreshKey, user?.token]);
 
   const fetchCoinBalance = async () => {
     try {
@@ -110,9 +112,11 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setCurrentCoins(data.totalCoins || 0);
+        const totalCoins = data.totalCoins || 0;
+        
+        setCurrentCoins(totalCoins);
         setCoinDetails({
-          totalCoins: data.totalCoins || 0,
+          totalCoins: totalCoins,
           availableCoins: data.availableCoins || 0,
           coinsSpent: data.coinsSpent || 0,
           purchasedCoins: data.purchasedCoins || 0,
@@ -127,6 +131,11 @@ const TreasureChestScreen = ({ onBack, user, setCoins }) => {
           maxLifetimeCredits: data.maxLifetimeCredits || 0,
           remainingLifetimeCredits: data.remainingLifetimeCredits || 0
         });
+        
+        // Update parent's coin state for consistency
+        if (setCoins) {
+          setCoins(totalCoins);
+        }
       }
     } catch (error) {
       console.error('Error fetching coins:', error);
