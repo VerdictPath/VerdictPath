@@ -146,8 +146,21 @@ exports.registerLawFirm = async (req, res) => {
     const firmCode = await generateUniqueCode('lawfirm');
     
     const tier = subscriptionTier || 'free';
-    // Extract just the tier name for storage in VARCHAR(20) column
-    const size = (tier !== 'free' && firmSize && firmSize.tierName) ? firmSize.tierName : null;
+    // Map tier names to database-accepted values
+    const tierNameMapping = {
+      'Solo/Shingle': 'shingle',
+      'Boutique': 'boutique',
+      'Small Firm': 'small',
+      'Medium-Small': 'medium',
+      'Medium': 'medium',
+      'Medium-Large': 'medium',
+      'Large': 'large',
+      'Regional': 'large',
+      'Enterprise': 'enterprise'
+    };
+    const size = (tier !== 'free' && firmSize && firmSize.tierName) 
+      ? (tierNameMapping[firmSize.tierName] || firmSize.tierName.toLowerCase()) 
+      : null;
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
@@ -220,8 +233,16 @@ exports.registerMedicalProvider = async (req, res) => {
     const providerCode = await generateUniqueCode('medicalprovider');
 
     const tier = subscriptionTier || 'free';
-    // Extract just the tier name for storage in VARCHAR(20) column
-    const size = (tier !== 'free' && providerSize && providerSize.tierName) ? providerSize.tierName : null;
+    // Map tier names to database-accepted values
+    const tierNameMapping = {
+      'Shingle Provider': 'small',
+      'Boutique Provider': 'medium',
+      'Medium Provider': 'medium',
+      'Large Provider': 'large'
+    };
+    const size = (tier !== 'free' && providerSize && providerSize.tierName) 
+      ? (tierNameMapping[providerSize.tierName] || providerSize.tierName.toLowerCase()) 
+      : null;
 
     const result = await db.query(
       `INSERT INTO medical_providers 
