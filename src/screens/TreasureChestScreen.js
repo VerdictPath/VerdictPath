@@ -94,7 +94,9 @@ const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
   const [selectedPackage, setSelectedPackage] = useState(null);
 
   useEffect(() => {
+    console.log('[TreasureChest] useEffect triggered - refreshKey:', refreshKey, 'hasToken:', !!user?.token);
     if (user?.token) {
+      console.log('[TreasureChest] Fetching coin balance...');
       fetchCoinBalance();
     }
   }, [refreshKey, user?.token]);
@@ -102,6 +104,7 @@ const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
   const fetchCoinBalance = async () => {
     try {
       setLoading(true);
+      console.log('[TreasureChest] Fetching from:', `${API_URL}/api/coins/balance`);
 
       const response = await fetch(`${API_URL}/api/coins/balance`, {
         headers: {
@@ -112,7 +115,9 @@ const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[TreasureChest] Balance response:', data);
         const totalCoins = data.totalCoins || 0;
+        console.log('[TreasureChest] Setting totalCoins to:', totalCoins);
         
         setCurrentCoins(totalCoins);
         setCoinDetails({
