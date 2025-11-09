@@ -17,6 +17,10 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
   const [accountStatus, setAccountStatus] = useState(null);
   const [settingUpAccount, setSettingUpAccount] = useState(false);
 
+  const isLawFirm = user.userType === 'lawfirm';
+  const actionText = isLawFirm ? 'send' : 'receive';
+  const disbursementText = isLawFirm ? 'send settlement disbursements' : 'receive settlement disbursements';
+
   useEffect(() => {
     checkAccountStatus();
   }, []);
@@ -153,13 +157,13 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💳 Set Up Your Payment Account</Text>
             <Text style={styles.description}>
-              To receive/send settlement disbursements, you need to connect a bank account through Stripe.
-              This secure process ensures you can receive/send payments directly to your account.
+              To {disbursementText}, you need to connect a bank account through Stripe.
+              This secure process ensures you can {actionText} payments directly {isLawFirm ? 'from' : 'to'} your account.
             </Text>
 
             <View style={styles.benefitsList}>
               <Text style={styles.benefitItem}>✓ Secure bank account connection</Text>
-              <Text style={styles.benefitItem}>✓ Direct deposit of settlement funds</Text>
+              <Text style={styles.benefitItem}>✓ {isLawFirm ? 'Send' : 'Receive'} settlement funds securely</Text>
               <Text style={styles.benefitItem}>✓ Track all payments in one place</Text>
               <Text style={styles.benefitItem}>✓ FDIC-insured transfers</Text>
             </View>
@@ -191,7 +195,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
             <Text style={styles.sectionTitle}>Complete Your Account Setup</Text>
             <Text style={styles.description}>
               Your payment account has been created, but you need to complete the onboarding process
-              to receive/send disbursements.
+              to {disbursementText}.
             </Text>
 
             <TouchableOpacity
@@ -221,7 +225,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
 
             <Text style={styles.sectionTitle}>Your Payment Account is Ready!</Text>
             <Text style={styles.description}>
-              Your bank account is connected and you're ready to receive settlement disbursements.
+              Your bank account is connected and you're ready to {disbursementText}.
             </Text>
 
             <View style={styles.statusDetails}>
