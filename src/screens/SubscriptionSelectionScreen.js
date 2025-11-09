@@ -416,21 +416,41 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
     return ((pricing.monthly * 12) - pricing.annual).toFixed(2);
   };
 
-  const handleSelectPlan = (plan, tierData = null) => {
+  const handleSelectPlan = (plan, tierData = null, fromTable = false) => {
     if (userType === 'lawfirm' || userType === 'medicalprovider') {
       // If tierData is passed, use it; otherwise use currentTier from calculator
       const selectedTier = tierData || currentTier;
       
       if (!selectedTier) {
-        Alert.alert('Selection Required', 'Please select a tier to continue');
+        const alertMessage = Platform.OS === 'web' 
+          ? 'Please select a tier from the table below or enter your client/patient count to continue'
+          : 'Selection Required\n\nPlease select a tier from the table below or enter your client/patient count to continue';
+        
+        if (Platform.OS === 'web') {
+          alert(alertMessage);
+        } else {
+          Alert.alert('Selection Required', alertMessage);
+        }
         return;
+      }
+
+      // If clicking from table and no count entered, auto-populate with midpoint of tier range
+      if (fromTable && (!clientCount || parseInt(clientCount) === 0)) {
+        const midpoint = selectedTier.max === Infinity 
+          ? selectedTier.min 
+          : Math.floor((selectedTier.min + selectedTier.max) / 2);
+        setClientCount(midpoint.toString());
       }
 
       const planLabel = planType === 'premium' ? 'Premium' : (userType === 'medicalprovider' ? 'Basic' : 'Standard');
       const countLabel = userType === 'medicalprovider' ? 'Patients' : 'Clients';
+      const tierRange = selectedTier.max === Infinity 
+        ? `${selectedTier.min}+ ${countLabel.toLowerCase()}`
+        : `${selectedTier.min}-${selectedTier.max} ${countLabel.toLowerCase()}`;
 
       // Build confirmation message
       let confirmMessage = `Select ${selectedTier.name} ${planLabel} plan?\n\n` +
+        `Tier Range: ${tierRange}\n` +
         `Price: $${getPrice(selectedTier)}/${billingPeriod === 'monthly' ? 'month' : 'year'}`;
       
       // Add client/patient info if count was entered
@@ -439,7 +459,14 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           `Per ${countLabel.toLowerCase().slice(0, -1)}: $${getPerClientCost(selectedTier, clientCount)}`;
       }
 
-      Alert.alert(
+      const alertFunc = Platform.OS === 'web' ? 
+        (title, message, buttons) => {
+          if (window.confirm(message)) {
+            buttons[1].onPress();
+          }
+        } : Alert.alert;
+
+      alertFunc(
         'Confirm Selection',
         confirmMessage,
         [
@@ -502,13 +529,16 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>How many clients do you have?</Text>
+            <Text style={styles.inputLabel}>How many clients do you have? (Optional)</Text>
+            <Text style={styles.inputHint}>
+              Enter a count for per-client pricing, or skip to select a tier below
+            </Text>
             <TextInput
               style={styles.input}
               keyboardType="number-pad"
               value={clientCount}
               onChangeText={setClientCount}
-              placeholder="Enter number of clients"
+              placeholder="Enter number of clients (optional)"
               placeholderTextColor="#999"
             />
           </View>
@@ -716,7 +746,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
-                      onPress={() => handleSelectPlan('lawfirm', tier)}
+                      onPress={() => handleSelectPlan('lawfirm', tier, true)}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
@@ -766,13 +796,16 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
           </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>How many patients do you have?</Text>
+            <Text style={styles.inputLabel}>How many patients do you have? (Optional)</Text>
+            <Text style={styles.inputHint}>
+              Enter a count for per-patient pricing, or skip to select a tier below
+            </Text>
             <TextInput
               style={styles.input}
               keyboardType="number-pad"
               value={clientCount}
               onChangeText={setClientCount}
-              placeholder="Enter number of patients"
+              placeholder="Enter number of patients (optional)"
               placeholderTextColor="#999"
             />
           </View>
@@ -980,7 +1013,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
-                      onPress={() => handleSelectPlan('medicalprovider', tier)}
+                      onPress={() => handleSelectPlan('medicalprovider', tier, true)}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
@@ -1160,7 +1193,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.text,
-    marginBottom: 8
+    marginBottom: 4
+  },
+  inputHint: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginBottom: 8,
+    fontStyle: 'italic'
   },
   input: {
     backgroundColor: '#f5f5f5',
