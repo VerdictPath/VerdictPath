@@ -153,7 +153,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💳 Set Up Your Payment Account</Text>
             <Text style={styles.description}>
-              To receive settlement disbursements, you need to connect a bank account through Stripe.
+              To receive/send settlement disbursements, you need to connect a bank account through Stripe.
               This secure process ensures you can receive payments directly to your account.
             </Text>
 
@@ -191,7 +191,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
             <Text style={styles.sectionTitle}>Complete Your Account Setup</Text>
             <Text style={styles.description}>
               Your payment account has been created, but you need to complete the onboarding process
-              to receive disbursements.
+              to receive/send disbursements.
             </Text>
 
             <TouchableOpacity
