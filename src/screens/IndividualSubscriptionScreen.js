@@ -270,6 +270,14 @@ const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        {onNavigate && (
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => onNavigate('dashboard')}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>Subscription Plans</Text>
         <Text style={styles.headerSubtitle}>
           Choose the plan that's right for your litigation journey
@@ -345,6 +353,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     padding: 25,
     paddingTop: Platform.OS === 'web' ? 25 : 50,
+  },
+  backButton: {
+    marginBottom: 15,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 28,
