@@ -885,9 +885,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             return subStage;
           });
 
-          // DON'T auto-complete the stage here - user must explicitly click "Complete Stage" button
-          // This prevents coin farming by ensuring stage bonus goes through backend validation
-          return { ...stage, subStages: updatedSubStages };
+          // Check if ALL substages are now complete
+          const allSubstagesComplete = updatedSubStages.every(sub => sub.completed);
+          
+          // Mark stage as complete for visual indicators (green dotted lines)
+          // but user still needs to click "Complete Stage" button for stage bonus coins
+          return { 
+            ...stage, 
+            subStages: updatedSubStages,
+            completed: allSubstagesComplete ? true : stage.completed
+          };
         }
         return stage;
       })
