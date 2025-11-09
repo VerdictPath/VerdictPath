@@ -146,7 +146,8 @@ exports.registerLawFirm = async (req, res) => {
     const firmCode = await generateUniqueCode('lawfirm');
     
     const tier = subscriptionTier || 'free';
-    const size = (tier !== 'free' && firmSize) ? firmSize : null;
+    // Extract just the tier name for storage in VARCHAR(20) column
+    const size = (tier !== 'free' && firmSize && firmSize.tierName) ? firmSize.tierName : null;
     
     const result = await db.query(
       `INSERT INTO law_firms (firm_name, firm_code, email, password, bar_number, phone_number, 
@@ -197,6 +198,8 @@ exports.registerMedicalProvider = async (req, res) => {
       phoneNumber,
       address,
       licenseNumber,
+      subscriptionTier,
+      providerSize,
       privacyAccepted
     } = req.body;
 
@@ -216,12 +219,16 @@ exports.registerMedicalProvider = async (req, res) => {
     // Generate unique provider code automatically
     const providerCode = await generateUniqueCode('medicalprovider');
 
+    const tier = subscriptionTier || 'free';
+    // Extract just the tier name for storage in VARCHAR(20) column
+    const size = (tier !== 'free' && providerSize && providerSize.tierName) ? providerSize.tierName : null;
+
     const result = await db.query(
       `INSERT INTO medical_providers 
        (provider_name, provider_code, email, password, npi_number, specialty, phone_number, 
-        street, city, state, zip_code, license_number, subscription_tier, privacy_accepted_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP) 
-       RETURNING id, provider_name, provider_code, email, subscription_tier`,
+        street, city, state, zip_code, license_number, subscription_tier, provider_size, privacy_accepted_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP) 
+       RETURNING id, provider_name, provider_code, email, subscription_tier, provider_size`,
       [
         providerName,
         providerCode,
@@ -235,7 +242,8 @@ exports.registerMedicalProvider = async (req, res) => {
         address?.state || null,
         address?.zipCode || null,
         licenseNumber || null,
-        'free'
+        tier,
+        size
       ]
     );
 
