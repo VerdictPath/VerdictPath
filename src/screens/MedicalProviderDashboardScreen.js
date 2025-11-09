@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput
 } from 'react-native';
 import { theme } from '../styles/theme';
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
 import MedicalProviderSubscriptionScreen from './MedicalProviderSubscriptionScreen';
@@ -16,9 +16,12 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
+  const [checkingStripeStatus, setCheckingStripeStatus] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+    checkStripeAccountStatus();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -83,6 +86,36 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     }
   };
 
+  const checkStripeAccountStatus = async () => {
+    try {
+      setCheckingStripeStatus(true);
+      if (!user?.token) {
+        console.error('No user token available');
+        return;
+      }
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStripeAccountStatus(data);
+      }
+    } catch (error) {
+      console.error('Error checking Stripe account status:', error);
+    } finally {
+      setCheckingStripeStatus(false);
+    }
+  };
+
+  const handleNavigateToPaymentSetup = () => {
+    if (onNavigate) {
+      onNavigate('medicalprovider-payment-setup');
+    }
+  };
+
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
@@ -119,11 +152,84 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     return filtered;
   };
 
+  const renderPaymentAccountBanner = () => {
+    if (checkingStripeStatus) {
+      return (
+        <View style={styles.paymentBanner}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={styles.paymentBannerText}>Checking payment account...</Text>
+        </View>
+      );
+    }
+
+    if (!stripeAccountStatus?.hasAccount) {
+      return (
+        <View style={[styles.paymentBanner, styles.paymentBannerWarning]}>
+          <View style={styles.paymentBannerContent}>
+            <Text style={styles.paymentBannerIcon}>⚠️</Text>
+            <View style={styles.paymentBannerTextContainer}>
+              <Text style={styles.paymentBannerTitle}>Payment Account Required</Text>
+              <Text style={styles.paymentBannerDescription}>
+                Set up your payment account to receive settlement disbursements
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.paymentBannerButton}
+            onPress={handleNavigateToPaymentSetup}
+          >
+            <Text style={styles.paymentBannerButtonText}>Set Up Now</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (stripeAccountStatus?.hasAccount && !stripeAccountStatus?.onboardingComplete) {
+      return (
+        <View style={[styles.paymentBanner, styles.paymentBannerWarning]}>
+          <View style={styles.paymentBannerContent}>
+            <Text style={styles.paymentBannerIcon}>⚠️</Text>
+            <View style={styles.paymentBannerTextContainer}>
+              <Text style={styles.paymentBannerTitle}>Complete Payment Setup</Text>
+              <Text style={styles.paymentBannerDescription}>
+                Finish your account setup to receive settlement disbursements
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.paymentBannerButton}
+            onPress={handleNavigateToPaymentSetup}
+          >
+            <Text style={styles.paymentBannerButtonText}>Resume Setup</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (stripeAccountStatus?.onboardingComplete) {
+      return (
+        <View style={[styles.paymentBanner, styles.paymentBannerSuccess]}>
+          <Text style={styles.paymentBannerIcon}>✓</Text>
+          <View style={styles.paymentBannerTextContainer}>
+            <Text style={styles.paymentBannerSuccessTitle}>Payment Account Active</Text>
+            <Text style={styles.paymentBannerSuccessDescription}>
+              You can receive settlement disbursements
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   const renderPatientsTab = () => {
     const filteredPatients = getFilteredPatients();
     
     return (
       <View style={styles.tabContent}>
+        {renderPaymentAccountBanner()}
+        
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚕️ Patient List</Text>
           
@@ -1153,6 +1259,80 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  paymentBanner: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+    marginHorizontal: 16,
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  paymentBannerWarning: {
+    backgroundColor: '#FFF3CD',
+    borderWidth: 2,
+    borderColor: '#FFC107',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  paymentBannerSuccess: {
+    backgroundColor: '#D4EDDA',
+    borderWidth: 2,
+    borderColor: '#28A745',
+  },
+  paymentBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  paymentBannerIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  paymentBannerTextContainer: {
+    flex: 1,
+  },
+  paymentBannerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 5,
+  },
+  paymentBannerDescription: {
+    fontSize: 13,
+    color: theme.colors.navy,
+    lineHeight: 18,
+  },
+  paymentBannerButton: {
+    backgroundColor: theme.colors.mahogany,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 6,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  paymentBannerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  paymentBannerText: {
+    fontSize: 14,
+    color: theme.colors.navy,
+    marginLeft: 10,
+  },
+  paymentBannerSuccessTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#28A745',
+    marginBottom: 3,
+  },
+  paymentBannerSuccessDescription: {
+    fontSize: 13,
+    color: theme.colors.navy,
   },
 });
 

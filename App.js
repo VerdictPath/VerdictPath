@@ -1323,6 +1323,20 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'medicalprovider-payment-setup' && (
+        <StripeConnectOnboardingScreen
+          user={user}
+          onBack={handleBackToMedicalProviderDashboard}
+        />
+      )}
+
+      {currentScreen === 'individual-payment-setup' && (
+        <StripeConnectOnboardingScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+
       {/* Notification Screens */}
       {currentScreen === 'notifications' && (
         <NotificationInboxScreen
