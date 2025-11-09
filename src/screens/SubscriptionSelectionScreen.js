@@ -494,7 +494,14 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
       if (plan === 'free') {
         onSelectSubscription('free', null);
       } else {
-        Alert.alert(
+        const alertFunc = Platform.OS === 'web' ? 
+          (title, message, buttons) => {
+            if (window.confirm(message)) {
+              buttons[1].onPress();
+            }
+          } : Alert.alert;
+
+        alertFunc(
           'Confirm Selection',
           `Select ${tierData.name} plan?\n\n` +
           `Price: $${price}/${billingPeriod === 'monthly' ? 'month' : 'year'}`,
