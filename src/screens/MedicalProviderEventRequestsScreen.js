@@ -279,7 +279,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
 
               <Text style={styles.label}>Event Type *</Text>
               <View style={styles.typeButtonsRow}>
-                {['appointment', 'consultation', 'consultation', 'court_date'].map((type) => (
+                {['appointment', 'consultation'].map((type) => (
                   <TouchableOpacity
                     key={type}
                     style={[
