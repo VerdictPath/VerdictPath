@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS law_firms (
   zip_code VARCHAR(20),
   subscription_tier VARCHAR(50) DEFAULT 'free',
   firm_size VARCHAR(20) CHECK (firm_size IN ('shingle', 'boutique', 'small', 'medium', 'large', 'enterprise')),
+  plan_type VARCHAR(20) DEFAULT 'standard' CHECK (plan_type IN ('standard', 'premium')),
   privacy_accepted_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

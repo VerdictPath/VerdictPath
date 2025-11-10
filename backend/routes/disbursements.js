@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../config/db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
+const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
 
 // Platform fee per disbursement transaction
 const PLATFORM_FEE = 200; // $200
@@ -11,7 +12,7 @@ const PLATFORM_FEE = 200; // $200
  * GET /api/disbursements/history
  * Get disbursement history for law firm
  */
-router.get('/history', authenticateToken, isLawFirm, async (req, res) => {
+router.get('/history', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
   try {
     const lawFirmId = req.user.id;
 
@@ -58,7 +59,7 @@ router.get('/history', authenticateToken, isLawFirm, async (req, res) => {
  * GET /api/disbursements/client-providers
  * Get medical providers connected to a specific client
  */
-router.get('/client-providers', authenticateToken, isLawFirm, async (req, res) => {
+router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
   try {
     const { clientId } = req.query;
     const lawFirmId = req.user.id;
@@ -118,7 +119,7 @@ router.get('/client-providers', authenticateToken, isLawFirm, async (req, res) =
  * Records disbursement data in database without processing actual payments.
  * Status remains 'pending' until Stripe integration is fully set up.
  */
-router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
+router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
   const client = await db.pool.connect();
   
   try {

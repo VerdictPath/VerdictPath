@@ -27,12 +27,34 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
   const [checkingStripeStatus, setCheckingStripeStatus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [subscription, setSubscription] = useState(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
 
   useEffect(() => {
+    loadSubscription();
     loadClients();
     loadDisbursementHistory();
     checkStripeAccountStatus();
   }, []);
+
+  const loadSubscription = async () => {
+    try {
+      setLoadingSubscription(true);
+      const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.GET_LAWFIRM_CURRENT, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      setSubscription(response.subscription);
+    } catch (error) {
+      console.error('Error loading subscription:', error);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -113,7 +135,21 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     }
   };
 
+  const checkPremiumAccess = () => {
+    // Check if subscription is loaded and has premium plan
+    if (!subscription || subscription.planType !== 'premium') {
+      setShowUpgradeModal(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleSelectClient = async (client) => {
+    // Check premium access before allowing disbursement creation
+    if (!checkPremiumAccess()) {
+      return;
+    }
+
     setSelectedClient(client);
     setDisbursementAmount('');
     setMedicalProviderPayments([]);
@@ -677,6 +713,43 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
       {/* Disbursement Modal */}
       {renderDisbursementModal()}
+
+      {/* Upgrade Modal */}
+      <Modal
+        visible={showUpgradeModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowUpgradeModal(false)}
+      >
+        <View style={styles.upgradeModalOverlay}>
+          <View style={styles.upgradeModalContent}>
+            <Text style={styles.upgradeModalIcon}>⭐</Text>
+            <Text style={styles.upgradeModalTitle}>Premium Feature</Text>
+            <Text style={styles.upgradeModalMessage}>
+              Settlement disbursements are only available with a Premium plan. 
+              Upgrade your subscription to unlock this powerful feature and process 
+              payments to clients and medical providers.
+            </Text>
+            <View style={styles.upgradeModalButtons}>
+              <TouchableOpacity
+                style={styles.upgradeButton}
+                onPress={() => {
+                  setShowUpgradeModal(false);
+                  if (onBack) onBack();
+                }}
+              >
+                <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.upgradeModalCancelButton}
+                onPress={() => setShowUpgradeModal(false)}
+              >
+                <Text style={styles.upgradeModalCancelText}>Not Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1157,6 +1230,69 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 14,
     fontWeight: '600'
+  },
+  upgradeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  upgradeModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 30,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10
+  },
+  upgradeModalIcon: {
+    fontSize: 60,
+    marginBottom: 16
+  },
+  upgradeModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 12,
+    textAlign: 'center'
+  },
+  upgradeModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24
+  },
+  upgradeModalButtons: {
+    width: '100%'
+  },
+  upgradeButton: {
+    backgroundColor: theme.colors.warmGold,
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary
+  },
+  upgradeButtonText: {
+    color: theme.colors.navy,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  upgradeModalCancelButton: {
+    paddingVertical: 12
+  },
+  upgradeModalCancelText: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center'
   }
 });
 
