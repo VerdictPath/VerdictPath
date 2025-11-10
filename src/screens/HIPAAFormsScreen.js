@@ -10,8 +10,7 @@ import {
   TextInput,
   Modal
 } from 'react-native';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 export default function HIPAAFormsScreen({ onNavigate, user }) {
   const [forms, setForms] = useState([]);
