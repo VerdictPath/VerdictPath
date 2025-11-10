@@ -107,7 +107,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
   const loadMedicalProvidersForClient = async (clientId) => {
     try {
       const response = await apiRequest(
-        `${API_ENDPOINTS.DISBURSEMENTS.GET_CLIENT_PROVIDERS}?clientId=${clientId}`,
+        API_ENDPOINTS.CLIENT_RELATIONSHIPS.GET_CLIENT_PROVIDERS(clientId),
         {
           method: 'GET',
           headers: {
