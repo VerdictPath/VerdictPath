@@ -772,6 +772,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         )
       );
       setCoins(prevCoins => prevCoins + stageCoins);
+      
+      // Trigger treasure chest refresh to show updated coin balance
+      console.log('[TreasureChest] Stage completed (offline), incrementing refreshKey to update coin balance');
+      setTreasureChestRefreshKey(prev => prev + 1);
+      
       Alert.alert('🎉 Congratulations!', `You completed this stage (offline mode)!`);
       return;
     }
@@ -803,6 +808,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       // Add coins from backend response (may be 0 if already earned)
       const actualCoinsEarned = response.coinsEarned || 0;
       setCoins(prevCoins => prevCoins + actualCoinsEarned);
+      
+      // Trigger treasure chest refresh to show updated coin balance
+      console.log('[TreasureChest] Stage completed, incrementing refreshKey to update coin balance');
+      setTreasureChestRefreshKey(prev => {
+        console.log('[TreasureChest] RefreshKey after stage completion:', prev, '→', prev + 1);
+        return prev + 1;
+      });
       
       if (actualCoinsEarned > 0) {
         Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${actualCoinsEarned} coins!`);
@@ -895,6 +907,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             if (subStage.id === subStageId && !subStage.completed) {
               // Only add coins from the backend response (could be 0 if already earned)
               setCoins(prevCoins => prevCoins + subStageCoins);
+              
+              // Trigger treasure chest refresh to show updated coin balance
+              console.log('[TreasureChest] Substage completed, incrementing refreshKey to update coin balance');
+              setTreasureChestRefreshKey(prev => {
+                console.log('[TreasureChest] RefreshKey after substage completion:', prev, '→', prev + 1);
+                return prev + 1;
+              });
+              
               // Note: Success alert is shown in RoadmapScreen after backend completion
               return { ...subStage, completed: true };
             }
