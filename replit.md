@@ -15,6 +15,10 @@ The design uses a "pirate treasure map" theme with a warm tan/beige color palett
 ### Technical Implementations
 The application uses Expo SDK 52 with React Native 0.76.9 in a modular monorepo structure. The backend is Node.js/Express with PostgreSQL, deployed via Railway, implementing HIPAA-compliant security with AES-256-GCM encryption, RBAC, patient consent management, and audit logging. The system tracks litigation progress through 9 stages and 60 substages, includes client/patient management with real-time search, and a comprehensive connection management system. A subscription management system supports Free, Basic, and Premium tiers. Gamification includes a coin system with a 25,000-coin cap and a universal invite/referral system. Cross-platform compatibility is supported, including web deployment with mobile-only features disabled for web. Real-time coin balance updates are implemented.
 
+**Recent UI Fixes (November 10, 2025):**
+- **Law Firm Dashboard Header Layout**: Fixed invite button visibility issue by making the firm info section flexible (flex: 1) and preventing the invite button from shrinking (flexShrink: 0). This ensures the invite button remains fully visible on all screen sizes, even with long firm names.
+- **Navigation Consistency**: Added back button to Individual user's subscription plan selection screen to match Law Firm and Medical Provider navigation patterns.
+
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
 - **Subscription Pricing Structure**: Tiered pricing for law firms (8 tiers), individuals (3 tiers), and medical providers (4 tiers) with different plans and annual savings.
