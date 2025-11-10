@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
-const { sendPushNotification } = require('../services/notificationService');
 
 // Helper function to get user type from token
 const getUserType = (user) => {
@@ -191,26 +190,9 @@ router.post('/initiate', authenticateToken, async (req, res) => {
       [negotiation.id, 'initiated', userType, initialOffer, notes || null]
     );
 
-    // Send push notification to the other party
-    const otherPartyId = userType === 'law_firm' ? finalMedicalProviderId : lawFirmId;
-    const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
-    
-    try {
-      await sendPushNotification({
-        userId: otherPartyId,
-        userType: otherPartyType,
-        title: 'New Bill Negotiation',
-        body: `A negotiation has been initiated for ${billDescription}. Initial offer: $${initialOffer}`,
-        data: {
-          type: 'negotiation_initiated',
-          negotiationId: negotiation.id,
-          actionUrl: 'verdictpath://negotiations'
-        }
-      });
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-      // Continue even if notification fails
-    }
+    // Send push notification to the other party (notifications disabled for now)
+    // const otherPartyId = userType === 'law_firm' ? finalMedicalProviderId : lawFirmId;
+    // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
 
     res.status(201).json({
       success: true,
@@ -303,27 +285,11 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
       [negotiationId, 'counter_offer', userType, counterOffer, notes || null]
     );
 
-    // Send push notification to the other party
-    const otherPartyId = userType === 'law_firm' 
-      ? negotiation.medical_provider_id 
-      : negotiation.law_firm_id;
-    const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
-    
-    try {
-      await sendPushNotification({
-        userId: otherPartyId,
-        userType: otherPartyType,
-        title: 'Counter Offer Received',
-        body: `New counter offer of $${counterOffer} for ${negotiation.bill_description}`,
-        data: {
-          type: 'negotiation_counter_offer',
-          negotiationId: negotiation.id,
-          actionUrl: 'verdictpath://negotiations'
-        }
-      });
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-    }
+    // Send push notification to the other party (notifications disabled for now)
+    // const otherPartyId = userType === 'law_firm' 
+    //   ? negotiation.medical_provider_id 
+    //   : negotiation.law_firm_id;
+    // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
 
     res.json({
       success: true,
@@ -405,40 +371,11 @@ router.post('/accept', authenticateToken, async (req, res) => {
       [negotiationId, 'accepted', userType, negotiation.current_offer]
     );
 
-    // Send push notification to the other party
-    const otherPartyId = userType === 'law_firm' 
-      ? negotiation.medical_provider_id 
-      : negotiation.law_firm_id;
-    const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
-    
-    try {
-      await sendPushNotification({
-        userId: otherPartyId,
-        userType: otherPartyType,
-        title: 'Negotiation Accepted',
-        body: `The negotiation for ${negotiation.bill_description} has been accepted at $${negotiation.current_offer}`,
-        data: {
-          type: 'negotiation_accepted',
-          negotiationId: negotiation.id,
-          actionUrl: 'verdictpath://negotiations'
-        }
-      });
-
-      // Send notification log to both parties
-      await sendPushNotification({
-        userId: req.user.id,
-        userType: userType === 'law_firm' ? 'lawfirm' : 'medical_provider',
-        title: 'Negotiation Complete',
-        body: `Negotiation log available for ${negotiation.bill_description}`,
-        data: {
-          type: 'negotiation_complete',
-          negotiationId: negotiation.id,
-          actionUrl: 'verdictpath://negotiations'
-        }
-      });
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-    }
+    // Send push notification to the other party (notifications disabled for now)
+    // const otherPartyId = userType === 'law_firm' 
+    //   ? negotiation.medical_provider_id 
+    //   : negotiation.law_firm_id;
+    // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
 
     res.json({
       success: true,
@@ -519,28 +456,11 @@ router.post('/request-call', authenticateToken, async (req, res) => {
       [negotiationId, 'call_requested', userType, phoneNumber, notes || null]
     );
 
-    // Send push notification with phone number to the other party
-    const otherPartyId = userType === 'law_firm' 
-      ? negotiation.medical_provider_id 
-      : negotiation.law_firm_id;
-    const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
-    
-    try {
-      await sendPushNotification({
-        userId: otherPartyId,
-        userType: otherPartyType,
-        title: 'Call Requested',
-        body: `The other party would like to discuss the negotiation. Call: ${phoneNumber}`,
-        data: {
-          type: 'negotiation_call_requested',
-          negotiationId: negotiation.id,
-          phoneNumber: phoneNumber,
-          actionUrl: 'verdictpath://negotiations'
-        }
-      });
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-    }
+    // Send push notification with phone number to the other party (notifications disabled for now)
+    // const otherPartyId = userType === 'law_firm' 
+    //   ? negotiation.medical_provider_id 
+    //   : negotiation.law_firm_id;
+    // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
 
     res.json({
       success: true,
