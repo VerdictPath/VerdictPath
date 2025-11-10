@@ -281,7 +281,7 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
         standardFeatures={basicFeatures}
         premiumFeatures={premiumFeatures}
         showDisbursementNote={true}
-        disbursementNoteText="Settlement Disbursements is a premium-only feature. Upgrade to Premium to receive settlement payments directly from law firms."
+        disbursementNoteText="Settlement Disbursements is a premium-only feature. Upgrade to Premium to receive payments from law firms."
         standardLabel="Basic"
         standardDescription="Core features for your practice"
         premiumLabel="Premium"
