@@ -5,46 +5,43 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   TextInput,
+  Alert,
+  ActivityIndicator,
   Modal,
-  Platform
+  Linking
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
-import alert from '../utils/alert';
 
 const NegotiationsScreen = ({ user, onBack }) => {
-  const [negotiations, setNegotiations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'new'
-  const [showInitiateModal, setShowInitiateModal] = useState(false);
+  const [negotiations, setNegotiations] = useState([]);
+  const [selectedNegotiation, setSelectedNegotiation] = useState(null);
+  const [showNewNegotiationModal, setShowNewNegotiationModal] = useState(false);
   const [showCounterOfferModal, setShowCounterOfferModal] = useState(false);
   const [showCallRequestModal, setShowCallRequestModal] = useState(false);
-  const [selectedNegotiation, setSelectedNegotiation] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [medicalProviders, setMedicalProviders] = useState([]);
   
-  // New negotiation form fields
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [selectedProvider, setSelectedProvider] = useState(null);
+  // New negotiation form state
+  const [clients, setClients] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [medicalProviders, setMedicalProviders] = useState([]);
+  const [selectedMedicalProviderId, setSelectedMedicalProviderId] = useState(null);
   const [billDescription, setBillDescription] = useState('');
   const [billAmount, setBillAmount] = useState('');
   const [initialOffer, setInitialOffer] = useState('');
   const [notes, setNotes] = useState('');
   
-  // Counter offer fields
-  const [counterOffer, setCounterOffer] = useState('');
-  const [counterNotes, setCounterNotes] = useState('');
+  // Counter offer state
+  const [counterOfferAmount, setCounterOfferAmount] = useState('');
+  const [counterOfferNotes, setCounterOfferNotes] = useState('');
   
-  // Call request fields
+  // Call request state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [callNotes, setCallNotes] = useState('');
-  
-  const [processing, setProcessing] = useState(false);
 
-  const isLawFirm = user?.userType === 'lawfirm';
-  const isMedicalProvider = user?.userType === 'medical_provider';
+  const isLawFirm = user?.type === 'LAW_FIRM' || user?.userType === 'lawfirm';
+  const isMedicalProvider = user?.type === 'MEDICAL_PROVIDER' || user?.userType === 'medical_provider';
 
   useEffect(() => {
     loadNegotiations();
@@ -64,11 +61,11 @@ const NegotiationsScreen = ({ user, onBack }) => {
           'Authorization': `Bearer ${user.token}`
         }
       });
-
+      
       setNegotiations(response.negotiations || []);
     } catch (error) {
       console.error('Error loading negotiations:', error);
-      alert('Error', 'Failed to load negotiations');
+      Alert.alert('Error', 'Failed to load negotiations');
     } finally {
       setLoading(false);
     }
@@ -82,7 +79,6 @@ const NegotiationsScreen = ({ user, onBack }) => {
           'Authorization': `Bearer ${user.token}`
         }
       });
-
       setClients(response.clients || []);
     } catch (error) {
       console.error('Error loading clients:', error);
@@ -97,7 +93,6 @@ const NegotiationsScreen = ({ user, onBack }) => {
           'Authorization': `Bearer ${user.token}`
         }
       });
-
       setClients(response.patients || []);
     } catch (error) {
       console.error('Error loading patients:', error);
@@ -105,18 +100,26 @@ const NegotiationsScreen = ({ user, onBack }) => {
   };
 
   const loadMedicalProvidersForClient = async (clientId) => {
+    if (!clientId) {
+      setMedicalProviders([]);
+      return;
+    }
+    
     try {
-      const response = await apiRequest(
-        API_ENDPOINTS.CLIENT_RELATIONSHIPS.GET_CLIENT_PROVIDERS(clientId),
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
+      const response = await apiRequest(API_ENDPOINTS.CLIENT_RELATIONSHIPS.GET_CLIENT_PROVIDERS(clientId), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
         }
-      );
-
+      });
       setMedicalProviders(response.providers || []);
+      
+      // Auto-select if only one provider
+      if (response.providers && response.providers.length === 1) {
+        setSelectedMedicalProviderId(response.providers[0].id);
+      } else {
+        setSelectedMedicalProviderId(null);
+      }
     } catch (error) {
       console.error('Error loading medical providers:', error);
       setMedicalProviders([]);
@@ -124,131 +127,174 @@ const NegotiationsScreen = ({ user, onBack }) => {
   };
 
   const handleInitiateNegotiation = async () => {
-    if (!billDescription.trim() || !billAmount || !initialOffer) {
-      alert('Error', 'Please fill in all required fields');
+    if (!selectedClientId || !billDescription || !billAmount || !initialOffer) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    if (parseFloat(initialOffer) > parseFloat(billAmount)) {
-      alert('Error', 'Initial offer must be less than or equal to bill amount');
+    // Law firms must select a medical provider
+    if (isLawFirm && !selectedMedicalProviderId) {
+      Alert.alert('Error', 'Please select a medical provider');
       return;
     }
 
-    if (!selectedClient) {
-      alert('Error', isLawFirm ? 'Please select a client' : 'Please select a patient');
+    const billAmountNum = parseFloat(billAmount);
+    const initialOfferNum = parseFloat(initialOffer);
+
+    if (isNaN(billAmountNum) || isNaN(initialOfferNum)) {
+      Alert.alert('Error', 'Please enter valid amounts');
       return;
     }
 
-    if (isLawFirm && !selectedProvider) {
-      alert('Error', 'Please select a medical provider');
+    if (initialOfferNum >= billAmountNum) {
+      Alert.alert('Error', 'Initial offer must be less than the bill amount');
       return;
     }
 
     try {
-      setProcessing(true);
-      
-      const body = {
-        clientId: selectedClient?.id,
+      setLoading(true);
+      const requestBody = {
+        clientId: selectedClientId,
         billDescription,
-        billAmount: parseFloat(billAmount),
-        initialOffer: parseFloat(initialOffer),
-        notes: notes.trim() || null
+        billAmount: billAmountNum,
+        initialOffer: initialOfferNum,
+        notes,
+        initiatedBy: isLawFirm ? 'law_firm' : 'medical_provider'
       };
 
+      // Add medical provider ID if initiated by law firm
       if (isLawFirm) {
-        body.medicalProviderId = selectedProvider?.id;
+        requestBody.medicalProviderId = selectedMedicalProviderId;
       }
 
-      await apiRequest(API_ENDPOINTS.NEGOTIATIONS.INITIATE, {
+      const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.INITIATE, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${user.token}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(requestBody)
       });
 
-      alert('Success', 'Negotiation initiated successfully');
-      setShowInitiateModal(false);
-      resetForm();
-      loadNegotiations();
+      Alert.alert(
+        'Success',
+        'Negotiation initiated! The other party has been notified.',
+        [{ text: 'OK', onPress: () => {
+          setShowNewNegotiationModal(false);
+          resetNewNegotiationForm();
+          loadNegotiations();
+        }}]
+      );
     } catch (error) {
       console.error('Error initiating negotiation:', error);
-      alert('Error', error.message || 'Failed to initiate negotiation');
+      Alert.alert('Error', error.message || 'Failed to initiate negotiation');
     } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
-  const handleCounterOffer = async () => {
-    if (!counterOffer) {
-      alert('Error', 'Please enter a counter offer amount');
+  const handleSendCounterOffer = async () => {
+    if (!counterOfferAmount) {
+      Alert.alert('Error', 'Please enter a counter offer amount');
       return;
     }
 
-    if (parseFloat(counterOffer) > parseFloat(selectedNegotiation.bill_amount)) {
-      alert('Error', 'Counter offer cannot exceed the bill amount');
+    const counterOfferNum = parseFloat(counterOfferAmount);
+    if (isNaN(counterOfferNum)) {
+      Alert.alert('Error', 'Please enter a valid amount');
       return;
+    }
+
+    const currentOffer = selectedNegotiation.currentOffer;
+    const billAmount = selectedNegotiation.billAmount;
+
+    // Validate counter offer logic
+    if (isLawFirm) {
+      if (counterOfferNum >= billAmount) {
+        Alert.alert('Error', 'Counter offer must be less than the bill amount');
+        return;
+      }
+      if (counterOfferNum <= currentOffer) {
+        Alert.alert('Error', 'Counter offer should be higher than the current offer');
+        return;
+      }
+    } else {
+      if (counterOfferNum <= currentOffer) {
+        Alert.alert('Error', 'Counter offer must be greater than the current offer');
+        return;
+      }
+      if (counterOfferNum > billAmount) {
+        Alert.alert('Error', 'Counter offer cannot exceed the bill amount');
+        return;
+      }
     }
 
     try {
-      setProcessing(true);
-      await apiRequest(API_ENDPOINTS.NEGOTIATIONS.COUNTER_OFFER, {
+      setLoading(true);
+      const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.COUNTER_OFFER, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${user.token}`
         },
         body: JSON.stringify({
           negotiationId: selectedNegotiation.id,
-          counterOffer: parseFloat(counterOffer),
-          notes: counterNotes.trim() || null
+          counterOffer: counterOfferNum,
+          notes: counterOfferNotes
         })
       });
 
-      alert('Success', 'Counter offer sent successfully');
-      setShowCounterOfferModal(false);
-      setCounterOffer('');
-      setCounterNotes('');
-      setSelectedNegotiation(null);
-      loadNegotiations();
+      Alert.alert(
+        'Success',
+        'Counter offer sent! The other party has been notified.',
+        [{ text: 'OK', onPress: () => {
+          setShowCounterOfferModal(false);
+          setCounterOfferAmount('');
+          setCounterOfferNotes('');
+          loadNegotiations();
+          setSelectedNegotiation(null);
+        }}]
+      );
     } catch (error) {
       console.error('Error sending counter offer:', error);
-      alert('Error', error.message || 'Failed to send counter offer');
+      Alert.alert('Error', error.message || 'Failed to send counter offer');
     } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
-  const handleAcceptOffer = async (negotiation) => {
-    alert(
+  const handleAcceptOffer = async (negotiationId) => {
+    Alert.alert(
       'Accept Offer',
-      `Accept the current offer of $${parseFloat(negotiation.current_offer).toFixed(2)} for ${negotiation.bill_description}?`,
+      'Are you sure you want to accept this offer? This will finalize the negotiation.',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
+        { 
+          text: 'Accept', 
           onPress: async () => {
             try {
-              setProcessing(true);
-              await apiRequest(API_ENDPOINTS.NEGOTIATIONS.ACCEPT, {
+              setLoading(true);
+              const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.ACCEPT, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${user.token}`,
-                  'Content-Type': 'application/json'
+                  'Authorization': `Bearer ${user.token}`
                 },
                 body: JSON.stringify({
-                  negotiationId: negotiation.id
+                  negotiationId
                 })
               });
 
-              alert('Success', 'Offer accepted! Negotiation complete.');
-              loadNegotiations();
+              Alert.alert(
+                'Success',
+                'Offer accepted! Both parties will receive a full negotiation log.',
+                [{ text: 'OK', onPress: () => {
+                  loadNegotiations();
+                  setSelectedNegotiation(null);
+                }}]
+              );
             } catch (error) {
               console.error('Error accepting offer:', error);
-              alert('Error', error.message || 'Failed to accept offer');
+              Alert.alert('Error', error.message || 'Failed to accept offer');
             } finally {
-              setProcessing(false);
+              setLoading(false);
             }
           }
         }
@@ -257,306 +303,402 @@ const NegotiationsScreen = ({ user, onBack }) => {
   };
 
   const handleRequestCall = async () => {
-    if (!phoneNumber.trim()) {
-      alert('Error', 'Please enter a phone number');
+    if (!phoneNumber) {
+      Alert.alert('Error', 'Please enter a phone number');
+      return;
+    }
+
+    // Basic phone validation
+    const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      Alert.alert('Error', 'Please enter a valid phone number');
       return;
     }
 
     try {
-      setProcessing(true);
-      await apiRequest(API_ENDPOINTS.NEGOTIATIONS.REQUEST_CALL, {
+      setLoading(true);
+      const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.REQUEST_CALL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${user.token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${user.token}`
         },
         body: JSON.stringify({
           negotiationId: selectedNegotiation.id,
-          phoneNumber: phoneNumber.trim(),
-          notes: callNotes.trim() || null
+          phoneNumber,
+          notes: callNotes
         })
       });
 
-      alert('Success', 'Call request sent successfully');
-      setShowCallRequestModal(false);
-      setPhoneNumber('');
-      setCallNotes('');
-      setSelectedNegotiation(null);
-      loadNegotiations();
+      Alert.alert(
+        'Success',
+        'Call request sent! The other party has been notified with your contact information.',
+        [{ text: 'OK', onPress: () => {
+          setShowCallRequestModal(false);
+          setPhoneNumber('');
+          setCallNotes('');
+          loadNegotiations();
+        }}]
+      );
     } catch (error) {
       console.error('Error requesting call:', error);
-      alert('Error', error.message || 'Failed to send call request');
+      Alert.alert('Error', error.message || 'Failed to send call request');
     } finally {
-      setProcessing(false);
+      setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setSelectedClient(null);
-    setSelectedProvider(null);
+  const handleDownloadLog = async (negotiationId) => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.LOG(negotiationId), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      // In a real app, this would download a PDF or open a new screen
+      Alert.alert(
+        'Negotiation Log',
+        JSON.stringify(response.log, null, 2),
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error downloading log:', error);
+      Alert.alert('Error', 'Failed to download negotiation log');
+    }
+  };
+
+  const resetNewNegotiationForm = () => {
+    setSelectedClientId(null);
+    setSelectedMedicalProviderId(null);
+    setMedicalProviders([]);
     setBillDescription('');
     setBillAmount('');
     setInitialOffer('');
     setNotes('');
-    setMedicalProviders([]);
   };
 
-  const filteredNegotiations = negotiations.filter(neg => {
-    if (activeTab === 'active') {
-      return neg.status !== 'accepted';
-    } else if (activeTab === 'completed') {
-      return neg.status === 'accepted';
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return '#FFA500';
+      case 'counter_offered': return '#1E90FF';
+      case 'accepted': return '#28a745';
+      case 'stalled': return '#dc3545';
+      default: return '#6c757d';
     }
-    return false;
-  });
+  };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { text: 'Pending', color: theme.colors.warmGold },
-      counter_offered: { text: 'Counter Offered', color: '#3498db' },
-      accepted: { text: 'Accepted', color: '#27ae60' },
-      stalled: { text: 'Call Requested', color: '#e74c3c' }
-    };
-
-    const config = statusConfig[status] || statusConfig.pending;
-    
-    return (
-      <View style={[styles.statusBadge, { backgroundColor: config.color }]}>
-        <Text style={styles.statusBadgeText}>{config.text}</Text>
-      </View>
-    );
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending': return 'Pending Response';
+      case 'counter_offered': return 'Counter Offer Made';
+      case 'accepted': return 'Accepted';
+      case 'stalled': return 'Stalled - Call Requested';
+      default: return status;
+    }
   };
 
   const renderNegotiationCard = (negotiation) => {
-    const savingsAmount = parseFloat(negotiation.bill_amount) - parseFloat(negotiation.current_offer);
-    const savingsPercentage = (savingsAmount / parseFloat(negotiation.bill_amount) * 100).toFixed(1);
-    const otherParty = isLawFirm ? negotiation.provider_name : negotiation.firm_name;
+    const isMyTurn = (isLawFirm && negotiation.lastRespondedBy === 'medical_provider') ||
+                     (isMedicalProvider && negotiation.lastRespondedBy === 'law_firm') ||
+                     negotiation.lastRespondedBy === null;
 
     return (
-      <View key={negotiation.id} style={styles.negotiationCard}>
+      <TouchableOpacity
+        key={negotiation.id}
+        style={styles.negotiationCard}
+        onPress={() => setSelectedNegotiation(negotiation)}
+      >
         <View style={styles.cardHeader}>
-          <Text style={styles.clientName}>{negotiation.client_name}</Text>
-          {getStatusBadge(negotiation.status)}
-        </View>
-
-        <Text style={styles.billDescription}>{negotiation.bill_description}</Text>
-        <Text style={styles.otherParty}>{isLawFirm ? 'Medical Provider' : 'Law Firm'}: {otherParty}</Text>
-
-        <View style={styles.amountsRow}>
-          <View style={styles.amountBox}>
-            <Text style={styles.amountLabel}>Original Bill</Text>
-            <Text style={styles.amountValue}>${parseFloat(negotiation.bill_amount).toFixed(2)}</Text>
-          </View>
-          <View style={styles.amountBox}>
-            <Text style={styles.amountLabel}>Current Offer</Text>
-            <Text style={[styles.amountValue, { color: theme.colors.warmGold }]}>
-              ${parseFloat(negotiation.current_offer).toFixed(2)}
-            </Text>
-          </View>
-        </View>
-
-        {savingsAmount > 0 && (
-          <View style={styles.savingsRow}>
-            <Text style={styles.savingsText}>
-              Potential Savings: ${savingsAmount.toFixed(2)} ({savingsPercentage}%)
-            </Text>
-          </View>
-        )}
-
-        {negotiation.history && negotiation.history.length > 0 && (
-          <Text style={styles.interactionText}>
-            {negotiation.interaction_count} interaction{negotiation.interaction_count !== 1 ? 's' : ''}
+          <Text style={styles.clientName}>
+            {negotiation.clientName || `Client ID: ${negotiation.clientId}`}
           </Text>
-        )}
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(negotiation.status) }]}>
+            <Text style={styles.statusText}>{getStatusText(negotiation.status)}</Text>
+          </View>
+        </View>
 
-        {negotiation.status !== 'accepted' && (
-          <View style={styles.cardActions}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.counterButton]}
-              onPress={() => {
-                setSelectedNegotiation(negotiation);
-                setCounterOffer(negotiation.current_offer);
-                setShowCounterOfferModal(true);
-              }}
-              disabled={processing}
-            >
-              <Text style={styles.actionButtonText}>Counter Offer</Text>
-            </TouchableOpacity>
+        <Text style={styles.billDescription}>{negotiation.billDescription}</Text>
 
-            <TouchableOpacity
-              style={[styles.actionButton, styles.acceptButton]}
-              onPress={() => handleAcceptOffer(negotiation)}
-              disabled={processing}
-            >
-              <Text style={styles.actionButtonText}>Accept</Text>
-            </TouchableOpacity>
+        <View style={styles.amountRow}>
+          <View style={styles.amountCol}>
+            <Text style={styles.amountLabel}>Bill Amount</Text>
+            <Text style={styles.amountValue}>${negotiation.billAmount.toFixed(2)}</Text>
+          </View>
+          <View style={styles.amountCol}>
+            <Text style={styles.amountLabel}>Current Offer</Text>
+            <Text style={styles.amountValue}>${negotiation.currentOffer.toFixed(2)}</Text>
+          </View>
+        </View>
 
-            <TouchableOpacity
-              style={[styles.actionButton, styles.callButton]}
-              onPress={() => {
-                setSelectedNegotiation(negotiation);
-                setShowCallRequestModal(true);
-              }}
-              disabled={processing}
-            >
-              <Text style={styles.actionButtonText}>📞</Text>
-            </TouchableOpacity>
+        {isMyTurn && negotiation.status !== 'accepted' && (
+          <View style={styles.yourTurnBadge}>
+            <Text style={styles.yourTurnText}>🔔 Your Turn</Text>
           </View>
         )}
 
-        {negotiation.status === 'accepted' && (
-          <View style={styles.completedBanner}>
-            <Text style={styles.completedText}>✅ Agreement reached</Text>
-            <Text style={styles.finalAmountText}>
-              Final Amount: ${parseFloat(negotiation.current_offer).toFixed(2)}
-            </Text>
-          </View>
-        )}
-      </View>
+        <Text style={styles.dateText}>
+          Initiated: {new Date(negotiation.createdAt).toLocaleDateString()}
+        </Text>
+      </TouchableOpacity>
     );
   };
 
-  const renderInitiateModal = () => (
-    <Modal
-      visible={showInitiateModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowInitiateModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <ScrollView>
-            <Text style={styles.modalTitle}>Start New Negotiation</Text>
+  const renderNegotiationDetail = () => {
+    if (!selectedNegotiation) return null;
 
-            {isLawFirm && (
-              <>
-                <Text style={styles.inputLabel}>Select Client *</Text>
-                <ScrollView style={styles.clientPickerContainer}>
-                  {clients.map(client => (
-                    <TouchableOpacity
-                      key={client.id}
-                      style={[
-                        styles.clientOption,
-                        selectedClient?.id === client.id && styles.selectedOption
-                      ]}
-                      onPress={() => {
-                        setSelectedClient(client);
-                        loadMedicalProvidersForClient(client.id);
-                      }}
-                    >
-                      <Text style={styles.clientOptionText}>{client.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+    const isMyTurn = (isLawFirm && selectedNegotiation.lastRespondedBy === 'medical_provider') ||
+                     (isMedicalProvider && selectedNegotiation.lastRespondedBy === 'law_firm') ||
+                     selectedNegotiation.lastRespondedBy === null;
 
-                {selectedClient && medicalProviders.length > 0 && (
-                  <>
-                    <Text style={styles.inputLabel}>Select Medical Provider *</Text>
-                    <ScrollView style={styles.clientPickerContainer}>
-                      {medicalProviders.map(provider => (
-                        <TouchableOpacity
-                          key={provider.id}
-                          style={[
-                            styles.clientOption,
-                            selectedProvider?.id === provider.id && styles.selectedOption
-                          ]}
-                          onPress={() => setSelectedProvider(provider)}
-                        >
-                          <Text style={styles.clientOptionText}>{provider.name}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </>
-                )}
-              </>
-            )}
+    const canAccept = selectedNegotiation.status === 'counter_offered' || selectedNegotiation.status === 'pending';
+    const canCounterOffer = isMyTurn && selectedNegotiation.status !== 'accepted';
 
-            {isMedicalProvider && (
-              <>
-                <Text style={styles.inputLabel}>Select Patient *</Text>
-                <ScrollView style={styles.clientPickerContainer}>
-                  {clients.map(patient => (
-                    <TouchableOpacity
-                      key={patient.id}
-                      style={[
-                        styles.clientOption,
-                        selectedClient?.id === patient.id && styles.selectedOption
-                      ]}
-                      onPress={() => setSelectedClient(patient)}
-                    >
-                      <Text style={styles.clientOptionText}>{patient.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </>
-            )}
+    return (
+      <Modal
+        visible={true}
+        animationType="slide"
+        onRequestClose={() => setSelectedNegotiation(null)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Negotiation Details</Text>
+            <TouchableOpacity onPress={() => setSelectedNegotiation(null)}>
+              <Text style={styles.closeButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-            <Text style={styles.inputLabel}>Bill Description *</Text>
-            <TextInput
-              style={styles.textInput}
-              value={billDescription}
-              onChangeText={setBillDescription}
-              placeholder="e.g., Emergency Room Visit - March 2024"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.inputLabel}>Bill Amount *</Text>
-            <TextInput
-              style={styles.textInput}
-              value={billAmount}
-              onChangeText={setBillAmount}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.inputLabel}>Initial Offer *</Text>
-            <TextInput
-              style={styles.textInput}
-              value={initialOffer}
-              onChangeText={setInitialOffer}
-              placeholder="0.00"
-              keyboardType="decimal-pad"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.inputLabel}>Notes (Optional)</Text>
-            <TextInput
-              style={[styles.textInput, styles.textArea]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Additional details or justification..."
-              multiline
-              numberOfLines={4}
-              placeholderTextColor="#999"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setShowInitiateModal(false);
-                  resetForm();
-                }}
-                disabled={processing}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={handleInitiateNegotiation}
-                disabled={processing}
-              >
-                {processing ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.modalButtonText}>Initiate</Text>
-                )}
-              </TouchableOpacity>
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.detailSection}>
+              <Text style={styles.sectionTitle}>Client Information</Text>
+              <Text style={styles.detailText}>
+                {selectedNegotiation.clientName || `Client ID: ${selectedNegotiation.clientId}`}
+              </Text>
             </View>
+
+            <View style={styles.detailSection}>
+              <Text style={styles.sectionTitle}>Bill Description</Text>
+              <Text style={styles.detailText}>{selectedNegotiation.billDescription}</Text>
+            </View>
+
+            <View style={styles.amountSection}>
+              <View style={styles.amountDetailCol}>
+                <Text style={styles.amountDetailLabel}>Original Bill</Text>
+                <Text style={styles.amountDetailValue}>
+                  ${selectedNegotiation.billAmount.toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.amountDetailCol}>
+                <Text style={styles.amountDetailLabel}>Current Offer</Text>
+                <Text style={[styles.amountDetailValue, { color: theme.colors.primary }]}>
+                  ${selectedNegotiation.currentOffer.toFixed(2)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailSection}>
+              <Text style={styles.sectionTitle}>Status</Text>
+              <View style={[styles.statusBadgeLarge, { backgroundColor: getStatusColor(selectedNegotiation.status) }]}>
+                <Text style={styles.statusTextLarge}>{getStatusText(selectedNegotiation.status)}</Text>
+              </View>
+            </View>
+
+            {selectedNegotiation.history && selectedNegotiation.history.length > 0 && (
+              <View style={styles.detailSection}>
+                <Text style={styles.sectionTitle}>Negotiation History</Text>
+                {selectedNegotiation.history.map((entry, index) => (
+                  <View key={index} style={styles.historyEntry}>
+                    <Text style={styles.historyDate}>
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </Text>
+                    <Text style={styles.historyAction}>{entry.action}</Text>
+                    <Text style={styles.historyAmount}>
+                      Amount: ${entry.amount.toFixed(2)}
+                    </Text>
+                    {entry.notes && (
+                      <Text style={styles.historyNotes}>Notes: {entry.notes}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {selectedNegotiation.status === 'accepted' && (
+              <TouchableOpacity
+                style={styles.downloadButton}
+                onPress={() => handleDownloadLog(selectedNegotiation.id)}
+              >
+                <Text style={styles.downloadButtonText}>📄 Download Full Log</Text>
+              </TouchableOpacity>
+            )}
+
+            {selectedNegotiation.status !== 'accepted' && (
+              <View style={styles.actionSection}>
+                {canAccept && (
+                  <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={() => handleAcceptOffer(selectedNegotiation.id)}
+                  >
+                    <Text style={styles.acceptButtonText}>✓ Accept Offer</Text>
+                  </TouchableOpacity>
+                )}
+
+                {canCounterOffer && (
+                  <TouchableOpacity
+                    style={styles.counterButton}
+                    onPress={() => setShowCounterOfferModal(true)}
+                  >
+                    <Text style={styles.counterButtonText}>↔ Send Counter Offer</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  style={styles.callButton}
+                  onPress={() => setShowCallRequestModal(true)}
+                >
+                  <Text style={styles.callButtonText}>📞 Request Call</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         </View>
+      </Modal>
+    );
+  };
+
+  const renderNewNegotiationModal = () => (
+    <Modal
+      visible={showNewNegotiationModal}
+      animationType="slide"
+      onRequestClose={() => setShowNewNegotiationModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>New Negotiation</Text>
+          <TouchableOpacity onPress={() => setShowNewNegotiationModal(false)}>
+            <Text style={styles.closeButton}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.modalContent}>
+          <Text style={styles.inputLabel}>
+            Select {isLawFirm ? 'Client' : 'Patient'} *
+          </Text>
+          <View style={styles.pickerContainer}>
+            {clients.map((client) => (
+              <TouchableOpacity
+                key={client.id}
+                style={[
+                  styles.clientOption,
+                  selectedClientId === client.id && styles.clientOptionSelected
+                ]}
+                onPress={() => {
+                  setSelectedClientId(client.id);
+                  if (isLawFirm) {
+                    loadMedicalProvidersForClient(client.id);
+                  }
+                }}
+              >
+                <Text style={[
+                  styles.clientOptionText,
+                  selectedClientId === client.id && styles.clientOptionTextSelected
+                ]}>
+                  {client.firstName} {client.lastName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Show medical provider selection for law firms */}
+          {isLawFirm && selectedClientId && (
+            <>
+              <Text style={styles.inputLabel}>Select Medical Provider *</Text>
+              {medicalProviders.length === 0 ? (
+                <View style={styles.warningBox}>
+                  <Text style={styles.warningText}>
+                    ⚠️ No medical providers linked to this client.
+                  </Text>
+                  <Text style={styles.warningSubtext}>
+                    Please link a medical provider to this client first.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.pickerContainer}>
+                  {medicalProviders.map((provider) => (
+                    <TouchableOpacity
+                      key={provider.id}
+                      style={[
+                        styles.clientOption,
+                        selectedMedicalProviderId === provider.id && styles.clientOptionSelected
+                      ]}
+                      onPress={() => setSelectedMedicalProviderId(provider.id)}
+                    >
+                      <Text style={[
+                        styles.clientOptionText,
+                        selectedMedicalProviderId === provider.id && styles.clientOptionTextSelected
+                      ]}>
+                        {provider.provider_name}
+                        {provider.is_primary && ' (Primary)'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+
+          <Text style={styles.inputLabel}>Bill Description *</Text>
+          <TextInput
+            style={styles.textArea}
+            value={billDescription}
+            onChangeText={setBillDescription}
+            placeholder="e.g., Emergency Room Visit - 01/15/2025"
+            multiline
+            numberOfLines={3}
+          />
+
+          <Text style={styles.inputLabel}>Bill Amount ($) *</Text>
+          <TextInput
+            style={styles.input}
+            value={billAmount}
+            onChangeText={setBillAmount}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.inputLabel}>
+            {isLawFirm ? 'Initial Offer ($) *' : 'Minimum Acceptable Amount ($) *'}
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={initialOffer}
+            onChangeText={setInitialOffer}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.inputLabel}>Notes (Optional)</Text>
+          <TextInput
+            style={styles.textArea}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Add any additional context..."
+            multiline
+            numberOfLines={4}
+          />
+
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleInitiateNegotiation}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Initiate Negotiation</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -565,72 +707,55 @@ const NegotiationsScreen = ({ user, onBack }) => {
     <Modal
       visible={showCounterOfferModal}
       animationType="slide"
-      transparent={true}
       onRequestClose={() => setShowCounterOfferModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Submit Counter Offer</Text>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Counter Offer</Text>
+          <TouchableOpacity onPress={() => setShowCounterOfferModal(false)}>
+            <Text style={styles.closeButton}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-          {selectedNegotiation && (
-            <>
-              <Text style={styles.negotiationInfo}>
-                {selectedNegotiation.bill_description}
-              </Text>
-              <Text style={styles.currentOfferInfo}>
-                Current Offer: ${parseFloat(selectedNegotiation.current_offer).toFixed(2)}
-              </Text>
-            </>
-          )}
+        <ScrollView style={styles.modalContent}>
+          <View style={styles.infoBox}>
+            <Text style={styles.infoLabel}>Current Offer:</Text>
+            <Text style={styles.infoValue}>
+              ${selectedNegotiation?.currentOffer.toFixed(2)}
+            </Text>
+          </View>
 
-          <Text style={styles.inputLabel}>Counter Offer Amount *</Text>
+          <Text style={styles.inputLabel}>Counter Offer Amount ($) *</Text>
           <TextInput
-            style={styles.textInput}
-            value={counterOffer}
-            onChangeText={setCounterOffer}
+            style={styles.input}
+            value={counterOfferAmount}
+            onChangeText={setCounterOfferAmount}
             placeholder="0.00"
             keyboardType="decimal-pad"
-            placeholderTextColor="#999"
           />
 
           <Text style={styles.inputLabel}>Notes (Optional)</Text>
           <TextInput
-            style={[styles.textInput, styles.textArea]}
-            value={counterNotes}
-            onChangeText={setCounterNotes}
+            style={styles.textArea}
+            value={counterOfferNotes}
+            onChangeText={setCounterOfferNotes}
             placeholder="Explain your counter offer..."
             multiline
             numberOfLines={4}
-            placeholderTextColor="#999"
           />
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => {
-                setShowCounterOfferModal(false);
-                setCounterOffer('');
-                setCounterNotes('');
-                setSelectedNegotiation(null);
-              }}
-              disabled={processing}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modalButton, styles.submitButton]}
-              onPress={handleCounterOffer}
-              disabled={processing}
-            >
-              {processing ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.modalButtonText}>Send</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSendCounterOffer}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Send Counter Offer</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -639,76 +764,68 @@ const NegotiationsScreen = ({ user, onBack }) => {
     <Modal
       visible={showCallRequestModal}
       animationType="slide"
-      transparent={true}
       onRequestClose={() => setShowCallRequestModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Request Phone Call</Text>
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Request Call</Text>
+          <TouchableOpacity onPress={() => setShowCallRequestModal(false)}>
+            <Text style={styles.closeButton}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-          {selectedNegotiation && (
-            <Text style={styles.negotiationInfo}>
-              {selectedNegotiation.bill_description}
-            </Text>
-          )}
+        <ScrollView style={styles.modalContent}>
+          <Text style={styles.infoText}>
+            Request a phone call to discuss this negotiation directly. The other party will receive your contact information.
+          </Text>
 
           <Text style={styles.inputLabel}>Your Phone Number *</Text>
           <TextInput
-            style={styles.textInput}
+            style={styles.input}
             value={phoneNumber}
             onChangeText={setPhoneNumber}
-            placeholder="(555) 123-4567"
+            placeholder="+1 (555) 123-4567"
             keyboardType="phone-pad"
-            placeholderTextColor="#999"
           />
 
           <Text style={styles.inputLabel}>Message (Optional)</Text>
           <TextInput
-            style={[styles.textInput, styles.textArea]}
+            style={styles.textArea}
             value={callNotes}
             onChangeText={setCallNotes}
-            placeholder="Best time to call, additional notes..."
+            placeholder="Let them know when you're available..."
             multiline
             numberOfLines={4}
-            placeholderTextColor="#999"
           />
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
-              onPress={() => {
-                setShowCallRequestModal(false);
-                setPhoneNumber('');
-                setCallNotes('');
-                setSelectedNegotiation(null);
-              }}
-              disabled={processing}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modalButton, styles.submitButton]}
-              onPress={handleRequestCall}
-              disabled={processing}
-            >
-              {processing ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.modalButtonText}>Send Request</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleRequestCall}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Send Call Request</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </Modal>
   );
 
-  if (loading) {
+  if (loading && negotiations.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.warmGold} />
-        <Text style={styles.loadingText}>Loading negotiations...</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Bill Negotiations</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
       </View>
     );
   }
@@ -720,61 +837,33 @@ const NegotiationsScreen = ({ user, onBack }) => {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Bill Negotiations</Text>
-        {isLawFirm && (
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowInitiateModal(true)}
-          >
-            <Text style={styles.addButtonText}>+ New</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
-      <View style={styles.tabsContainer}>
+      <View style={styles.content}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'active' && styles.activeTab]}
-          onPress={() => setActiveTab('active')}
+          style={styles.newNegotiationButton}
+          onPress={() => setShowNewNegotiationModal(true)}
         >
-          <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>
-            Active
-          </Text>
+          <Text style={styles.newNegotiationButtonText}>+ Start New Negotiation</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
-          onPress={() => setActiveTab('completed')}
-        >
-          <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>
-            Completed
-          </Text>
-        </TouchableOpacity>
+
+        <ScrollView style={styles.negotiationsList}>
+          {negotiations.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                No negotiations yet. Start one to begin negotiating medical bills!
+              </Text>
+            </View>
+          ) : (
+            negotiations.map(renderNegotiationCard)
+          )}
+        </ScrollView>
       </View>
 
-      <ScrollView style={styles.listContainer}>
-        {filteredNegotiations.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>💰</Text>
-            <Text style={styles.emptyStateText}>
-              {activeTab === 'active' 
-                ? 'No active negotiations' 
-                : 'No completed negotiations'}
-            </Text>
-            {activeTab === 'active' && isLawFirm && (
-              <TouchableOpacity
-                style={styles.emptyStateButton}
-                onPress={() => setShowInitiateModal(true)}
-              >
-                <Text style={styles.emptyStateButtonText}>Start a Negotiation</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ) : (
-          filteredNegotiations.map(renderNegotiationCard)
-        )}
-      </ScrollView>
-
-      {renderInitiateModal()}
-      {renderCounterOfferModal()}
-      {renderCallRequestModal()}
+      {selectedNegotiation && renderNegotiationDetail()}
+      {showNewNegotiationModal && renderNewNegotiationModal()}
+      {showCounterOfferModal && renderCounterOfferModal()}
+      {showCallRequestModal && renderCallRequestModal()}
     </View>
   );
 };
@@ -784,82 +873,54 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: theme.colors.mahogany,
+    padding: 20,
+    backgroundColor: theme.colors.primary,
   },
   backButton: {
-    padding: 8,
+    marginRight: 15,
   },
   backButtonText: {
-    color: '#FFF',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: '#fff',
+  },
+  content: {
     flex: 1,
-    textAlign: 'center',
+    padding: 20,
   },
-  addButton: {
-    backgroundColor: theme.colors.warmGold,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  tab: {
+  loadingContainer: {
     flex: 1,
-    paddingVertical: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.warmGold,
+  newNegotiationButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  tabText: {
+  newNegotiationButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#666',
-  },
-  activeTabText: {
-    color: theme.colors.mahogany,
     fontWeight: '600',
   },
-  listContainer: {
+  negotiationsList: {
     flex: 1,
   },
   negotiationCard: {
-    backgroundColor: '#FFF',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -870,225 +931,328 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   clientName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: theme.colors.text,
     flex: 1,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
   },
-  statusBadgeText: {
-    color: '#FFF',
+  statusText: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '600',
   },
   billDescription: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
-  },
-  otherParty: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 10,
   },
-  amountsRow: {
+  amountRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  amountBox: {
+  amountCol: {
     flex: 1,
-    marginHorizontal: 4,
   },
   amountLabel: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+    color: theme.colors.textSecondary,
+    marginBottom: 5,
   },
   amountValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.mahogany,
-  },
-  savingsRow: {
-    backgroundColor: '#E8F5E9',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  savingsText: {
-    fontSize: 14,
-    color: '#2E7D32',
-    fontWeight: '600',
-  },
-  interactionText: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 12,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 10,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  counterButton: {
-    backgroundColor: '#3498db',
-  },
-  acceptButton: {
-    backgroundColor: '#27ae60',
-  },
-  callButton: {
-    backgroundColor: '#e74c3c',
-    flex: 0.5,
-  },
-  actionButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  completedBanner: {
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  completedText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E7D32',
-    marginBottom: 4,
+    color: theme.colors.text,
   },
-  finalAmountText: {
-    fontSize: 14,
-    color: '#2E7D32',
+  yourTurnBadge: {
+    backgroundColor: '#FFF3CD',
+    padding: 8,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  yourTurnText: {
+    color: '#856404',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  dateText: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 5,
   },
   emptyState: {
-    alignItems: 'center',
     padding: 40,
-  },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    alignItems: 'center',
   },
   emptyStateText: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 24,
-  },
-  emptyStateButton: {
-    backgroundColor: theme.colors.warmGold,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  emptyStateButtonText: {
-    color: '#FFF',
     fontSize: 16,
-    fontWeight: '600',
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: theme.colors.background,
   },
-  modalContent: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 24,
-    width: '90%',
-    maxHeight: '80%',
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: theme.colors.primary,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#fff',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  detailSection: {
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: 10,
+  },
+  detailText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  amountSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f8f9fa',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  amountDetailCol: {
+    alignItems: 'center',
+  },
+  amountDetailLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 5,
+  },
+  amountDetailValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  statusBadgeLarge: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  statusTextLarge: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  historyEntry: {
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  historyDate: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginBottom: 5,
+  },
+  historyAction: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 3,
+  },
+  historyAmount: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginBottom: 3,
+  },
+  historyNotes: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  actionSection: {
+    marginTop: 20,
+  },
+  acceptButton: {
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  acceptButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  counterButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  counterButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  callButton: {
+    backgroundColor: '#6c757d',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  callButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  downloadButton: {
+    backgroundColor: '#17a2b8',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: theme.colors.text,
     marginBottom: 8,
-    marginTop: 12,
+    marginTop: 10,
   },
-  textInput: {
+  input: {
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#DDD',
+    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#333',
-    backgroundColor: '#FFF',
+    marginBottom: 15,
   },
   textArea: {
-    height: 100,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 15,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
-  clientPickerContainer: {
-    maxHeight: 150,
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-    marginBottom: 8,
+  pickerContainer: {
+    marginBottom: 15,
   },
   clientOption: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 10,
   },
-  selectedOption: {
-    backgroundColor: theme.colors.warmGold + '20',
+  clientOptionSelected: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   clientOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: theme.colors.text,
   },
-  negotiationInfo: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 8,
-  },
-  currentOfferInfo: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 14,
-    marginHorizontal: 6,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#95a5a6',
+  clientOptionTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: theme.colors.primary,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
   },
-  modalButtonText: {
-    color: '#FFF',
+  submitButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  infoBox: {
+    backgroundColor: '#e7f3ff',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  infoValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  infoText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  warningBox: {
+    backgroundColor: '#fff3cd',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  warningText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 5,
+  },
+  warningSubtext: {
+    fontSize: 12,
+    color: '#856404',
   },
 });
 
