@@ -533,6 +533,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
     const premiumFeatures = [
       '📈 Premium Analytics Dashboard',
       '💰 Settlement Disbursements',
+      '🤝 Negotiations Portal',
       '🏥 Medical Hub (COMING SOON)',
       '🏥 Medical Provider Payments (COMING SOON)'
     ];
