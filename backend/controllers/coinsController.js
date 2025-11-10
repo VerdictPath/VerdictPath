@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 
 const COINS_PER_CREDIT = 5000; // 5,000 coins = $1
