@@ -22,6 +22,7 @@ const disbursementsRoutes = require('./routes/disbursements');
 const stripeConnectRoutes = require('./routes/stripe-connect');
 const adminTempRoutes = require('./routes/admin-temp');
 const negotiationsRoutes = require('./routes/negotiations');
+const clientRelationshipsRoutes = require('./routes/client-relationships');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -138,6 +139,7 @@ app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/gamification', require('./routes/gamification'));
 app.use('/api/event-requests', require('./routes/eventRequests'));
 app.use('/api/negotiations', negotiationsRoutes);
+app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/admin', adminTempRoutes);
 
 // Health check endpoint

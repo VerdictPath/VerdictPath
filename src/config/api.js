@@ -141,6 +141,11 @@ export const API_ENDPOINTS = {
     REQUEST_CALL: '/api/negotiations/request-call',
     LOG: (negotiationId) => `/api/negotiations/${negotiationId}/log`,
     DETAILS: (negotiationId) => `/api/negotiations/${negotiationId}`
+  },
+  CLIENT_RELATIONSHIPS: {
+    LINK_PROVIDER: '/api/client-relationships/link-medical-provider',
+    GET_CLIENT_PROVIDERS: (clientId) => `/api/client-relationships/clients/${clientId}/medical-providers`,
+    REMOVE_PROVIDER: (clientId, providerId) => `/api/client-relationships/clients/${clientId}/medical-providers/${providerId}`
   }
 };
 
