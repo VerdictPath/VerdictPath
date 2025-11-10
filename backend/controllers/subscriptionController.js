@@ -11,14 +11,19 @@ const INDIVIDUAL_PRICING = {
 const updateLawFirmSubscription = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
-    const { subscriptionTier, firmSize } = req.body;
+    const { subscriptionTier, firmSize, planType } = req.body;
 
     if (!subscriptionTier) {
       return res.status(400).json({ error: 'Subscription tier is required' });
     }
 
+    // Validate plan type if provided
+    if (planType && !['standard', 'premium'].includes(planType)) {
+      return res.status(400).json({ error: 'Invalid plan type. Must be "standard" or "premium"' });
+    }
+
     const lawFirmResult = await db.query(
-      'SELECT id, subscription_tier, firm_size FROM law_firms WHERE id = $1',
+      'SELECT id, subscription_tier, firm_size, plan_type FROM law_firms WHERE id = $1',
       [lawFirmId]
     );
 
@@ -105,10 +110,11 @@ const updateLawFirmSubscription = async (req, res) => {
       });
     }
 
-    // Store canonical tier and size for consistent limit calculations
+    // Store canonical tier, size, and plan type for consistent limit calculations
+    const updatePlanType = planType || lawFirm.plan_type || 'standard';
     await db.query(
-      'UPDATE law_firms SET subscription_tier = $1, firm_size = $2 WHERE id = $3',
-      [canonicalTier, canonicalSize, lawFirmId]
+      'UPDATE law_firms SET subscription_tier = $1, firm_size = $2, plan_type = $3 WHERE id = $4',
+      [canonicalTier, canonicalSize, updatePlanType, lawFirmId]
     );
 
     res.json({
@@ -117,6 +123,7 @@ const updateLawFirmSubscription = async (req, res) => {
       subscription: {
         tier: canonicalTier,
         firmSize: canonicalSize,
+        planType: updatePlanType,
         clientLimit: newLimit,
         currentClientCount: currentClientCount
       }
@@ -206,7 +213,7 @@ const getLawFirmSubscription = async (req, res) => {
     const lawFirmId = req.user.id;
 
     const lawFirmResult = await db.query(
-      'SELECT id, firm_name, email, subscription_tier, firm_size FROM law_firms WHERE id = $1',
+      'SELECT id, firm_name, email, subscription_tier, firm_size, plan_type FROM law_firms WHERE id = $1',
       [lawFirmId]
     );
 
@@ -240,11 +247,13 @@ const getLawFirmSubscription = async (req, res) => {
 
     const currentClientCount = parseInt(clientCountResult.rows[0].count);
     const currentLimit = getLawFirmClientLimit(canonicalTier, canonicalSize);
+    const planType = lawFirm.plan_type || 'standard';
 
     res.json({
       subscription: {
         tier: canonicalTier,
         firmSize: canonicalSize,
+        planType: planType,
         clientLimit: currentLimit,
         currentClientCount: currentClientCount,
         firmName: lawFirm.firm_name,
