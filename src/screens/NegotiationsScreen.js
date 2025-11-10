@@ -208,22 +208,25 @@ const NegotiationsScreen = ({ user, onBack }) => {
     const billAmount = selectedNegotiation.billAmount;
 
     // Validate counter offer logic
+    // Law firms negotiate DOWN (pay less), Medical providers negotiate UP (get paid more)
     if (isLawFirm) {
-      if (counterOfferNum >= billAmount) {
-        Alert.alert('Error', 'Counter offer must be less than the bill amount');
+      // Law firms try to pay less than current offer but more than zero
+      if (counterOfferNum <= 0) {
+        Alert.alert('Error', 'Counter offer must be greater than zero');
         return;
       }
-      if (counterOfferNum <= currentOffer) {
-        Alert.alert('Error', 'Counter offer should be higher than the current offer');
+      if (counterOfferNum >= currentOffer) {
+        Alert.alert('Error', 'Counter offer should be less than the current offer of $' + currentOffer.toFixed(2));
         return;
       }
     } else {
+      // Medical providers try to get paid more than current offer but less than bill amount
       if (counterOfferNum <= currentOffer) {
-        Alert.alert('Error', 'Counter offer must be greater than the current offer');
+        Alert.alert('Error', 'Counter offer must be greater than the current offer of $' + currentOffer.toFixed(2));
         return;
       }
       if (counterOfferNum > billAmount) {
-        Alert.alert('Error', 'Counter offer cannot exceed the bill amount');
+        Alert.alert('Error', 'Counter offer cannot exceed the bill amount of $' + billAmount.toFixed(2));
         return;
       }
     }
