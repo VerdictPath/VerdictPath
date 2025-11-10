@@ -44,6 +44,8 @@ The application uses Expo SDK 52 with React Native 0.76.9 in a modular monorepo 
 5. **ReceivedDisbursementsScreen Component**: Shared screen for medical providers and clients featuring pull-to-refresh, summary card, status badges (pending/completed/failed), empty states, and pirate-themed styling. Routes registered in App.js: `disbursement-dashboard`, `medicalprovider-disbursements`, `individual-disbursements`.
 6. **Route Ordering Fix**: Moved `/received` route registration before `/:id` dynamic route to prevent Express from treating "received" as an ID parameter.
 
+**Subscription Flow Improvement (November 10, 2025)**: Removed payment account setup requirement from subscription upgrade flow in IndividualSubscriptionScreen. Users can now upgrade from Free to Basic/Premium tiers without being blocked by "Payment Setup Required" alerts. Payment account warnings remain visible in disbursement locations (dashboard banners) where they're contextually relevant, but no longer prevent legitimate subscription upgrades. This aligns with product intent that payment accounts are required for receiving disbursements, not for subscription tier access.
+
 Key features implemented include:
 - **Push Notification System**: Targeted notifications, 22 templates, Expo push integration, deep linking, and real-time badge count synchronization.
 - **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards.
