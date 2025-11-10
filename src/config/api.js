@@ -132,6 +132,15 @@ export const API_ENDPOINTS = {
     CLIENT_TASKS: (clientId) => `/api/tasks/client/${clientId}`,
     DELETE: (taskId) => `/api/tasks/${taskId}`,
     TEMPLATES: '/api/tasks/templates'
+  },
+  NEGOTIATIONS: {
+    LIST: '/api/negotiations',
+    INITIATE: '/api/negotiations/initiate',
+    COUNTER_OFFER: '/api/negotiations/counter-offer',
+    ACCEPT: '/api/negotiations/accept',
+    REQUEST_CALL: '/api/negotiations/request-call',
+    LOG: (negotiationId) => `/api/negotiations/${negotiationId}/log`,
+    DETAILS: (negotiationId) => `/api/negotiations/${negotiationId}`
   }
 };
 
