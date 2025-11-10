@@ -48,7 +48,7 @@ const INDIVIDUAL_PRICING = {
   }
 };
 
-const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
+const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged }) => {
   const [loading, setLoading] = useState(true);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [billingCycle, setBillingCycle] = useState('monthly');
@@ -159,7 +159,11 @@ const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
 
       if (response.success) {
         alert('Success!', response.message);
-        fetchCurrentSubscription();
+        await fetchCurrentSubscription();
+        
+        if (onSubscriptionChanged) {
+          await onSubscriptionChanged();
+        }
       } else {
         alert('Error', response.error || 'Failed to update subscription');
       }
