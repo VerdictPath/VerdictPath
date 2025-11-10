@@ -26,6 +26,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('new'); // 'new' or 'history'
   const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
   const [checkingStripeStatus, setCheckingStripeStatus] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadClients();
@@ -386,46 +387,99 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     </Modal>
   );
 
-  const renderNewDisbursements = () => (
-    <View style={styles.tabContent}>
-      <Text style={styles.headerText}>
-        Select a client to disburse settlement proceeds
-      </Text>
+  const getFilteredClients = () => {
+    if (!searchQuery.trim()) {
+      return clients;
+    }
 
-      {loading ? (
-        <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
-      ) : clients.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            No clients available for disbursement
-          </Text>
-          <Text style={styles.emptyStateSubtext}>
-            All eligible clients have received their final settlement
-          </Text>
-        </View>
-      ) : (
-        <ScrollView style={styles.clientList}>
-          {clients.map((client) => (
-            <TouchableOpacity
-              key={client.id}
-              style={styles.clientCard}
-              onPress={() => handleSelectClient(client)}
-            >
-              <View style={styles.clientInfo}>
-                <Text style={styles.clientName}>
-                  {client.firstName} {client.lastName}
-                </Text>
-                <Text style={styles.clientEmail}>{client.email}</Text>
-              </View>
-              <View style={styles.disbursementBadge}>
-                <Text style={styles.disbursementBadgeText}>Disburse →</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-    </View>
-  );
+    const query = searchQuery.toLowerCase();
+    return clients.filter(client => {
+      const firstName = (client.firstName || '').toLowerCase();
+      const lastName = (client.lastName || '').toLowerCase();
+      const email = (client.email || '').toLowerCase();
+      const fullName = `${client.firstName || ''} ${client.lastName || ''}`.toLowerCase();
+      
+      return firstName.includes(query) ||
+             lastName.includes(query) ||
+             email.includes(query) ||
+             fullName.includes(query);
+    });
+  };
+
+  const renderNewDisbursements = () => {
+    const filteredClients = getFilteredClients();
+
+    return (
+      <View style={styles.tabContent}>
+        <Text style={styles.headerText}>
+          Select a client to disburse settlement proceeds
+        </Text>
+
+        {!loading && clients.length > 0 && (
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search clients by name or email..."
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity 
+                style={styles.clearButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <Text style={styles.clearButtonText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+        ) : clients.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              No clients available for disbursement
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              All eligible clients have received their final settlement
+            </Text>
+          </View>
+        ) : filteredClients.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              No clients found
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              Try a different search term
+            </Text>
+          </View>
+        ) : (
+          <ScrollView style={styles.clientList}>
+            {filteredClients.map((client) => (
+              <TouchableOpacity
+                key={client.id}
+                style={styles.clientCard}
+                onPress={() => handleSelectClient(client)}
+              >
+                <View style={styles.clientInfo}>
+                  <Text style={styles.clientName}>
+                    {client.firstName} {client.lastName}
+                  </Text>
+                  <Text style={styles.clientEmail}>{client.email}</Text>
+                </View>
+                <View style={styles.disbursementBadge}>
+                  <Text style={styles.disbursementBadgeText}>Disburse →</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    );
+  };
 
   const renderHistory = () => (
     <View style={styles.tabContent}>
@@ -681,6 +735,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 20
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e0e0e0'
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 10,
+    color: '#999'
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    padding: 0
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8
+  },
+  clearButtonText: {
+    fontSize: 20,
+    color: '#999',
+    fontWeight: '300'
   },
   loader: {
     marginTop: 50
