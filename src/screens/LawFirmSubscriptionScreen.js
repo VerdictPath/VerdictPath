@@ -339,10 +339,29 @@ const LawFirmSubscriptionScreen = ({ token }) => {
   const renderCurrentPlan = () => {
     if (!currentSubscription) return null;
 
+    const planTypeDisplay = currentSubscription.planType === 'premium' ? 'Premium' : 'Standard';
+    const isPremium = currentSubscription.planType === 'premium';
+
     return (
       <View style={styles.currentPlanCard}>
         <Text style={styles.currentPlanTitle}>Current Subscription</Text>
         <View style={styles.currentPlanDetails}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Plan Type:</Text>
+            <View style={styles.planTypeBadgeContainer}>
+              {isPremium && (
+                <View style={styles.planTypeBadge}>
+                  <Text style={styles.planTypeBadgeText}>⭐</Text>
+                </View>
+              )}
+              <Text style={[
+                styles.detailValue,
+                isPremium && styles.premiumPlanText
+              ]}>
+                {planTypeDisplay}
+              </Text>
+            </View>
+          </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Current Clients:</Text>
             <Text style={[styles.detailValue, styles.currentCount]}>
@@ -730,6 +749,27 @@ const styles = StyleSheet.create({
   },
   currentCount: {
     color: theme.colors.primary
+  },
+  planTypeBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  planTypeBadge: {
+    backgroundColor: theme.colors.warmGold,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary
+  },
+  planTypeBadgeText: {
+    fontSize: 12,
+    color: theme.colors.navy
+  },
+  premiumPlanText: {
+    color: theme.colors.mahogany,
+    fontWeight: 'bold'
   },
   calculatorContainer: {
     padding: 20
