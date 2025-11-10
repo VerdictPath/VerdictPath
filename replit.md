@@ -41,6 +41,9 @@ The application uses Expo SDK 52 with React Native 0.76.9 in a modular monorepo 
 - **Settlement Disbursement System**: Law firm portal feature for tracking settlement disbursements to clients and medical providers, including Stripe Connect for account onboarding and payment processing.
 - **Bill Negotiations Portal**: In-app negotiation system enabling law firms and medical providers to negotiate medical bills. Supports full workflow including initiation, counter-offers, acceptance, call requests, and negotiation history logs. Accessible from both Law Firm and Medical Provider dashboards with role-specific UX.
 
+## Documentation
+- **docs/BILL_NEGOTIATIONS_GUIDE.md**: Complete implementation guide for the Medical Bill Negotiations system, including architecture, API endpoints, user flows, security model, and testing checklist.
+
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
 - **React Native**: For building mobile applications.
