@@ -368,6 +368,89 @@ const LawFirmSubscriptionScreen = ({ token }) => {
     );
   }
 
+  const renderFeatureComparison = () => (
+    <View style={styles.comparisonContainer}>
+      <Text style={styles.comparisonTitle}>📊 Compare Plans</Text>
+      <Text style={styles.comparisonSubtitle}>
+        Choose the plan that best fits your firm's needs
+      </Text>
+      
+      <View style={styles.comparisonGrid}>
+        {/* Standard Column */}
+        <View style={styles.comparisonColumn}>
+          <View style={styles.comparisonHeader}>
+            <Text style={styles.comparisonPlanName}>Standard</Text>
+            <Text style={styles.comparisonPlanDescription}>Core features for your practice</Text>
+          </View>
+          <View style={styles.comparisonFeatures}>
+            <Text style={styles.comparisonFeaturesTitle}>Included:</Text>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📍</Text>
+              <Text style={styles.featureLabel}>Interactive Roadmap</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🔔</Text>
+              <Text style={styles.featureLabel}>Push Notifications to Clients</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📊</Text>
+              <Text style={styles.featureLabel}>Basic Analytics Dashboard</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🔒</Text>
+              <Text style={styles.featureLabel}>Evidence Locker Access</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📅</Text>
+              <Text style={styles.featureLabel}>Calendar Integration</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Premium Column */}
+        <View style={[styles.comparisonColumn, styles.comparisonColumnPremium]}>
+          <View style={[styles.comparisonHeader, styles.comparisonHeaderPremium]}>
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>⭐ PREMIUM</Text>
+            </View>
+            <Text style={[styles.comparisonPlanName, styles.comparisonPlanNamePremium]}>Premium</Text>
+            <Text style={styles.comparisonPlanDescription}>Everything in Standard, plus:</Text>
+          </View>
+          <View style={styles.comparisonFeatures}>
+            <Text style={styles.comparisonFeaturesTitle}>Additional Features:</Text>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>📈</Text>
+              <Text style={styles.featureLabel}>Premium Analytics Dashboard</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>💰</Text>
+              <Text style={styles.featureLabel}>Settlement Disbursements</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🏥</Text>
+              <Text style={styles.featureLabel}>Medical Hub (COMING SOON)</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🏥</Text>
+              <Text style={styles.featureLabel}>Medical Provider Payments (COMING SOON)</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Text style={styles.featureIcon}>🎯</Text>
+              <Text style={styles.featureLabel}>Priority Support</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      
+      <View style={styles.comparisonNote}>
+        <Text style={styles.comparisonNoteIcon}>💡</Text>
+        <Text style={styles.comparisonNoteText}>
+          Settlement Disbursements is a premium-only feature. Upgrade to Premium to process payments to clients and medical providers.
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -376,6 +459,8 @@ const LawFirmSubscriptionScreen = ({ token }) => {
       </View>
 
       {renderCurrentPlan()}
+
+      {renderFeatureComparison()}
 
       <View style={styles.calculatorContainer}>
         <View style={styles.calculator}>
@@ -1084,6 +1169,132 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 12
+  },
+  comparisonContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 16,
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  comparisonTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    textAlign: 'center',
+    marginBottom: 8
+  },
+  comparisonSubtitle: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20
+  },
+  comparisonGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 16
+  },
+  comparisonColumn: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e0e0e0'
+  },
+  comparisonColumnPremium: {
+    backgroundColor: '#fff9e6',
+    borderColor: theme.colors.warmGold,
+    borderWidth: 2
+  },
+  comparisonHeader: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#e0e0e0'
+  },
+  comparisonHeaderPremium: {
+    borderBottomColor: theme.colors.warmGold
+  },
+  comparisonPlanName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: 4
+  },
+  comparisonPlanNamePremium: {
+    color: theme.colors.mahogany
+  },
+  comparisonPlanDescription: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic'
+  },
+  comparisonFeatures: {
+    gap: 10
+  },
+  comparisonFeaturesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 8
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  featureIcon: {
+    fontSize: 16
+  },
+  featureLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.colors.text,
+    lineHeight: 18
+  },
+  premiumBadge: {
+    backgroundColor: theme.colors.warmGold,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary
+  },
+  premiumBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: theme.colors.navy
+  },
+  comparisonNote: {
+    backgroundColor: '#e8f4ff',
+    padding: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary
+  },
+  comparisonNoteIcon: {
+    fontSize: 18,
+    marginTop: 2
+  },
+  comparisonNoteText: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.colors.text,
+    lineHeight: 18
   }
 });
 
