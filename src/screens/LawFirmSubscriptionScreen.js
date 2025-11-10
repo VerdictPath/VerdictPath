@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
 import { theme } from '../styles/theme';
+import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const LAW_FIRM_PRICING = {
   tiers: [
@@ -368,88 +369,32 @@ const LawFirmSubscriptionScreen = ({ token }) => {
     );
   }
 
-  const renderFeatureComparison = () => (
-    <View style={styles.comparisonContainer}>
-      <Text style={styles.comparisonTitle}>📊 Compare Plans</Text>
-      <Text style={styles.comparisonSubtitle}>
-        Choose the plan that best fits your firm's needs
-      </Text>
-      
-      <View style={styles.comparisonGrid}>
-        {/* Standard Column */}
-        <View style={styles.comparisonColumn}>
-          <View style={styles.comparisonHeader}>
-            <Text style={styles.comparisonPlanName}>Standard</Text>
-            <Text style={styles.comparisonPlanDescription}>Core features for your practice</Text>
-          </View>
-          <View style={styles.comparisonFeatures}>
-            <Text style={styles.comparisonFeaturesTitle}>Included:</Text>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📍</Text>
-              <Text style={styles.featureLabel}>Interactive Roadmap</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🔔</Text>
-              <Text style={styles.featureLabel}>Push Notifications to Clients</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📊</Text>
-              <Text style={styles.featureLabel}>Basic Analytics Dashboard</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🔒</Text>
-              <Text style={styles.featureLabel}>Evidence Locker Access</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📅</Text>
-              <Text style={styles.featureLabel}>Calendar Integration</Text>
-            </View>
-          </View>
-        </View>
+  const renderFeatureComparison = () => {
+    const standardFeatures = [
+      'Client limits vary by tier',
+      '📍 Interactive Roadmap',
+      '🔔 Push Notifications to Clients',
+      '📊 Basic Analytics Dashboard',
+      '🔒 Evidence Locker Access'
+    ];
 
-        {/* Premium Column */}
-        <View style={[styles.comparisonColumn, styles.comparisonColumnPremium]}>
-          <View style={[styles.comparisonHeader, styles.comparisonHeaderPremium]}>
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumBadgeText}>⭐ PREMIUM</Text>
-            </View>
-            <Text style={[styles.comparisonPlanName, styles.comparisonPlanNamePremium]}>Premium</Text>
-            <Text style={styles.comparisonPlanDescription}>Everything in Standard, plus:</Text>
-          </View>
-          <View style={styles.comparisonFeatures}>
-            <Text style={styles.comparisonFeaturesTitle}>Additional Features:</Text>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>📈</Text>
-              <Text style={styles.featureLabel}>Premium Analytics Dashboard</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>💰</Text>
-              <Text style={styles.featureLabel}>Settlement Disbursements</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🏥</Text>
-              <Text style={styles.featureLabel}>Medical Hub (COMING SOON)</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🏥</Text>
-              <Text style={styles.featureLabel}>Medical Provider Payments (COMING SOON)</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Text style={styles.featureIcon}>🎯</Text>
-              <Text style={styles.featureLabel}>Priority Support</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-      
-      <View style={styles.comparisonNote}>
-        <Text style={styles.comparisonNoteIcon}>💡</Text>
-        <Text style={styles.comparisonNoteText}>
-          Settlement Disbursements is a premium-only feature. Upgrade to Premium to process payments to clients and medical providers.
-        </Text>
-      </View>
-    </View>
-  );
+    const premiumFeatures = [
+      '📈 Premium Analytics Dashboard',
+      '💰 Settlement Disbursements',
+      '🏥 Medical Hub (COMING SOON)',
+      '🏥 Medical Provider Payments (COMING SOON)'
+    ];
+
+    return (
+      <FeatureComparisonMatrix
+        heading="📊 Compare Plans"
+        subheading="Choose the plan that best fits your firm's needs"
+        standardFeatures={standardFeatures}
+        premiumFeatures={premiumFeatures}
+        showDisbursementNote={true}
+      />
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
