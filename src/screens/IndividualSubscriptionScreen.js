@@ -119,36 +119,6 @@ const IndividualSubscriptionScreen = ({ user, onNavigate }) => {
   };
 
   const handleUpdateSubscription = async (newTier) => {
-    // Check if user is trying to upgrade to paid tier without payment setup
-    if (newTier !== 'free' && newTier !== currentSubscription?.tier) {
-      // Check if Stripe account is set up and onboarding is complete
-      const hasPaymentSetup = stripeAccountStatus?.hasAccount && stripeAccountStatus?.onboardingComplete;
-      
-      if (!hasPaymentSetup) {
-        // Show payment setup requirement message
-        alert(
-          'Payment Setup Required',
-          'To upgrade to a paid subscription, you\'ll need to set up payment processing through Stripe. This ensures you can receive settlement disbursements and access premium features.\n\nWould you like to set up your payment account now?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Set Up Payment',
-              onPress: () => {
-                if (onNavigate) {
-                  onNavigate('individual-payment-setup');
-                }
-              }
-            }
-          ]
-        );
-        return;
-      }
-      
-      // Payment setup complete, proceed with upgrade
-      performUpdate(newTier);
-      return;
-    }
-
     // Handle downgrade to free
     if (newTier === 'free' && currentSubscription?.tier !== 'free') {
       alert(
