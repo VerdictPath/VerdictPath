@@ -13,11 +13,55 @@ router.post('/link-medical-provider', authenticateToken, async (req, res) => {
   try {
     const { clientId, medicalProviderId, isPrimary, firstVisitDate, lastVisitDate } = req.body;
     
+    if (!clientId || !medicalProviderId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Client ID and Medical Provider ID are required' 
+      });
+    }
+    
     const userType = getUserType(req.user);
-    if (!['law_firm', 'medical_provider'].includes(userType)) {
+    
+    if (userType !== 'law_firm') {
       return res.status(403).json({ 
         success: false, 
-        message: 'Unauthorized' 
+        message: 'Only law firms can create client-provider relationships' 
+      });
+    }
+    
+    const lawFirmClientCheck = await db.query(
+      'SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [req.user.id, clientId]
+    );
+    
+    if (lawFirmClientCheck.rows.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to manage this client' 
+      });
+    }
+    
+    const clientExists = await db.query(
+      'SELECT 1 FROM users WHERE id = $1 AND user_type = $2',
+      [clientId, 'individual']
+    );
+    
+    if (clientExists.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Client not found' 
+      });
+    }
+    
+    const providerExists = await db.query(
+      'SELECT 1 FROM users WHERE id = $1 AND user_type = $2',
+      [medicalProviderId, 'medical_provider']
+    );
+    
+    if (providerExists.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Medical provider not found' 
       });
     }
     
@@ -121,10 +165,23 @@ router.delete('/clients/:clientId/medical-providers/:providerId', authenticateTo
     const { clientId, providerId } = req.params;
     
     const userType = getUserType(req.user);
-    if (!['law_firm', 'medical_provider'].includes(userType)) {
+    
+    if (userType !== 'law_firm') {
       return res.status(403).json({ 
         success: false, 
-        message: 'Unauthorized' 
+        message: 'Only law firms can remove client-provider relationships' 
+      });
+    }
+    
+    const lawFirmClientCheck = await db.query(
+      'SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [req.user.id, clientId]
+    );
+    
+    if (lawFirmClientCheck.rows.length === 0) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to manage this client' 
       });
     }
     
