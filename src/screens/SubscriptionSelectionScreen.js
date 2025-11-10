@@ -812,6 +812,20 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   const renderMedicalProviderPricing = () => {
+    const basicFeatures = [
+      'Patient limits vary by tier',
+      '📍 Access to Patients\' Interactive Roadmap',
+      '📊 Basic Analytics',
+      '🔔 Full Access to Push Notifications',
+      '🔒 Evidence Locker Unlocked',
+      '🏥 Medical Hub Unlocked'
+    ];
+
+    const premiumFeatures = [
+      '💰 Disbursement Payments Unlocked',
+      '🤝 Negotiations with Law Firms Unlocked'
+    ];
+
     return (
       <View style={styles.lawFirmContainer}>
         <TouchableOpacity
@@ -820,6 +834,18 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
+        
+        <FeatureComparisonMatrix
+          heading="📊 Compare Plans"
+          subheading="Choose the plan that best fits your practice"
+          standardFeatures={basicFeatures}
+          premiumFeatures={premiumFeatures}
+          showDisbursementNote={true}
+          standardLabel="Basic"
+          standardDescription="Core features for your practice"
+          premiumLabel="Premium"
+          premiumDescription="Advanced features"
+        />
         
         <View style={styles.calculator}>
           <Text style={styles.calculatorTitle}>🏥 Calculate Your Price</Text>
