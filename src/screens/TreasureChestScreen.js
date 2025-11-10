@@ -11,12 +11,7 @@ import {
 } from 'react-native';
 import { theme } from '../styles/theme';
 import alert from '../utils/alert';
-
-// API Configuration
-const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://verdictpath.up.railway.app' 
-    : 'http://localhost:5000');
+import { API_BASE_URL } from '../config/api';
 
 const COIN_PACKAGES = [
   {
@@ -104,9 +99,9 @@ const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
   const fetchCoinBalance = async () => {
     try {
       setLoading(true);
-      console.log('[TreasureChest] Fetching from:', `${API_URL}/api/coins/balance`);
+      console.log('[TreasureChest] Fetching from:', `${API_BASE_URL}/api/coins/balance`);
 
-      const response = await fetch(`${API_URL}/api/coins/balance`, {
+      const response = await fetch(`${API_BASE_URL}/api/coins/balance`, {
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json',
