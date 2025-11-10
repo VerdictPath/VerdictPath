@@ -436,7 +436,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.firmInfo}>
           <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
           <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
         </View>
@@ -527,6 +527,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  firmInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
   firmName: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -545,6 +549,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
+    flexShrink: 0,
   },
   inviteButtonText: {
     color: theme.colors.navy,
