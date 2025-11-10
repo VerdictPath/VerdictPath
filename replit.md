@@ -36,6 +36,14 @@ The application uses Expo SDK 52 with React Native 0.76.9 in a modular monorepo 
 3. **JWT_SECRET Security Warning**: Added prominent console warnings in `auth.js` to alert developers when JWT_SECRET environment variable is missing, preventing silent security vulnerabilities in production where tokens could be forged.
 4. **Stripe Connect UserType Mismatch**: Fixed Stripe Connect routes that only checked for `userType === 'individual'` when users are registered with `userType === 'client'`, causing 500 errors on all Stripe account operations. Added support for both 'client' and 'individual' userTypes with defensive guards that return 400 Bad Request for unsupported account types, preventing undefined SQL query crashes.
 
+**Settlement Disbursement UI Enhancement (November 10, 2025)**: Added prominent disbursement buttons/sections across all three portals for easy access:
+1. **Law Firm Dashboard**: Hero-style "Settlement Disbursements" CTA button positioned under header, navigates to existing DisbursementDashboardScreen for sending payments to clients and medical providers.
+2. **Medical Provider Dashboard**: Conditional hero-style CTA button - shows clickable "View Disbursements" when Stripe onboarding complete, or disabled version with setup prompt when incomplete. Routes to new ReceivedDisbursementsScreen.
+3. **Individual Client Dashboard**: Hero-style "My Disbursements" CTA button (only shown when Stripe onboarding complete) positioned after Treasure Chest, routes to ReceivedDisbursementsScreen for viewing settlement payments from law firm.
+4. **Backend Enhancements**: Created GET `/api/disbursements/received` endpoint supporting both individual/client and medical_provider userTypes with parameterized SQL queries. Added `status` (varchar(20), default 'pending') and `updated_at` columns to `disbursement_medical_payments` table via direct SQL migration to track individual medical provider payment status separately from parent disbursement.
+5. **ReceivedDisbursementsScreen Component**: Shared screen for medical providers and clients featuring pull-to-refresh, summary card, status badges (pending/completed/failed), empty states, and pirate-themed styling. Routes registered in App.js: `disbursement-dashboard`, `medicalprovider-disbursements`, `individual-disbursements`.
+6. **Route Ordering Fix**: Moved `/received` route registration before `/:id` dynamic route to prevent Express from treating "received" as an ID parameter.
+
 Key features implemented include:
 - **Push Notification System**: Targeted notifications, 22 templates, Expo push integration, deep linking, and real-time badge count synchronization.
 - **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards.

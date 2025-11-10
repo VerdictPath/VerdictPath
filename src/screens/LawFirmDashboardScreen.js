@@ -427,6 +427,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     );
   }
 
+  const handleNavigateToDisbursements = () => {
+    if (onNavigate) {
+      onNavigate('disbursement-dashboard');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -441,6 +447,20 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           <Text style={styles.inviteButtonText}>👍 Invite</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity 
+        style={styles.disbursementCTA} 
+        onPress={handleNavigateToDisbursements}
+      >
+        <View style={styles.disbursementCTAContent}>
+          <Text style={styles.disbursementCTAIcon}>💰</Text>
+          <View style={styles.disbursementCTATextContainer}>
+            <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
+            <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
+          </View>
+          <Text style={styles.disbursementCTAArrow}>→</Text>
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
@@ -1074,6 +1094,48 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  disbursementCTA: {
+    backgroundColor: theme.colors.mahogany,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: theme.colors.warmGold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  disbursementCTAContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  disbursementCTAIcon: {
+    fontSize: 40,
+    marginRight: 16,
+  },
+  disbursementCTATextContainer: {
+    flex: 1,
+  },
+  disbursementCTATitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.cream,
+    marginBottom: 4,
+  },
+  disbursementCTASubtitle: {
+    fontSize: 14,
+    color: theme.colors.lightCream,
+    opacity: 0.9,
+  },
+  disbursementCTAArrow: {
+    fontSize: 24,
+    color: theme.colors.warmGold,
+    fontWeight: 'bold',
   },
 });
 

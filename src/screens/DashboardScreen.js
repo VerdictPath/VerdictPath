@@ -93,6 +93,12 @@ const DashboardScreen = ({
     }
   };
 
+  const handleNavigateToDisbursements = () => {
+    if (onNavigate) {
+      onNavigate('individual-disbursements');
+    }
+  };
+
   const renderPaymentAccountBanner = () => {
     if (checkingStripeStatus) {
       return (
@@ -226,6 +232,22 @@ const DashboardScreen = ({
           <Text style={styles.treasureButtonText}>Treasure Chest</Text>
           <Text style={styles.treasureButtonSubtext}>Purchase Coins</Text>
         </TouchableOpacity>
+
+        {stripeAccountStatus?.onboardingComplete && (
+          <TouchableOpacity 
+            style={styles.disbursementCTA} 
+            onPress={handleNavigateToDisbursements}
+          >
+            <View style={styles.disbursementCTAContent}>
+              <Text style={styles.disbursementCTAIcon}>💰</Text>
+              <View style={styles.disbursementCTATextContainer}>
+                <Text style={styles.disbursementCTATitle}>My Disbursements</Text>
+                <Text style={styles.disbursementCTASubtitle}>View settlement payments from your law firm</Text>
+              </View>
+              <Text style={styles.disbursementCTAArrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -1285,6 +1307,48 @@ const styles = StyleSheet.create({
   paymentBannerSuccessDescription: {
     fontSize: 13,
     color: theme.colors.navy,
+  },
+  disbursementCTA: {
+    backgroundColor: theme.colors.mahogany,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: theme.colors.warmGold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  disbursementCTAContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  disbursementCTAIcon: {
+    fontSize: 40,
+    marginRight: 16,
+  },
+  disbursementCTATextContainer: {
+    flex: 1,
+  },
+  disbursementCTATitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.cream,
+    marginBottom: 4,
+  },
+  disbursementCTASubtitle: {
+    fontSize: 14,
+    color: theme.colors.lightCream,
+    opacity: 0.9,
+  },
+  disbursementCTAArrow: {
+    fontSize: 24,
+    color: theme.colors.warmGold,
+    fontWeight: 'bold',
   },
 });
 
