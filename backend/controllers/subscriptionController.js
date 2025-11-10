@@ -17,13 +17,26 @@ const updateLawFirmSubscription = async (req, res) => {
       return res.status(400).json({ error: 'Subscription tier is required' });
     }
 
-    // Extract planType from either top level or firmSize object
+    // Extract planType - prefer top level, fall back to firmSize for backward compatibility
     const planType = topLevelPlanType || (firmSize && firmSize.planType);
 
-    // Validate plan type if provided
-    if (planType && !['standard', 'premium'].includes(planType)) {
-      return res.status(400).json({ error: 'Invalid plan type. Must be "standard" or "premium"' });
+    // Require explicit planType for subscription updates to prevent silent tier persistence
+    if (!planType || typeof planType !== 'string' || planType.trim() === '') {
+      return res.status(400).json({ 
+        error: 'Plan type is required. Must be "standard" or "premium"',
+        received: planType
+      });
     }
+
+    // Validate plan type
+    if (!['standard', 'premium'].includes(planType)) {
+      return res.status(400).json({ 
+        error: 'Invalid plan type. Must be "standard" or "premium"',
+        received: planType
+      });
+    }
+
+    console.log(`[Subscription Update] Law firm ${lawFirmId} updating to planType: ${planType}`);
 
     const lawFirmResult = await db.query(
       'SELECT id, subscription_tier, firm_size, plan_type FROM law_firms WHERE id = $1',
@@ -114,11 +127,12 @@ const updateLawFirmSubscription = async (req, res) => {
     }
 
     // Store canonical tier, size, and plan type for consistent limit calculations
-    const updatePlanType = planType || lawFirm.plan_type || 'standard';
     await db.query(
       'UPDATE law_firms SET subscription_tier = $1, firm_size = $2, plan_type = $3 WHERE id = $4',
-      [canonicalTier, canonicalSize, updatePlanType, lawFirmId]
+      [canonicalTier, canonicalSize, planType, lawFirmId]
     );
+
+    console.log(`[Subscription Update] Law firm ${lawFirmId} successfully updated to ${planType} plan`);
 
     res.json({
       success: true,
@@ -126,7 +140,7 @@ const updateLawFirmSubscription = async (req, res) => {
       subscription: {
         tier: canonicalTier,
         firmSize: canonicalSize,
-        planType: updatePlanType,
+        planType: planType,
         clientLimit: newLimit,
         currentClientCount: currentClientCount
       }
