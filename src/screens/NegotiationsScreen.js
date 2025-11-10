@@ -50,6 +50,8 @@ const NegotiationsScreen = ({ user, onBack }) => {
     loadNegotiations();
     if (isLawFirm) {
       loadClients();
+    } else if (isMedicalProvider) {
+      loadPatients();
     }
   }, []);
 
@@ -87,6 +89,21 @@ const NegotiationsScreen = ({ user, onBack }) => {
     }
   };
 
+  const loadPatients = async () => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.GET_PATIENTS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      setClients(response.patients || []);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+    }
+  };
+
   const loadMedicalProvidersForClient = async (clientId) => {
     try {
       const response = await apiRequest(
@@ -117,8 +134,8 @@ const NegotiationsScreen = ({ user, onBack }) => {
       return;
     }
 
-    if (isLawFirm && !selectedClient) {
-      alert('Error', 'Please select a client');
+    if (!selectedClient) {
+      alert('Error', isLawFirm ? 'Please select a client' : 'Please select a patient');
       return;
     }
 
@@ -451,6 +468,26 @@ const NegotiationsScreen = ({ user, onBack }) => {
                     </ScrollView>
                   </>
                 )}
+              </>
+            )}
+
+            {isMedicalProvider && (
+              <>
+                <Text style={styles.inputLabel}>Select Patient *</Text>
+                <ScrollView style={styles.clientPickerContainer}>
+                  {clients.map(patient => (
+                    <TouchableOpacity
+                      key={patient.id}
+                      style={[
+                        styles.clientOption,
+                        selectedClient?.id === patient.id && styles.selectedOption
+                      ]}
+                      onPress={() => setSelectedClient(patient)}
+                    >
+                      <Text style={styles.clientOptionText}>{patient.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </>
             )}
 
