@@ -8,12 +8,15 @@ const FeatureComparisonMatrix = ({
   standardFeatures = [],
   premiumFeatures = [],
   showDisbursementNote = true,
+  disbursementNoteText = null,
   standardLabel = 'Standard',
   standardDescription = 'Core features for your practice',
   premiumLabel = 'Premium',
   premiumDescription = null
 }) => {
   const premiumDescText = premiumDescription || `Everything in ${standardLabel}, plus:`;
+  const defaultDisbursementNote = 'Settlement Disbursements is a premium-only feature. Upgrade to Premium to process payments to clients and medical providers.';
+  const noteText = disbursementNoteText || defaultDisbursementNote;
   
   return (
     <View style={styles.container}>
@@ -63,7 +66,7 @@ const FeatureComparisonMatrix = ({
         <View style={styles.note}>
           <Text style={styles.noteIcon}>💡</Text>
           <Text style={styles.noteText}>
-            Settlement Disbursements is a premium-only feature. Upgrade to Premium to process payments to clients and medical providers.
+            {noteText}
           </Text>
         </View>
       )}
