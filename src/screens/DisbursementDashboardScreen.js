@@ -662,6 +662,39 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   );
 
   const renderStripeConnectBanner = () => {
+    // Show loading state while checking subscription
+    if (loadingSubscription) {
+      return (
+        <View style={styles.stripeConnectBanner}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={styles.stripeConnectText}>Loading...</Text>
+        </View>
+      );
+    }
+
+    // Check if user is on standard plan - show upgrade notification
+    if (subscription && subscription.planType !== 'premium') {
+      return (
+        <View style={[styles.stripeConnectBanner, styles.stripeConnectUpgrade]}>
+          <View style={styles.stripeConnectContent}>
+            <Text style={styles.stripeConnectIcon}>⭐</Text>
+            <View style={styles.stripeConnectTextContainer}>
+              <Text style={styles.stripeConnectTitle}>Premium Feature</Text>
+              <Text style={styles.stripeConnectDescription}>
+                Settlement disbursements require a Premium plan. Upgrade to unlock this feature.
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.stripeConnectButtonUpgrade}
+            onPress={() => onNavigate('LawFirmSubscription')}
+          >
+            <Text style={styles.stripeConnectButtonTextUpgrade}>Upgrade Now</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     if (checkingStripeStatus) {
       return (
         <View style={styles.stripeConnectBanner}>
@@ -1250,6 +1283,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#D4EDDA',
     borderBottomColor: '#4CAF50'
   },
+  stripeConnectUpgrade: {
+    backgroundColor: '#FFF9E6',
+    borderBottomColor: theme.colors.warmGold
+  },
   stripeConnectContent: {
     flex: 1,
     flexDirection: 'row',
@@ -1302,6 +1339,20 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 14,
     fontWeight: '600'
+  },
+  stripeConnectButtonUpgrade: {
+    backgroundColor: theme.colors.warmGold,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+    marginLeft: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary
+  },
+  stripeConnectButtonTextUpgrade: {
+    color: theme.colors.navy,
+    fontSize: 14,
+    fontWeight: 'bold'
   },
   upgradeInvitationCard: {
     backgroundColor: '#fff',
