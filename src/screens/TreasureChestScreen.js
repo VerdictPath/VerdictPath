@@ -141,6 +141,10 @@ const TreasureChestScreen = ({ onBack, user, setCoins, refreshKey = 0 }) => {
         if (setCoins) {
           setCoins(totalCoins);
         }
+      } else {
+        console.error('[TreasureChest] Failed to fetch balance - Status:', response.status);
+        const errorText = await response.text();
+        console.error('[TreasureChest] Error response:', errorText);
       }
     } catch (error) {
       console.error('Error fetching coins:', error);
