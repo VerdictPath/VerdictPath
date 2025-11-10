@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform
 } from 'react-native';
 import { theme } from '../styles/theme';
+import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const LAW_FIRM_PRICING = {
   tiers: [
@@ -520,6 +521,22 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   const renderLawFirmPricing = () => {
+    // Derive features from LAW_FIRM_PRICING (using first tier as template)
+    const standardFeatures = [
+      'Client limits vary by tier',
+      '📍 Interactive Roadmap',
+      '🔔 Push Notifications to Clients',
+      '📊 Basic Analytics Dashboard',
+      '🔒 Evidence Locker Access'
+    ];
+
+    const premiumFeatures = [
+      '📈 Premium Analytics Dashboard',
+      '💰 Settlement Disbursements',
+      '🏥 Medical Hub (COMING SOON)',
+      '🏥 Medical Provider Payments (COMING SOON)'
+    ];
+
     return (
       <View style={styles.lawFirmContainer}>
         <TouchableOpacity
@@ -528,6 +545,14 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
+
+        <FeatureComparisonMatrix
+          heading="📊 Compare Plans"
+          subheading="Choose the plan that best fits your firm's needs"
+          standardFeatures={standardFeatures}
+          premiumFeatures={premiumFeatures}
+          showDisbursementNote={true}
+        />
         
         <View style={styles.calculator}>
           <Text style={styles.calculatorTitle}>💼 Calculate Your Price</Text>
