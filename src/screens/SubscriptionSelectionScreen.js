@@ -1046,6 +1046,13 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   const renderIndividualPricing = () => {
     return (
       <View style={styles.individualContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => onNavigate('register')}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        
         <Text style={styles.title}>Choose Your Plan</Text>
         <Text style={styles.subtitle}>
           Navigate your legal journey with confidence
