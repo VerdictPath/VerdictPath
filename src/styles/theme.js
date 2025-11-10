@@ -9,6 +9,7 @@ export const theme = {
     warmGray: '#A0826D',
     darkWarmGray: '#8B7355',
     gold: '#C9A961',
+    warmGold: '#D4AF37',
     brightGold: '#D4AF37',
     deepMaroon: '#8C3B2A',
     charcoal: '#2B2216',
