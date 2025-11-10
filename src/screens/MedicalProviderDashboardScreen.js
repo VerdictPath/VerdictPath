@@ -384,6 +384,22 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('medicalprovider-negotiations')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>💰</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Bill Negotiations</Text>
+              <Text style={styles.notificationActionDescription}>
+                Negotiate medical bills with law firms
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>

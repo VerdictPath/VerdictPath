@@ -242,6 +242,22 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
           <TouchableOpacity 
             style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('lawfirm-negotiations')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>💰</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Bill Negotiations</Text>
+              <Text style={styles.notificationActionDescription}>
+                Negotiate medical bills with providers
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
             onPress={() => onNavigate && onNavigate('lawfirm-disbursements')}
           >
             <View style={styles.notificationActionIcon}>

@@ -51,6 +51,7 @@ import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
 import IndividualSubscriptionScreen from './src/screens/IndividualSubscriptionScreen';
+import NegotiationsScreen from './src/screens/NegotiationsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1321,6 +1322,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-negotiations' && (
+        <NegotiationsScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
       {currentScreen === 'lawfirm-disbursements' && (
         <DisbursementDashboardScreen
           user={user}
@@ -1420,6 +1428,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'medicalprovider-event-requests' && (
         <MedicalProviderEventRequestsScreen
+          user={user}
+          onBack={handleBackToMedicalProviderDashboard}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-negotiations' && (
+        <NegotiationsScreen
           user={user}
           onBack={handleBackToMedicalProviderDashboard}
         />
