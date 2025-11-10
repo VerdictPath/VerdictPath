@@ -11,11 +11,14 @@ const INDIVIDUAL_PRICING = {
 const updateLawFirmSubscription = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
-    const { subscriptionTier, firmSize, planType } = req.body;
+    const { subscriptionTier, firmSize, planType: topLevelPlanType } = req.body;
 
     if (!subscriptionTier) {
       return res.status(400).json({ error: 'Subscription tier is required' });
     }
+
+    // Extract planType from either top level or firmSize object
+    const planType = topLevelPlanType || (firmSize && firmSize.planType);
 
     // Validate plan type if provided
     if (planType && !['standard', 'premium'].includes(planType)) {
