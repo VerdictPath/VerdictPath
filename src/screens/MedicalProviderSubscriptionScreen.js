@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
 import { theme } from '../styles/theme';
+import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const MEDICAL_PROVIDER_PRICING = {
   tiers: [
@@ -251,6 +252,20 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
     );
   }
 
+  const basicFeatures = [
+    'Patient limits vary by tier',
+    '📍 Access to Patients\' Interactive Roadmap',
+    '📊 Basic Analytics',
+    '🔔 Full Access to Push Notifications',
+    '🔒 Evidence Locker Unlocked',
+    '🏥 Medical Hub Unlocked'
+  ];
+
+  const premiumFeatures = [
+    '💰 Disbursement Payments Unlocked',
+    '🤝 Negotiations with Law Firms Unlocked'
+  ];
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -259,6 +274,18 @@ const MedicalProviderSubscriptionScreen = ({ token }) => {
       </View>
 
       {renderCurrentPlan()}
+
+      <FeatureComparisonMatrix
+        heading="📊 Compare Plans"
+        subheading="Choose the plan that best fits your practice"
+        standardFeatures={basicFeatures}
+        premiumFeatures={premiumFeatures}
+        showDisbursementNote={true}
+        standardLabel="Basic"
+        standardDescription="Core features for your practice"
+        premiumLabel="Premium"
+        premiumDescription="Advanced features"
+      />
 
       <View style={styles.calculatorContainer}>
         <View style={styles.calculator}>

@@ -7,19 +7,25 @@ const FeatureComparisonMatrix = ({
   subheading = 'Choose the plan that best fits your firm\'s needs',
   standardFeatures = [],
   premiumFeatures = [],
-  showDisbursementNote = true
+  showDisbursementNote = true,
+  standardLabel = 'Standard',
+  standardDescription = 'Core features for your practice',
+  premiumLabel = 'Premium',
+  premiumDescription = null
 }) => {
+  const premiumDescText = premiumDescription || `Everything in ${standardLabel}, plus:`;
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{heading}</Text>
       <Text style={styles.subtitle}>{subheading}</Text>
       
       <View style={styles.grid}>
-        {/* Standard Column */}
+        {/* Standard/Basic Column */}
         <View style={styles.column}>
           <View style={styles.header}>
-            <Text style={styles.planName}>Standard</Text>
-            <Text style={styles.planDescription}>Core features for your practice</Text>
+            <Text style={styles.planName}>{standardLabel}</Text>
+            <Text style={styles.planDescription}>{standardDescription}</Text>
           </View>
           <View style={styles.features}>
             <Text style={styles.featuresTitle}>Included:</Text>
@@ -38,8 +44,8 @@ const FeatureComparisonMatrix = ({
             <View style={styles.badge}>
               <Text style={styles.badgeText}>⭐ PREMIUM</Text>
             </View>
-            <Text style={[styles.planName, styles.planNamePremium]}>Premium</Text>
-            <Text style={styles.planDescription}>Everything in Standard, plus:</Text>
+            <Text style={[styles.planName, styles.planNamePremium]}>{premiumLabel}</Text>
+            <Text style={styles.planDescription}>{premiumDescText}</Text>
           </View>
           <View style={styles.features}>
             <Text style={styles.featuresTitle}>Additional Features:</Text>
