@@ -443,6 +443,72 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const renderNewDisbursements = () => {
+    // Show loading state while checking subscription
+    if (loadingSubscription) {
+      return (
+        <View style={styles.tabContent}>
+          <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      );
+    }
+
+    // Show upgrade invitation for standard plan users
+    if (subscription && subscription.planType !== 'premium') {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.upgradeInvitationCard}>
+            <View style={styles.upgradeIconContainer}>
+              <Text style={styles.upgradeIcon}>⭐</Text>
+            </View>
+            <Text style={styles.upgradeInvitationTitle}>
+              Unlock Settlement Disbursements
+            </Text>
+            <Text style={styles.upgradeInvitationMessage}>
+              Settlement disbursements are a premium feature. Upgrade to Premium to process payments to clients and medical providers directly through the app.
+            </Text>
+            
+            <View style={styles.upgradeFeatureList}>
+              <Text style={styles.upgradeFeatureListTitle}>With Premium, you can:</Text>
+              <View style={styles.upgradeFeatureItem}>
+                <Text style={styles.upgradeFeatureIcon}>✓</Text>
+                <Text style={styles.upgradeFeatureText}>Disburse settlement proceeds to clients</Text>
+              </View>
+              <View style={styles.upgradeFeatureItem}>
+                <Text style={styles.upgradeFeatureIcon}>✓</Text>
+                <Text style={styles.upgradeFeatureText}>Pay medical providers directly</Text>
+              </View>
+              <View style={styles.upgradeFeatureItem}>
+                <Text style={styles.upgradeFeatureIcon}>✓</Text>
+                <Text style={styles.upgradeFeatureText}>Track disbursement history</Text>
+              </View>
+              <View style={styles.upgradeFeatureItem}>
+                <Text style={styles.upgradeFeatureIcon}>✓</Text>
+                <Text style={styles.upgradeFeatureText}>Streamline your settlement process</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.upgradeInvitationButton}
+              onPress={() => {
+                if (onNavigate) {
+                  onNavigate('LawFirmSubscription');
+                }
+              }}
+            >
+              <Text style={styles.upgradeInvitationButtonText}>
+                Upgrade to Premium ⭐
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.upgradeInvitationFooter}>
+              Questions? Contact our support team for more information.
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
     const filteredClients = getFilteredClients();
 
     return (
@@ -848,6 +914,12 @@ const styles = StyleSheet.create({
   loader: {
     marginTop: 50
   },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 16
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -1230,6 +1302,104 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 14,
     fontWeight: '600'
+  },
+  upgradeInvitationCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 30,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold
+  },
+  upgradeIconContainer: {
+    backgroundColor: '#FFF9E6',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: theme.colors.warmGold
+  },
+  upgradeIcon: {
+    fontSize: 40
+  },
+  upgradeInvitationTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 16,
+    textAlign: 'center'
+  },
+  upgradeInvitationMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24
+  },
+  upgradeFeatureList: {
+    width: '100%',
+    marginBottom: 24
+  },
+  upgradeFeatureListTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 12
+  },
+  upgradeFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingLeft: 10
+  },
+  upgradeFeatureIcon: {
+    fontSize: 18,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+    marginRight: 12,
+    width: 20
+  },
+  upgradeFeatureText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 22
+  },
+  upgradeInvitationButton: {
+    backgroundColor: theme.colors.warmGold,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    width: '100%',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  upgradeInvitationButtonText: {
+    color: theme.colors.navy,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  upgradeInvitationFooter: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
+    fontStyle: 'italic'
   },
   upgradeModalOverlay: {
     flex: 1,
