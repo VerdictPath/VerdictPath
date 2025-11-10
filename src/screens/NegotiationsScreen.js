@@ -637,7 +637,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
                         styles.clientOptionText,
                         selectedMedicalProviderId === provider.id && styles.clientOptionTextSelected
                       ]}>
-                        {provider.provider_name}
+                        {provider.name}
                         {provider.is_primary && ' (Primary)'}
                       </Text>
                     </TouchableOpacity>
