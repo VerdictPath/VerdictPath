@@ -1,0 +1,93 @@
+// INTEGRATION INSTRUCTIONS FOR App.js
+// Add these changes to your existing App.js file
+
+// 1. ADD IMPORT at the top with other screen imports:
+import NegotiationsScreen from './src/screens/NegotiationsScreen';
+
+// 2. ADD NAVIGATION CASES in your existing screen rendering section:
+
+// For Law Firm Negotiations (add after lawfirm-event-requests case)
+{currentScreen === 'lawfirm-negotiations' && (
+  <NegotiationsScreen
+    user={user}
+    onBack={handleBackToLawFirmDashboard}
+  />
+)}
+
+// For Medical Provider Negotiations (add after medicalprovider-event-requests case)
+{currentScreen === 'medicalprovider-negotiations' && (
+  <NegotiationsScreen
+    user={user}
+    onBack={handleBackToMedicalProviderDashboard}
+  />
+)}
+
+// 3. UPDATE LawFirmDashboardScreen.js to add navigation button:
+// Add this button in your law firm dashboard:
+<TouchableOpacity
+  style={styles.menuButton}
+  onPress={() => onNavigate('lawfirm-negotiations')}
+>
+  <Text style={styles.menuButtonIcon}>💰</Text>
+  <Text style={styles.menuButtonText}>Bill Negotiations</Text>
+  <Text style={styles.menuButtonSubtext}>Negotiate medical bills with providers</Text>
+</TouchableOpacity>
+
+// 4. UPDATE MedicalProviderDashboardScreen.js to add navigation button:
+// Add this button in your medical provider dashboard:
+<TouchableOpacity
+  style={styles.menuButton}
+  onPress={() => onNavigate('medicalprovider-negotiations')}
+>
+  <Text style={styles.menuButtonIcon}>💰</Text>
+  <Text style={styles.menuButtonText}>Bill Negotiations</Text>
+  <Text style={styles.menuButtonSubtext}>Negotiate medical bills with law firms</Text>
+</TouchableOpacity>
+
+// 5. ADD TO YOUR API ENDPOINTS FILE (src/config/api.js):
+// Merge this with your existing API_ENDPOINTS object:
+export const API_ENDPOINTS = {
+  // ... existing endpoints ...
+  
+  NEGOTIATIONS: {
+    LIST: '/api/negotiations',
+    INITIATE: '/api/negotiations/initiate',
+    COUNTER_OFFER: '/api/negotiations/counter-offer',
+    ACCEPT: '/api/negotiations/accept',
+    REQUEST_CALL: '/api/negotiations/request-call',
+    LOG: (negotiationId) => `/api/negotiations/${negotiationId}/log`,
+    DETAILS: (negotiationId) => `/api/negotiations/${negotiationId}`,
+  },
+  
+  // ... rest of endpoints ...
+};
+
+// 6. UPDATE YOUR NOTIFICATION HANDLER in the useEffect for notifications:
+// Add these cases to your handleDeepLink function:
+const handleDeepLink = (url) => {
+  console.log('Deep link:', url);
+  
+  if (typeof url === 'string') {
+    if (url.includes('negotiations')) {
+      // Navigate to appropriate negotiations screen based on user type
+      if (user?.type === 'LAW_FIRM' || user?.userType === 'lawfirm') {
+        setCurrentScreen('lawfirm-negotiations');
+      } else if (user?.type === 'MEDICAL_PROVIDER' || user?.userType === 'medical_provider') {
+        setCurrentScreen('medicalprovider-negotiations');
+      }
+    }
+    // ... rest of your existing deep link handlers ...
+  }
+};
+
+// 7. BACKEND SETUP (if using Express.js):
+// In your main server file (e.g., server.js or app.js):
+const negotiationsRouter = require('./routes/negotiations');
+app.use('/api/negotiations', negotiationsRouter);
+
+// 8. DATABASE SETUP:
+// Run the SQL schema from database-schema-negotiations.sql in your PostgreSQL database
+
+// 9. NOTIFICATION SERVICE UPDATE:
+// Make sure your sendPushNotification function supports userType parameter
+// to send notifications to both law firms and medical providers
