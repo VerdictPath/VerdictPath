@@ -306,6 +306,7 @@ const LawFirmSubscriptionScreen = ({ token }) => {
         },
         body: JSON.stringify({
           subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+          planType: planType,
           firmSize: {
             clientCount: clientCount ? parseInt(clientCount) : null,
             tierName: selectedTier.name,
