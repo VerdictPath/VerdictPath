@@ -255,6 +255,11 @@ const LawFirmSubscriptionScreen = ({ token }) => {
         }
       });
       setCurrentSubscription(response.subscription);
+      
+      // Set initial planType to match current subscription
+      if (response.subscription?.planType) {
+        setPlanType(response.subscription.planType);
+      }
     } catch (error) {
       console.error('Error fetching subscription:', error);
       if (Platform.OS === 'web') {
@@ -296,44 +301,100 @@ const LawFirmSubscriptionScreen = ({ token }) => {
     return ((pricing.monthly * 12) - pricing.annual).toFixed(2);
   };
 
-  const handleUpdateSubscription = async (selectedTier) => {
-    try {
-      setUpdating(true);
-      
-      const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_UPDATE, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
-          planType: planType,
-          firmSize: {
-            clientCount: clientCount ? parseInt(clientCount) : null,
-            tierName: selectedTier.name,
-            billingPeriod: billingPeriod,
-            planType: planType
-          }
-        })
-      });
-
-      if (Platform.OS === 'web') {
-        alert('Subscription updated successfully!');
-      } else {
-        Alert.alert('Success', 'Subscription updated successfully!');
-      }
-      
-      await fetchSubscriptionDetails();
-    } catch (error) {
-      console.error('Error updating subscription:', error);
-      if (Platform.OS === 'web') {
-        alert(error.message || 'Failed to update subscription');
-      } else {
-        Alert.alert('Error', error.message || 'Failed to update subscription');
-      }
-    } finally {
-      setUpdating(false);
+  const confirmDowngrade = (selectedTier, onConfirm) => {
+    const isDowngrading = currentSubscription?.planType === 'premium' && planType === 'standard';
+    
+    if (!isDowngrading) {
+      onConfirm();
+      return;
     }
+
+    // Show downgrade warning
+    if (Platform.OS === 'web') {
+      const confirmed = confirm(
+        '⚠️ DOWNGRADE WARNING\n\n' +
+        'You are about to downgrade from Premium to Standard.\n\n' +
+        '⛔ You will LOSE access to:\n' +
+        '• Settlement Disbursements\n' +
+        '• Premium Analytics Dashboard\n' +
+        '• Medical Hub (when available)\n' +
+        '• Medical Provider Payments (when available)\n\n' +
+        '💰 Any pending disbursements should be completed before downgrading.\n\n' +
+        'Are you sure you want to downgrade to Standard?'
+      );
+      
+      if (confirmed) {
+        onConfirm();
+      }
+    } else {
+      Alert.alert(
+        '⚠️ Downgrade Warning',
+        'You are about to downgrade from Premium to Standard.\n\n' +
+        '⛔ You will LOSE access to:\n' +
+        '• Settlement Disbursements\n' +
+        '• Premium Analytics Dashboard\n' +
+        '• Medical Hub (when available)\n' +
+        '• Medical Provider Payments (when available)\n\n' +
+        '💰 Any pending disbursements should be completed before downgrading.\n\n' +
+        'Are you sure you want to downgrade?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Downgrade to Standard',
+            style: 'destructive',
+            onPress: onConfirm
+          }
+        ]
+      );
+    }
+  };
+
+  const handleUpdateSubscription = async (selectedTier) => {
+    const performUpdate = async () => {
+      try {
+        setUpdating(true);
+        
+        const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_UPDATE, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+            planType: planType,
+            firmSize: {
+              clientCount: clientCount ? parseInt(clientCount) : null,
+              tierName: selectedTier.name,
+              billingPeriod: billingPeriod,
+              planType: planType
+            }
+          })
+        });
+
+        if (Platform.OS === 'web') {
+          alert('Subscription updated successfully!');
+        } else {
+          Alert.alert('Success', 'Subscription updated successfully!');
+        }
+        
+        await fetchSubscriptionDetails();
+      } catch (error) {
+        console.error('Error updating subscription:', error);
+        if (Platform.OS === 'web') {
+          alert(error.message || 'Failed to update subscription');
+        } else {
+          Alert.alert('Error', error.message || 'Failed to update subscription');
+        }
+      } finally {
+        setUpdating(false);
+      }
+    };
+
+    // Check for downgrade and confirm before proceeding
+    confirmDowngrade(selectedTier, performUpdate);
   };
 
   const renderCurrentPlan = () => {
