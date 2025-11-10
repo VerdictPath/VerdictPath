@@ -66,7 +66,8 @@ export const API_ENDPOINTS = {
     PROCESS: '/api/disbursements/process',
     GET_HISTORY: '/api/disbursements/history',
     GET_CLIENT_PROVIDERS: '/api/disbursements/client-providers',
-    GET_DETAIL: (id) => `/api/disbursements/${id}`
+    GET_DETAIL: (id) => `/api/disbursements/${id}`,
+    GET_RECEIVED: '/api/disbursements/received'
   },
   STRIPE_CONNECT: {
     CREATE_ACCOUNT: '/api/stripe-connect/create-account',

@@ -272,6 +272,73 @@ router.post('/process', authenticateToken, isLawFirm, async (req, res) => {
 });
 
 /**
+ * GET /api/disbursements/received
+ * Get received disbursements for medical providers and individual clients
+ * IMPORTANT: Must be defined BEFORE /:id route to avoid being caught by dynamic parameter
+ */
+router.get('/received', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    let result;
+
+    if (userType === 'individual' || userType === 'client') {
+      result = await db.query(`
+        SELECT 
+          d.id,
+          d.client_amount as amount,
+          d.total_amount,
+          d.platform_fee,
+          d.stripe_transfer_id,
+          d.status,
+          d.created_at,
+          lf.firm_name as law_firm_name
+        FROM disbursements d
+        JOIN law_firms lf ON d.law_firm_id = lf.id
+        WHERE d.client_id = $1
+        ORDER BY d.created_at DESC
+      `, [userId]);
+    } else if (userType === 'medical_provider') {
+      result = await db.query(`
+        SELECT 
+          dmp.id,
+          dmp.amount,
+          dmp.status,
+          dmp.created_at,
+          d.total_amount as disbursement_total,
+          d.stripe_transfer_id,
+          lf.firm_name as law_firm_name,
+          u.first_name || ' ' || u.last_name as client_name
+        FROM disbursement_medical_payments dmp
+        JOIN disbursements d ON dmp.disbursement_id = d.id
+        JOIN law_firms lf ON d.law_firm_id = lf.id
+        JOIN users u ON d.client_id = u.id
+        WHERE dmp.medical_provider_id = $1
+        ORDER BY dmp.created_at DESC
+      `, [userId]);
+    } else {
+      return res.status(400).json({ error: 'Invalid user type' });
+    }
+
+    res.json({
+      disbursements: result.rows.map(row => ({
+        id: row.id,
+        amount: parseFloat(row.amount),
+        status: row.status,
+        createdAt: row.created_at,
+        lawFirmName: row.law_firm_name,
+        clientName: row.client_name || null,
+        stripeTransferId: row.stripe_transfer_id || null
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching received disbursements:', error);
+    res.status(500).json({ error: 'Failed to fetch received disbursements' });
+  }
+});
+
+/**
  * GET /api/disbursements/:id
  * Get detailed information about a specific disbursement
  */

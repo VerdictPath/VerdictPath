@@ -116,6 +116,12 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     }
   };
 
+  const handleNavigateToDisbursements = () => {
+    if (onNavigate) {
+      onNavigate('medicalprovider-disbursements');
+    }
+  };
+
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
@@ -596,6 +602,37 @@ const renderAnalyticsTab = () => {
           <Text style={styles.inviteButtonText}>👍 Invite</Text>
         </TouchableOpacity>
       </View>
+
+      {stripeAccountStatus?.onboardingComplete && (
+        <TouchableOpacity 
+          style={styles.disbursementCTA} 
+          onPress={handleNavigateToDisbursements}
+        >
+          <View style={styles.disbursementCTAContent}>
+            <Text style={styles.disbursementCTAIcon}>💰</Text>
+            <View style={styles.disbursementCTATextContainer}>
+              <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
+              <Text style={styles.disbursementCTASubtitle}>View your received payments & history</Text>
+            </View>
+            <Text style={styles.disbursementCTAArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
+      )}
+
+      {!stripeAccountStatus?.onboardingComplete && (
+        <View style={[styles.disbursementCTA, styles.disbursementCTADisabled]}>
+          <View style={styles.disbursementCTAContent}>
+            <Text style={styles.disbursementCTAIcon}>⚠️</Text>
+            <View style={styles.disbursementCTATextContainer}>
+              <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
+              <Text style={styles.disbursementCTASubtitle}>Complete payment setup to receive disbursements</Text>
+            </View>
+            <TouchableOpacity onPress={handleNavigateToPaymentSetup}>
+              <Text style={styles.disbursementSetupText}>Setup →</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       <View style={styles.tabBar}>
         {renderTabButton('patients', 'Patients', '👥')}
@@ -1333,6 +1370,58 @@ const styles = StyleSheet.create({
   paymentBannerSuccessDescription: {
     fontSize: 13,
     color: theme.colors.navy,
+  },
+  disbursementCTA: {
+    backgroundColor: theme.colors.mahogany,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 3,
+    borderColor: theme.colors.warmGold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  disbursementCTADisabled: {
+    backgroundColor: theme.colors.warmGray,
+    borderColor: theme.colors.textSecondary,
+    opacity: 0.8,
+  },
+  disbursementCTAContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+  },
+  disbursementCTAIcon: {
+    fontSize: 40,
+    marginRight: 16,
+  },
+  disbursementCTATextContainer: {
+    flex: 1,
+  },
+  disbursementCTATitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.cream,
+    marginBottom: 4,
+  },
+  disbursementCTASubtitle: {
+    fontSize: 14,
+    color: theme.colors.lightCream,
+    opacity: 0.9,
+  },
+  disbursementCTAArrow: {
+    fontSize: 24,
+    color: theme.colors.warmGold,
+    fontWeight: 'bold',
+  },
+  disbursementSetupText: {
+    fontSize: 16,
+    color: theme.colors.warmGold,
+    fontWeight: 'bold',
   },
 });
 

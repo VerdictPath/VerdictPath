@@ -30,6 +30,7 @@ import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import DisbursementDashboardScreen from './src/screens/DisbursementDashboardScreen';
+import ReceivedDisbursementsScreen from './src/screens/ReceivedDisbursementsScreen';
 import StripeConnectOnboardingScreen from './src/screens/StripeConnectOnboardingScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
@@ -1291,6 +1292,30 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={user}
           onBack={handleBackToLawFirmDashboard}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'disbursement-dashboard' && (
+        <DisbursementDashboardScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-disbursements' && (
+        <ReceivedDisbursementsScreen
+          user={user}
+          userType="medical_provider"
+          onBack={handleBackToMedicalProviderDashboard}
+        />
+      )}
+
+      {currentScreen === 'individual-disbursements' && (
+        <ReceivedDisbursementsScreen
+          user={user}
+          userType="individual"
+          onBack={() => setCurrentScreen('dashboard')}
         />
       )}
 

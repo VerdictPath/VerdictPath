@@ -1,0 +1,378 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl
+} from 'react-native';
+import { theme } from '../styles/theme';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
+
+const ReceivedDisbursementsScreen = ({ user, onBack, userType }) => {
+  const [disbursements, setDisbursements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadDisbursements();
+  }, []);
+
+  const loadDisbursements = async () => {
+    try {
+      setLoading(true);
+      const response = await apiRequest(API_ENDPOINTS.DISBURSEMENTS.GET_RECEIVED, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      setDisbursements(response.disbursements || []);
+    } catch (error) {
+      console.error('Error loading disbursements:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDisbursements();
+    setRefreshing(false);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusBadge = (status) => {
+    const statusColors = {
+      'pending': { bg: '#FFF3CD', text: '#856404', label: 'Pending' },
+      'completed': { bg: '#D4EDDA', text: '#155724', label: 'Completed' },
+      'failed': { bg: '#F8D7DA', text: '#721C24', label: 'Failed' }
+    };
+
+    const statusStyle = statusColors[status] || statusColors['pending'];
+
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+          {statusStyle.label}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderDisbursementCard = (disbursement) => {
+    const isMedicalProvider = userType === 'medical_provider';
+
+    return (
+      <View key={disbursement.id} style={styles.disbursementCard}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.cardIcon}>💰</Text>
+            <View>
+              <Text style={styles.cardTitle}>
+                {isMedicalProvider ? 'Medical Services Payment' : 'Settlement Disbursement'}
+              </Text>
+              <Text style={styles.cardSubtitle}>
+                from {disbursement.lawFirmName}
+                {isMedicalProvider && disbursement.clientName && ` (${disbursement.clientName})`}
+              </Text>
+            </View>
+          </View>
+          {getStatusBadge(disbursement.status)}
+        </View>
+
+        <View style={styles.cardDivider} />
+
+        <View style={styles.cardBody}>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Amount:</Text>
+            <Text style={styles.infoValue}>{formatCurrency(disbursement.amount)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Date:</Text>
+            <Text style={styles.infoValue}>{formatDate(disbursement.createdAt)}</Text>
+          </View>
+          {disbursement.stripeTransferId && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Transaction ID:</Text>
+              <Text style={styles.infoValueSmall} numberOfLines={1} ellipsizeMode="middle">
+                {disbursement.stripeTransferId}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderEmptyState = () => {
+    const isMedicalProvider = userType === 'medical_provider';
+
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyIcon}>📭</Text>
+        <Text style={styles.emptyTitle}>No Disbursements Yet</Text>
+        <Text style={styles.emptyText}>
+          {isMedicalProvider
+            ? 'When law firms send you payments for medical services, they will appear here.'
+            : 'When your law firm sends settlement disbursements, they will appear here.'}
+        </Text>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Disbursements</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.mahogany} />
+          <Text style={styles.loadingText}>Loading disbursements...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {userType === 'medical_provider' ? 'Received Payments' : 'My Disbursements'}
+        </Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryIcon}>📊</Text>
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryLabel}>Total Disbursements</Text>
+            <Text style={styles.summaryValue}>{disbursements.length}</Text>
+          </View>
+        </View>
+
+        {disbursements.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <View style={styles.disbursementsList}>
+            <Text style={styles.listTitle}>Payment History</Text>
+            {disbursements.map(renderDisbursementCard)}
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.sand,
+  },
+  header: {
+    backgroundColor: theme.colors.cream,
+    padding: 20,
+    borderBottomWidth: 3,
+    borderBottomColor: theme.colors.secondary,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: theme.colors.mahogany,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+  },
+  placeholder: {
+    width: 60,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+  },
+  content: {
+    flex: 1,
+  },
+  summaryCard: {
+    backgroundColor: theme.colors.mahogany,
+    margin: 16,
+    padding: 20,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: theme.colors.warmGold,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  summaryIcon: {
+    fontSize: 40,
+    marginRight: 16,
+  },
+  summaryContent: {
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: theme.colors.lightCream,
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: theme.colors.cream,
+  },
+  disbursementsList: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  listTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 12,
+  },
+  disbursementCard: {
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  cardHeaderLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 2,
+  },
+  cardSubtitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: theme.colors.warmGray + '40',
+    marginBottom: 12,
+  },
+  cardBody: {
+    gap: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 14,
+    color: theme.colors.mahogany,
+    fontWeight: '600',
+  },
+  infoValueSmall: {
+    fontSize: 12,
+    color: theme.colors.mahogany,
+    fontWeight: '500',
+    maxWidth: 200,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});
+
+export default ReceivedDisbursementsScreen;
