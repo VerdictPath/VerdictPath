@@ -675,6 +675,40 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setCurrentScreen('landing');
   };
 
+  const refreshUserProfile = async () => {
+    if (!user || !user.token || user.type !== USER_TYPES.INDIVIDUAL) {
+      console.log('[RefreshProfile] Skipping refresh - not an individual user');
+      return;
+    }
+
+    try {
+      console.log('[RefreshProfile] Fetching latest subscription data...');
+      const response = await apiRequest(
+        API_ENDPOINTS.SUBSCRIPTION.INDIVIDUAL_CURRENT,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      if (response.subscription) {
+        const updatedUser = {
+          ...user,
+          subscription: response.subscription.tier
+        };
+        
+        console.log('[RefreshProfile] Updated subscription from', user.subscription, 'to', response.subscription.tier);
+        setUser(updatedUser);
+        
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error('[RefreshProfile] Error refreshing user profile:', error);
+    }
+  };
+
   const handleClaimDailyBonus = async () => {
     if (!user || !user.token) {
       Alert.alert('Error', 'You must be logged in to claim daily rewards');
@@ -1442,6 +1476,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <IndividualSubscriptionScreen
           user={user}
           onNavigate={handleNavigateInternal}
+          onSubscriptionChanged={refreshUserProfile}
         />
       )}
       
