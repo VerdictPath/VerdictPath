@@ -30,12 +30,14 @@ router.post('/create-account', authenticateToken, async (req, res) => {
 
     // Check if user already has a Stripe account
     let checkQuery;
-    if (userType === 'individual') {
+    if (userType === 'individual' || userType === 'client') {
       checkQuery = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       checkQuery = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
     } else if (userType === 'lawfirm') {
       checkQuery = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
+    } else {
+      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
 
     const existingResult = await db.query(checkQuery, [userId]);
@@ -60,7 +62,7 @@ router.post('/create-account', authenticateToken, async (req, res) => {
       let updateQuery;
       let updateParams;
 
-      if (userType === 'individual') {
+      if (userType === 'individual' || userType === 'client') {
         updateQuery = 'UPDATE users SET stripe_account_id = $1 WHERE id = $2';
         updateParams = [accountId, userId];
       } else if (userType === 'medical_provider') {
@@ -69,6 +71,8 @@ router.post('/create-account', authenticateToken, async (req, res) => {
       } else if (userType === 'lawfirm') {
         updateQuery = 'UPDATE law_firms SET stripe_account_id = $1 WHERE id = $2';
         updateParams = [accountId, userId];
+      } else {
+        return res.status(400).json({ error: `Unsupported account type: ${userType}` });
       }
 
       await db.query(updateQuery, updateParams);
@@ -108,12 +112,14 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     let query;
     let params = [userId];
 
-    if (userType === 'individual') {
+    if (userType === 'individual' || userType === 'client') {
       query = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
     } else if (userType === 'lawfirm') {
       query = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
+    } else {
+      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
 
     const result = await db.query(query, params);
@@ -153,12 +159,14 @@ router.post('/create-dashboard-link', authenticateToken, async (req, res) => {
     const userType = req.user.userType;
 
     let query;
-    if (userType === 'individual') {
+    if (userType === 'individual' || userType === 'client') {
       query = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
     } else if (userType === 'lawfirm') {
       query = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
+    } else {
+      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
 
     const result = await db.query(query, [userId]);

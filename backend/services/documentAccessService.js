@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 const encryptionService = require('./encryption');
 
 async function verifyLawFirmClientRelationship(lawFirmId, clientId) {

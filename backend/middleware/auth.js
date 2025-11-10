@@ -1,5 +1,12 @@
 const jwt = require('jsonwebtoken');
 
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  SECURITY WARNING: JWT_SECRET environment variable is not set!');
+  console.warn('⚠️  Using fallback secret for DEVELOPMENT ONLY.');
+  console.warn('⚠️  This is a CRITICAL SECURITY RISK in production - tokens can be forged!');
+  console.warn('⚠️  Please set JWT_SECRET in your environment variables immediately.');
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-secret-key-change-in-production';
 
 exports.authenticateToken = (req, res, next) => {
