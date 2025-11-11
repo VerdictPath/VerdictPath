@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   },
   clientOptionText: {
     fontSize: 16,
-    color: theme.colors.text,
+    color: theme.colors.navy,
   },
   clientOptionTextSelected: {
     color: '#fff',
