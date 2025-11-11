@@ -1,0 +1,546 @@
+-- COMPLETE VERDICT PATH DATABASE SCHEMA
+-- PostgreSQL 12+
+-- Run this file to create all necessary tables
+
+-- ============================================================================
+-- USERS & AUTHENTICATION
+-- ============================================================================
+
+-- Individual Clients
+CREATE TABLE clients (
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  
+  -- Relationships
+  law_firm_id INTEGER REFERENCES law_firms(id) ON DELETE SET NULL,
+  
+  -- Profile
+  avatar_type VARCHAR(50) DEFAULT 'captain',
+  subscription_tier VARCHAR(50) DEFAULT 'free',
+  subscription_price DECIMAL(10, 2) DEFAULT 0,
+  stripe_customer_id VARCHAR(255),
+  stripe_subscription_id VARCHAR(255),
+  
+  -- Privacy & Legal
+  privacy_accepted BOOLEAN DEFAULT false,
+  terms_accepted_at TIMESTAMP,
+  
+  -- Status
+  is_active BOOLEAN DEFAULT true,
+  email_verified BOOLEAN DEFAULT false,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login_at TIMESTAMP
+);
+
+-- Law Firms
+CREATE TABLE law_firms (
+  id SERIAL PRIMARY KEY,
+  firm_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  firm_code VARCHAR(50) UNIQUE NOT NULL,
+  
+  -- Subscription
+  subscription_tier VARCHAR(50) DEFAULT 'free',
+  firm_size VARCHAR(50),
+  stripe_customer_id VARCHAR(255),
+  stripe_subscription_id VARCHAR(255),
+  
+  -- Privacy & Legal
+  privacy_accepted BOOLEAN DEFAULT false,
+  
+  -- Payment Setup
+  stripe_account_id VARCHAR(255), -- For Stripe Connect
+  stripe_account_status VARCHAR(50),
+  
+  -- Status
+  is_active BOOLEAN DEFAULT true,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Medical Providers
+CREATE TABLE medical_providers (
+  id SERIAL PRIMARY KEY,
+  provider_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  provider_code VARCHAR(50) UNIQUE NOT NULL,
+  
+  -- Subscription
+  subscription_tier VARCHAR(50) DEFAULT 'free',
+  provider_size VARCHAR(50),
+  stripe_customer_id VARCHAR(255),
+  stripe_subscription_id VARCHAR(255),
+  
+  -- Privacy & Legal
+  privacy_accepted BOOLEAN DEFAULT false,
+  
+  -- Payment Setup
+  stripe_account_id VARCHAR(255), -- For Stripe Connect
+  stripe_account_status VARCHAR(50),
+  
+  -- Status
+  is_active BOOLEAN DEFAULT true,
+  
+  -- Timestamps
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- GAMIFICATION
+-- ============================================================================
+
+-- Coin Balances
+CREATE TABLE coin_balances (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL, -- 'individual', 'lawfirm', 'medical_provider'
+  balance INTEGER DEFAULT 0,
+  lifetime_credits_earned DECIMAL(10, 2) DEFAULT 0,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, user_type),
+  CHECK (balance >= 0),
+  CHECK (lifetime_credits_earned >= 0 AND lifetime_credits_earned <= 5)
+);
+
+-- Coin Transactions (Audit Trail)
+CREATE TABLE coin_transactions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  amount INTEGER NOT NULL, -- Positive for earning, negative for spending
+  transaction_type VARCHAR(50) NOT NULL, -- 'daily_bonus', 'substage_completion', 'stage_completion', 'conversion', 'referral', etc.
+  description TEXT,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Login Streaks
+CREATE TABLE login_streaks (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  current_streak INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0,
+  last_login DATE,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, user_type)
+);
+
+-- Achievements
+CREATE TABLE achievements (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  achievement_type VARCHAR(100) NOT NULL, -- 'first_login', 'week_streak', 'month_streak', etc.
+  achievement_name VARCHAR(255),
+  achievement_description TEXT,
+  icon_url VARCHAR(500),
+  
+  earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, user_type, achievement_type)
+);
+
+-- Badges
+CREATE TABLE badges (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  badge_type VARCHAR(100) NOT NULL,
+  badge_name VARCHAR(255),
+  badge_description TEXT,
+  badge_image_url VARCHAR(500),
+  rarity VARCHAR(50), -- 'common', 'rare', 'epic', 'legendary'
+  
+  earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, user_type, badge_type)
+);
+
+-- ============================================================================
+-- LITIGATION PROGRESS
+-- ============================================================================
+
+-- Litigation Substage Progress
+CREATE TABLE litigation_progress (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  stage_id VARCHAR(50) NOT NULL, -- e.g., 'pre-filing', 'case-filing'
+  substage_id VARCHAR(50) NOT NULL, -- e.g., 'pre-1', 'cf-2'
+  substage_name VARCHAR(255),
+  coins_earned INTEGER DEFAULT 0,
+  
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, substage_id)
+);
+
+-- Stage Completions (separate from substages)
+CREATE TABLE stage_completions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  stage_id VARCHAR(50) NOT NULL,
+  stage_name VARCHAR(255),
+  coins_earned INTEGER DEFAULT 0,
+  
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, stage_id)
+);
+
+-- ============================================================================
+-- DOCUMENTS & FILES
+-- ============================================================================
+
+-- Document Uploads
+CREATE TABLE documents (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  
+  -- File Info
+  filename VARCHAR(500) NOT NULL,
+  original_filename VARCHAR(500),
+  file_type VARCHAR(100), -- 'medical_bill', 'medical_record', 'legal_document', etc.
+  mime_type VARCHAR(100),
+  file_size INTEGER, -- in bytes
+  storage_url VARCHAR(1000), -- S3/Cloudinary URL
+  
+  -- Categorization
+  category VARCHAR(100), -- 'medical', 'legal', 'general'
+  subcategory VARCHAR(100),
+  
+  -- Metadata
+  description TEXT,
+  tags TEXT[], -- Array of tags
+  
+  -- Status
+  is_deleted BOOLEAN DEFAULT false,
+  
+  -- Timestamps
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP
+);
+
+-- ============================================================================
+-- INVITES & REFERRALS
+-- ============================================================================
+
+-- Invite Codes
+CREATE TABLE invites (
+  id SERIAL PRIMARY KEY,
+  inviter_id INTEGER NOT NULL,
+  inviter_type VARCHAR(50) NOT NULL,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  
+  -- Usage
+  used BOOLEAN DEFAULT false,
+  used_by_user_id INTEGER,
+  used_at TIMESTAMP,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- NOTIFICATIONS
+-- ============================================================================
+
+-- Notifications
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  
+  -- Notification Content
+  title VARCHAR(500) NOT NULL,
+  body TEXT NOT NULL,
+  notification_type VARCHAR(100), -- 'task_assigned', 'general', 'negotiation', etc.
+  
+  -- Actions
+  action_url VARCHAR(500),
+  action_data JSONB, -- Additional data for deep linking
+  
+  -- Sender Info (for law firm/provider notifications)
+  sender_id INTEGER,
+  sender_type VARCHAR(50),
+  sender_name VARCHAR(255),
+  
+  -- Status
+  is_read BOOLEAN DEFAULT false,
+  is_clicked BOOLEAN DEFAULT false,
+  read_at TIMESTAMP,
+  clicked_at TIMESTAMP,
+  
+  -- Push Notification
+  push_sent BOOLEAN DEFAULT false,
+  push_sent_at TIMESTAMP,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Device Tokens (for push notifications)
+CREATE TABLE device_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  token TEXT NOT NULL,
+  device_type VARCHAR(50), -- 'ios', 'android', 'web'
+  device_info JSONB,
+  
+  is_active BOOLEAN DEFAULT true,
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  UNIQUE(user_id, user_type, token)
+);
+
+-- ============================================================================
+-- CALENDAR & TASKS
+-- ============================================================================
+
+-- Calendar Events
+CREATE TABLE calendar_events (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  
+  -- Event Info
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  event_type VARCHAR(100), -- 'court_date', 'appointment', 'deadline', 'meeting'
+  
+  -- Timing
+  start_time TIMESTAMP NOT NULL,
+  end_time TIMESTAMP,
+  all_day BOOLEAN DEFAULT false,
+  
+  -- Location
+  location VARCHAR(500),
+  
+  -- Status
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'confirmed', 'cancelled'
+  
+  -- Creator Info (for law firm/provider events)
+  created_by_id INTEGER,
+  created_by_type VARCHAR(50),
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tasks / Action Items
+CREATE TABLE tasks (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type VARCHAR(50) NOT NULL,
+  
+  -- Task Info
+  title VARCHAR(500) NOT NULL,
+  description TEXT,
+  task_type VARCHAR(100),
+  priority VARCHAR(50) DEFAULT 'medium', -- 'low', 'medium', 'high', 'urgent'
+  
+  -- Status
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'in_progress', 'completed', 'cancelled'
+  completed_at TIMESTAMP,
+  
+  -- Due Date
+  due_date TIMESTAMP,
+  
+  -- Assignment (for law firm tasks)
+  assigned_by_id INTEGER,
+  assigned_by_type VARCHAR(50),
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- EVENT REQUESTS
+-- ============================================================================
+
+-- Event Requests (clients can request events with law firms/providers)
+CREATE TABLE event_requests (
+  id SERIAL PRIMARY KEY,
+  requester_id INTEGER NOT NULL,
+  requester_type VARCHAR(50) NOT NULL,
+  recipient_id INTEGER NOT NULL,
+  recipient_type VARCHAR(50) NOT NULL,
+  
+  -- Request Info
+  event_type VARCHAR(100),
+  preferred_date DATE,
+  preferred_time TIME,
+  notes TEXT,
+  
+  -- Status
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'completed'
+  responded_at TIMESTAMP,
+  response_notes TEXT,
+  
+  -- Final Event (if approved)
+  calendar_event_id INTEGER REFERENCES calendar_events(id),
+  
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================================
+-- INDEXES FOR PERFORMANCE
+-- ============================================================================
+
+-- Clients indexes
+CREATE INDEX idx_clients_email ON clients(email);
+CREATE INDEX idx_clients_law_firm ON clients(law_firm_id);
+CREATE INDEX idx_clients_created ON clients(created_at DESC);
+
+-- Law firms indexes
+CREATE INDEX idx_law_firms_email ON law_firms(email);
+CREATE INDEX idx_law_firms_code ON law_firms(firm_code);
+
+-- Medical providers indexes
+CREATE INDEX idx_medical_providers_email ON medical_providers(email);
+CREATE INDEX idx_medical_providers_code ON medical_providers(provider_code);
+
+-- Coin balances indexes
+CREATE INDEX idx_coin_balances_user ON coin_balances(user_id, user_type);
+
+-- Coin transactions indexes
+CREATE INDEX idx_coin_transactions_user ON coin_transactions(user_id, user_type);
+CREATE INDEX idx_coin_transactions_created ON coin_transactions(created_at DESC);
+
+-- Litigation progress indexes
+CREATE INDEX idx_litigation_progress_user ON litigation_progress(user_id);
+CREATE INDEX idx_litigation_progress_substage ON litigation_progress(substage_id);
+
+-- Notifications indexes
+CREATE INDEX idx_notifications_user ON notifications(user_id, user_type);
+CREATE INDEX idx_notifications_unread ON notifications(user_id, user_type, is_read);
+CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
+
+-- Documents indexes
+CREATE INDEX idx_documents_user ON documents(user_id, user_type);
+CREATE INDEX idx_documents_type ON documents(file_type);
+
+-- Calendar events indexes
+CREATE INDEX idx_calendar_events_user ON calendar_events(user_id, user_type);
+CREATE INDEX idx_calendar_events_start ON calendar_events(start_time);
+
+-- Tasks indexes
+CREATE INDEX idx_tasks_user ON tasks(user_id, user_type);
+CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_due ON tasks(due_date);
+
+-- ============================================================================
+-- TRIGGERS FOR UPDATED_AT
+-- ============================================================================
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply trigger to all tables with updated_at
+CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_law_firms_updated_at BEFORE UPDATE ON law_firms
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_medical_providers_updated_at BEFORE UPDATE ON medical_providers
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_coin_balances_updated_at BEFORE UPDATE ON coin_balances
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_login_streaks_updated_at BEFORE UPDATE ON login_streaks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_calendar_events_updated_at BEFORE UPDATE ON calendar_events
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_event_requests_updated_at BEFORE UPDATE ON event_requests
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_device_tokens_updated_at BEFORE UPDATE ON device_tokens
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================================
+-- VIEWS FOR COMMON QUERIES
+-- ============================================================================
+
+-- Client Dashboard View
+CREATE VIEW client_dashboard_view AS
+SELECT 
+  c.id,
+  c.first_name,
+  c.last_name,
+  c.email,
+  c.avatar_type,
+  c.subscription_tier,
+  COALESCE(cb.balance, 0) as coins,
+  COALESCE(ls.current_streak, 0) as current_streak,
+  COALESCE(ls.longest_streak, 0) as longest_streak,
+  (SELECT COUNT(*) FROM litigation_progress WHERE user_id = c.id) as completed_substages,
+  (SELECT COUNT(*) FROM stage_completions WHERE user_id = c.id) as completed_stages,
+  (SELECT COUNT(*) FROM notifications WHERE user_id = c.id AND user_type = 'individual' AND is_read = false) as unread_notifications
+FROM clients c
+LEFT JOIN coin_balances cb ON c.id = cb.user_id AND cb.user_type = 'individual'
+LEFT JOIN login_streaks ls ON c.id = ls.user_id AND ls.user_type = 'individual';
+
+-- ============================================================================
+-- INITIAL DATA (OPTIONAL)
+-- ============================================================================
+
+-- You can add seed data here if needed
+
+-- Example: Create a test user (password is 'password123')
+-- INSERT INTO clients (first_name, last_name, email, password_hash, privacy_accepted)
+-- VALUES ('Test', 'User', 'test@example.com', '$2a$10$...hash...', true);
+
+-- ============================================================================
+-- SCHEMA VERSION TRACKING
+-- ============================================================================
+
+CREATE TABLE schema_versions (
+  id SERIAL PRIMARY KEY,
+  version VARCHAR(50) NOT NULL,
+  description TEXT,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO schema_versions (version, description)
+VALUES ('1.0.0', 'Initial schema - Core features without HIPAA');
+
+-- ============================================================================
+-- GRANT PERMISSIONS (adjust as needed for your setup)
+-- ============================================================================
+
+-- Example: Grant all permissions to your application database user
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_app_user;
+-- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_app_user;
