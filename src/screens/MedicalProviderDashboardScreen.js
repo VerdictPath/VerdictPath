@@ -258,6 +258,28 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.quickActionsTitle}>⚡ Quick Actions</Text>
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-negotiations')}
+              >
+                <Text style={styles.quickActionIcon}>💰</Text>
+                <Text style={styles.quickActionText}>Bill Negotiations</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-disbursements')}
+              >
+                <Text style={styles.quickActionIcon}>💵</Text>
+                <Text style={styles.quickActionText}>Disbursements</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           
           {patients.length === 0 ? (
             <View style={styles.emptyState}>
@@ -1438,6 +1460,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.warmGold,
     fontWeight: 'bold',
+  },
+  quickActionsContainer: {
+    marginVertical: 16,
+  },
+  quickActionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 12,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: theme.colors.cream,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickActionIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.navy,
+    textAlign: 'center',
   },
 });
 
