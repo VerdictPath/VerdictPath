@@ -10,6 +10,7 @@ exports.getPatients = async (req, res) => {
     const providerId = req.user.id;
     
     // Get patients who have granted consent to this provider
+    // Also includes patients from medical_provider_patients table (for beta/legacy support)
     const patientsResult = await db.query(
       `SELECT DISTINCT
         u.id,
@@ -19,10 +20,13 @@ exports.getPatients = async (req, res) => {
         u.last_name_encrypted,
         u.email
        FROM users u
-       INNER JOIN consent_records cr ON u.id = cr.patient_id
-       WHERE cr.granted_to_type = 'medical_provider'
+       LEFT JOIN consent_records cr ON u.id = cr.patient_id 
+         AND cr.granted_to_type = 'medical_provider'
          AND cr.granted_to_id = $1
          AND cr.status = 'active'
+       LEFT JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
+         AND mpp.medical_provider_id = $1
+       WHERE (cr.id IS NOT NULL OR mpp.id IS NOT NULL)
          AND u.user_type = 'client'
        ORDER BY u.last_name, u.first_name`,
       [providerId]
@@ -70,6 +74,7 @@ exports.getDashboard = async (req, res) => {
     const provider = providerResult.rows[0];
     
     // Get patients who have granted consent to this provider (HIPAA-compliant approach)
+    // Also includes patients from medical_provider_patients table (for beta/legacy support)
     const patientsResult = await db.query(
       `SELECT DISTINCT
         u.id,
@@ -78,18 +83,21 @@ exports.getDashboard = async (req, res) => {
         u.first_name_encrypted,
         u.last_name_encrypted,
         u.email,
-        cr.consent_type,
-        cr.status as consent_status,
-        cr.granted_at as registered_date,
+        COALESCE(cr.consent_type, 'implied') as consent_type,
+        COALESCE(cr.status, 'active') as consent_status,
+        COALESCE(cr.granted_at, mpp.registered_date, NOW()) as registered_date,
         (SELECT COUNT(*) FROM medical_records WHERE user_id = u.id) as record_count,
         (SELECT COALESCE(SUM(total_amount), 0) FROM medical_billing WHERE user_id = u.id) as total_billed
        FROM users u
-       INNER JOIN consent_records cr ON u.id = cr.patient_id
-       WHERE cr.granted_to_type = 'medical_provider'
+       LEFT JOIN consent_records cr ON u.id = cr.patient_id 
+         AND cr.granted_to_type = 'medical_provider'
          AND cr.granted_to_id = $1
          AND cr.status = 'active'
+       LEFT JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
+         AND mpp.medical_provider_id = $1
+       WHERE (cr.id IS NOT NULL OR mpp.id IS NOT NULL)
          AND u.user_type = 'client'
-       ORDER BY cr.granted_at DESC`,
+       ORDER BY COALESCE(cr.granted_at, mpp.registered_date, NOW()) DESC`,
       [providerId]
     );
     
@@ -144,10 +152,13 @@ exports.getDashboard = async (req, res) => {
               u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
        FROM medical_records mr
        INNER JOIN users u ON mr.user_id = u.id
-       INNER JOIN consent_records cr ON u.id = cr.patient_id
-       WHERE cr.granted_to_type = 'medical_provider'
+       LEFT JOIN consent_records cr ON u.id = cr.patient_id 
+         AND cr.granted_to_type = 'medical_provider'
          AND cr.granted_to_id = $1
          AND cr.status = 'active'
+       LEFT JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
+         AND mpp.medical_provider_id = $1
+       WHERE (cr.id IS NOT NULL OR mpp.id IS NOT NULL)
        ORDER BY mr.uploaded_at DESC
        LIMIT 50`,
       [providerId]
@@ -186,10 +197,13 @@ exports.getDashboard = async (req, res) => {
          COUNT(*) FILTER (WHERE u.current_phase = 'litigation') AS litigation_count,
          COUNT(*) FILTER (WHERE u.current_phase = 'trial') AS trial_count
        FROM users u
-       INNER JOIN consent_records cr ON u.id = cr.patient_id
-       WHERE cr.granted_to_type = 'medical_provider'
+       LEFT JOIN consent_records cr ON u.id = cr.patient_id 
+         AND cr.granted_to_type = 'medical_provider'
          AND cr.granted_to_id = $1
          AND cr.status = 'active'
+       LEFT JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
+         AND mpp.medical_provider_id = $1
+       WHERE (cr.id IS NOT NULL OR mpp.id IS NOT NULL)
          AND u.user_type = 'client'`,
       [providerId]
     );
