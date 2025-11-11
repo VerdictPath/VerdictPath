@@ -2,6 +2,54 @@ const db = require('../config/db');
 const encryption = require('../services/encryption');
 
 /**
+ * Get Patients List (simplified for dropdowns/selection)
+ * Returns basic list of patients who have granted consent to this provider
+ */
+exports.getPatients = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    
+    // Get patients who have granted consent to this provider
+    const patientsResult = await db.query(
+      `SELECT DISTINCT
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.first_name_encrypted,
+        u.last_name_encrypted,
+        u.email
+       FROM users u
+       INNER JOIN consent_records cr ON u.id = cr.patient_id
+       WHERE cr.granted_to_type = 'medical_provider'
+         AND cr.granted_to_id = $1
+         AND cr.status = 'active'
+         AND u.user_type = 'client'
+       ORDER BY u.last_name, u.first_name`,
+      [providerId]
+    );
+    
+    // Decrypt patient names
+    const patients = patientsResult.rows.map((patient) => {
+      const firstName = patient.first_name_encrypted ? encryption.decrypt(patient.first_name_encrypted) : patient.first_name;
+      const lastName = patient.last_name_encrypted ? encryption.decrypt(patient.last_name_encrypted) : patient.last_name;
+      
+      return {
+        id: patient.id,
+        firstName: firstName,
+        lastName: lastName,
+        displayName: `${lastName}, ${firstName}`,
+        email: patient.email
+      };
+    });
+    
+    res.json({ patients });
+  } catch (error) {
+    console.error('Error fetching patients list:', error);
+    res.status(500).json({ message: 'Error fetching patients', error: error.message });
+  }
+};
+
+/**
  * Get Medical Provider Dashboard
  * Shows list of patients who have granted consent to this provider
  */
