@@ -48,6 +48,7 @@ The application uses Expo SDK 52 with React Native 0.76.9 in a modular monorepo 
 - **docs/BILL_NEGOTIATIONS_GUIDE.md**: Complete implementation guide for the Medical Bill Negotiations system, including architecture, API endpoints, user flows, security model, and testing checklist.
 - **docs/TESTING_CHECKLIST.md**: Comprehensive 7-phase testing checklist covering backend API testing, frontend integration, end-to-end flows, edge cases, performance, security, and cross-device testing. Includes specific test cases for all features.
 - **docs/ENVIRONMENT_SETUP.md**: Complete environment variables template with setup instructions for database, JWT authentication, Stripe payments, file storage (Cloudinary/AWS), Firebase push notifications, email services, and monitoring tools. Includes security best practices and verification steps.
+- **docs/API_CONFIGURATION.md**: Frontend API configuration with Railway backend integration, comprehensive endpoint mapping, error handling utilities, file upload with progress tracking, and health check functions. Configured for production at verdictpath.up.railway.app.
 
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.

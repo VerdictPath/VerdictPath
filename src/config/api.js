@@ -1,183 +1,404 @@
-// API Configuration - Environment-aware backend URL selection
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend
+// Replace your existing /src/config/api.js with this file
 
-// For web: Use current origin dynamically at runtime
-// For mobile dev: Use localhost or tunnel
-// For mobile prod: Use Railway
-const getApiBaseUrl = () => {
-  // Priority 1: Explicit environment variable override (for testing/staging)
-  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
-    return process.env.EXPO_PUBLIC_API_BASE_URL;
-  }
-  
-  // Priority 2: Web platform - MUST evaluate at runtime, not build time
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    // Use current page origin - works for both Replit and Railway
-    return window.location.origin;
-  }
-  
-  // Priority 3: Production environment for mobile (Railway deployment)
-  if (!__DEV__) {
-    return 'https://verdictpath.up.railway.app';
-  }
-  
-  // Priority 4: Development environment for mobile
-  // Check if running on a physical device (iOS/Android) via tunnel mode
-  // Physical devices can't access localhost, so use Replit public URL
-  const platform = Constants.platform;
-  if (platform && (platform.ios || platform.android)) {
-    // Running on physical device - use Replit public URL
-    return 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
-  }
-  
-  // Priority 5: Mobile development (localhost works in simulator/emulator)
-  return 'http://localhost:3000';
-};
+// ============================================================================
+// API BASE URL CONFIGURATION
+// ============================================================================
 
-// Don't cache the base URL - call function each time for web platform
-export const getAPIBaseURL = getApiBaseUrl;
+// RAILWAY PRODUCTION DEPLOYMENT
+export const API_BASE_URL = 'https://verdictpath.up.railway.app';
 
-// For backward compatibility and to support dynamic URLs on web
-export const API_BASE_URL = Platform.OS === 'web' && typeof window !== 'undefined' 
-  ? window.location.origin 
-  : getApiBaseUrl();
+// LOCAL DEVELOPMENT (uncomment when testing locally)
+// export const API_BASE_URL = 'http://localhost:5000';
 
-export const API_URL = Platform.OS === 'web' && typeof window !== 'undefined'
-  ? `${window.location.origin}/api`
-  : `${getApiBaseUrl()}/api`;
+// REPLIT DEVELOPMENT (if using Replit for backend)
+// export const API_BASE_URL = 'https://your-replit-username-your-project-name.replit.app';
+
+// ============================================================================
+// API ENDPOINTS
+// ============================================================================
 
 export const API_ENDPOINTS = {
+  // Authentication
   AUTH: {
-    REGISTER_CLIENT: '/api/auth/register/client',
-    REGISTER_LAWFIRM: '/api/auth/register/lawfirm',
-    REGISTER_MEDICALPROVIDER: '/api/auth/register/medicalprovider',
-    LOGIN: '/api/auth/login'
+    REGISTER_CLIENT: `${API_BASE_URL}/api/auth/register-client`,
+    REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register-lawfirm`,
+    REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register-medicalprovider`,
+    LOGIN: `${API_BASE_URL}/api/auth/login`,
+    LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   },
-  LAWFIRM: {
-    DASHBOARD: '/api/lawfirm/dashboard',
-    CLIENTS: '/api/lawfirm/clients',
-    GET_CLIENTS: '/api/lawfirm/clients',
-    CLIENT_DETAILS: (clientId) => `/api/lawfirm/client/${clientId}`,
-    UPDATE_STAGE: '/api/lawfirm/litigation-stage',
-    ALL_DOCUMENTS: '/api/lawfirm/documents/all'
-  },
-  DISBURSEMENTS: {
-    PROCESS: '/api/disbursements/process',
-    GET_HISTORY: '/api/disbursements/history',
-    GET_CLIENT_PROVIDERS: '/api/disbursements/client-providers',
-    GET_DETAIL: (id) => `/api/disbursements/${id}`,
-    GET_RECEIVED: '/api/disbursements/received'
-  },
-  STRIPE_CONNECT: {
-    CREATE_ACCOUNT: '/api/stripe-connect/create-account',
-    ACCOUNT_STATUS: '/api/stripe-connect/account-status',
-    DASHBOARD_LINK: '/api/stripe-connect/create-dashboard-link'
-  },
-  MEDICALPROVIDER: {
-    DASHBOARD: '/api/medicalprovider/dashboard',
-    PATIENTS: '/api/medicalprovider/patients',
-    PATIENT_DETAILS: (patientId) => `/api/medicalprovider/patient/${patientId}`
-  },
+
+  // Coins & Gamification
   COINS: {
-    // UPDATE endpoint removed for security - use specific endpoints instead
-    CONVERT: '/api/coins/convert',
-    BALANCE: '/api/coins/balance',
-    CONVERSION_HISTORY: '/api/coins/conversion-history',
-    CLAIM_DAILY: '/api/coins/claim-daily'
+    BALANCE: `${API_BASE_URL}/api/coins/balance`,
+    CLAIM_DAILY: `${API_BASE_URL}/api/coins/claim-daily`,
+    CONVERT: `${API_BASE_URL}/api/coins/convert`,
   },
-  INVITES: {
-    MY_CODE: '/api/invites/my-code',
-    STATS: '/api/invites/stats',
-    VALIDATE: (code) => `/api/invites/validate/${code}`,
-    PROCESS: '/api/invites/process'
-  },
-  SUBSCRIPTION: {
-    LAWFIRM_CURRENT: '/api/subscription/lawfirm/current',
-    LAWFIRM_UPDATE: '/api/subscription/lawfirm/update',
-    MEDICALPROVIDER_CURRENT: '/api/subscription/medicalprovider/current',
-    MEDICALPROVIDER_UPDATE: '/api/subscription/medicalprovider/update',
-    INDIVIDUAL_CURRENT: '/api/subscription/individual/current',
-    INDIVIDUAL_UPDATE: '/api/subscription/individual/update'
-  },
-  CONNECTIONS: {
-    MY_CONNECTIONS: '/api/connections/my-connections',
-    UPDATE_LAWFIRM: '/api/connections/update-lawfirm',
-    DISCONNECT_LAWFIRM: '/api/connections/disconnect-lawfirm',
-    ADD_MEDICALPROVIDER: '/api/connections/add-medical-provider',
-    REMOVE_MEDICALPROVIDER: '/api/connections/remove-medical-provider'
-  },
+
+  // Litigation Progress
   LITIGATION: {
-    PROGRESS: '/api/litigation/progress',
-    COMPLETE_SUBSTAGE: '/api/litigation/substage/complete',
-    REVERT_SUBSTAGE: '/api/litigation/substage/revert',
-    COMPLETE_STAGE: '/api/litigation/stage/complete',
-    REVERT_STAGE: '/api/litigation/stage/revert',
-    VIDEO_PROGRESS: '/api/litigation/video/progress'
+    PROGRESS: `${API_BASE_URL}/api/litigation/progress`,
+    COMPLETE_SUBSTAGE: `${API_BASE_URL}/api/litigation/complete-substage`,
+    COMPLETE_STAGE: `${API_BASE_URL}/api/litigation/complete-stage`,
+    REVERT_STAGE: `${API_BASE_URL}/api/litigation/revert-stage`,
   },
+
+  // Law Firm
+  LAWFIRM: {
+    CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
+    CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}`,
+    CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}/progress`,
+  },
+
+  // Medical Provider
+  MEDICALPROVIDER: {
+    PATIENTS: `${API_BASE_URL}/api/medicalprovider/patients`,
+    PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patients/${patientId}`,
+  },
+
+  // Invites & Referrals
+  INVITES: {
+    GENERATE: `${API_BASE_URL}/api/invites/generate`,
+    PROCESS: `${API_BASE_URL}/api/invites/process`,
+    STATS: `${API_BASE_URL}/api/invites/stats`,
+  },
+
+  // File Uploads
+  UPLOADS: {
+    DOCUMENT: `${API_BASE_URL}/api/uploads/document`,
+    DOCUMENTS: `${API_BASE_URL}/api/uploads/documents`,
+    LIST: `${API_BASE_URL}/api/uploads`,
+    GET: (documentId) => `${API_BASE_URL}/api/uploads/${documentId}`,
+    DELETE: (documentId) => `${API_BASE_URL}/api/uploads/${documentId}`,
+  },
+
+  // Subscriptions (Stripe)
+  SUBSCRIPTIONS: {
+    CREATE_CHECKOUT: `${API_BASE_URL}/api/subscriptions/create-checkout-session`,
+    PORTAL: `${API_BASE_URL}/api/subscriptions/portal-session`,
+    STATUS: `${API_BASE_URL}/api/subscriptions/status`,
+    WEBHOOK: `${API_BASE_URL}/api/subscriptions/webhook`, // Backend only
+  },
+
+  // Notifications
   NOTIFICATIONS: {
-    REGISTER_DEVICE: '/api/notifications/register-device',
-    UNREGISTER_DEVICE: '/api/notifications/unregister-device',
-    MY_NOTIFICATIONS: '/api/notifications/my-notifications',
-    UNREAD_COUNT: '/api/notifications/unread-count',
-    MARK_READ: (id) => `/api/notifications/${id}/read`,
-    MARK_CLICKED: (id) => `/api/notifications/${id}/clicked`,
-    SEND_TO_CLIENTS: '/api/notifications/send-to-clients',
-    SEND_TO_PATIENTS: '/api/notifications/send-to-patients'
+    LIST: `${API_BASE_URL}/api/notifications`,
+    UNREAD_COUNT: `${API_BASE_URL}/api/notifications/unread-count`,
+    MARK_READ: `${API_BASE_URL}/api/notifications/mark-read`,
+    MARK_CLICKED: `${API_BASE_URL}/api/notifications/mark-clicked`,
+    MARK_ALL_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
+    REGISTER_DEVICE: `${API_BASE_URL}/api/notifications/register-device`,
+    UNREGISTER_DEVICE: `${API_BASE_URL}/api/notifications/unregister-device`,
+    SEND: `${API_BASE_URL}/api/notifications/send`,
   },
-  TASKS: {
-    MY_TASKS: '/api/tasks/my-tasks',
-    CREATE: '/api/tasks/create',
-    UPDATE_STATUS: (taskId) => `/api/tasks/${taskId}/status`,
-    CLIENT_TASKS: (clientId) => `/api/tasks/client/${clientId}`,
-    DELETE: (taskId) => `/api/tasks/${taskId}`,
-    TEMPLATES: '/api/tasks/templates'
-  },
+
+  // Negotiations
   NEGOTIATIONS: {
-    LIST: '/api/negotiations',
-    INITIATE: '/api/negotiations/initiate',
-    COUNTER_OFFER: '/api/negotiations/counter-offer',
-    ACCEPT: '/api/negotiations/accept',
-    REQUEST_CALL: '/api/negotiations/request-call',
-    LOG: (negotiationId) => `/api/negotiations/${negotiationId}/log`,
-    DETAILS: (negotiationId) => `/api/negotiations/${negotiationId}`
+    LIST: `${API_BASE_URL}/api/negotiations`,
+    INITIATE: `${API_BASE_URL}/api/negotiations/initiate`,
+    COUNTER_OFFER: `${API_BASE_URL}/api/negotiations/counter-offer`,
+    ACCEPT: `${API_BASE_URL}/api/negotiations/accept`,
+    REQUEST_CALL: `${API_BASE_URL}/api/negotiations/request-call`,
+    LOG: (negotiationId) => `${API_BASE_URL}/api/negotiations/${negotiationId}/log`,
   },
-  CLIENT_RELATIONSHIPS: {
-    LINK_PROVIDER: '/api/client-relationships/link-medical-provider',
-    GET_CLIENT_PROVIDERS: (clientId) => `/api/client-relationships/clients/${clientId}/medical-providers`,
-    REMOVE_PROVIDER: (clientId, providerId) => `/api/client-relationships/clients/${clientId}/medical-providers/${providerId}`
-  }
 };
 
-export const apiRequest = async (endpoint, options = {}) => {
+// ============================================================================
+// IMPROVED API REQUEST FUNCTION WITH BETTER ERROR HANDLING
+// ============================================================================
+
+export async function apiRequest(url, options = {}) {
+  const defaultOptions = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  };
+
+  const config = { ...defaultOptions, ...options };
+
   try {
-    // Get base URL dynamically at request time for web platform
-    const baseUrl = Platform.OS === 'web' && typeof window !== 'undefined'
-      ? window.location.origin
-      : getApiBaseUrl();
+    console.log(`[API] ${config.method || 'GET'} ${url}`);
     
-    const url = `${baseUrl}${endpoint}`;
-    console.log('API Request:', url, options.method || 'GET');
+    const response = await fetch(url, config);
     
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-      }
-    });
+    // Log response status
+    console.log(`[API] Response: ${response.status} ${response.statusText}`);
 
-    const data = await response.json();
-    console.log('API Response:', response.status, data);
+    // Handle non-JSON responses (like for file downloads)
+    const contentType = response.headers.get('content-type');
+    
+    let data;
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // For non-JSON responses (files, etc.)
+      data = await response.text();
+    }
 
+    // Handle errors
     if (!response.ok) {
-      const errorMessage = data.message || data.error || 'API request failed';
-      throw new Error(errorMessage);
+      // Extract error message from response
+      const errorMessage = data?.message || data?.error || response.statusText || 'Request failed';
+      
+      // Log for debugging
+      console.error('[API] Error:', {
+        status: response.status,
+        message: errorMessage,
+        url: url
+      });
+
+      // Throw with detailed error
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.response = data;
+      throw error;
     }
 
     return data;
+
   } catch (error) {
-    console.error('API Error:', error.message || error);
+    // Network errors or other fetch errors
+    if (error.message === 'Network request failed' || error.message === 'Failed to fetch') {
+      console.error('[API] Network Error - Check your internet connection');
+      throw new Error('Network error. Please check your internet connection.');
+    }
+
+    // Timeout errors
+    if (error.name === 'AbortError') {
+      console.error('[API] Request Timeout');
+      throw new Error('Request timeout. Please try again.');
+    }
+
+    // Re-throw the error with context
+    console.error('[API] Request failed:', error);
     throw error;
   }
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if backend is reachable
+ */
+export async function checkBackendHealth() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Backend is healthy:', data);
+      return true;
+    }
+    
+    console.warn('⚠️ Backend responded but not OK:', response.status);
+    return false;
+  } catch (error) {
+    console.error('❌ Backend is unreachable:', error);
+    return false;
+  }
+}
+
+/**
+ * Upload file with progress tracking
+ */
+export async function uploadFileWithProgress(file, token, onProgress, fileType = 'general', category = 'general') {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    // Track upload progress
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const percentComplete = (e.loaded / e.total) * 100;
+        if (onProgress) {
+          onProgress(Math.round(percentComplete));
+        }
+      }
+    });
+
+    // Handle completion
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch (error) {
+          reject(new Error('Invalid response from server'));
+        }
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText);
+          reject(new Error(error.message || 'Upload failed'));
+        } catch {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      }
+    });
+
+    // Handle errors
+    xhr.addEventListener('error', () => {
+      reject(new Error('Network error during upload'));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload cancelled'));
+    });
+
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileType', fileType);
+    formData.append('category', category);
+
+    // Send request
+    xhr.open('POST', API_ENDPOINTS.UPLOADS.DOCUMENT);
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Get error message from error object
+ */
+export function getErrorMessage(error) {
+  if (typeof error === 'string') {
+    return error;
+  }
+  
+  if (error?.message) {
+    return error.message;
+  }
+  
+  if (error?.response?.message) {
+    return error.response.message;
+  }
+  
+  return 'An unexpected error occurred';
+}
+
+/**
+ * Check if error is authentication error
+ */
+export function isAuthError(error) {
+  return error?.status === 401 || error?.status === 403;
+}
+
+/**
+ * Check if error is network error
+ */
+export function isNetworkError(error) {
+  return error?.message?.includes('Network') || 
+         error?.message?.includes('fetch') ||
+         error?.message?.includes('connection');
+}
+
+// ============================================================================
+// CONFIGURATION VALIDATION
+// ============================================================================
+
+// Validate API_BASE_URL on module load
+if (API_BASE_URL.includes('your-replit-username')) {
+  console.warn('⚠️ WARNING: API_BASE_URL is not configured!');
+  console.warn('Please update API_BASE_URL in /src/config/api.js with your actual Replit URL');
+}
+
+// Log API configuration on app start
+console.log('🔧 API Configuration:');
+console.log('Base URL:', API_BASE_URL);
+
+// Test backend connection on app start (optional - comment out if not needed)
+if (__DEV__) {
+  checkBackendHealth().then(isHealthy => {
+    if (isHealthy) {
+      console.log('✅ Backend connection successful!');
+    } else {
+      console.error('❌ Backend connection failed! Please check API_BASE_URL');
+    }
+  });
+}
+
+// ============================================================================
+// USAGE EXAMPLES
+// ============================================================================
+
+/*
+// Example 1: Simple GET request
+const balance = await apiRequest(API_ENDPOINTS.COINS.BALANCE, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+
+// Example 2: POST request with body
+const result = await apiRequest(API_ENDPOINTS.LITIGATION.COMPLETE_SUBSTAGE, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    stageId: 'pre-filing',
+    subStageId: 'pre-1',
+    subStageName: 'Initial Consultation',
+    coinsEarned: 50
+  })
+});
+
+// Example 3: File upload with progress
+const file = { 
+  uri: 'file://...',
+  name: 'document.pdf',
+  type: 'application/pdf'
+};
+
+const result = await uploadFileWithProgress(
+  file,
+  token,
+  (progress) => {
+    console.log(`Upload progress: ${progress}%`);
+  },
+  'medical_bill',
+  'medical'
+);
+
+// Example 4: Error handling
+try {
+  const data = await apiRequest(API_ENDPOINTS.AUTH.LOGIN, {
+    method: 'POST',
+    body: JSON.stringify({ email, password, userType: 'individual' })
+  });
+  // Success
+  console.log('Login successful:', data);
+} catch (error) {
+  // Handle specific error types
+  if (isAuthError(error)) {
+    console.log('Invalid credentials');
+  } else if (isNetworkError(error)) {
+    console.log('Network error');
+  } else {
+    console.log('Error:', getErrorMessage(error));
+  }
+}
+*/
+
+// ============================================================================
+// EXPORT EVERYTHING
+// ============================================================================
+
+export default {
+  API_BASE_URL,
+  API_ENDPOINTS,
+  apiRequest,
+  checkBackendHealth,
+  uploadFileWithProgress,
+  getErrorMessage,
+  isAuthError,
+  isNetworkError,
 };

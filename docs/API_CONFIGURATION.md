@@ -5,16 +5,14 @@
 // API BASE URL CONFIGURATION
 // ============================================================================
 
-// REPLIT DEPLOYMENT
-// Replace this with your actual Replit URL
-export const API_BASE_URL = 'https://your-replit-username-your-project-name.replit.app';
-
-// EXAMPLES:
-// export const API_BASE_URL = 'https://johndoe-verdictpath.replit.app';
-// export const API_BASE_URL = 'https://verdictpath-backend.replit.app';
+// RAILWAY PRODUCTION DEPLOYMENT
+export const API_BASE_URL = 'https://verdictpath.up.railway.app';
 
 // LOCAL DEVELOPMENT (uncomment when testing locally)
-// export const API_BASE_URL = 'http://localhost:3001';
+// export const API_BASE_URL = 'http://localhost:5000';
+
+// REPLIT DEVELOPMENT (if using Replit for backend)
+// export const API_BASE_URL = 'https://your-replit-username-your-project-name.replit.app';
 
 // ============================================================================
 // API ENDPOINTS
