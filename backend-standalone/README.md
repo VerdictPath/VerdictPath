@@ -368,7 +368,7 @@ npm run db:studio
 ## Support
 
 For issues or questions:
-- **Email:** parsonslawfirm@gmail.com
+- **Email:** contact@verdictpath.io
 - **GitHub Issues:** [Create an issue](https://github.com/yourusername/verdict-path-backend/issues)
 
 ## License

@@ -213,7 +213,7 @@ Copyright © 2025 Verdict Path. All rights reserved.
 ## Contact
 
 For support or inquiries:
-- Email: parsonslawfirm@gmail.com
+- Email: contact@verdictpath.io
 - Developer: VerdictPath
 
 ---

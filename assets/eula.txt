@@ -341,7 +341,7 @@ Upon termination of this license:
 
 ### 12.1 Informal Resolution
 
-Before filing any claim, you agree to contact us at support@verdictpath.com to attempt to resolve the dispute informally. Both parties will make good faith efforts to resolve disputes amicably.
+Before filing any claim, you agree to contact us at contact@verdictpath.io to attempt to resolve the dispute informally. Both parties will make good faith efforts to resolve disputes amicably.
 
 ### 12.2 Binding Arbitration
 
@@ -417,7 +417,7 @@ Provisions that by their nature should survive termination will survive, includi
 
 If you have any questions about this EULA, please contact us:
 
-**Email:** support@verdictpath.com
+**Email:** contact@verdictpath.io
 
 **Response Time:** We will respond to your inquiry within 30 days.
 
