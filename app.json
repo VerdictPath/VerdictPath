@@ -5,6 +5,7 @@
     "version": "1.0.1",
     "owner": "verdictpath",
     "scheme": "verdictpath",
+    "icon": "./attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png",
     "extra": {
       "eas": {
         "projectId": "71e06a4e-c10f-4b46-92d3-4f091343570c"
@@ -13,8 +14,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3498db"
+      "backgroundColor": "#2C5F7C"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,7 +28,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#3498db"
+        "foregroundImage": "./attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png",
+        "backgroundColor": "#2C5F7C"
       },
       "package": "com.verdictpath.app",
       "intentFilters": [
