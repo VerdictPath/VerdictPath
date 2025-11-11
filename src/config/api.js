@@ -9,10 +9,10 @@
 // export const API_BASE_URL = 'https://verdictpath.up.railway.app';
 
 // LOCAL DEVELOPMENT (uncomment when testing locally)
-export const API_BASE_URL = 'http://localhost:5000';
+// export const API_BASE_URL = 'http://localhost:5000';
 
 // REPLIT DEVELOPMENT (if using Replit for backend)
-// export const API_BASE_URL = 'https://your-replit-username-your-project-name.replit.app';
+export const API_BASE_URL = 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
 
 // ============================================================================
 // API ENDPOINTS
