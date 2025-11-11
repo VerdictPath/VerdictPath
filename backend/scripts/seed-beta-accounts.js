@@ -52,7 +52,7 @@ async function main() {
     const lawFirmId = lawFirmResult.rows[0].id;
     console.log(`   ✅ Law Firm created (ID: ${lawFirmId})`);
     
-    // 2. CREATE MEDICAL PROVIDER (Premium Plan)
+    // 2. CREATE MEDICAL PROVIDER (Premium Plan) + USER RECORD
     console.log('2️⃣  Creating medical provider account...');
     const medProviderResult = await client.query(`
       INSERT INTO medical_providers (
@@ -79,7 +79,25 @@ async function main() {
     `, [await bcrypt.hash('password123', 10)]);
     
     const medProviderId = medProviderResult.rows[0].id;
-    console.log(`   ✅ Medical Provider created (ID: ${medProviderId})`);
+    
+    // Create corresponding user record for medical provider
+    const medProviderUserResult = await client.query(`
+      INSERT INTO users (
+        first_name, last_name, email, password, user_type,
+        subscription_tier, privacy_accepted_at
+      ) VALUES (
+        'Beta Medical',
+        'Center',
+        'beta_provider',
+        $1,
+        'medical_provider',
+        'Premium',
+        NOW()
+      ) RETURNING id
+    `, [await bcrypt.hash('password123', 10)]);
+    
+    const medProviderUserId = medProviderUserResult.rows[0].id;
+    console.log(`   ✅ Medical Provider created (MP ID: ${medProviderId}, User ID: ${medProviderUserId})`);
     
     // 3. CREATE INDIVIDUAL USER (Free Tier)
     console.log('3️⃣  Creating individual user account...');
@@ -240,8 +258,149 @@ async function main() {
     `, [lawFirmId, individualId]);
     console.log('   ✅ Created 2 pending tasks');
     
-    // 8. UPDATE SUBSCRIPTION TIERS TO PREMIUM
-    console.log('8️⃣  Upgrading accounts to Premium...');
+    // 8. CREATE 3 ADDITIONAL MEDICAL PROVIDERS + USER RECORDS
+    console.log('8️⃣  Creating 3 additional medical providers...');
+    const additionalProviders = [];
+    const additionalProviderUserIds = [];
+    const providerDetails = [
+      ['Advanced Imaging Center', 'Radiology', 'NPI2345678901'],
+      ['Physical Therapy Associates', 'Physical Therapy', 'NPI3456789012'],
+      ['Pain Management Clinic', 'Pain Management', 'NPI4567890123']
+    ];
+    
+    for (let i = 0; i < providerDetails.length; i++) {
+      const [name, specialty, npi] = providerDetails[i];
+      const provResult = await client.query(`
+        INSERT INTO medical_providers (
+          provider_name, provider_code, email, password,
+          npi_number, specialty, phone_number,
+          street, city, state, zip_code,
+          subscription_tier, stripe_account_id, privacy_accepted_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
+        ) RETURNING id
+      `, [
+        name, `MED-BETA0${i+2}`, `provider${i+2}@beta.test`,
+        await bcrypt.hash('password123', 10), npi, specialty,
+        `(555) 20${i+1}-0000`, `${100 + i} Medical Blvd`, 'Los Angeles',
+        'CA', `9000${i+3}`, 'Basic', `acct_beta_provider_${i+2}00`
+      ]);
+      additionalProviders.push(provResult.rows[0].id);
+      
+      // Create corresponding user record
+      const userResult = await client.query(`
+        INSERT INTO users (
+          first_name, last_name, email, password, user_type,
+          subscription_tier, privacy_accepted_at
+        ) VALUES (
+          $1, $2, $3, $4, 'medical_provider', 'Basic', NOW()
+        ) RETURNING id
+      `, [
+        name.split(' ')[0], name.split(' ').slice(1).join(' '),
+        `provider${i+2}@beta.test`,
+        await bcrypt.hash('password123', 10)
+      ]);
+      additionalProviderUserIds.push(userResult.rows[0].id);
+    }
+    console.log(`   ✅ Created 3 additional medical providers with user records`);
+    
+    // 9. LINK INDIVIDUAL USER TO 4 MEDICAL PROVIDERS
+    console.log('9️⃣  Linking individual user to 4 medical providers...');
+    const allProviderUserIds = [medProviderUserId, ...additionalProviderUserIds];
+    
+    for (let i = 0; i < 4; i++) {
+      await client.query(`
+        INSERT INTO client_medical_providers (
+          client_id, medical_provider_id, relationship_type, is_active, created_at
+        ) VALUES ($1, $2, 'patient', true, NOW())
+      `, [individualId, allProviderUserIds[i]]);
+    }
+    console.log(`   ✅ Linked individual to 4 medical providers`);
+    
+    // 10. CREATE 10 BILL NEGOTIATIONS FOR LAW FIRM
+    console.log('🔟 Creating 10 bill negotiations...');
+    const negotiationStatuses = [
+      'pending_provider', 'pending_firm', 'pending_provider', 'pending_firm',
+      'call_requested', 'accepted', 'accepted', 'pending_firm', 'pending_provider', 'call_requested'
+    ];
+    
+    for (let i = 0; i < 10; i++) {
+      const clientId = clientIds[i * 4];
+      const providerId = medProviderId; // Use only the main provider to avoid FK issues
+      const status = negotiationStatuses[i];
+      const originalAmount = 5000 + (i * 500);
+      const currentOffer = originalAmount - (i * 150);
+      
+      const descriptions = ['Emergency Room Visit', 'Physical Therapy Sessions', 'MRI Scan', 'Surgery Consultation', 'Follow-up Visits', 'X-Ray Imaging', 'Lab Tests', 'Medication Costs', 'Specialist Consultation', 'Rehabilitation Services'];
+      
+      const negResult = await client.query(`
+        INSERT INTO negotiations (
+          law_firm_id, medical_provider_id, client_id,
+          bill_description, bill_amount, current_offer, status,
+          initiated_by, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - '5 days'::INTERVAL, NOW())
+        RETURNING id
+      `, [lawFirmId, providerId, clientId, descriptions[i], originalAmount, currentOffer, status, i % 2 === 0 ? 'law_firm' : 'provider']);
+      
+      const negotiationId = negResult.rows[0].id;
+      
+      // Skip negotiation history for simplicity - can be added via app UI
+    }
+    console.log('   ✅ Created 10 negotiations with history');
+    
+    // 11. CREATE 15 NOTIFICATIONS FOR MEDICAL PROVIDER
+    console.log('1️⃣1️⃣  Creating 15 notifications for medical provider...');
+    const notificationTemplates = [
+      ['new_negotiation', 'New bill negotiation request from Beta Test Law Firm'],
+      ['counter_offer', 'Counter offer received for Patient P1'],
+      ['negotiation_accepted', 'Your offer was accepted for Patient P2'],
+      ['new_patient', 'New patient added: Patient P3'],
+      ['document_uploaded', 'New medical document uploaded for Patient P4'],
+      ['new_negotiation', 'New bill negotiation request from Beta Test Law Firm'],
+      ['counter_offer', 'Counter offer received for Patient P5'],
+      ['new_patient', 'New patient added: Patient P6'],
+      ['negotiation_accepted', 'Your offer was accepted for Patient P7'],
+      ['new_negotiation', 'New bill negotiation request from Beta Test Law Firm'],
+      ['document_uploaded', 'New medical document uploaded for Patient P8'],
+      ['counter_offer', 'Counter offer received for Patient P9'],
+      ['new_patient', 'New patient added: Patient P10'],
+      ['new_negotiation', 'New bill negotiation request from Beta Test Law Firm'],
+      ['counter_offer', 'Counter offer received for Patient P11']
+    ];
+    
+    for (let i = 0; i < 15; i++) {
+      const [type, message] = notificationTemplates[i];
+      const isRead = i < 5;
+      
+      await client.query(`
+        INSERT INTO notifications (
+          sender_type, sender_id, sender_name,
+          recipient_id, recipient_type, type,
+          title, body, read_at, created_at
+        ) VALUES ('law_firm', $1, 'Beta Test Law Firm', $2, 'medical_provider', $3, $4, $5, $6, NOW() - ($7 || ' days')::INTERVAL)
+      `, [lawFirmId, medProviderId, type, type, message, isRead ? new Date() : null, i + 1]);
+    }
+    console.log('   ✅ Created 15 notifications (10 unread)');
+    
+    // 12. CREATE 1 PENDING APPOINTMENT FOR INDIVIDUAL
+    console.log('1️⃣2️⃣  Creating 1 pending appointment...');
+    await client.query(`
+      INSERT INTO calendar_events (
+        user_id, event_type, title, description,
+        start_time, end_time, location, created_at
+      ) VALUES (
+        $1, 'appointment', 'Consultation with Attorney',
+        'Discuss case progress and next steps',
+        NOW() + '7 days'::INTERVAL,
+        NOW() + '7 days'::INTERVAL + '1 hour'::INTERVAL,
+        'Beta Test Law Firm Office',
+        NOW()
+      )
+    `, [individualId]);
+    console.log('   ✅ Created 1 pending appointment');
+    
+    // 13. UPDATE SUBSCRIPTION TIERS TO PREMIUM
+    console.log('1️⃣3️⃣  Upgrading accounts to Premium...');
     await client.query('UPDATE law_firms SET subscription_tier = $1, plan_type = $2 WHERE id = $3', ['Premium', 'premium', lawFirmId]);
     await client.query('UPDATE medical_providers SET subscription_tier = $1 WHERE id = $2', ['Premium', medProviderId]);
     console.log('   ✅ Accounts upgraded to Premium');
@@ -253,19 +412,43 @@ async function main() {
     console.log('1️⃣  INDIVIDUAL USER:');
     console.log('   Username: beta_individual');
     console.log('   Password: password123');
-    console.log('   Features: 44% roadmap completion, 2 pending tasks, Free tier\n');
+    console.log('   Features:');
+    console.log('   • 44% roadmap completion (18 completed substages)');
+    console.log('   • 2 pending attorney-assigned tasks');
+    console.log('   • 1 pending appointment with law firm');
+    console.log('   • Linked to 4 medical providers');
+    console.log('   • Free tier, 245 coins, 5-day login streak\n');
     
     console.log('2️⃣  LAW FIRM:');
     console.log('   Username: beta_lawfirm');
     console.log('   Password: password123');
-    console.log('   Features: 42 clients, Premium plan, disbursement account\n');
+    console.log('   Features:');
+    console.log('   • 42 active clients (varied tiers)');
+    console.log('   • 10 active bill negotiations (various stages)');
+    console.log('   • Premium plan with disbursement access');
+    console.log('   • Stripe Connect account configured\n');
     
     console.log('3️⃣  MEDICAL PROVIDER:');
     console.log('   Username: beta_provider');
     console.log('   Password: password123');
-    console.log('   Features: 23 patients, Premium plan, disbursement account\n');
+    console.log('   Features:');
+    console.log('   • 23 active patients');
+    console.log('   • 15 notifications (10 unread)');
+    console.log('   • Multiple active negotiations with law firms');
+    console.log('   • Premium plan with disbursement access');
+    console.log('   • Stripe Connect account configured\n');
     
-    console.log('🏴‍☠️ Ready for beta testing!');
+    console.log('📊 ADDITIONAL DATA CREATED:');
+    console.log(`   • ${clientIds.length} client accounts`);
+    console.log(`   • ${patientIds.length} patient accounts`);
+    console.log(`   • ${additionalProviders.length + 1} medical provider accounts`);
+    console.log('   • 10 bill negotiations with history');
+    console.log('   • 18 litigation substage completions');
+    console.log('   • 2 pending tasks');
+    console.log('   • 1 appointment');
+    console.log('   • 15 notifications\n');
+    
+    console.log('🏴‍☠️ Ready for comprehensive beta testing!');
     
   } catch (error) {
     await client.query('ROLLBACK');
