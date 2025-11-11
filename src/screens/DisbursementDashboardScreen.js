@@ -41,7 +41,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const loadSubscription = async () => {
     try {
       setLoadingSubscription(true);
-      const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.GET_LAWFIRM_CURRENT, {
+      const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_CURRENT, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
