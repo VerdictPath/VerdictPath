@@ -62,7 +62,29 @@ const NegotiationsScreen = ({ user, onBack }) => {
         }
       });
       
-      setNegotiations(response.negotiations || []);
+      // Normalize API response from snake_case to camelCase
+      const normalizedNegotiations = (response.negotiations || []).map(neg => ({
+        ...neg,
+        billAmount: parseFloat(neg.bill_amount || 0),
+        currentOffer: parseFloat(neg.current_offer || 0),
+        billDescription: neg.bill_description,
+        clientId: neg.client_id,
+        lawFirmId: neg.law_firm_id,
+        medicalProviderId: neg.medical_provider_id,
+        initiatedBy: neg.initiated_by,
+        lastRespondedBy: neg.last_responded_by,
+        createdAt: neg.created_at,
+        updatedAt: neg.updated_at,
+        acceptedAt: neg.accepted_at,
+        clientName: neg.client_name,
+        firmName: neg.firm_name,
+        lawFirmEmail: neg.law_firm_email,
+        providerName: neg.provider_name,
+        medicalProviderEmail: neg.medical_provider_email,
+        interactionCount: parseInt(neg.interaction_count || 0)
+      }));
+      
+      setNegotiations(normalizedNegotiations);
     } catch (error) {
       console.error('Error loading negotiations:', error);
       Alert.alert('Error', 'Failed to load negotiations');
