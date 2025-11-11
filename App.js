@@ -51,6 +51,8 @@ import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
 import IndividualSubscriptionScreen from './src/screens/IndividualSubscriptionScreen';
+import LawFirmSubscriptionScreen from './src/screens/LawFirmSubscriptionScreen';
+import MedicalProviderSubscriptionScreen from './src/screens/MedicalProviderSubscriptionScreen';
 import NegotiationsScreen from './src/screens/NegotiationsScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
@@ -1492,6 +1494,20 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={user}
           onNavigate={handleNavigateInternal}
           onSubscriptionChanged={refreshUserProfile}
+        />
+      )}
+
+      {currentScreen === 'LawFirmSubscription' && (
+        <LawFirmSubscriptionScreen
+          token={user?.token}
+          onBack={() => setCurrentScreen('lawfirm-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'MedicalProviderSubscription' && (
+        <MedicalProviderSubscriptionScreen
+          token={user?.token}
+          onBack={() => setCurrentScreen('medicalprovider-dashboard')}
         />
       )}
       
