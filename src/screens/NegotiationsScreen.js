@@ -238,17 +238,17 @@ const NegotiationsScreen = ({ user, onBack }) => {
         return;
       }
       if (counterOfferNum >= currentOffer) {
-        Alert.alert('Error', 'Counter offer should be less than the current offer of $' + currentOffer.toFixed(2));
+        Alert.alert('Error', 'Counter offer should be less than the current offer of $' + (currentOffer || 0).toFixed(2));
         return;
       }
     } else {
       // Medical providers try to get paid more than current offer but less than bill amount
       if (counterOfferNum <= currentOffer) {
-        Alert.alert('Error', 'Counter offer must be greater than the current offer of $' + currentOffer.toFixed(2));
+        Alert.alert('Error', 'Counter offer must be greater than the current offer of $' + (currentOffer || 0).toFixed(2));
         return;
       }
       if (counterOfferNum > billAmount) {
-        Alert.alert('Error', 'Counter offer cannot exceed the bill amount of $' + billAmount.toFixed(2));
+        Alert.alert('Error', 'Counter offer cannot exceed the bill amount of $' + (billAmount || 0).toFixed(2));
         return;
       }
     }
@@ -448,11 +448,11 @@ const NegotiationsScreen = ({ user, onBack }) => {
         <View style={styles.amountRow}>
           <View style={styles.amountCol}>
             <Text style={styles.amountLabel}>Bill Amount</Text>
-            <Text style={styles.amountValue}>${negotiation.billAmount.toFixed(2)}</Text>
+            <Text style={styles.amountValue}>${(negotiation.billAmount || 0).toFixed(2)}</Text>
           </View>
           <View style={styles.amountCol}>
             <Text style={styles.amountLabel}>Current Offer</Text>
-            <Text style={styles.amountValue}>${negotiation.currentOffer.toFixed(2)}</Text>
+            <Text style={styles.amountValue}>${(negotiation.currentOffer || 0).toFixed(2)}</Text>
           </View>
         </View>
 
@@ -510,13 +510,13 @@ const NegotiationsScreen = ({ user, onBack }) => {
               <View style={styles.amountDetailCol}>
                 <Text style={styles.amountDetailLabel}>Original Bill</Text>
                 <Text style={styles.amountDetailValue}>
-                  ${selectedNegotiation.billAmount.toFixed(2)}
+                  ${(selectedNegotiation.billAmount || 0).toFixed(2)}
                 </Text>
               </View>
               <View style={styles.amountDetailCol}>
                 <Text style={styles.amountDetailLabel}>Current Offer</Text>
                 <Text style={[styles.amountDetailValue, { color: theme.colors.primary }]}>
-                  ${selectedNegotiation.currentOffer.toFixed(2)}
+                  ${(selectedNegotiation.currentOffer || 0).toFixed(2)}
                 </Text>
               </View>
             </View>
@@ -538,7 +538,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
                     </Text>
                     <Text style={styles.historyAction}>{entry.action}</Text>
                     <Text style={styles.historyAmount}>
-                      Amount: ${entry.amount.toFixed(2)}
+                      Amount: ${(entry.amount || 0).toFixed(2)}
                     </Text>
                     {entry.notes && (
                       <Text style={styles.historyNotes}>Notes: {entry.notes}</Text>
@@ -746,7 +746,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
           <View style={styles.infoBox}>
             <Text style={styles.infoLabel}>Current Offer:</Text>
             <Text style={styles.infoValue}>
-              ${selectedNegotiation?.currentOffer.toFixed(2)}
+              ${(selectedNegotiation?.currentOffer || 0).toFixed(2)}
             </Text>
           </View>
 
