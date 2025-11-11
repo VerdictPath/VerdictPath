@@ -1,0 +1,473 @@
+// FILE UPLOAD SYSTEM
+// Supports both AWS S3 and Cloudinary - choose one based on your preference
+
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const { authenticateToken } = require('../middleware/auth');
+const db = require('../config/database');
+
+// ============================================================================
+// CONFIGURATION - Choose AWS S3 or Cloudinary
+// ============================================================================
+
+const UPLOAD_PROVIDER = process.env.UPLOAD_PROVIDER || 'cloudinary'; // 'aws' or 'cloudinary'
+
+// ============================================================================
+// AWS S3 SETUP (Option 1)
+// ============================================================================
+
+if (UPLOAD_PROVIDER === 'aws') {
+  const AWS = require('aws-sdk');
+  const multerS3 = require('multer-s3');
+
+  // Configure AWS
+  const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION || 'us-east-1'
+  });
+
+  // S3 Upload configuration
+  const s3Upload = multer({
+    storage: multerS3({
+      s3: s3,
+      bucket: process.env.AWS_S3_BUCKET,
+      acl: 'private', // Files are private by default
+      metadata: function (req, file, cb) {
+        cb(null, {
+          userId: req.user.id.toString(),
+          userType: req.user.type,
+          uploadedAt: new Date().toISOString()
+        });
+      },
+      key: function (req, file, cb) {
+        // Generate unique filename: userid/timestamp-originalname
+        const uniqueKey = `${req.user.id}/${Date.now()}-${file.originalname}`;
+        cb(null, uniqueKey);
+      }
+    }),
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    },
+    fileFilter: function (req, file, cb) {
+      // Allowed file types
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Allowed: PDF, Images, Word, Excel'));
+      }
+    }
+  });
+
+  var upload = s3Upload;
+}
+
+// ============================================================================
+// CLOUDINARY SETUP (Option 2 - RECOMMENDED FOR SIMPLICITY)
+// ============================================================================
+
+if (UPLOAD_PROVIDER === 'cloudinary') {
+  const cloudinary = require('cloudinary').v2;
+  const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+  // Configure Cloudinary
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+
+  // Cloudinary Upload configuration
+  const cloudinaryStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: (req, file) => `verdictpath/${req.user.type}/${req.user.id}`,
+      allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+      resource_type: 'auto' // Automatically detect resource type
+    }
+  });
+
+  const cloudinaryUpload = multer({
+    storage: cloudinaryStorage,
+    limits: {
+      fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+  });
+
+  var upload = cloudinaryUpload;
+}
+
+// ============================================================================
+// MEMORY STORAGE (Option 3 - For testing without cloud storage)
+// ============================================================================
+
+if (UPLOAD_PROVIDER === 'memory') {
+  const memoryUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024 // 10MB limit for memory storage
+    }
+  });
+
+  var upload = memoryUpload;
+  console.warn('⚠️  Using memory storage for uploads - not suitable for production!');
+}
+
+// ============================================================================
+// UPLOAD ROUTES
+// ============================================================================
+
+// Upload a single file
+router.post('/uploads/document', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const { fileType, category, subcategory, description, tags } = req.body;
+
+    // Get file URL based on provider
+    let fileUrl;
+    if (UPLOAD_PROVIDER === 'aws') {
+      fileUrl = req.file.location; // S3 URL
+    } else if (UPLOAD_PROVIDER === 'cloudinary') {
+      fileUrl = req.file.path; // Cloudinary URL
+    } else {
+      fileUrl = null; // Memory storage - no persistent URL
+    }
+
+    // Save file metadata to database
+    const result = await db.query(
+      `INSERT INTO documents (
+        user_id, user_type, filename, original_filename, 
+        file_type, mime_type, file_size, storage_url,
+        category, subcategory, description, tags, uploaded_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+      RETURNING id, filename, storage_url`,
+      [
+        req.user.id,
+        req.user.type,
+        req.file.filename || req.file.key || `file-${Date.now()}`,
+        req.file.originalname,
+        fileType || 'general',
+        req.file.mimetype,
+        req.file.size,
+        fileUrl,
+        category || 'general',
+        subcategory,
+        description,
+        tags ? tags.split(',') : null
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'File uploaded successfully',
+      file: {
+        id: result.rows[0].id,
+        filename: req.file.originalname,
+        url: fileUrl,
+        size: req.file.size,
+        type: req.file.mimetype
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to upload file'
+    });
+  }
+});
+
+// Upload multiple files
+router.post('/uploads/documents', authenticateToken, upload.array('files', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No files uploaded'
+      });
+    }
+
+    const { fileType, category } = req.body;
+    const uploadedFiles = [];
+
+    // Process each file
+    for (const file of req.files) {
+      let fileUrl;
+      if (UPLOAD_PROVIDER === 'aws') {
+        fileUrl = file.location;
+      } else if (UPLOAD_PROVIDER === 'cloudinary') {
+        fileUrl = file.path;
+      }
+
+      const result = await db.query(
+        `INSERT INTO documents (
+          user_id, user_type, filename, original_filename,
+          file_type, mime_type, file_size, storage_url,
+          category, uploaded_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        RETURNING id, filename, storage_url`,
+        [
+          req.user.id,
+          req.user.type,
+          file.filename || file.key || `file-${Date.now()}`,
+          file.originalname,
+          fileType || 'general',
+          file.mimetype,
+          file.size,
+          fileUrl,
+          category || 'general'
+        ]
+      );
+
+      uploadedFiles.push({
+        id: result.rows[0].id,
+        filename: file.originalname,
+        url: fileUrl,
+        size: file.size
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `${uploadedFiles.length} files uploaded successfully`,
+      files: uploadedFiles
+    });
+
+  } catch (error) {
+    console.error('Multiple upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload files'
+    });
+  }
+});
+
+// Get user's documents
+router.get('/uploads', authenticateToken, async (req, res) => {
+  try {
+    const { category, fileType, limit = 50, offset = 0 } = req.query;
+
+    let query = `
+      SELECT id, filename, original_filename, file_type, mime_type, 
+             file_size, storage_url, category, subcategory, 
+             description, uploaded_at
+      FROM documents
+      WHERE user_id = $1 AND user_type = $2 AND is_deleted = false
+    `;
+    const params = [req.user.id, req.user.type];
+    let paramCount = 2;
+
+    if (category) {
+      paramCount++;
+      query += ` AND category = $${paramCount}`;
+      params.push(category);
+    }
+
+    if (fileType) {
+      paramCount++;
+      query += ` AND file_type = $${paramCount}`;
+      params.push(fileType);
+    }
+
+    query += ` ORDER BY uploaded_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+    params.push(limit, offset);
+
+    const result = await db.query(query, params);
+
+    res.json({
+      success: true,
+      documents: result.rows,
+      count: result.rows.length
+    });
+
+  } catch (error) {
+    console.error('Get documents error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get documents'
+    });
+  }
+});
+
+// Get specific document
+router.get('/uploads/:documentId', authenticateToken, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    const result = await db.query(
+      `SELECT * FROM documents 
+       WHERE id = $1 AND user_id = $2 AND user_type = $3 AND is_deleted = false`,
+      [documentId, req.user.id, req.user.type]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    const document = result.rows[0];
+
+    // Generate signed URL for AWS S3 (if using S3)
+    if (UPLOAD_PROVIDER === 'aws' && document.storage_url) {
+      const AWS = require('aws-sdk');
+      const s3 = new AWS.S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION || 'us-east-1'
+      });
+
+      // Extract key from URL
+      const url = new URL(document.storage_url);
+      const key = url.pathname.substring(1); // Remove leading slash
+
+      // Generate signed URL (valid for 1 hour)
+      const signedUrl = s3.getSignedUrl('getObject', {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key,
+        Expires: 3600
+      });
+
+      document.downloadUrl = signedUrl;
+    } else {
+      document.downloadUrl = document.storage_url;
+    }
+
+    res.json({
+      success: true,
+      document
+    });
+
+  } catch (error) {
+    console.error('Get document error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get document'
+    });
+  }
+});
+
+// Delete document
+router.delete('/uploads/:documentId', authenticateToken, async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    // Get document info
+    const docResult = await db.query(
+      'SELECT * FROM documents WHERE id = $1 AND user_id = $2 AND user_type = $3',
+      [documentId, req.user.id, req.user.type]
+    );
+
+    if (docResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    const document = docResult.rows[0];
+
+    // Delete from cloud storage
+    if (UPLOAD_PROVIDER === 'aws' && document.storage_url) {
+      const AWS = require('aws-sdk');
+      const s3 = new AWS.S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        region: process.env.AWS_REGION || 'us-east-1'
+      });
+
+      const url = new URL(document.storage_url);
+      const key = url.pathname.substring(1);
+
+      await s3.deleteObject({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key
+      }).promise();
+
+    } else if (UPLOAD_PROVIDER === 'cloudinary' && document.storage_url) {
+      const cloudinary = require('cloudinary').v2;
+      
+      // Extract public ID from Cloudinary URL
+      const publicId = document.filename;
+      await cloudinary.uploader.destroy(publicId);
+    }
+
+    // Soft delete in database (mark as deleted)
+    await db.query(
+      'UPDATE documents SET is_deleted = true, deleted_at = NOW() WHERE id = $1',
+      [documentId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Document deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete document error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete document'
+    });
+  }
+});
+
+module.exports = router;
+
+// ============================================================================
+// ENVIRONMENT VARIABLES NEEDED
+// ============================================================================
+
+/*
+# Choose one upload provider
+
+# FOR AWS S3:
+UPLOAD_PROVIDER=aws
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=your-bucket-name
+
+# FOR CLOUDINARY (RECOMMENDED):
+UPLOAD_PROVIDER=cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# FOR TESTING (Memory - not for production):
+UPLOAD_PROVIDER=memory
+*/
+
+// ============================================================================
+// NPM PACKAGES NEEDED
+// ============================================================================
+
+/*
+npm install multer
+
+# For AWS S3:
+npm install aws-sdk multer-s3
+
+# For Cloudinary:
+npm install cloudinary multer-storage-cloudinary
+*/
