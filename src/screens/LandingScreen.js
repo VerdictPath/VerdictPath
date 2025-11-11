@@ -8,7 +8,7 @@ const LandingScreen = ({ onNavigate }) => {
     <View style={commonStyles.container}>
       <View style={styles.heroSection}>
         <Image 
-          source={require('../../attached_assets/LOGONEW_1762465474031.png')}
+          source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
           style={styles.logo}
           resizeMode="contain"
         />
