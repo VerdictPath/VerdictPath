@@ -233,7 +233,7 @@ const LAW_FIRM_PRICING = {
   ]
 };
 
-const LawFirmSubscriptionScreen = ({ token }) => {
+const LawFirmSubscriptionScreen = ({ token, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState(null);
@@ -479,6 +479,11 @@ const LawFirmSubscriptionScreen = ({ token }) => {
 
   return (
     <ScrollView style={styles.container}>
+      {onBack && (
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={styles.backButtonText}>← Back to Dashboard</Text>
+        </TouchableOpacity>
+      )}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>⚖️ Subscription Management</Text>
         <Text style={styles.headerSubtitle}>Manage your law firm subscription</Text>
@@ -745,6 +750,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: theme.colors.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.2)'
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600'
   },
   loadingContainer: {
     flex: 1,
