@@ -147,7 +147,7 @@ const PrivacyPolicyScreen = ({ onBack, onNavigate }) => {
           <Text style={styles.paragraph}>
             If you have any questions about this Privacy Policy, please contact us at:
           </Text>
-          <Text style={styles.bold}>Email: support@verdictpath.com</Text>
+          <Text style={styles.bold}>Email: contact@verdictpath.io</Text>
           <Text style={styles.paragraph}>
             We will respond to your inquiry within 30 days.
           </Text>

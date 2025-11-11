@@ -229,7 +229,7 @@ We may offer free trials for certain subscription plans:
 
 **Exceptions:**
 - If we terminate your account without cause, we will refund the prorated unused portion
-- If you are unsatisfied within the first 7 days, contact support@verdictpath.com for a potential refund
+- If you are unsatisfied within the first 7 days, contact contact@verdictpath.io for a potential refund
 
 ### 6.6 Price Changes
 
@@ -339,7 +339,7 @@ You agree to indemnify, defend, and hold harmless Verdict Path and its affiliate
 
 You may terminate your account at any time by:
 - Accessing account settings in the app
-- Contacting support@verdictpath.com
+- Contacting contact@verdictpath.io
 
 Upon termination, your access to the Service will cease.
 
@@ -367,7 +367,7 @@ Upon termination:
 
 ### 13.1 Informal Resolution
 
-Before filing a claim, you agree to contact us at support@verdictpath.com to attempt to resolve the dispute informally. We will attempt to resolve disputes in good faith.
+Before filing a claim, you agree to contact us at contact@verdictpath.io to attempt to resolve the dispute informally. We will attempt to resolve disputes in good faith.
 
 ### 13.2 Binding Arbitration
 
@@ -429,7 +429,7 @@ Provisions that by their nature should survive termination will survive, includi
 
 If you have questions about these Terms, please contact us:
 
-**Email:** support@verdictpath.com
+**Email:** contact@verdictpath.io
 
 **Response Time:** We will respond within 30 days.
 

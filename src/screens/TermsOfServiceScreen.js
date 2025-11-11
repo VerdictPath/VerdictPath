@@ -104,7 +104,7 @@ const TermsOfServiceScreen = ({ onBack, onNavigate }) => {
 
           <Text style={styles.subsectionTitle}>Refund Policy:</Text>
           <Text style={styles.paragraph}>
-            All subscription fees are non-refundable except as required by law. If you are unsatisfied within the first 7 days, contact support@verdictpath.com for a potential refund.
+            All subscription fees are non-refundable except as required by law. If you are unsatisfied within the first 7 days, contact contact@verdictpath.io for a potential refund.
           </Text>
 
           <View style={styles.divider} />
@@ -133,7 +133,7 @@ const TermsOfServiceScreen = ({ onBack, onNavigate }) => {
 
           <Text style={styles.sectionTitle}>10. DISPUTE RESOLUTION</Text>
           <Text style={styles.paragraph}>
-            Before filing a claim, contact us at support@verdictpath.com to attempt informal resolution. Disputes will be resolved through binding arbitration rather than in court.
+            Before filing a claim, contact us at contact@verdictpath.io to attempt informal resolution. Disputes will be resolved through binding arbitration rather than in court.
           </Text>
           <Text style={styles.bold}>CLASS ACTION WAIVER:</Text>
           <Text style={styles.paragraph}>
@@ -146,7 +146,7 @@ const TermsOfServiceScreen = ({ onBack, onNavigate }) => {
           <Text style={styles.paragraph}>
             If you have questions about these Terms, please contact us at:
           </Text>
-          <Text style={styles.bold}>Email: support@verdictpath.com</Text>
+          <Text style={styles.bold}>Email: contact@verdictpath.io</Text>
           <Text style={styles.paragraph}>
             We will respond to your inquiry within 30 days.
           </Text>
