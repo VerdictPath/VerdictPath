@@ -1,0 +1,501 @@
+// LITIGATION PROGRESS API ROUTES
+// Add this to your backend routes
+
+const express = require('express');
+const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
+const db = require('../config/database');
+
+// ============================================================================
+// LITIGATION PROGRESS ROUTES
+// ============================================================================
+
+// Get user's litigation progress
+router.get('/litigation/progress', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== 'individual') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only individual clients can access litigation progress'
+      });
+    }
+
+    // Get all completed substages
+    const result = await db.query(
+      `SELECT substage_id, stage_id, completed_at, coins_earned
+       FROM litigation_progress
+       WHERE user_id = $1
+       ORDER BY completed_at ASC`,
+      [req.user.id]
+    );
+
+    res.json({
+      success: true,
+      completedSubstages: result.rows
+    });
+
+  } catch (error) {
+    console.error('Get litigation progress error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get litigation progress'
+    });
+  }
+});
+
+// Complete a substage
+router.post('/litigation/complete-substage', authenticateToken, async (req, res) => {
+  try {
+    const { stageId, subStageId, subStageName, coinsEarned } = req.body;
+
+    if (req.user.type !== 'individual') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only individual clients can complete substages'
+      });
+    }
+
+    // Check if already completed (prevent farming)
+    const existing = await db.query(
+      'SELECT id FROM litigation_progress WHERE user_id = $1 AND substage_id = $2',
+      [req.user.id, subStageId]
+    );
+
+    let actualCoinsEarned = 0;
+
+    if (existing.rows.length === 0) {
+      // First time completing - award coins
+      actualCoinsEarned = coinsEarned || 0;
+
+      // Record completion
+      await db.query(
+        `INSERT INTO litigation_progress (user_id, stage_id, substage_id, substage_name, coins_earned, completed_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [req.user.id, stageId, subStageId, subStageName, actualCoinsEarned]
+      );
+
+      // Add coins to balance
+      if (actualCoinsEarned > 0) {
+        await db.query(
+          'UPDATE coin_balances SET balance = balance + $1 WHERE user_id = $2 AND user_type = $3',
+          [actualCoinsEarned, req.user.id, 'individual']
+        );
+
+        // Log transaction
+        await db.query(
+          `INSERT INTO coin_transactions (user_id, user_type, amount, transaction_type, description, created_at)
+           VALUES ($1, $2, $3, $4, $5, NOW())`,
+          [req.user.id, 'individual', actualCoinsEarned, 'substage_completion', `Completed: ${subStageName}`]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: actualCoinsEarned > 0 ? `Substage completed! +${actualCoinsEarned} coins` : 'Substage marked complete',
+      coinsEarned: actualCoinsEarned,
+      alreadyCompleted: existing.rows.length > 0
+    });
+
+  } catch (error) {
+    console.error('Complete substage error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to complete substage'
+    });
+  }
+});
+
+// Complete a stage
+router.post('/litigation/complete-stage', authenticateToken, async (req, res) => {
+  try {
+    const { stageId, stageName, coinsEarned, allSubstagesCompleted } = req.body;
+
+    if (req.user.type !== 'individual') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only individual clients can complete stages'
+      });
+    }
+
+    // Check if stage already completed (prevent farming)
+    const existing = await db.query(
+      'SELECT id FROM stage_completions WHERE user_id = $1 AND stage_id = $2',
+      [req.user.id, stageId]
+    );
+
+    let actualCoinsEarned = 0;
+
+    if (existing.rows.length === 0 && allSubstagesCompleted) {
+      // First time completing stage - award coins
+      actualCoinsEarned = coinsEarned || 0;
+
+      // Record stage completion
+      await db.query(
+        `INSERT INTO stage_completions (user_id, stage_id, stage_name, coins_earned, completed_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [req.user.id, stageId, stageName, actualCoinsEarned]
+      );
+
+      // Add coins to balance
+      if (actualCoinsEarned > 0) {
+        await db.query(
+          'UPDATE coin_balances SET balance = balance + $1 WHERE user_id = $2 AND user_type = $3',
+          [actualCoinsEarned, req.user.id, 'individual']
+        );
+
+        // Log transaction
+        await db.query(
+          `INSERT INTO coin_transactions (user_id, user_type, amount, transaction_type, description, created_at)
+           VALUES ($1, $2, $3, $4, $5, NOW())`,
+          [req.user.id, 'individual', actualCoinsEarned, 'stage_completion', `Completed Stage: ${stageName}`]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: actualCoinsEarned > 0 ? `Stage completed! +${actualCoinsEarned} coins` : 'Stage marked complete',
+      coinsEarned: actualCoinsEarned,
+      alreadyCompleted: existing.rows.length > 0
+    });
+
+  } catch (error) {
+    console.error('Complete stage error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to complete stage'
+    });
+  }
+});
+
+// Revert a stage (mark as incomplete)
+router.post('/litigation/revert-stage', authenticateToken, async (req, res) => {
+  try {
+    const { stageId } = req.body;
+
+    if (req.user.type !== 'individual') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only individual clients can revert stages'
+      });
+    }
+
+    // Note: We don't remove coins, just mark as incomplete
+    // This prevents farming while allowing users to fix mistakes
+
+    // Delete stage completion record
+    await db.query(
+      'DELETE FROM stage_completions WHERE user_id = $1 AND stage_id = $2',
+      [req.user.id, stageId]
+    );
+
+    // Delete all substage completions for this stage
+    await db.query(
+      'DELETE FROM litigation_progress WHERE user_id = $1 AND stage_id = $2',
+      [req.user.id, stageId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Stage reverted to incomplete. Previously earned coins are preserved.'
+    });
+
+  } catch (error) {
+    console.error('Revert stage error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to revert stage'
+    });
+  }
+});
+
+// ============================================================================
+// LAW FIRM ROUTES
+// ============================================================================
+
+// Get all clients for a law firm
+router.get('/lawfirm/clients', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== 'lawfirm') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only law firms can access this endpoint'
+      });
+    }
+
+    const result = await db.query(
+      `SELECT 
+        c.id,
+        c.first_name,
+        c.last_name,
+        c.email,
+        c.avatar_type,
+        c.subscription_tier,
+        c.created_at,
+        COALESCE(cb.balance, 0) as coins,
+        COALESCE(ls.current_streak, 0) as current_streak,
+        (SELECT COUNT(*) FROM litigation_progress WHERE user_id = c.id) as completed_substages,
+        (SELECT COUNT(*) FROM stage_completions WHERE user_id = c.id) as completed_stages
+       FROM clients c
+       LEFT JOIN coin_balances cb ON c.id = cb.user_id AND cb.user_type = 'individual'
+       LEFT JOIN login_streaks ls ON c.id = ls.user_id AND ls.user_type = 'individual'
+       WHERE c.law_firm_id = $1
+       ORDER BY c.created_at DESC`,
+      [req.user.id]
+    );
+
+    res.json({
+      success: true,
+      clients: result.rows
+    });
+
+  } catch (error) {
+    console.error('Get clients error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get clients'
+    });
+  }
+});
+
+// Get specific client details
+router.get('/lawfirm/clients/:clientId', authenticateToken, async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user.type !== 'lawfirm') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only law firms can access this endpoint'
+      });
+    }
+
+    // Verify client belongs to this law firm
+    const clientCheck = await db.query(
+      'SELECT * FROM clients WHERE id = $1 AND law_firm_id = $2',
+      [clientId, req.user.id]
+    );
+
+    if (clientCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+
+    const client = clientCheck.rows[0];
+
+    // Get additional data
+    const [coinBalance, streak, progress] = await Promise.all([
+      db.query('SELECT balance FROM coin_balances WHERE user_id = $1 AND user_type = $2', [clientId, 'individual']),
+      db.query('SELECT current_streak, longest_streak FROM login_streaks WHERE user_id = $1 AND user_type = $2', [clientId, 'individual']),
+      db.query('SELECT * FROM litigation_progress WHERE user_id = $1 ORDER BY completed_at DESC', [clientId])
+    ]);
+
+    res.json({
+      success: true,
+      client: {
+        id: client.id,
+        firstName: client.first_name,
+        lastName: client.last_name,
+        email: client.email,
+        avatarType: client.avatar_type,
+        subscriptionTier: client.subscription_tier,
+        coins: coinBalance.rows[0]?.balance || 0,
+        currentStreak: streak.rows[0]?.current_streak || 0,
+        longestStreak: streak.rows[0]?.longest_streak || 0,
+        completedSubstages: progress.rows
+      }
+    });
+
+  } catch (error) {
+    console.error('Get client details error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get client details'
+    });
+  }
+});
+
+// Get client's litigation progress (for law firm view)
+router.get('/lawfirm/clients/:clientId/progress', authenticateToken, async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    if (req.user.type !== 'lawfirm') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only law firms can access this endpoint'
+      });
+    }
+
+    // Verify client belongs to this law firm
+    const clientCheck = await db.query(
+      'SELECT id FROM clients WHERE id = $1 AND law_firm_id = $2',
+      [clientId, req.user.id]
+    );
+
+    if (clientCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+
+    // Get completed substages
+    const result = await db.query(
+      `SELECT substage_id, stage_id, substage_name, coins_earned, completed_at
+       FROM litigation_progress
+       WHERE user_id = $1
+       ORDER BY completed_at ASC`,
+      [clientId]
+    );
+
+    res.json({
+      success: true,
+      completedSubstages: result.rows
+    });
+
+  } catch (error) {
+    console.error('Get client progress error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get client progress'
+    });
+  }
+});
+
+// ============================================================================
+// INVITES ROUTES
+// ============================================================================
+
+// Process invite code
+router.post('/invites/process', authenticateToken, async (req, res) => {
+  try {
+    const { inviteCode, newUserId } = req.body;
+
+    if (!inviteCode || !newUserId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+
+    // Find invite
+    const inviteResult = await db.query(
+      'SELECT * FROM invites WHERE code = $1 AND used = false',
+      [inviteCode.trim().toUpperCase()]
+    );
+
+    if (inviteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid or already used invite code'
+      });
+    }
+
+    const invite = inviteResult.rows[0];
+
+    // Can't use own invite code
+    if (invite.inviter_id === newUserId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot use your own invite code'
+      });
+    }
+
+    // Mark invite as used
+    await db.query(
+      'UPDATE invites SET used = true, used_by_user_id = $1, used_at = NOW() WHERE id = $2',
+      [newUserId, invite.id]
+    );
+
+    // Award 500 coins to inviter
+    await db.query(
+      'UPDATE coin_balances SET balance = balance + 500 WHERE user_id = $1 AND user_type = $2',
+      [invite.inviter_id, invite.inviter_type]
+    );
+
+    // Log transaction
+    await db.query(
+      `INSERT INTO coin_transactions (user_id, user_type, amount, transaction_type, description, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())`,
+      [invite.inviter_id, invite.inviter_type, 500, 'referral', 'Friend signed up with your invite code']
+    );
+
+    res.json({
+      success: true,
+      message: 'Invite code applied successfully! Your friend earned 500 coins.'
+    });
+
+  } catch (error) {
+    console.error('Process invite error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process invite code'
+    });
+  }
+});
+
+// Generate invite code
+router.get('/invites/generate', authenticateToken, async (req, res) => {
+  try {
+    // Generate unique code
+    const code = `VP${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+
+    // Create invite
+    await db.query(
+      'INSERT INTO invites (inviter_id, inviter_type, code, created_at) VALUES ($1, $2, $3, NOW())',
+      [req.user.id, req.user.type, code]
+    );
+
+    res.json({
+      success: true,
+      inviteCode: code,
+      message: 'Share this code with friends! You\'ll earn 500 coins when they sign up.'
+    });
+
+  } catch (error) {
+    console.error('Generate invite error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate invite code'
+    });
+  }
+});
+
+// Get user's invite stats
+router.get('/invites/stats', authenticateToken, async (req, res) => {
+  try {
+    const stats = await db.query(
+      `SELECT 
+        COUNT(*) as total_invites,
+        COUNT(CASE WHEN used = true THEN 1 END) as successful_invites,
+        COUNT(CASE WHEN used = false THEN 1 END) as pending_invites
+       FROM invites
+       WHERE inviter_id = $1 AND inviter_type = $2`,
+      [req.user.id, req.user.type]
+    );
+
+    const codes = await db.query(
+      'SELECT code, used, used_at, created_at FROM invites WHERE inviter_id = $1 AND inviter_type = $2 ORDER BY created_at DESC LIMIT 10',
+      [req.user.id, req.user.type]
+    );
+
+    res.json({
+      success: true,
+      stats: stats.rows[0],
+      recentCodes: codes.rows
+    });
+
+  } catch (error) {
+    console.error('Get invite stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get invite stats'
+    });
+  }
+});
+
+module.exports = router;
