@@ -95,7 +95,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
   const loadClients = async () => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.LAWFIRM.GET_CLIENTS, {
+      const response = await apiRequest(API_ENDPOINTS.LAWFIRM.CLIENTS, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
@@ -109,7 +109,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
   const loadPatients = async () => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.GET_PATIENTS, {
+      const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.PATIENTS, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
