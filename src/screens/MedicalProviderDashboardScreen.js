@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, Alert
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
@@ -18,11 +18,17 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
   const [searchQuery, setSearchQuery] = useState('');
   const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
   const [checkingStripeStatus, setCheckingStripeStatus] = useState(false);
+  const [lawFirms, setLawFirms] = useState([]);
+  const [firmCode, setFirmCode] = useState('');
+  const [addingFirm, setAddingFirm] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
     checkStripeAccountStatus();
-  }, []);
+    if (activeTab === 'connections') {
+      fetchLawFirms();
+    }
+  }, [activeTab]);
 
   const fetchDashboardData = async () => {
     try {
@@ -84,6 +90,87 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchLawFirms = async () => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.LAW_FIRMS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      setLawFirms(response.lawFirms || []);
+    } catch (error) {
+      console.error('Error fetching law firms:', error);
+    }
+  };
+
+  const handleAddLawFirm = async () => {
+    if (!firmCode.trim()) {
+      Alert.alert('Missing Information', 'Please enter a law firm code');
+      return;
+    }
+
+    try {
+      setAddingFirm(true);
+      const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.ADD_LAW_FIRM, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ firmCode: firmCode.trim().toUpperCase() })
+      });
+
+      if (response.success) {
+        Alert.alert('Success', response.message || 'Law firm connection added successfully!');
+        setFirmCode('');
+        fetchLawFirms();
+      }
+    } catch (error) {
+      console.error('Error adding law firm:', error);
+      Alert.alert('Error', error.response?.error || 'Failed to add law firm connection');
+    } finally {
+      setAddingFirm(false);
+    }
+  };
+
+  const handleRemoveLawFirm = async (lawFirmId, firmName) => {
+    Alert.alert(
+      'Remove Connection',
+      `Are you sure you want to disconnect from ${firmName}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.REMOVE_LAW_FIRM, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lawFirmId })
+              });
+
+              if (response.success) {
+                Alert.alert('Success', response.message || 'Law firm connection removed successfully');
+                fetchLawFirms();
+              }
+            } catch (error) {
+              console.error('Error removing law firm:', error);
+              Alert.alert('Error', error.response?.error || 'Failed to remove law firm connection');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const checkStripeAccountStatus = async () => {
@@ -590,26 +677,77 @@ const renderAnalyticsTab = () => {
       <View style={styles.tabContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔗 Law Firm Connections</Text>
-          
-          <View style={styles.comingSoonContainer}>
-            <Text style={styles.comingSoonIcon}>🏴‍☠️</Text>
-            <Text style={styles.comingSoonTitle}>Ahoy, Matey!</Text>
-            <Text style={styles.comingSoonText}>
-              The Law Firm Connections feature be under construction by our crew! 
-            </Text>
-            <Text style={styles.comingSoonText}>
-              Soon ye'll be able to connect with cooperating law firms to share patient medical records and billing information securely. Keep yer eyes on the horizon! ⚓
-            </Text>
+          <Text style={styles.sectionDescription}>
+            Connect with law firms to collaborate on patient cases, share medical information securely, and negotiate medical bills.
+          </Text>
+
+          <View style={styles.addFirmContainer}>
+            <Text style={styles.addFirmLabel}>Add Law Firm by Code:</Text>
+            <View style={styles.addFirmInputRow}>
+              <TextInput
+                style={styles.firmCodeInput}
+                value={firmCode}
+                onChangeText={setFirmCode}
+                placeholder="Enter firm code (e.g., LAW-BETA01)"
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity 
+                style={[styles.addFirmButton, addingFirm && styles.addFirmButtonDisabled]}
+                onPress={handleAddLawFirm}
+                disabled={addingFirm}
+              >
+                <Text style={styles.addFirmButtonText}>
+                  {addingFirm ? 'Adding...' : '+ Add'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          
+
+          {lawFirms.length > 0 ? (
+            <View style={styles.firmsListContainer}>
+              <Text style={styles.firmsListTitle}>Connected Law Firms ({lawFirms.length})</Text>
+              {lawFirms.map((firm) => (
+                <View key={firm.id} style={styles.firmCard}>
+                  <View style={styles.firmCardHeader}>
+                    <View style={styles.firmCardIcon}>
+                      <Text style={styles.firmCardIconText}>⚖️</Text>
+                    </View>
+                    <View style={styles.firmCardInfo}>
+                      <Text style={styles.firmCardName}>{firm.firm_name || firm.email}</Text>
+                      <Text style={styles.firmCardCode}>Code: {firm.firm_code}</Text>
+                      <Text style={styles.firmCardMeta}>
+                        {firm.client_count || 0} clients • Connected {new Date(firm.connected_date).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.removeFirmButton}
+                    onPress={() => handleRemoveLawFirm(firm.id, firm.firm_name || firm.email)}
+                  >
+                    <Text style={styles.removeFirmButtonText}>✕ Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateIcon}>🔗</Text>
+              <Text style={styles.emptyStateTitle}>No Law Firm Connections</Text>
+              <Text style={styles.emptyStateText}>
+                Enter a law firm code above to connect with a law firm. Once connected, you'll be able to collaborate on patient cases and negotiate medical bills.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.infoBox}>
             <Text style={styles.infoIcon}>ℹ️</Text>
             <Text style={styles.infoText}>
-              Once available, you'll be able to:
-              {'\n'}• Add law firms by their unique firm code
-              {'\n'}• View connected law firms
-              {'\n'}• Manage connection permissions
-              {'\n'}• Remove connections when needed
+              Benefits of connecting with law firms:
+              {'\n'}• Securely share patient medical records
+              {'\n'}• Negotiate medical bills directly in the platform
+              {'\n'}• Coordinate on patient care and case progress
+              {'\n'}• Streamline communication and collaboration
             </Text>
           </View>
         </View>
@@ -1497,6 +1635,147 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.navy,
     textAlign: 'center',
+  },
+  addFirmContainer: {
+    backgroundColor: theme.colors.lightCream,
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
+    marginBottom: 20,
+  },
+  addFirmLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+    marginBottom: 10,
+  },
+  addFirmInputRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  firmCodeInput: {
+    flex: 1,
+    backgroundColor: theme.colors.cream,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: theme.colors.text,
+  },
+  addFirmButton: {
+    backgroundColor: theme.colors.warmGold,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    justifyContent: 'center',
+  },
+  addFirmButtonDisabled: {
+    opacity: 0.6,
+  },
+  addFirmButtonText: {
+    color: theme.colors.navy,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  firmsListContainer: {
+    marginBottom: 20,
+  },
+  firmsListTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 15,
+  },
+  firmCard: {
+    backgroundColor: theme.colors.cream,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    padding: 16,
+    marginBottom: 12,
+  },
+  firmCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  firmCardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: theme.colors.warmGold,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+  },
+  firmCardIconText: {
+    fontSize: 24,
+  },
+  firmCardInfo: {
+    flex: 1,
+  },
+  firmCardName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 4,
+  },
+  firmCardCode: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontFamily: 'monospace',
+    marginBottom: 4,
+  },
+  firmCardMeta: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+  },
+  removeFirmButton: {
+    backgroundColor: theme.colors.sand,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#d32f2f',
+    alignSelf: 'flex-start',
+  },
+  removeFirmButtonText: {
+    color: '#d32f2f',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    marginBottom: 20,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

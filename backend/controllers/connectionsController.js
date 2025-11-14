@@ -356,10 +356,170 @@ const removeMedicalProvider = async (req, res) => {
   }
 };
 
+// Medical Provider - Get Connected Law Firms
+const getMedicalProviderLawFirms = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'medical_provider') {
+      return res.status(403).json({ 
+        error: 'Only medical providers can access law firm connections.' 
+      });
+    }
+
+    const result = await db.query(
+      `SELECT 
+        mplf.id as connection_id,
+        mplf.connected_date,
+        mplf.connection_status,
+        lf.id,
+        lf.email,
+        lf.firm_name,
+        lf.firm_code,
+        lf.subscription_tier,
+        (SELECT COUNT(*) FROM law_firm_clients WHERE law_firm_id = lf.id) as client_count
+      FROM medical_provider_law_firms mplf
+      INNER JOIN law_firms lf ON mplf.law_firm_id = lf.id
+      WHERE mplf.medical_provider_id = $1 
+        AND mplf.connection_status = 'active'
+      ORDER BY mplf.connected_date DESC`,
+      [providerId]
+    );
+
+    res.json({
+      success: true,
+      lawFirms: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching law firm connections:', error);
+    res.status(500).json({ error: 'Failed to fetch law firm connections' });
+  }
+};
+
+// Medical Provider - Add Law Firm Connection
+const addLawFirmConnection = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const userType = req.user.userType;
+    const { firmCode } = req.body;
+
+    if (userType !== 'medical_provider') {
+      return res.status(403).json({ 
+        error: 'Only medical providers can add law firm connections.' 
+      });
+    }
+
+    if (!firmCode || typeof firmCode !== 'string') {
+      return res.status(400).json({ error: 'Valid law firm code is required' });
+    }
+
+    const trimmedCode = firmCode.trim().toUpperCase();
+
+    const lawFirmResult = await db.query(
+      `SELECT id, email, firm_name, firm_code
+      FROM law_firms
+      WHERE firm_code = $1`,
+      [trimmedCode]
+    );
+
+    if (lawFirmResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Law firm not found with this code' });
+    }
+
+    const lawFirm = lawFirmResult.rows[0];
+
+    // Check if already connected
+    const existingConnection = await db.query(
+      `SELECT id FROM medical_provider_law_firms
+      WHERE medical_provider_id = $1 AND law_firm_id = $2 AND connection_status = 'active'`,
+      [providerId, lawFirm.id]
+    );
+
+    if (existingConnection.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'Already connected to this law firm',
+        lawFirm: lawFirm
+      });
+    }
+
+    // Create new connection
+    await db.query(
+      `INSERT INTO medical_provider_law_firms (medical_provider_id, law_firm_id, connection_status, connected_date, created_at, updated_at)
+      VALUES ($1, $2, 'active', NOW(), NOW(), NOW())`,
+      [providerId, lawFirm.id]
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully connected with ${lawFirm.firm_name || lawFirm.email}!`,
+      lawFirm: lawFirm
+    });
+  } catch (error) {
+    console.error('Error adding law firm connection:', error);
+    res.status(500).json({ error: 'Failed to add law firm connection' });
+  }
+};
+
+// Medical Provider - Remove Law Firm Connection
+const removeLawFirmConnection = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const userType = req.user.userType;
+    const { lawFirmId } = req.body;
+
+    if (userType !== 'medical_provider') {
+      return res.status(403).json({ 
+        error: 'Only medical providers can remove law firm connections.' 
+      });
+    }
+
+    if (!lawFirmId) {
+      return res.status(400).json({ 
+        error: 'Law firm ID is required.' 
+      });
+    }
+
+    const existingConnection = await db.query(
+      `SELECT id FROM medical_provider_law_firms
+      WHERE medical_provider_id = $1 AND law_firm_id = $2 AND connection_status = 'active'`,
+      [providerId, lawFirmId]
+    );
+
+    if (existingConnection.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'No active connection found with this law firm.' 
+      });
+    }
+
+    // Mark as disconnected instead of deleting (preserve history)
+    await db.query(
+      `UPDATE medical_provider_law_firms
+      SET connection_status = 'disconnected',
+          disconnected_date = NOW(),
+          updated_at = NOW()
+      WHERE medical_provider_id = $1 AND law_firm_id = $2 AND connection_status = 'active'`,
+      [providerId, lawFirmId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Successfully removed law firm connection.'
+    });
+  } catch (error) {
+    console.error('Error removing law firm connection:', error);
+    res.status(500).json({ error: 'Failed to remove law firm connection' });
+  }
+};
+
 module.exports = {
   getMyConnections,
   updateLawFirm,
   addMedicalProvider,
   disconnectLawFirm,
-  removeMedicalProvider
+  removeMedicalProvider,
+  getMedicalProviderLawFirms,
+  addLawFirmConnection,
+  removeLawFirmConnection
 };

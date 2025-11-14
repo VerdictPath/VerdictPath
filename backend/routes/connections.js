@@ -9,4 +9,9 @@ router.post('/add-medical-provider', authenticateToken, connectionsController.ad
 router.post('/disconnect-lawfirm', authenticateToken, connectionsController.disconnectLawFirm);
 router.post('/remove-medical-provider', authenticateToken, connectionsController.removeMedicalProvider);
 
+// Medical Provider - Law Firm Connections
+router.get('/law-firms', authenticateToken, connectionsController.getMedicalProviderLawFirms);
+router.post('/add-law-firm', authenticateToken, connectionsController.addLawFirmConnection);
+router.post('/remove-law-firm', authenticateToken, connectionsController.removeLawFirmConnection);
+
 module.exports = router;

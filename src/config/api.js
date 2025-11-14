@@ -54,6 +54,9 @@ export const API_ENDPOINTS = {
   MEDICALPROVIDER: {
     PATIENTS: `${API_BASE_URL}/api/medicalprovider/patients`,
     PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patients/${patientId}`,
+    LAW_FIRMS: `${API_BASE_URL}/api/connections/law-firms`,
+    ADD_LAW_FIRM: `${API_BASE_URL}/api/connections/add-law-firm`,
+    REMOVE_LAW_FIRM: `${API_BASE_URL}/api/connections/remove-law-firm`,
   },
 
   // Invites & Referrals
