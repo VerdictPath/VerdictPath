@@ -445,7 +445,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
             </View>
             <View style={styles.templateItem}>
               <Text style={styles.templateIcon}>🔬</Text>
-              <Text style={styles.templateText}>Test Results Available</Text>
+              <Text style={styles.templateText}>Scans Available</Text>
             </View>
             <View style={styles.templateItem}>
               <Text style={styles.templateIcon}>💊</Text>
