@@ -8,12 +8,25 @@ const InviteModal = ({ visible, onClose, user }) => {
   const [loading, setLoading] = useState(false);
   const [inviteData, setInviteData] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [selectedInviteType, setSelectedInviteType] = useState(null);
+  const isMedicalProvider = user?.userType === 'medical_provider';
 
   useEffect(() => {
     if (visible && user?.token) {
-      fetchInviteCode();
+      if (isMedicalProvider) {
+        // Medical providers need to select who to invite first
+        setSelectedInviteType(null);
+      } else {
+        fetchInviteCode();
+      }
     }
   }, [visible, user]);
+
+  useEffect(() => {
+    if (selectedInviteType && user?.token) {
+      fetchInviteCode();
+    }
+  }, [selectedInviteType]);
 
   const fetchInviteCode = async () => {
     try {
@@ -114,6 +127,33 @@ const InviteModal = ({ visible, onClose, user }) => {
         `Or click here: ${inviteData.shareUrl}\n\n` +
         `Best regards`
       );
+    } else if (isMedicalProvider && selectedInviteType === 'lawfirm') {
+      emailBody = encodeURIComponent(
+        `Hi there!\n\nI'm inviting your law firm to join Verdict Path - a HIPAA-compliant platform connecting medical providers and law firms.\n\n` +
+        `Verdict Path helps law firms:\n` +
+        `• Coordinate with medical providers seamlessly\n` +
+        `• Access patient medical information securely\n` +
+        `• Negotiate medical bills directly in the platform\n` +
+        `• Track client litigation progress\n` +
+        `• Manage cases efficiently\n\n` +
+        `Use this invite code to connect: ${inviteData.inviteCode}\n` +
+        `Or click here: ${inviteData.shareUrl}\n\n` +
+        `Looking forward to collaborating with you!\n\n` +
+        `Best regards`
+      );
+    } else if (isMedicalProvider && selectedInviteType === 'patient') {
+      emailBody = encodeURIComponent(
+        `Hi there!\n\nI'm inviting you to join Verdict Path - a HIPAA-compliant platform for tracking your legal case.\n\n` +
+        `Verdict Path helps patients:\n` +
+        `• Stay informed about your legal case progress\n` +
+        `• Securely store and share medical records\n` +
+        `• Connect with your medical providers and law firm\n` +
+        `• Track litigation milestones step-by-step\n` +
+        `• Communicate with your legal team\n\n` +
+        `Use my invite code: ${inviteData.inviteCode}\n` +
+        `Or click here: ${inviteData.shareUrl}\n\n` +
+        `Best regards`
+      );
     } else {
       emailBody = encodeURIComponent(
         `Hi there!\n\nI'm inviting you to join our practice on Verdict Path - a HIPAA-compliant platform for medical providers.\n\n` +
@@ -167,8 +207,70 @@ const InviteModal = ({ visible, onClose, user }) => {
               <ActivityIndicator size="large" color={theme.colors.mahogany} />
               <Text style={styles.loadingText}>Generating your invite code...</Text>
             </View>
+          ) : isMedicalProvider && !selectedInviteType ? (
+            <View style={styles.content}>
+              <View style={styles.infoSection}>
+                <Text style={styles.infoIcon}>⚕️</Text>
+                <Text style={styles.infoText}>
+                  Who would you like to invite to Verdict Path? Select the type of person you want to invite:
+                </Text>
+              </View>
+
+              <Text style={styles.selectionTitle}>Select Invite Type:</Text>
+
+              <TouchableOpacity 
+                style={styles.selectionOption} 
+                onPress={() => setSelectedInviteType('patient')}
+              >
+                <Text style={styles.selectionIcon}>👤</Text>
+                <View style={styles.selectionTextContainer}>
+                  <Text style={styles.selectionOptionTitle}>Invite a Patient</Text>
+                  <Text style={styles.selectionOptionDescription}>
+                    Invite patients to track their legal case progress
+                  </Text>
+                </View>
+                <Text style={styles.selectionArrow}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.selectionOption} 
+                onPress={() => setSelectedInviteType('lawfirm')}
+              >
+                <Text style={styles.selectionIcon}>⚖️</Text>
+                <View style={styles.selectionTextContainer}>
+                  <Text style={styles.selectionOptionTitle}>Invite a Law Firm</Text>
+                  <Text style={styles.selectionOptionDescription}>
+                    Connect with law firms for collaboration and bill negotiations
+                  </Text>
+                </View>
+                <Text style={styles.selectionArrow}>→</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.selectionOption} 
+                onPress={() => setSelectedInviteType('colleague')}
+              >
+                <Text style={styles.selectionIcon}>👨‍⚕️</Text>
+                <View style={styles.selectionTextContainer}>
+                  <Text style={styles.selectionOptionTitle}>Invite a Colleague</Text>
+                  <Text style={styles.selectionOptionDescription}>
+                    Invite other medical providers to join your practice
+                  </Text>
+                </View>
+                <Text style={styles.selectionArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
           ) : inviteData ? (
             <View style={styles.content}>
+              {isMedicalProvider && selectedInviteType && (
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => setSelectedInviteType(null)}
+                >
+                  <Text style={styles.backButtonText}>← Back to Selection</Text>
+                </TouchableOpacity>
+              )}
+              
               {user?.userType === 'individual' || user?.userType === 'client' ? (
                 <View style={styles.infoSection}>
                   <Text style={styles.infoIcon}>💰</Text>
@@ -183,11 +285,25 @@ const InviteModal = ({ visible, onClose, user }) => {
                     Invite your clients, colleagues, and peers to join Verdict Path! Help them navigate their legal journey with our interactive case management platform. Share your invite code to connect and collaborate seamlessly.
                   </Text>
                 </View>
+              ) : selectedInviteType === 'lawfirm' ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoIcon}>⚖️</Text>
+                  <Text style={styles.infoText}>
+                    Invite law firms to join Verdict Path! Connect with legal professionals to coordinate patient care, share medical information securely, and negotiate medical bills directly in the platform.
+                  </Text>
+                </View>
+              ) : selectedInviteType === 'patient' ? (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoIcon}>👤</Text>
+                  <Text style={styles.infoText}>
+                    Invite your patients to join Verdict Path! Help them track their legal case progress, store medical records securely, and stay connected with their legal team through our HIPAA-compliant platform.
+                  </Text>
+                </View>
               ) : (
                 <View style={styles.infoSection}>
-                  <Text style={styles.infoIcon}>⚕️</Text>
+                  <Text style={styles.infoIcon}>👨‍⚕️</Text>
                   <Text style={styles.infoText}>
-                    Invite your patients and colleagues to join Verdict Path! Help your patients stay informed about their legal cases with our HIPAA-compliant platform. Share your invite code to connect and collaborate with law firms seamlessly.
+                    Invite colleagues to join your practice on Verdict Path! Collaborate with other medical providers, share patient information securely, and coordinate care efficiently.
                   </Text>
                 </View>
               )}
@@ -414,6 +530,53 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: theme.colors.mahogany,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  selectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.mahogany,
+    marginBottom: 15,
+  },
+  selectionOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.lightCream,
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    marginBottom: 12,
+  },
+  selectionIcon: {
+    fontSize: 32,
+    marginRight: 15,
+  },
+  selectionTextContainer: {
+    flex: 1,
+  },
+  selectionOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.mahogany,
+    marginBottom: 4,
+  },
+  selectionOptionDescription: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+  },
+  selectionArrow: {
+    fontSize: 20,
+    color: theme.colors.mahogany,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    marginBottom: 15,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: theme.colors.mahogany,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
