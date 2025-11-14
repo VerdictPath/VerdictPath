@@ -61,6 +61,7 @@ export const API_ENDPOINTS = {
 
   // Invites & Referrals
   INVITES: {
+    MY_CODE: `${API_BASE_URL}/api/invites/my-code`,
     GENERATE: `${API_BASE_URL}/api/invites/generate`,
     PROCESS: `${API_BASE_URL}/api/invites/process`,
     STATS: `${API_BASE_URL}/api/invites/stats`,
