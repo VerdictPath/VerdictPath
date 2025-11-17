@@ -3,7 +3,7 @@ export const AVATARS = {
     id: 'captain',
     name: 'The Advocate',
     description: 'Passionate and determined - fights for your justice',
-    calmVideo: null,
+    calmVideo: require('../../assets/avatars/captain/captain-calm.mp4'),
     actionVideo: null,
     thumbnail: null,
     primaryColor: '#1E40AF',
