@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   videoPreview: {
     width: '100%',
-    height: 250,
+    height: 320,
     backgroundColor: '#000',
   },
   previewVideo: {
@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
   thumbnailImage: {
     width: '100%',
     height: '100%',
+    backgroundColor: '#000',
   },
   placeholderImage: {
     width: '100%',
