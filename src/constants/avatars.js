@@ -14,7 +14,7 @@ export const AVATARS = {
     name: 'Lady Justice',
     description: 'Fair and balanced - upholds truth and righteousness',
     calmVideo: require('../../assets/avatars/navigator/navigator-calm.mp4'),
-    actionVideo: null,
+    actionVideo: require('../../assets/avatars/navigator/navigator-action.mp4'),
     thumbnail: require('../../assets/avatars/navigator/navigator-thumbnail.png'),
     primaryColor: '#0F766E',
     accentColor: '#5EEAD4',
