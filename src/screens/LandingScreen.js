@@ -35,7 +35,7 @@ const LandingScreen = ({ onNavigate }) => {
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeMap}>
             <Image 
-              source={require('../../attached_assets/Treasure Map_1762016241708.png')}
+              source={require('../../attached_assets/MAP_1763356928680.png')}
               style={styles.treasureMapThumbnail}
               resizeMode="cover"
             />
