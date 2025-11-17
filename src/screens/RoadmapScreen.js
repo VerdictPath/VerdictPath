@@ -4,7 +4,7 @@ import { commonStyles } from '../styles/commonStyles';
 import AvatarSelector from '../components/AvatarSelector';
 import CelebrationAnimation from '../components/CelebrationAnimation';
 import Svg, { Path } from 'react-native-svg';
-import { API_URL } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 import alert from '../utils/alert';
 import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
 
@@ -260,11 +260,11 @@ const RoadmapScreen = ({
         coinsEarned: subStageCoins
       };
 
-      console.log('[RoadmapScreen] Making API request to:', `${API_URL}/litigation/substage/complete`);
+      console.log('[RoadmapScreen] Making API request to:', `${API_BASE_URL}/api/litigation/substage/complete`);
       console.log('[RoadmapScreen] Request body:', requestBody);
       console.log('[RoadmapScreen] Auth token present:', !!authToken);
 
-      const response = await fetch(`${API_URL}/litigation/substage/complete`, {
+      const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
