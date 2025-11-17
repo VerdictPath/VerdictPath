@@ -34,7 +34,7 @@ export const AVATARS = {
     name: 'The Judge',
     description: 'Wise and authoritative - guides you with experience',
     calmVideo: null,
-    actionVideo: null,
+    actionVideo: require('../../assets/avatars/advocate/advocate-action.mp4'),
     thumbnail: require('../../assets/avatars/advocate/advocate-thumbnail.png'),
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
