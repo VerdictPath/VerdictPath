@@ -1,0 +1,520 @@
+// src/screens/LawFirmDashboardScreen.jsx
+
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import GlassCard from '../components/GlassCard';
+import StatCard from '../components/StatCard';
+import { lawFirmTheme } from '../styles/lawFirmTheme';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
+
+const { width } = Dimensions.get('window');
+
+const LawFirmDashboardScreen = ({
+  user,
+  onNavigateToClient,
+  onNavigate,
+  onLogout,
+}) => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [stats, setStats] = useState({
+    totalClients: 0,
+    activeClients: 0,
+    completedStages: 0,
+    totalRevenue: 0,
+  });
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setRefreshing(true);
+
+      // Fetch clients
+      const clientsResponse = await apiRequest(
+        API_ENDPOINTS.LAWFIRM.CLIENTS,
+        {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${user.token}` },
+        }
+      );
+
+      setClients(clientsResponse.clients || []);
+
+      // Calculate stats
+      const activeClients = clientsResponse.clients?.filter(
+        c => c.caseStatus === 'active'
+      ).length || 0;
+
+      setStats({
+        totalClients: clientsResponse.clients?.length || 0,
+        activeClients: activeClients,
+        completedStages: 42, // TODO: Calculate from actual data
+        totalRevenue: 125000, // TODO: Calculate from actual data
+      });
+
+    } catch (error) {
+      console.error('[LawFirmDashboard] Load error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    loadDashboardData();
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Animated Background */}
+      <LinearGradient
+        colors={[
+          lawFirmTheme.colors.deepNavy,
+          lawFirmTheme.colors.midnightBlue,
+          lawFirmTheme.colors.professionalBlue,
+        ]}
+        style={styles.background}
+      />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <BlurView intensity={20} style={styles.headerBlur}>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerSubtitle}>LAW FIRM PORTAL</Text>
+              <Text style={styles.headerTitle}>
+                {user?.firmName || 'Law Firm'}
+              </Text>
+              <Text style={styles.headerCode}>
+                Code: {user?.firmCode}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => onNavigate('lawfirm-profile')}
+            >
+              <LinearGradient
+                colors={[lawFirmTheme.colors.accentBlue, lawFirmTheme.colors.lightBlue]}
+                style={styles.profileGradient}
+              >
+                <Text style={styles.profileInitials}>
+                  {user?.firmName?.substring(0, 2).toUpperCase()}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+      </View>
+
+      {/* Main Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={lawFirmTheme.colors.accentBlue}
+          />
+        }
+      >
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statRow}>
+            <StatCard
+              label="Total Clients"
+              value={stats.totalClients}
+              icon="👥"
+              color={lawFirmTheme.colors.accentBlue}
+              trend={{ direction: 'up', value: '8%' }}
+            />
+            <View style={{ width: 15 }} />
+            <StatCard
+              label="Active Cases"
+              value={stats.activeClients}
+              icon="⚖️"
+              color={lawFirmTheme.colors.success}
+              trend={{ direction: 'up', value: '12%' }}
+            />
+          </View>
+
+          <View style={styles.statRow}>
+            <StatCard
+              label="Completed Stages"
+              value={stats.completedStages}
+              icon="✅"
+              color={lawFirmTheme.colors.gold}
+            />
+            <View style={{ width: 15 }} />
+            <StatCard
+              label="Total Revenue"
+              value={`$${(stats.totalRevenue / 1000).toFixed(0)}K`}
+              icon="💰"
+              color={lawFirmTheme.colors.success}
+              trend={{ direction: 'up', value: '15%' }}
+            />
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          <QuickActionCard
+            icon="📨"
+            title="Send Notification"
+            subtitle="Notify all clients"
+            onPress={() => onNavigate('lawfirm-send-notification')}
+          />
+          <QuickActionCard
+            icon="📊"
+            title="Analytics"
+            subtitle="View insights"
+            onPress={() => onNavigate('lawfirm-notification-analytics')}
+          />
+          <QuickActionCard
+            icon="💼"
+            title="Negotiations"
+            subtitle="Track settlements"
+            onPress={() => onNavigate('lawfirm-negotiations')}
+          />
+          <QuickActionCard
+            icon="💳"
+            title="Disbursements"
+            subtitle="Manage payments"
+            onPress={() => onNavigate('lawfirm-disbursements')}
+          />
+          <QuickActionCard
+            icon="📅"
+            title="Event Requests"
+            subtitle="Calendar approvals"
+            onPress={() => onNavigate('lawfirm-event-requests')}
+          />
+          <QuickActionCard
+            icon="⚙️"
+            title="Subscription"
+            subtitle="Manage plan"
+            onPress={() => onNavigate('LawFirmSubscription')}
+          />
+        </View>
+
+        {/* Recent Clients */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Clients</Text>
+          <TouchableOpacity onPress={() => onNavigate('lawfirm-clients')}>
+            <Text style={styles.seeAllText}>See All →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {clients.slice(0, 5).map((client, index) => (
+          <ClientCard
+            key={client.id || index}
+            client={client}
+            onPress={() => onNavigateToClient(client.id)}
+          />
+        ))}
+
+        {clients.length === 0 && (
+          <GlassCard variant="light" style={styles.emptyCard}>
+            <Text style={styles.emptyText}>
+              No clients yet. Share your firm code to get started!
+            </Text>
+            <Text style={styles.firmCodeLarge}>
+              {user?.firmCode}
+            </Text>
+          </GlassCard>
+        )}
+
+        {/* Logout */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={onLogout}
+        >
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
+  );
+};
+
+const QuickActionCard = ({ icon, title, subtitle, onPress }) => (
+  <GlassCard
+    variant="medium"
+    onPress={onPress}
+    style={styles.actionCard}
+    shadowIntensity="small"
+  >
+    <Text style={styles.actionIcon}>{icon}</Text>
+    <Text style={styles.actionTitle}>{title}</Text>
+    <Text style={styles.actionSubtitle}>{subtitle}</Text>
+  </GlassCard>
+);
+
+const ClientCard = ({ client, onPress }) => (
+  <GlassCard
+    variant="dark"
+    onPress={onPress}
+    style={styles.clientCard}
+    shadowIntensity="medium"
+  >
+    <View style={styles.clientCardContent}>
+      <View style={styles.clientAvatar}>
+        <LinearGradient
+          colors={[lawFirmTheme.colors.accentBlue, lawFirmTheme.colors.professionalBlue]}
+          style={styles.avatarGradient}
+        >
+          <Text style={styles.avatarText}>
+            {client.firstName?.[0]}{client.lastName?.[0]}
+          </Text>
+        </LinearGradient>
+      </View>
+
+      <View style={styles.clientInfo}>
+        <Text style={styles.clientName}>
+          {client.firstName} {client.lastName}
+        </Text>
+        <Text style={styles.clientEmail}>{client.email}</Text>
+      </View>
+
+      <View style={styles.clientMeta}>
+        <View style={[
+          styles.statusBadge,
+          { backgroundColor: client.caseStatus === 'active' 
+            ? lawFirmTheme.colors.success + '30' 
+            : lawFirmTheme.colors.mediumGray + '30' 
+          }
+        ]}>
+          <Text style={[
+            styles.statusText,
+            { color: client.caseStatus === 'active' 
+              ? lawFirmTheme.colors.success 
+              : lawFirmTheme.colors.mediumGray 
+            }
+          ]}>
+            {client.caseStatus || 'Active'}
+          </Text>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </View>
+    </View>
+  </GlassCard>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: lawFirmTheme.colors.deepNavy,
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  header: {
+    paddingTop: 60,
+    zIndex: 10,
+  },
+  headerBlur: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerSubtitle: {
+    ...lawFirmTheme.typography.label,
+    color: lawFirmTheme.colors.accentBlue,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    ...lawFirmTheme.typography.h1,
+    marginBottom: 4,
+  },
+  headerCode: {
+    ...lawFirmTheme.typography.caption,
+    fontFamily: 'monospace',
+    color: lawFirmTheme.colors.gold,
+  },
+  profileButton: {
+    borderRadius: 50,
+    overflow: 'hidden',
+  },
+  profileGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  profileInitials: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+  },
+  statsGrid: {
+    marginBottom: 30,
+  },
+  statRow: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    ...lawFirmTheme.typography.h2,
+    marginBottom: 15,
+  },
+  seeAllText: {
+    color: lawFirmTheme.colors.accentBlue,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  actionCard: {
+    width: (width - 55) / 2,
+    padding: 20,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  actionIcon: {
+    fontSize: 36,
+    marginBottom: 10,
+  },
+  actionTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  actionSubtitle: {
+    color: lawFirmTheme.colors.mediumGray,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  clientCard: {
+    marginBottom: 12,
+    padding: 16,
+  },
+  clientCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clientAvatar: {
+    marginRight: 15,
+  },
+  avatarGradient: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  clientInfo: {
+    flex: 1,
+  },
+  clientName: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  clientEmail: {
+    color: lawFirmTheme.colors.mediumGray,
+    fontSize: 14,
+  },
+  clientMeta: {
+    alignItems: 'flex-end',
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  chevron: {
+    color: lawFirmTheme.colors.mediumGray,
+    fontSize: 24,
+  },
+  emptyCard: {
+    padding: 40,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyText: {
+    color: lawFirmTheme.colors.mediumGray,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  firmCodeLarge: {
+    color: lawFirmTheme.colors.gold,
+    fontSize: 32,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 4,
+  },
+  logoutButton: {
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutText: {
+    color: lawFirmTheme.colors.error,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+export default LawFirmDashboardScreen;
