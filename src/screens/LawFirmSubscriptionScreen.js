@@ -357,21 +357,27 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
       try {
         setUpdating(true);
         
+        // DEBUG: Log what we're about to send
+        const requestBody = {
+          subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+          planType: planType,
+          firmSize: {
+            clientCount: clientCount ? parseInt(clientCount) : null,
+            tierName: selectedTier.name,
+            billingPeriod: billingPeriod,
+            planType: planType
+          }
+        };
+        console.log('[LawFirm Subscription] Sending update request:', requestBody);
+        console.log('[LawFirm Subscription] Stringified body:', JSON.stringify(requestBody));
+        
         const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_UPDATE, {
           method: 'PUT',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
-            planType: planType,
-            firmSize: {
-              clientCount: clientCount ? parseInt(clientCount) : null,
-              tierName: selectedTier.name,
-              billingPeriod: billingPeriod,
-              planType: planType
-            }
-          })
+          body: JSON.stringify(requestBody)
         });
 
         if (Platform.OS === 'web') {
