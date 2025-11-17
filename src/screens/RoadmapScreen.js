@@ -83,10 +83,11 @@ const RoadmapScreen = ({
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
     mapContainer: {
-      minHeight: height * 2.2,
+      minHeight: height,
     },
     pirateMap: {
-      minHeight: height * 2.2,
+      minHeight: height,
+      height: height,
     },
     modalContent: {
       maxHeight: height * 0.85,
@@ -1023,14 +1024,12 @@ const styles = StyleSheet.create({
   mapContainer: {
   },
   pirateMap: {
-    flex: 1,
     width: '100%',
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#c9a86a',
   },
   treasureMapImage: {
-    resizeMode: 'cover',
   },
   mapOverlay: {
     position: 'absolute',
