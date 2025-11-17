@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { USER_TYPES } from '../constants/mockData';
 
@@ -13,9 +14,34 @@ const LoginScreen = ({
   userType,
   setUserType
 }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playAsync();
+    }
+  }, []);
+
   return (
     <View style={commonStyles.container}>
-      <View style={styles.formContainer}>
+      <View style={styles.videoWrapper} pointerEvents="none">
+        <Video
+          ref={videoRef}
+          source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
+          style={styles.backgroundVideo}
+          resizeMode={ResizeMode.COVER}
+          isLooping
+          isMuted
+          shouldPlay
+        />
+        <View style={styles.videoOverlay} />
+      </View>
+      
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.formContainer}>
         <Text style={styles.formTitle}>Welcome Back</Text>
         
         <Text style={styles.sectionLabel}>I am a:</Text>
@@ -85,27 +111,64 @@ const LoginScreen = ({
           <Text style={commonStyles.linkText}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  videoWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  backgroundVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
   formContainer: {
     padding: 20,
   },
   formTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 30,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   sectionLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 12,
     marginTop: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   userTypeContainer: {
     flexDirection: 'row',
@@ -118,22 +181,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#d4a574',
-    backgroundColor: '#f5f5f5',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
   },
   userTypeButtonActive: {
-    backgroundColor: '#d4a574',
-    borderColor: '#b8935f',
+    backgroundColor: 'rgba(212, 165, 116, 0.7)',
+    borderColor: '#d4a574',
   },
   userTypeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   userTypeTextActive: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
 });
 
