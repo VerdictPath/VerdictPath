@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const BottomNavigation = ({ currentScreen, onNavigate }) => {
@@ -7,7 +7,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
   
   const tabs = [
     { name: 'Dashboard', icon: '🏠', screen: 'dashboard', badge: unreadCount },
-    { name: 'Roadmap', icon: '🗺️', screen: 'roadmap' },
+    { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
     { name: 'Medical', icon: '⚕️', screen: 'medical' },
     { name: 'Videos', icon: '🎬', screen: 'videos' },
     { name: 'Actions', icon: '⚓', screen: 'actions' },
@@ -27,7 +27,15 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
-              <Text style={styles.icon}>{tab.icon}</Text>
+              {tab.imageSource ? (
+                <Image 
+                  source={tab.imageSource} 
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.icon}>{tab.icon}</Text>
+              )}
               {showBadge && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
@@ -84,6 +92,10 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 22,
+  },
+  iconImage: {
+    width: 24,
+    height: 24,
   },
   label: {
     fontSize: 10,
