@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { USER_TYPES } from '../constants/mockData';
 
@@ -29,15 +30,37 @@ const RegisterScreen = ({
   onRegister, 
   onNavigate 
 }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playAsync();
+    }
+  }, []);
+
   console.log('RegisterScreen rendering - privacyAccepted:', privacyAccepted);
   console.log('RegisterScreen rendering - userType:', userType);
   
   return (
-    <ScrollView 
-      style={commonStyles.container}
-      contentContainerStyle={styles.scrollContent}
-    >
-      <View style={styles.formContainer}>
+    <View style={commonStyles.container}>
+      <View style={styles.videoWrapper} pointerEvents="none">
+        <Video
+          ref={videoRef}
+          source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
+          style={styles.backgroundVideo}
+          resizeMode={ResizeMode.COVER}
+          isLooping
+          isMuted
+          shouldPlay
+        />
+        <View style={styles.videoOverlay} />
+      </View>
+      
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.formContainer}>
         <Text style={styles.formTitle}>Create Your Account</Text>
         
         <Text style={styles.label}>I am a:</Text>
@@ -195,11 +218,37 @@ const RegisterScreen = ({
           This app provides educational information, not legal advice.
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  videoWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  backgroundVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
@@ -210,15 +259,21 @@ const styles = StyleSheet.create({
   formTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 30,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 10,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -248,10 +303,13 @@ const styles = StyleSheet.create({
   },
   disclaimer: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: '#FFFFFF',
     textAlign: 'center',
     marginTop: 20,
     lineHeight: 18,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   inviteHint: {
     fontSize: 14,
