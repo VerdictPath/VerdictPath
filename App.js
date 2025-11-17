@@ -18,7 +18,6 @@ import NotificationService from './src/services/NotificationService';
 import ActionVideoModal from './src/components/ActionVideoModal';
 import { AVATARS } from './src/constants/avatars';
 
-import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -61,7 +60,6 @@ import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null);
   const [userType, setUserType] = useState(USER_TYPES.INDIVIDUAL);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [coins, setCoins] = useState(0);
@@ -149,19 +147,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     loadUserProgress();
   }, [user?.token, user?.id]);
 
-  useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      try {
-        const onboardingStatus = await AsyncStorage.getItem('hasSeenOnboarding');
-        setHasSeenOnboarding(onboardingStatus === 'true');
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        setHasSeenOnboarding(true);
-      }
-    };
-
-    checkOnboardingStatus();
-  }, []);
 
   // Initialize push notifications
   useEffect(() => {
@@ -267,10 +252,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setCurrentScreen('dashboard');
       }
     }
-  };
-
-  const handleOnboardingComplete = () => {
-    setHasSeenOnboarding(true);
   };
 
   const handleRegister = () => {
@@ -1125,14 +1106,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setUser(updatedUser);
     await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
   };
-
-  if (hasSeenOnboarding === null) {
-    return null;
-  }
-
-  if (hasSeenOnboarding === false) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  }
 
   return (
     <SafeAreaView style={commonStyles.safeArea}>
