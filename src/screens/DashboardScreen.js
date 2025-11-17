@@ -225,7 +225,7 @@ const DashboardScreen = ({
           onPress={() => onNavigate && onNavigate('treasure-chest')}
         >
           <Image 
-            source={require('../../attached_assets/Treasure Chest Full Cartoon_1762017505115.png')}
+            source={require('../../attached_assets/_a_pirates_treasure_chest_of_gold_1763356815342.png')}
             style={styles.treasureButtonIcon}
             resizeMode="contain"
           />
