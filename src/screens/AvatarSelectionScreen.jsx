@@ -106,11 +106,8 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
                 ) : avatar.thumbnail ? (
                   <Image
                     source={avatar.thumbnail}
-                    style={[
-                      styles.thumbnailImage,
-                      (avatar.id === 'captain' || avatar.id === 'navigator') && styles.thumbnailAdjusted
-                    ]}
-                    resizeMode="cover"
+                    style={styles.thumbnailImage}
+                    resizeMode={(avatar.id === 'captain' || avatar.id === 'navigator') ? 'contain' : 'cover'}
                   />
                 ) : (
                   <View style={[styles.placeholderImage, { backgroundColor: avatar.primaryColor }]}>
@@ -209,9 +206,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
-  },
-  thumbnailAdjusted: {
-    transform: [{ translateY: -60 }],
   },
   placeholderImage: {
     width: '100%',
