@@ -88,6 +88,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
               ]}
               onPress={() => handleSelect(avatar.id)}
               onLongPress={() => setPreviewingAvatar(avatar.id)}
+              onPressOut={() => setPreviewingAvatar(null)}
               disabled={isSaving}
             >
               <View style={styles.videoPreview}>
