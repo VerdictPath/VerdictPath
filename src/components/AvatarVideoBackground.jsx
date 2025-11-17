@@ -39,7 +39,7 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         isMuted={true}
         isLooping={true}
         shouldPlay={true}
-        resizeMode={ResizeMode.COVER}
+        resizeMode={ResizeMode.CONTAIN}
         style={styles.video}
         onLoad={() => {
           console.log('[AvatarVideoBackground] Video loaded');
