@@ -1,0 +1,118 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import GlassCard from './GlassCard';
+import { lawFirmTheme } from '../styles/theme';
+
+const StatCard = ({ 
+  label, 
+  value, 
+  icon, 
+  trend = null,
+  color = lawFirmTheme.colors.accentBlue,
+  size = 'medium',
+}) => {
+  const sizes = {
+    small: {
+      padding: 15,
+      valueSize: 24,
+      labelSize: 12,
+      iconSize: 24,
+    },
+    medium: {
+      padding: 20,
+      valueSize: 32,
+      labelSize: 14,
+      iconSize: 32,
+    },
+    large: {
+      padding: 25,
+      valueSize: 40,
+      labelSize: 16,
+      iconSize: 40,
+    },
+  };
+
+  const sizeConfig = sizes[size];
+
+  return (
+    <GlassCard variant="dark" shadowIntensity="medium" style={{ flex: 1 }}>
+      <View style={[styles.container, { padding: sizeConfig.padding }]}>
+        <View style={styles.iconContainer}>
+          <LinearGradient
+            colors={[color + '40', color + '10']}
+            style={styles.iconGradient}
+          >
+            <Text style={[styles.icon, { fontSize: sizeConfig.iconSize }]}>
+              {icon}
+            </Text>
+          </LinearGradient>
+        </View>
+
+        <Text style={[
+          styles.value, 
+          { fontSize: sizeConfig.valueSize, color: color }
+        ]}>
+          {value}
+        </Text>
+
+        <Text style={[
+          styles.label,
+          { fontSize: sizeConfig.labelSize }
+        ]}>
+          {label}
+        </Text>
+
+        {trend && (
+          <View style={styles.trendContainer}>
+            <Text style={[
+              styles.trendText,
+              { color: trend.direction === 'up' ? lawFirmTheme.colors.success : lawFirmTheme.colors.error }
+            ]}>
+              {trend.direction === 'up' ? '↑' : '↓'} {trend.value}
+            </Text>
+          </View>
+        )}
+      </View>
+    </GlassCard>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'flex-start',
+  },
+  iconContainer: {
+    marginBottom: 12,
+  },
+  iconGradient: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  icon: {
+    textAlign: 'center',
+  },
+  value: {
+    fontWeight: '700',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  label: {
+    color: lawFirmTheme.colors.mediumGray,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  trendContainer: {
+    marginTop: 8,
+  },
+  trendText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+});
+
+export default StatCard;
