@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator, Image, ImageBackground } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
-import AvatarSelector from '../components/AvatarSelector';
 import CelebrationAnimation from '../components/CelebrationAnimation';
 import Svg, { Path } from 'react-native-svg';
 import { API_BASE_URL } from '../config/api';
 import alert from '../utils/alert';
 import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
+import { AVATARS } from '../constants/avatars';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const ProgressBar = ({ progressPercentage, completedSubstages, totalSubstages }) => {
+const ProgressBar = ({ progressPercentage, completedSubstages, totalSubstages, avatarType }) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const avatar = avatarType ? AVATARS[avatarType.toUpperCase()] : null;
 
   useEffect(() => {
     progressAnim.setValue(0);
@@ -30,14 +31,30 @@ const ProgressBar = ({ progressPercentage, completedSubstages, totalSubstages })
   return (
     <View style={styles.progressContainer}>
       <View style={styles.progressHeader}>
-        <Text style={styles.progressTitle}>⚓ Your Journey Progress</Text>
+        {avatar && (
+          <View style={styles.avatarBadge}>
+            <Image 
+              source={avatar.thumbnail} 
+              style={styles.avatarThumbnail}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+        <View style={styles.progressTitleContainer}>
+          <Text style={styles.progressTitle}>⚓ Your Journey Progress</Text>
+          {avatar && (
+            <Text style={[styles.avatarLabel, { color: avatar.primaryColor }]}>
+              {avatar.name}
+            </Text>
+          )}
+        </View>
         <Text style={styles.progressPercentage}>{progressPercentage}%</Text>
       </View>
       <View style={styles.progressBarBackground}>
         <Animated.View 
           style={[
             styles.progressBarFill, 
-            { width: widthInterpolated }
+            { width: widthInterpolated, backgroundColor: avatar?.primaryColor || '#8B4513' }
           ]} 
         />
       </View>
@@ -780,29 +797,21 @@ const RoadmapScreen = ({
         );
       })()}
 
-      {selectedAvatar && !readOnly && (() => {
+      {!readOnly && (() => {
         const totalSubstages = litigationStages.reduce((sum, stage) => sum + stage.subStages.length, 0);
         const completedSubstages = litigationStages.reduce((sum, stage) => 
           sum + stage.subStages.filter(s => s.completed).length, 0
         );
         const progressPercentage = totalSubstages > 0 ? Math.round((completedSubstages / totalSubstages) * 100) : 0;
 
-        return <ProgressBar progressPercentage={progressPercentage} completedSubstages={completedSubstages} totalSubstages={totalSubstages} />;
+        return <ProgressBar progressPercentage={progressPercentage} completedSubstages={completedSubstages} totalSubstages={totalSubstages} avatarType={user?.avatarType} />;
       })()}
 
-      {!selectedAvatar && !readOnly ? (
-        <View style={styles.avatarSelectorContainer}>
-          <AvatarSelector 
-            selectedAvatar={selectedAvatar} 
-            onSelectAvatar={onSelectAvatar}
-          />
-        </View>
-      ) : (
-        <ScrollView 
-          style={styles.mapScrollView}
-          contentContainerStyle={[styles.mapContainer, dynamicStyles.mapContainer]}
-        >
-          <ImageBackground 
+      <ScrollView 
+        style={styles.mapScrollView}
+        contentContainerStyle={[styles.mapContainer, dynamicStyles.mapContainer]}
+      >
+        <ImageBackground 
             source={require('../../attached_assets/MAP_1763356928680.png')}
             style={[styles.pirateMap, dynamicStyles.pirateMap]}
             resizeMode="stretch"
@@ -833,12 +842,10 @@ const RoadmapScreen = ({
                   <Text style={styles.legendItemText}> = Treasure to Claim</Text>
                 </View>
                 <Text style={styles.legendItem}>🏆 = Treasure Found!</Text>
-                {!readOnly && <Text style={styles.legendItem}>{selectedAvatar.emoji} = Your Position</Text>}
               </View>
             </View>
           </ImageBackground>
         </ScrollView>
-      )}
 
       {renderStageModal()}
 
@@ -965,10 +972,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  avatarBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    marginRight: 12,
+    borderWidth: 3,
+    borderColor: '#FFD700',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  avatarThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  progressTitleContainer: {
+    flex: 1,
+  },
   progressTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2c3e50',
+  },
+  avatarLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   progressPercentage: {
     fontSize: 24,
