@@ -23,7 +23,7 @@ export const AVATARS = {
     id: 'strategist',
     name: 'The Paralegal',
     description: 'Organized and thorough - manages every detail expertly',
-    calmVideo: null,
+    calmVideo: require('../../assets/avatars/strategist/strategist-calm.mp4'),
     actionVideo: null,
     thumbnail: require('../../assets/avatars/strategist/strategist-thumbnail.png'),
     primaryColor: '#7C3AED',
