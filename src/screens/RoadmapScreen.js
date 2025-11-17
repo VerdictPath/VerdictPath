@@ -83,10 +83,10 @@ const RoadmapScreen = ({
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
     mapContainer: {
-      minHeight: height * 1.5,
+      minHeight: height * 2.2,
     },
     pirateMap: {
-      minHeight: height * 1.5,
+      minHeight: height * 2.2,
     },
     modalContent: {
       maxHeight: height * 0.85,
