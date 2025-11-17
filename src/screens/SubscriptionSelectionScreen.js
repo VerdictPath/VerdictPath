@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Platform
 } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { theme } from '../styles/theme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
@@ -376,11 +377,18 @@ const MEDICAL_PROVIDER_PRICING = {
 };
 
 const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate }) => {
+  const videoRef = useRef(null);
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [planType, setPlanType] = useState(userType === 'medicalprovider' ? 'basic' : 'standard');
   const [selectedTier, setSelectedTier] = useState(null);
   const [showCalculator, setShowCalculator] = useState(userType === 'lawfirm' || userType === 'medicalprovider');
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playAsync();
+    }
+  }, []);
 
   const calculateTier = (count) => {
     const numClients = parseInt(count);
@@ -1198,18 +1206,61 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {userType === 'lawfirm' ? renderLawFirmPricing() : 
-       userType === 'medicalprovider' ? renderMedicalProviderPricing() :
-       renderIndividualPricing()}
-    </ScrollView>
+    <View style={styles.container}>
+      <View style={styles.videoWrapper} pointerEvents="none">
+        <Video
+          ref={videoRef}
+          source={require('../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4')}
+          style={styles.backgroundVideo}
+          resizeMode={ResizeMode.COVER}
+          isLooping
+          isMuted
+          shouldPlay
+        />
+        <View style={styles.videoOverlay} />
+      </View>
+      
+      <ScrollView style={styles.scrollContainer}>
+        {userType === 'lawfirm' ? renderLawFirmPricing() : 
+         userType === 'medicalprovider' ? renderMedicalProviderPricing() :
+         renderIndividualPricing()}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background
+    backgroundColor: theme.colors.background,
+    position: 'relative'
+  },
+  videoWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
+  backgroundVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  scrollContainer: {
+    flex: 1,
+    position: 'relative',
+    zIndex: 1,
   },
   lawFirmContainer: {
     padding: 20
