@@ -1,8 +1,8 @@
 export const AVATARS = {
   CAPTAIN: {
     id: 'captain',
-    name: 'The Captain',
-    description: 'Bold and adventurous - leads the voyage through litigation',
+    name: 'The Advocate',
+    description: 'Passionate and determined - fights for your justice',
     calmVideo: null,
     actionVideo: null,
     thumbnail: null,
@@ -11,8 +11,8 @@ export const AVATARS = {
   },
   NAVIGATOR: {
     id: 'navigator',
-    name: 'The Navigator',
-    description: 'Strategic and precise - charts the course to victory',
+    name: 'Lady Justice',
+    description: 'Fair and balanced - upholds truth and righteousness',
     calmVideo: null,
     actionVideo: null,
     thumbnail: null,
@@ -21,8 +21,8 @@ export const AVATARS = {
   },
   STRATEGIST: {
     id: 'strategist',
-    name: 'The Strategist',
-    description: 'Calculated and wise - plans every move carefully',
+    name: 'The Paralegal',
+    description: 'Organized and thorough - manages every detail expertly',
     calmVideo: null,
     actionVideo: null,
     thumbnail: null,
@@ -31,8 +31,8 @@ export const AVATARS = {
   },
   ADVOCATE: {
     id: 'advocate',
-    name: 'The Advocate',
-    description: 'Passionate and determined - fights for justice',
+    name: 'The Judge',
+    description: 'Wise and authoritative - guides you with experience',
     calmVideo: null,
     actionVideo: null,
     thumbnail: null,
@@ -50,7 +50,15 @@ export const ACTION_TRIGGERS = {
 };
 
 // NOTE: To enable video playback, add these video files:
-// assets/avatars/captain/captain-calm.mp4
+// assets/avatars/captain/captain-calm.mp4 (The Advocate)
 // assets/avatars/captain/captain-action.mp4
 // assets/avatars/captain/captain-thumbnail.png
-// (Same pattern for navigator, strategist, advocate)
+// assets/avatars/navigator/navigator-calm.mp4 (Lady Justice)
+// assets/avatars/navigator/navigator-action.mp4
+// assets/avatars/navigator/navigator-thumbnail.png
+// assets/avatars/strategist/strategist-calm.mp4 (The Paralegal)
+// assets/avatars/strategist/strategist-action.mp4
+// assets/avatars/strategist/strategist-thumbnail.png
+// assets/avatars/advocate/advocate-calm.mp4 (The Judge)
+// assets/avatars/advocate/advocate-action.mp4
+// assets/avatars/advocate/advocate-thumbnail.png
