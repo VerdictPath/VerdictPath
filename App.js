@@ -15,6 +15,8 @@ import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } 
 import { apiRequest, API_ENDPOINTS } from './src/config/api';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import NotificationService from './src/services/NotificationService';
+import ActionVideoModal from './src/components/ActionVideoModal';
+import { AVATARS } from './src/constants/avatars';
 
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LandingScreen from './src/screens/LandingScreen';
@@ -94,6 +96,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationCleanupRef = useRef(null);
   const prevScreenRef = useRef(currentScreen);
   const [treasureChestRefreshKey, setTreasureChestRefreshKey] = useState(0);
+
+  const [showActionVideo, setShowActionVideo] = useState(false);
+  const [actionVideoData, setActionVideoData] = useState({
+    message: '',
+    coinsEarned: 0,
+  });
 
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
@@ -712,6 +720,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     }
   };
 
+  const triggerActionVideo = (message, coinsEarned = 0) => {
+    console.log('[App] Triggering action video:', message, coinsEarned);
+    setActionVideoData({ message, coinsEarned });
+    setShowActionVideo(true);
+  };
+
   const handleClaimDailyBonus = async () => {
     if (!user || !user.token) {
       Alert.alert('Error', 'You must be logged in to claim daily rewards');
@@ -727,9 +741,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       });
 
       if (response.success) {
+        const bonusAmount = response.totalCoins - coins;
         setCoins(response.totalCoins);
         setLoginStreak(response.newStreak);
-        Alert.alert('Daily Bonus!', response.message);
+        
+        triggerActionVideo(`Daily Bonus Claimed! 🎉\nDay ${response.newStreak} Streak`, bonusAmount);
       } else {
         Alert.alert('Error', response.message || 'Failed to claim daily reward');
       }
@@ -815,7 +831,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       console.log('[TreasureChest] Stage completed (offline), incrementing refreshKey to update coin balance');
       setTreasureChestRefreshKey(prev => prev + 1);
       
-      Alert.alert('🎉 Congratulations!', `You completed this stage (offline mode)!`);
+      triggerActionVideo('Stage Complete! 🏆', stageCoins);
       return;
     }
 
@@ -855,7 +871,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       });
       
       if (actualCoinsEarned > 0) {
-        Alert.alert('🎉 Congratulations!', `You completed this stage and earned ${actualCoinsEarned} coins!`);
+        triggerActionVideo('Stage Complete! 🏆', actualCoinsEarned);
       } else {
         Alert.alert('🎉 Stage Completed!', `Stage marked complete! (Coins were already earned previously)`);
       }
@@ -953,7 +969,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
                 return prev + 1;
               });
               
-              // Note: Success alert is shown in RoadmapScreen after backend completion
+              // Trigger action video for substage completion
+              if (subStageCoins > 0) {
+                triggerActionVideo('Substage Complete! 🎯', subStageCoins);
+              }
+              
               return { ...subStage, completed: true };
             }
             return subStage;
@@ -1518,6 +1538,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             onNavigate={handleNavigateInternal}
           />
         )}
+
+      {/* Global Action Video Modal */}
+      {user && user.avatarType && (
+        <ActionVideoModal
+          visible={showActionVideo}
+          onClose={() => setShowActionVideo(false)}
+          avatarType={user.avatarType}
+          message={actionVideoData.message}
+          coinsEarned={actionVideoData.coinsEarned}
+        />
+      )}
     </SafeAreaView>
   );
 };
