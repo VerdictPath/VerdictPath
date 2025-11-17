@@ -56,6 +56,7 @@ import IndividualSubscriptionScreen from './src/screens/IndividualSubscriptionSc
 import LawFirmSubscriptionScreen from './src/screens/LawFirmSubscriptionScreen';
 import MedicalProviderSubscriptionScreen from './src/screens/MedicalProviderSubscriptionScreen';
 import NegotiationsScreen from './src/screens/NegotiationsScreen';
+import AvatarSelectionScreen from './src/screens/AvatarSelectionScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -1116,6 +1117,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setCurrentScreen('medicalprovider-dashboard');
   };
 
+  const handleAvatarSelected = async (avatarType) => {
+    const updatedUser = {
+      ...user,
+      avatarType: avatarType
+    };
+    setUser(updatedUser);
+    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   if (hasSeenOnboarding === null) {
     return null;
   }
@@ -1528,6 +1538,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <MedicalProviderSubscriptionScreen
           token={user?.token}
           onBack={() => setCurrentScreen('medicalprovider-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'avatar-selection' && (
+        <AvatarSelectionScreen
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+          onAvatarSelected={handleAvatarSelected}
         />
       )}
       
