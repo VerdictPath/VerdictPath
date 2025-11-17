@@ -15,7 +15,7 @@ export const AVATARS = {
     description: 'Fair and balanced - upholds truth and righteousness',
     calmVideo: null,
     actionVideo: null,
-    thumbnail: null,
+    thumbnail: require('../../assets/avatars/navigator/navigator-thumbnail.png'),
     primaryColor: '#0F766E',
     accentColor: '#5EEAD4',
   },
