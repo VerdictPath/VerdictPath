@@ -116,6 +116,7 @@ const RegisterScreen = ({
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          autoComplete="email"
         />
 
         <TextInput
@@ -124,6 +125,7 @@ const RegisterScreen = ({
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoComplete="new-password"
         />
 
         <TextInput
@@ -132,6 +134,7 @@ const RegisterScreen = ({
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
+          autoComplete="new-password"
         />
 
         {userType === USER_TYPES.INDIVIDUAL && (
