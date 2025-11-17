@@ -29,7 +29,7 @@ import VideosScreen from './src/screens/VideosScreen';
 import MedicalHubScreen from './src/screens/MedicalHubScreen';
 import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen.jsx';
-import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
+import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen.jsx';
 import DisbursementDashboardScreen from './src/screens/DisbursementDashboardScreen';
 import ReceivedDisbursementsScreen from './src/screens/ReceivedDisbursementsScreen';
 import StripeConnectOnboardingScreen from './src/screens/StripeConnectOnboardingScreen';
