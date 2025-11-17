@@ -513,6 +513,163 @@ const removeLawFirmConnection = async (req, res) => {
   }
 };
 
+// Law Firm - Get Connected Medical Providers
+const getLawFirmMedicalProviders = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ 
+        error: 'Only law firms can access medical provider connections.' 
+      });
+    }
+
+    const result = await db.query(
+      `SELECT 
+        mplf.id as connection_id,
+        mplf.connected_date,
+        mplf.connection_status,
+        mp.id,
+        mp.email,
+        mp.provider_name,
+        mp.provider_code,
+        mp.subscription_tier,
+        (SELECT COUNT(*) FROM medical_provider_patients WHERE medical_provider_id = mp.id) as patient_count
+      FROM medical_provider_law_firms mplf
+      INNER JOIN medical_providers mp ON mplf.medical_provider_id = mp.id
+      WHERE mplf.law_firm_id = $1 
+        AND mplf.connection_status = 'active'
+      ORDER BY mplf.connected_date DESC`,
+      [lawFirmId]
+    );
+
+    res.json({
+      success: true,
+      medicalProviders: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching medical provider connections:', error);
+    res.status(500).json({ error: 'Failed to fetch medical provider connections' });
+  }
+};
+
+// Law Firm - Add Medical Provider Connection
+const addMedicalProviderConnection = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const userType = req.user.userType;
+    const { medicalProviderCode } = req.body;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ 
+        error: 'Only law firms can add medical provider connections.' 
+      });
+    }
+
+    if (!medicalProviderCode || typeof medicalProviderCode !== 'string') {
+      return res.status(400).json({ error: 'Valid medical provider code is required' });
+    }
+
+    const trimmedCode = medicalProviderCode.trim().toUpperCase();
+
+    const providerResult = await db.query(
+      `SELECT id, email, provider_name, provider_code
+      FROM medical_providers
+      WHERE provider_code = $1`,
+      [trimmedCode]
+    );
+
+    if (providerResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Medical provider not found with this code' });
+    }
+
+    const provider = providerResult.rows[0];
+
+    // Check if already connected
+    const existingConnection = await db.query(
+      `SELECT id FROM medical_provider_law_firms
+      WHERE law_firm_id = $1 AND medical_provider_id = $2 AND connection_status = 'active'`,
+      [lawFirmId, provider.id]
+    );
+
+    if (existingConnection.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'Already connected to this medical provider',
+        medicalProvider: provider
+      });
+    }
+
+    // Create new connection
+    await db.query(
+      `INSERT INTO medical_provider_law_firms (law_firm_id, medical_provider_id, connection_status, connected_date, created_at, updated_at)
+      VALUES ($1, $2, 'active', NOW(), NOW(), NOW())`,
+      [lawFirmId, provider.id]
+    );
+
+    res.json({
+      success: true,
+      message: `Successfully connected with ${provider.provider_name || provider.email}!`,
+      medicalProvider: provider
+    });
+  } catch (error) {
+    console.error('Error adding medical provider connection:', error);
+    res.status(500).json({ error: 'Failed to add medical provider connection' });
+  }
+};
+
+// Law Firm - Remove Medical Provider Connection
+const removeMedicalProviderConnection = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const userType = req.user.userType;
+    const { providerId } = req.body;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ 
+        error: 'Only law firms can remove medical provider connections.' 
+      });
+    }
+
+    if (!providerId) {
+      return res.status(400).json({ 
+        error: 'Medical provider ID is required.' 
+      });
+    }
+
+    const existingConnection = await db.query(
+      `SELECT id FROM medical_provider_law_firms
+      WHERE law_firm_id = $1 AND medical_provider_id = $2 AND connection_status = 'active'`,
+      [lawFirmId, providerId]
+    );
+
+    if (existingConnection.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'No active connection found with this medical provider.' 
+      });
+    }
+
+    // Mark as disconnected instead of deleting (preserve history)
+    await db.query(
+      `UPDATE medical_provider_law_firms
+      SET connection_status = 'disconnected',
+          disconnected_date = NOW(),
+          updated_at = NOW()
+      WHERE law_firm_id = $1 AND medical_provider_id = $2 AND connection_status = 'active'`,
+      [lawFirmId, providerId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Successfully removed medical provider connection.'
+    });
+  } catch (error) {
+    console.error('Error removing medical provider connection:', error);
+    res.status(500).json({ error: 'Failed to remove medical provider connection' });
+  }
+};
+
 module.exports = {
   getMyConnections,
   updateLawFirm,
@@ -521,5 +678,8 @@ module.exports = {
   removeMedicalProvider,
   getMedicalProviderLawFirms,
   addLawFirmConnection,
-  removeLawFirmConnection
+  removeLawFirmConnection,
+  getLawFirmMedicalProviders,
+  addMedicalProviderConnection,
+  removeMedicalProviderConnection
 };
