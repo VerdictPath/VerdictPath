@@ -106,7 +106,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
                   <Image
                     source={avatar.thumbnail}
                     style={styles.thumbnailImage}
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                 ) : (
                   <View style={[styles.placeholderImage, { backgroundColor: avatar.primaryColor }]}>
