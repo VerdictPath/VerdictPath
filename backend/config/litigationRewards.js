@@ -45,41 +45,59 @@ const SUBSTAGE_COINS = {
   'med-2': 10,   // Attend Mediation
   'med-3': 7,    // Outcome Documented
   
-  // Pre-Trial (Stage 5)
-  'pt-1': 8,     // Pretrial Motions
-  'pt-2': 10,    // Summary Judgment
-  'pt-3': 7,     // Pretrial Conference
-  'pt-4': 8,     // Jury Selection
-  'pt-5': 7,     // Trial Brief
+  // Deposition (Stage 5)
+  'dep-1': 25,   // Deposition Preparation
+  'dep-2': 25,   // Your Deposition
+  'dep-3': 25,   // Opposing Party Deposition
+  'dep-4': 25,   // Expert Deposition
   
-  // Trial (Stage 6)
-  'tr-1': 12,    // Opening Statements
-  'tr-2': 15,    // Evidence Presentation
-  'tr-3': 10,    // Witness Testimony
-  'tr-4': 13,    // Closing Arguments
-  'tr-5': 10,    // Jury Instructions
+  // Trial Preparation (Stage 6)
+  'tp-1': 25,    // Prepare your Testimony
+  'tp-2': 20,    // Confirm Exhibits and Evidence
+  'tp-3': 15,    // Arrange to miss work
+  'tp-4': 15,    // Arrange Transportation
+  'tp-5': 25,    // Discuss Trial Strategy
   
-  // Verdict (Stage 7)
-  'ver-1': 15,   // Jury Deliberation
-  'ver-2': 20,   // Verdict Rendered
-  'ver-3': 15,   // Post-Trial Motions
+  // Trial (Stage 7)
+  'trial-1': 10,    // PreTrial motions
+  'trial-2': 10,    // Jury selection / voir dire
+  'trial-3': 15,    // Opening statements
+  'trial-4': 15,    // Plaintiff's witness testimony
+  'trial-5': 15,    // Plaintiff's evidence
+  'trial-6': 5,     // Plaintiff rests
+  'trial-7': 5,     // Motions
+  'trial-8': 15,    // Defense's witness testimony
+  'trial-9': 15,    // Defense's evidence
+  'trial-10': 5,    // Defense rests
+  'trial-11': 5,    // Motions
+  'trial-12': 15,   // Closing arguments
+  'trial-13': 10,   // Jury instructions
+  'trial-14': 10,   // Jury deliberations
+  'trial-15': 5,    // Jury questions
+  'trial-16': 20,   // Verdict
   
-  // Appeal (Stage 8)
-  'app-1': 10,   // Notice of Appeal
-  'app-2': 12,   // Brief Filing
-  'app-3': 8,    // Oral Arguments
+  // Settlement (Stage 8)
+  'settle-1': 10,   // Negotiations
+  'settle-2': 10,   // Agreement to settle
+  'settle-3': 8,    // Settlement release
+  'settle-4': 7,    // Lien affidavit
+  'settle-5': 8,    // Settlement statement
+  'settle-6': 7,    // Disbursement to attorney
+  'settle-7': 7,    // Attorney fees/costs/case expenses disbursed
+  'settle-8': 7,    // Medical provider payments
+  'settle-9': 6,    // Funding payments
+  'settle-10': 15,  // Client disbursement
   
   // Case Resolution (Stage 9)
-  'res-1': 20,   // Settlement Agreement
-  'res-2': 25,   // Final Judgment
-  'res-3': 30    // Case Closed
+  'cr-1': 100,      // Judgment Entry
+  'cr-2': 100       // Case Closure
 };
 
 // Get canonical coins for a stage
 function getStageCoins(stageId) {
   const coins = STAGE_COINS[stageId];
   if (coins === undefined) {
-    console.warn(`Unknown stage ID: ${stageId}, defaulting to 0 coins`);
+    console.warn(`[LitigationRewards] Unknown stage ID: ${stageId}, defaulting to 0 coins`);
     return 0;
   }
   return coins;
@@ -89,9 +107,10 @@ function getStageCoins(stageId) {
 function getSubstageCoins(substageId) {
   const coins = SUBSTAGE_COINS[substageId];
   if (coins === undefined) {
-    console.warn(`Unknown substage ID: ${substageId}, defaulting to 0 coins`);
+    console.warn(`[LitigationRewards] Unknown substage ID: ${substageId}, defaulting to 0 coins`);
     return 0;
   }
+  console.log(`[LitigationRewards] Substage ${substageId} rewards ${coins} coins`);
   return coins;
 }
 
