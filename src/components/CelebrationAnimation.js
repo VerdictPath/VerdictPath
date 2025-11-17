@@ -101,14 +101,14 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
       try {
         await videoRef.current.unloadAsync();
         await videoRef.current.loadAsync(
-          require('../../attached_assets/the_treasure_chest_lid_bursts_open_backwards_1763358610920.mp4'),
+          require('../../attached_assets/raining_small_gold_coins_from_the_sky_1763417404596.mp4'),
           {
             shouldPlay: true,
             isLooping: false,
             volume: 0.8,
           }
         );
-        console.log('[CelebrationAnimation] Playing treasure chest video');
+        console.log('[CelebrationAnimation] Playing raining coins celebration video');
       } catch (error) {
         console.error('[CelebrationAnimation] Video error:', error);
       }
@@ -175,11 +175,11 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
           </View>
           
           <View style={styles.messageContainer}>
-            <Text style={styles.congratsText}>⚡ TREASURE FOUND! ⚡</Text>
+            <Text style={styles.congratsText}>💰 COINS RAINING DOWN! 💰</Text>
             <View style={styles.coinsContainer}>
-              <Text style={styles.coinsBig}>💰</Text>
+              <Text style={styles.coinsBig}>🪙</Text>
               <Text style={styles.coinsEarnedText}>+{coinsEarned}</Text>
-              <Text style={styles.coinsBig}>💰</Text>
+              <Text style={styles.coinsBig}>🪙</Text>
             </View>
           </View>
         </Animated.View>
