@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  Image,
 } from 'react-native';
 import AvatarVideoBackground from '../components/AvatarVideoBackground';
 import ActionVideoModal from '../components/ActionVideoModal';
@@ -120,7 +121,7 @@ const DashboardScreen = ({
 
         <View style={styles.quickActions}>
           <QuickActionButton
-            icon="🗺️"
+            imageSource={require('../../attached_assets/MAP_1763356928680.png')}
             title="Roadmap"
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('roadmap')}
@@ -206,12 +207,20 @@ const DashboardScreen = ({
   );
 };
 
-const QuickActionButton = ({ icon, title, color, onPress }) => (
+const QuickActionButton = ({ icon, imageSource, title, color, onPress }) => (
   <TouchableOpacity 
     style={[styles.quickActionCard, { borderColor: color }]}
     onPress={onPress}
   >
-    <Text style={styles.quickActionIcon}>{icon}</Text>
+    {imageSource ? (
+      <Image 
+        source={imageSource} 
+        style={styles.quickActionImage}
+        resizeMode="contain"
+      />
+    ) : (
+      <Text style={styles.quickActionIcon}>{icon}</Text>
+    )}
     <Text style={styles.quickActionTitle}>{title}</Text>
   </TouchableOpacity>
 );
@@ -346,6 +355,12 @@ const styles = StyleSheet.create({
   quickActionIcon: {
     fontSize: 44,
     marginBottom: 12,
+  },
+  quickActionImage: {
+    width: 50,
+    height: 50,
+    marginBottom: 12,
+    borderRadius: 8,
   },
   quickActionTitle: {
     color: '#FFFFFF',
