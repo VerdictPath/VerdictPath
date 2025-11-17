@@ -44,3 +44,56 @@ export const theme = {
     error: '#8C3B2A',
   }
 };
+
+export const lawFirmTheme = {
+  colors: {
+    // Black backgrounds
+    black: '#000000',
+    darkBlack: '#0A0A0A',
+    charcoal: '#1A1A1A',
+    darkCharcoal: '#121212',
+    
+    // Glass Blue tones
+    glassBlue: 'rgba(30, 144, 255, 0.15)',
+    glassBlueBorder: 'rgba(30, 144, 255, 0.3)',
+    glassBlueHover: 'rgba(30, 144, 255, 0.25)',
+    
+    // Blue accents
+    primaryBlue: '#1E90FF',
+    royalBlue: '#4169E1',
+    deepBlue: '#0066CC',
+    lightBlue: '#87CEEB',
+    electricBlue: '#00BFFF',
+    
+    // Professional grays
+    steel: '#778899',
+    slate: '#708090',
+    silver: '#C0C0C0',
+    lightGray: '#D3D3D3',
+    
+    // Text colors
+    white: '#FFFFFF',
+    offWhite: '#F5F5F5',
+    lightText: '#E0E0E0',
+    mutedText: '#A0A0A0',
+    
+    // Accent colors
+    success: '#00C853',
+    warning: '#FFB300',
+    error: '#FF3D00',
+    info: '#00B0FF',
+    
+    // Themed mappings for compatibility
+    primary: '#1E90FF',
+    primaryDark: '#0066CC',
+    secondary: '#4169E1',
+    background: '#000000',
+    surface: '#1A1A1A',
+    surfaceLight: '#121212',
+    text: '#FFFFFF',
+    textSecondary: '#E0E0E0',
+    textLight: '#A0A0A0',
+    border: 'rgba(30, 144, 255, 0.3)',
+    accent: '#00BFFF',
+  }
+};
