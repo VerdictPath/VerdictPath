@@ -21,7 +21,6 @@ const DashboardScreen = ({
   coins,
   loginStreak,
   onClaimBonus,
-  onConvertCoins,
   onNavigate,
   onLogout,
 }) => {
@@ -169,15 +168,6 @@ const DashboardScreen = ({
             onPress={() => onNavigate('badges')}
           />
         </View>
-
-        <TouchableOpacity 
-          style={styles.convertButton}
-          onPress={onConvertCoins}
-        >
-          <Text style={styles.convertButtonText}>
-            💰 Convert Coins to Credits
-          </Text>
-        </TouchableOpacity>
 
         <TouchableOpacity 
           style={[
@@ -367,25 +357,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  convertButton: {
-    backgroundColor: 'rgba(255, 215, 0, 0.25)',
-    padding: 18,
-    borderRadius: 15,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFD700',
-    marginBottom: 15,
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  convertButtonText: {
-    color: '#FFD700',
-    fontSize: 18,
-    fontWeight: '700',
   },
   treasureButton: {
     backgroundColor: 'rgba(139, 69, 19, 0.4)',
