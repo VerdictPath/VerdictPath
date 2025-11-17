@@ -5,8 +5,15 @@ const VALID_AVATARS = ['captain', 'navigator', 'strategist', 'advocate'];
 const selectAvatar = async (req, res) => {
   const { avatarType } = req.body;
   const userId = req.user.id;
+  const userType = req.user.userType;
 
   try {
+    if (userType !== 'individual') {
+      return res.status(403).json({ 
+        error: 'Avatar selection is only available for individual users' 
+      });
+    }
+
     if (!avatarType || !VALID_AVATARS.includes(avatarType.toLowerCase())) {
       return res.status(400).json({ 
         error: 'Invalid avatar type. Must be one of: captain, navigator, strategist, advocate' 
@@ -42,8 +49,15 @@ const selectAvatar = async (req, res) => {
 
 const getCurrentAvatar = async (req, res) => {
   const userId = req.user.id;
+  const userType = req.user.userType;
 
   try {
+    if (userType !== 'individual') {
+      return res.status(403).json({ 
+        error: 'Avatar features are only available for individual users' 
+      });
+    }
+
     const query = `
       SELECT avatar_type 
       FROM users 

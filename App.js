@@ -1541,7 +1541,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'avatar-selection' && (
+      {currentScreen === 'avatar-selection' && user?.userType === 'individual' && (
         <AvatarSelectionScreen
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
@@ -1557,8 +1557,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           />
         )}
 
-      {/* Global Action Video Modal */}
-      {user && user.avatarType && (
+      {/* Global Action Video Modal - Individual Users Only */}
+      {user && user.userType === 'individual' && user.avatarType && (
         <ActionVideoModal
           visible={showActionVideo}
           onClose={() => setShowActionVideo(false)}
