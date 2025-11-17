@@ -33,7 +33,7 @@ export const AVATARS = {
     id: 'advocate',
     name: 'The Judge',
     description: 'Wise and authoritative - guides you with experience',
-    calmVideo: null,
+    calmVideo: require('../../assets/avatars/advocate/advocate-calm.mp4'),
     actionVideo: require('../../assets/avatars/advocate/advocate-action.mp4'),
     thumbnail: require('../../assets/avatars/advocate/advocate-thumbnail.png'),
     primaryColor: '#DC2626',
