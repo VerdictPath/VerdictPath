@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { theme } from '../styles/theme';
+import { lawFirmTheme as theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
