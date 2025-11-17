@@ -12,8 +12,10 @@ import {
 import AvatarVideoBackground from '../components/AvatarVideoBackground';
 import ActionVideoModal from '../components/ActionVideoModal';
 import InviteModal from '../components/InviteModal';
+import ConnectionsModal from '../components/ConnectionsModal';
 import { AVATARS } from '../constants/avatars';
 import { useVideoPreloader } from '../hooks/useVideoPreloader';
+import { API_BASE_URL } from '../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +31,12 @@ const DashboardScreen = ({
   const [actionMessage, setActionMessage] = useState('');
   const [actionCoins, setActionCoins] = useState(0);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
+  const [connections, setConnections] = useState({
+    lawFirm: null,
+    medicalProviders: []
+  });
+  const [loadingConnections, setLoadingConnections] = useState(true);
 
   const avatarType = user?.avatarType || 'captain';
   const selectedAvatar = AVATARS[avatarType.toUpperCase()] || AVATARS.CAPTAIN;
@@ -38,6 +46,40 @@ const DashboardScreen = ({
   useEffect(() => {
     console.log('[Dashboard] Videos loaded:', videosLoaded);
   }, [videosLoaded]);
+
+  useEffect(() => {
+    fetchConnections();
+  }, []);
+
+  const fetchConnections = async () => {
+    try {
+      setLoadingConnections(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConnections({
+          lawFirm: data.lawFirm,
+          medicalProviders: data.medicalProviders || []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching connections:', error);
+    } finally {
+      setLoadingConnections(false);
+    }
+  };
+
+  const handleConnectionsClose = () => {
+    setConnectionsModalVisible(false);
+    fetchConnections();
+  };
 
   const handleClaimBonus = async () => {
     try {
@@ -179,6 +221,12 @@ const DashboardScreen = ({
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('badges')}
           />
+          <QuickActionButton
+            icon="🔗"
+            title="Connections"
+            color={selectedAvatar.accentColor}
+            onPress={() => setConnectionsModalVisible(true)}
+          />
         </View>
 
         <TouchableOpacity 
@@ -209,6 +257,12 @@ const DashboardScreen = ({
       <InviteModal
         visible={inviteModalVisible}
         onClose={() => setInviteModalVisible(false)}
+        user={user}
+      />
+
+      <ConnectionsModal
+        visible={connectionsModalVisible}
+        onClose={handleConnectionsClose}
         user={user}
       />
     </View>
