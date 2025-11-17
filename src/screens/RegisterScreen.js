@@ -283,23 +283,23 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderWidth: 2,
-    borderColor: '#bdc3c7',
-    backgroundColor: '#fff',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     marginHorizontal: 5,
     borderRadius: 8,
     alignItems: 'center',
   },
   toggleButtonActive: {
     borderColor: '#3498db',
-    backgroundColor: '#3498db',
+    backgroundColor: 'rgba(52, 152, 219, 0.7)',
   },
   toggleText: {
     fontSize: 12,
-    color: '#7f8c8d',
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   toggleTextActive: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
   disclaimer: {
     fontSize: 12,

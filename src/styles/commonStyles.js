@@ -41,13 +41,14 @@ export const commonStyles = StyleSheet.create({
     fontWeight: '600',
   },
   input: {
-    backgroundColor: theme.colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     padding: 15,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.secondary,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     marginBottom: 15,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   linkText: {
     color: theme.colors.primary,
