@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
-import { lawFirmTheme as theme } from '../styles/theme';
+import { theme } from '../styles/theme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const LAW_FIRM_PRICING = {

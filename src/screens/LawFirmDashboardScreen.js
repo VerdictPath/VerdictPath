@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
-import { lawFirmTheme as theme } from '../styles/theme';
+import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';

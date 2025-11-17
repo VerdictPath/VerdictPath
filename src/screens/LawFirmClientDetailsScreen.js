@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { lawFirmTheme as theme } from '../styles/theme';
+import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {

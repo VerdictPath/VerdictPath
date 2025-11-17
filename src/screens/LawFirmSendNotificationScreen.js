@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { lawFirmTheme as theme } from '../styles/theme';
+import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const NOTIFICATION_TEMPLATES = [
