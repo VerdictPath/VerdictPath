@@ -22,7 +22,7 @@ const selectAvatar = async (req, res) => {
 
     const updateQuery = `
       UPDATE users 
-      SET avatar_type = $1, updated_at = NOW()
+      SET avatar_type = $1
       WHERE id = $2
       RETURNING id, avatar_type
     `;
