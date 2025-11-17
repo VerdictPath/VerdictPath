@@ -24,7 +24,7 @@ export const AVATARS = {
     name: 'The Paralegal',
     description: 'Organized and thorough - manages every detail expertly',
     calmVideo: require('../../assets/avatars/strategist/strategist-calm.mp4'),
-    actionVideo: null,
+    actionVideo: require('../../assets/avatars/strategist/strategist-action.mp4'),
     thumbnail: require('../../assets/avatars/strategist/strategist-thumbnail.png'),
     primaryColor: '#7C3AED',
     accentColor: '#C4B5FD',
