@@ -529,6 +529,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         visible={connectionsModalVisible}
         onClose={() => setConnectionsModalVisible(false)}
         user={user}
+        userType="lawfirm"
       />
 
       <InviteModal

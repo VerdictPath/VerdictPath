@@ -3,12 +3,14 @@ import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, ActivityInd
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 
-const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
+const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userType = 'individual' }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lawFirmCode, setLawFirmCode] = useState('');
   const [medicalProviderCode, setMedicalProviderCode] = useState('');
   const [currentConnections, setCurrentConnections] = useState(null);
+  
+  const isLawFirm = userType === 'lawfirm';
 
   useEffect(() => {
     if (visible && user?.token) {
@@ -167,9 +169,13 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
           ) : (
             <View style={styles.content}>
               <Text style={styles.description}>
-                Connect with your law firm and medical provider to share your case information securely.
+                {isLawFirm 
+                  ? 'Manage your medical provider connections to access client medical records and billing information.'
+                  : 'Connect with your law firm and medical provider to share your case information securely.'
+                }
               </Text>
 
+              {!isLawFirm && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>⚖️ Law Firm Connection</Text>
                 {currentConnections?.lawFirm ? (
@@ -205,6 +211,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
                   )}
                 </TouchableOpacity>
               </View>
+              )}
 
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>🏥 Medical Provider Connections</Text>
@@ -257,7 +264,10 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated }) => {
               <View style={styles.infoBox}>
                 <Text style={styles.infoIcon}>ℹ️</Text>
                 <Text style={styles.infoText}>
-                  You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.
+                  {isLawFirm
+                    ? 'Connect with medical providers using their connection codes. This allows you to access client medical records and negotiate bills directly.'
+                    : 'You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.'
+                  }
                 </Text>
               </View>
             </View>
