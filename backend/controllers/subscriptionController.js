@@ -11,10 +11,21 @@ const INDIVIDUAL_PRICING = {
 const updateLawFirmSubscription = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
+    
+    // DEBUG: Log the entire request body to see what's being received
+    console.log('[Subscription Update] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('[Subscription Update] Content-Type:', req.headers['content-type']);
+    
     const { subscriptionTier, firmSize, planType: topLevelPlanType } = req.body;
 
     if (!subscriptionTier) {
-      return res.status(400).json({ error: 'Subscription tier is required' });
+      console.log('[Subscription Update] ERROR: subscriptionTier is missing or undefined');
+      console.log('[Subscription Update] Received keys:', Object.keys(req.body));
+      return res.status(400).json({ 
+        error: 'Subscription tier is required',
+        receivedBody: req.body,
+        receivedKeys: Object.keys(req.body)
+      });
     }
 
     // Extract planType - prefer top level, fall back to firmSize for backward compatibility
