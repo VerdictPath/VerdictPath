@@ -3,9 +3,9 @@ export const AVATARS = {
     id: 'captain',
     name: 'The Captain',
     description: 'Bold and adventurous - leads the voyage through litigation',
-    calmVideo: require('../../assets/avatars/captain/captain-calm.mp4'),
-    actionVideo: require('../../assets/avatars/captain/captain-action.mp4'),
-    thumbnail: require('../../assets/avatars/captain/captain-thumbnail.png'),
+    calmVideo: null,
+    actionVideo: null,
+    thumbnail: null,
     primaryColor: '#1E40AF',
     accentColor: '#60A5FA',
   },
@@ -13,9 +13,9 @@ export const AVATARS = {
     id: 'navigator',
     name: 'The Navigator',
     description: 'Strategic and precise - charts the course to victory',
-    calmVideo: require('../../assets/avatars/navigator/navigator-calm.mp4'),
-    actionVideo: require('../../assets/avatars/navigator/navigator-action.mp4'),
-    thumbnail: require('../../assets/avatars/navigator/navigator-thumbnail.png'),
+    calmVideo: null,
+    actionVideo: null,
+    thumbnail: null,
     primaryColor: '#0F766E',
     accentColor: '#5EEAD4',
   },
@@ -23,9 +23,9 @@ export const AVATARS = {
     id: 'strategist',
     name: 'The Strategist',
     description: 'Calculated and wise - plans every move carefully',
-    calmVideo: require('../../assets/avatars/strategist/strategist-calm.mp4'),
-    actionVideo: require('../../assets/avatars/strategist/strategist-action.mp4'),
-    thumbnail: require('../../assets/avatars/strategist/strategist-thumbnail.png'),
+    calmVideo: null,
+    actionVideo: null,
+    thumbnail: null,
     primaryColor: '#7C3AED',
     accentColor: '#C4B5FD',
   },
@@ -33,9 +33,9 @@ export const AVATARS = {
     id: 'advocate',
     name: 'The Advocate',
     description: 'Passionate and determined - fights for justice',
-    calmVideo: require('../../assets/avatars/advocate/advocate-calm.mp4'),
-    actionVideo: require('../../assets/avatars/advocate/advocate-action.mp4'),
-    thumbnail: require('../../assets/avatars/advocate/advocate-thumbnail.png'),
+    calmVideo: null,
+    actionVideo: null,
+    thumbnail: null,
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
   },
@@ -48,3 +48,9 @@ export const ACTION_TRIGGERS = {
   ACHIEVEMENT: 'achievement',
   MILESTONE: 'milestone',
 };
+
+// NOTE: To enable video playback, add these video files:
+// assets/avatars/captain/captain-calm.mp4
+// assets/avatars/captain/captain-action.mp4
+// assets/avatars/captain/captain-thumbnail.png
+// (Same pattern for navigator, strategist, advocate)
