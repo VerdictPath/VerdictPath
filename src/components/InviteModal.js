@@ -31,7 +31,7 @@ const InviteModal = ({ visible, onClose, user }) => {
   const fetchInviteCode = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.INVITES.MY_CODE}`, {
+      const response = await fetch(API_ENDPOINTS.INVITES.MY_CODE, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
