@@ -35,7 +35,7 @@ export const AVATARS = {
     description: 'Wise and authoritative - guides you with experience',
     calmVideo: null,
     actionVideo: null,
-    thumbnail: null,
+    thumbnail: require('../../assets/avatars/advocate/advocate-thumbnail.png'),
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
   },
