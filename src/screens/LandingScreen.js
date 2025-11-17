@@ -143,8 +143,11 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     marginBottom: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   featureRow: {
     flexDirection: 'row',
@@ -153,8 +156,11 @@ const styles = StyleSheet.create({
   },
   featureItem: {
     fontSize: 16,
-    color: theme.colors.text,
+    color: '#FFFFFF',
     flex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   iconBadgeMap: {
     width: 40,
