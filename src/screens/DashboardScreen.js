@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AvatarVideoBackground from '../components/AvatarVideoBackground';
 import ActionVideoModal from '../components/ActionVideoModal';
+import InviteModal from '../components/InviteModal';
 import { AVATARS } from '../constants/avatars';
 import { useVideoPreloader } from '../hooks/useVideoPreloader';
 
@@ -27,6 +28,7 @@ const DashboardScreen = ({
   const [showActionVideo, setShowActionVideo] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [actionCoins, setActionCoins] = useState(0);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
   const avatarType = user?.avatarType || 'captain';
   const selectedAvatar = AVATARS[avatarType.toUpperCase()] || AVATARS.CAPTAIN;
@@ -69,7 +71,7 @@ const DashboardScreen = ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerLeft}>
             <Text style={styles.welcomeText}>Welcome back,</Text>
             <Text style={styles.userName}>
               {user?.firstName || 'Captain'} 
@@ -79,15 +81,25 @@ const DashboardScreen = ({
             </Text>
           </View>
           
-          <TouchableOpacity 
-            style={[
-              styles.avatarButton,
-              { backgroundColor: selectedAvatar.primaryColor }
-            ]}
-            onPress={() => onNavigate('avatar-selection')}
-          >
-            <Text style={styles.avatarButtonText}>Change Avatar</Text>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.inviteButton}
+              onPress={() => setInviteModalVisible(true)}
+            >
+              <Text style={styles.inviteIcon}>👍</Text>
+              <Text style={styles.inviteButtonText}>Invite</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.avatarButton,
+                { backgroundColor: selectedAvatar.primaryColor }
+              ]}
+              onPress={() => onNavigate('avatar-selection')}
+            >
+              <Text style={styles.avatarButtonText}>Change Avatar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.statsContainer}>
@@ -193,6 +205,12 @@ const DashboardScreen = ({
         message={actionMessage}
         coinsEarned={actionCoins}
       />
+
+      <InviteModal
+        visible={inviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
+        user={user}
+      />
     </View>
   );
 };
@@ -235,6 +253,13 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     marginTop: 60,
   },
+  headerLeft: {
+    flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'column',
+    gap: 10,
+  },
   welcomeText: {
     fontSize: 16,
     color: '#E0E0E0',
@@ -257,6 +282,30 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  inviteIcon: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  inviteButtonText: {
+    color: '#FFD700',
+    fontSize: 13,
+    fontWeight: '700',
   },
   avatarButton: {
     paddingHorizontal: 18,
