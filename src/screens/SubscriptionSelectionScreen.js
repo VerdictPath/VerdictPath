@@ -1271,22 +1271,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary
+    color: '#FFFFFF'
   },
   calculator: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 16,
     padding: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
     marginBottom: 20
@@ -1294,15 +1298,21 @@ const styles = StyleSheet.create({
   calculatorTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     marginBottom: 8,
-    textAlign: 'center'
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   calculatorSubtitle: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 24
+    marginBottom: 24,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   inputGroup: {
     marginBottom: 24
@@ -1310,23 +1320,29 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 4
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   inputHint: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     marginBottom: 8,
-    fontStyle: 'italic'
+    fontStyle: 'italic',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     padding: 16,
     fontSize: 18,
     borderWidth: 2,
-    borderColor: theme.colors.border,
-    color: theme.colors.text
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    color: '#FFFFFF'
   },
   planTypeSelector: {
     marginBottom: 24
@@ -1334,8 +1350,11 @@ const styles = StyleSheet.create({
   planTypeSelectorLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 12
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   planTypeButtons: {
     flexDirection: 'row',
@@ -1343,29 +1362,29 @@ const styles = StyleSheet.create({
   },
   planTypeButton: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'transparent'
+    borderColor: 'rgba(255, 255, 255, 0.3)'
   },
   planTypeButtonActive: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.primary
+    backgroundColor: 'rgba(212, 165, 116, 0.3)',
+    borderColor: '#d4a574'
   },
   planTypeButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     marginBottom: 4
   },
   planTypeButtonTextActive: {
-    color: theme.colors.primary
+    color: '#FFD700'
   },
   planTypeButtonSubtext: {
     fontSize: 13,
-    color: theme.colors.textSecondary
+    color: '#E0E0E0'
   },
   premiumBadgeSmall: {
     backgroundColor: '#FFD700',
@@ -1381,10 +1400,12 @@ const styles = StyleSheet.create({
   },
   billingToggle: {
     flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 4,
-    marginBottom: 24
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   toggleButton: {
     flex: 1,
@@ -1394,20 +1415,20 @@ const styles = StyleSheet.create({
     position: 'relative'
   },
   toggleActive: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(212, 165, 116, 0.4)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 2
   },
   toggleText: {
     fontSize: 16,
     fontWeight: '500',
-    color: theme.colors.textSecondary
+    color: '#E0E0E0'
   },
   toggleTextActive: {
-    color: theme.colors.primary,
+    color: '#FFD700',
     fontWeight: '600'
   },
   savingsBadge: {
@@ -1428,7 +1449,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
+    borderTopColor: 'rgba(255, 255, 255, 0.3)'
   },
   tierBadgeContainer: {
     flexDirection: 'row',
@@ -1442,12 +1463,15 @@ const styles = StyleSheet.create({
   tierName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: 4
+    color: '#FFD700',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   tierRange: {
     fontSize: 14,
-    color: theme.colors.textSecondary
+    color: '#E0E0E0'
   },
   premiumPill: {
     backgroundColor: '#FFD700',
@@ -1462,7 +1486,7 @@ const styles = StyleSheet.create({
   },
   tierDescription: {
     fontSize: 15,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     marginBottom: 16
   },
   priceDisplay: {
@@ -1473,11 +1497,14 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: '#FFD700',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   pricePeriod: {
     fontSize: 20,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     marginLeft: 4
   },
   priceDetails: {
@@ -1485,8 +1512,11 @@ const styles = StyleSheet.create({
   },
   perClientText: {
     fontSize: 16,
-    color: theme.colors.text,
-    marginBottom: 4
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   savingsHighlight: {
     fontSize: 16,
@@ -1494,16 +1524,21 @@ const styles = StyleSheet.create({
     color: '#4CAF50'
   },
   featuresContainer: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 20
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   featuresTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
-    marginBottom: 12
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   featureRow: {
     flexDirection: 'row',
@@ -1519,7 +1554,7 @@ const styles = StyleSheet.create({
   featureText: {
     flex: 1,
     fontSize: 15,
-    color: theme.colors.text,
+    color: '#FFFFFF',
     lineHeight: 22
   },
   selectButton: {
@@ -1557,7 +1592,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
+    borderTopColor: 'rgba(255, 255, 255, 0.3)'
   },
   pricingTableHeader: {
     marginBottom: 16
@@ -1565,16 +1600,21 @@ const styles = StyleSheet.create({
   pricingTableTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     marginBottom: 12,
-    textAlign: 'center'
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   pricingTableToggle: {
     flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 8,
     padding: 4,
-    alignSelf: 'center'
+    alignSelf: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   tableToggleButton: {
     paddingHorizontal: 20,
@@ -1582,14 +1622,14 @@ const styles = StyleSheet.create({
     borderRadius: 6
   },
   tableToggleActive: {
-    backgroundColor: '#fff'
+    backgroundColor: 'rgba(212, 165, 116, 0.4)'
   },
   tableToggleText: {
     fontSize: 14,
-    color: theme.colors.textSecondary
+    color: '#E0E0E0'
   },
   tableToggleTextActive: {
-    color: theme.colors.primary,
+    color: '#FFD700',
     fontWeight: '600'
   },
   pricingTable: {
@@ -1598,37 +1638,37 @@ const styles = StyleSheet.create({
   },
   pricingTableColumn: {
     width: 120,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'transparent'
+    borderColor: 'rgba(255, 255, 255, 0.3)'
   },
   pricingTableColumnActive: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.primary
+    backgroundColor: 'rgba(212, 165, 116, 0.3)',
+    borderColor: '#d4a574'
   },
   tableColumnName: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 4
   },
   tableColumnRange: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     marginBottom: 8
   },
   tableColumnPrice: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: '#FFD700'
   },
   tableColumnPeriod: {
     fontSize: 12,
-    color: theme.colors.textSecondary
+    color: '#E0E0E0'
   },
   additionalRevenueBox: {
     backgroundColor: '#E8F5E9',
@@ -1673,33 +1713,40 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 8
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   subtitle: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     textAlign: 'center',
-    marginBottom: 32
+    marginBottom: 32,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   planCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 16,
     padding: 24,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     position: 'relative'
   },
   planCardPremium: {
     borderColor: '#FFD700',
-    transform: [{ scale: 1.02 }]
+    transform: [{ scale: 1.02 }],
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
   },
   premiumBadgeTop: {
     position: 'absolute',
@@ -1718,8 +1765,11 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: 12
+    color: '#FFD700',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   planPrice: {
     flexDirection: 'row',
@@ -1729,11 +1779,14 @@ const styles = StyleSheet.create({
   planPriceAmount: {
     fontSize: 42,
     fontWeight: 'bold',
-    color: theme.colors.text
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   planPricePeriod: {
     fontSize: 18,
-    color: theme.colors.textSecondary,
+    color: '#E0E0E0',
     marginLeft: 4
   },
   planFeatures: {
