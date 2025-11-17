@@ -21,16 +21,34 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
   const fetchCurrentConnections = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
+      
+      if (isLawFirm) {
+        // Law firm fetches medical provider connections
+        const response = await fetch(`${API_BASE_URL}/api/connections/medical-providers`, {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentConnections(data);
-        setLawFirmCode(data.lawFirmCode || '');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentConnections({
+            medicalProviders: data.medicalProviders || []
+          });
+        }
+      } else {
+        // Individual user fetches both law firm and medical provider connections
+        const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentConnections(data);
+          setLawFirmCode(data.lawFirmCode || '');
+        }
       }
     } catch (error) {
       console.error('Error fetching connections:', error);
@@ -81,7 +99,13 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
 
     try {
       setSaving(true);
-      const response = await fetch(`${API_BASE_URL}/api/connections/add-medical-provider`, {
+      
+      // Use different endpoint based on user type
+      const endpoint = isLawFirm 
+        ? `${API_BASE_URL}/api/connections/add-medical-provider-lawfirm`
+        : `${API_BASE_URL}/api/connections/add-medical-provider`;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -111,7 +135,13 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
   const handleRemoveMedicalProvider = async (providerId) => {
     try {
       setSaving(true);
-      const response = await fetch(`${API_BASE_URL}/api/connections/remove-medical-provider`, {
+      
+      // Use different endpoint based on user type
+      const endpoint = isLawFirm
+        ? `${API_BASE_URL}/api/connections/remove-medical-provider-lawfirm`
+        : `${API_BASE_URL}/api/connections/remove-medical-provider`;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
