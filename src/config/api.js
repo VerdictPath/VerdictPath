@@ -105,6 +105,12 @@ export const API_ENDPOINTS = {
     REQUEST_CALL: `${API_BASE_URL}/api/negotiations/request-call`,
     LOG: (negotiationId) => `${API_BASE_URL}/api/negotiations/${negotiationId}/log`,
   },
+
+  // Avatar
+  AVATAR: {
+    SELECT: `${API_BASE_URL}/api/avatar/select`,
+    CURRENT: `${API_BASE_URL}/api/avatar/current`,
+  },
 };
 
 // ============================================================================
