@@ -83,10 +83,10 @@ const RoadmapScreen = ({
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
     mapContainer: {
-      minHeight: height * 1.2,
+      minHeight: height * 1.5,
     },
     pirateMap: {
-      minHeight: height * 1.1,
+      minHeight: height * 1.5,
     },
     modalContent: {
       maxHeight: height * 0.85,
@@ -804,7 +804,7 @@ const RoadmapScreen = ({
           <ImageBackground 
             source={require('../../attached_assets/MAP_1763356928680.png')}
             style={[styles.pirateMap, dynamicStyles.pirateMap]}
-            resizeMode="cover"
+            resizeMode="stretch"
             imageStyle={styles.treasureMapImage}
           >
             <View style={styles.mapOverlay}>
@@ -1024,16 +1024,13 @@ const styles = StyleSheet.create({
   },
   pirateMap: {
     flex: 1,
-    margin: 10,
-    borderRadius: 15,
-    borderWidth: 5,
-    borderColor: '#8b7355',
+    width: '100%',
     position: 'relative',
     overflow: 'hidden',
     backgroundColor: '#c9a86a',
   },
   treasureMapImage: {
-    borderRadius: 10,
+    resizeMode: 'cover',
   },
   mapOverlay: {
     position: 'absolute',
