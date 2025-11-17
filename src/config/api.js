@@ -21,9 +21,9 @@ export const API_BASE_URL = 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    REGISTER_CLIENT: `${API_BASE_URL}/api/auth/register-client`,
-    REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register-lawfirm`,
-    REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register-medicalprovider`,
+    REGISTER_CLIENT: `${API_BASE_URL}/api/auth/register/client`,
+    REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register/lawfirm`,
+    REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register/medicalprovider`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   },
