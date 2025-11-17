@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, Animated, StyleSheet, Dimensions } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
 
 const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 100 }) => {
+  const videoRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -18,6 +20,9 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
 
   useEffect(() => {
     if (visible) {
+      // Play video
+      playVideo();
+      
       // Reset animations
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.3);
@@ -80,16 +85,35 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
 
       Animated.parallel(confettiAnimations).start();
 
-      // Auto-dismiss after 1 second
+      // Auto-dismiss after video completes (extended duration)
       setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 200,
+          duration: 300,
           useNativeDriver: true,
         }).start(() => onComplete());
-      }, 1000);
+      }, 2500);
     }
   }, [visible]);
+
+  const playVideo = async () => {
+    if (videoRef.current) {
+      try {
+        await videoRef.current.unloadAsync();
+        await videoRef.current.loadAsync(
+          require('../../attached_assets/the_treasure_chest_lid_bursts_open_backwards_1763358610920.mp4'),
+          {
+            shouldPlay: true,
+            isLooping: false,
+            volume: 0.8,
+          }
+        );
+        console.log('[CelebrationAnimation] Playing treasure chest video');
+      } catch (error) {
+        console.error('[CelebrationAnimation] Video error:', error);
+      }
+    }
+  };
 
   if (!visible) return null;
 
@@ -119,7 +143,7 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
           />
         ))}
 
-        {/* Main celebration card */}
+        {/* Video celebration card */}
         <Animated.View
           style={[
             styles.celebrationCard,
@@ -133,22 +157,30 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
                     outputRange: [0, -20],
                   })
                 },
-                {
-                  rotate: rotateAnim.interpolate({
-                    inputRange: [0, 0.5, 1],
-                    outputRange: ['-5deg', '5deg', '0deg'],
-                  })
-                }
               ],
             },
           ]}
         >
-          <Text style={styles.treasure}>🏴‍☠️</Text>
-          <Text style={styles.congratsText}>⚡ TREASURE FOUND! ⚡</Text>
-          <View style={styles.coinsContainer}>
-            <Text style={styles.coinsBig}>💰</Text>
-            <Text style={styles.coinsEarnedText}>+{coinsEarned}</Text>
-            <Text style={styles.coinsBig}>💰</Text>
+          <View style={styles.videoContainer}>
+            <Video
+              ref={videoRef}
+              rate={1.0}
+              volume={0.8}
+              isMuted={false}
+              isLooping={false}
+              shouldPlay={visible}
+              resizeMode={ResizeMode.CONTAIN}
+              style={styles.video}
+            />
+          </View>
+          
+          <View style={styles.messageContainer}>
+            <Text style={styles.congratsText}>⚡ TREASURE FOUND! ⚡</Text>
+            <View style={styles.coinsContainer}>
+              <Text style={styles.coinsBig}>💰</Text>
+              <Text style={styles.coinsEarnedText}>+{coinsEarned}</Text>
+              <Text style={styles.coinsBig}>💰</Text>
+            </View>
           </View>
         </Animated.View>
       </View>
@@ -172,21 +204,32 @@ const styles = StyleSheet.create({
   celebrationCard: {
     backgroundColor: '#1a1a1a',
     borderRadius: 20,
-    padding: 25,
+    padding: 15,
     alignItems: 'center',
     borderWidth: 4,
     borderColor: '#FFD700',
-    width: width * 0.75,
-    maxWidth: 350,
+    width: width * 0.85,
+    maxWidth: 450,
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 15,
     elevation: 15,
   },
-  treasure: {
-    fontSize: 70,
-    marginBottom: 8,
+  videoContainer: {
+    width: '100%',
+    height: 250,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 15,
+    backgroundColor: '#000',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+  },
+  messageContainer: {
+    alignItems: 'center',
   },
   congratsText: {
     fontSize: 26,
