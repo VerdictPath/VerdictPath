@@ -25,7 +25,7 @@ export const AVATARS = {
     description: 'Organized and thorough - manages every detail expertly',
     calmVideo: null,
     actionVideo: null,
-    thumbnail: null,
+    thumbnail: require('../../assets/avatars/strategist/strategist-thumbnail.png'),
     primaryColor: '#7C3AED',
     accentColor: '#C4B5FD',
   },
