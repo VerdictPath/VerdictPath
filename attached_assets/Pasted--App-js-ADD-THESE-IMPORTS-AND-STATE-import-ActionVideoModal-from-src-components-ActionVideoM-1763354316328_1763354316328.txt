@@ -1,0 +1,212 @@
+// App.js - ADD THESE IMPORTS AND STATE
+
+import ActionVideoModal from './src/components/ActionVideoModal';
+import { AVATARS } from './src/constants/avatars';
+
+const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
+  // ... existing state ...
+  
+  // ADD THESE NEW STATES
+  const [showActionVideo, setShowActionVideo] = useState(false);
+  const [actionVideoData, setActionVideoData] = useState({
+    message: '',
+    coins: 0,
+  });
+
+  // ADD THIS HELPER FUNCTION
+  const triggerActionVideo = (message, coinsEarned = 0) => {
+    console.log('[App] Triggering action video:', message, coinsEarned);
+    setActionVideoData({ message, coinsEarned });
+    setShowActionVideo(true);
+  };
+
+  // UPDATE handleCompleteSubStage
+  const handleCompleteSubStage = async (stageId, subStageId, subStageCoins) => {
+    if (!user || !user.token) {
+      // Offline mode
+      setLitigationStages(prevStages =>
+        prevStages.map(stage => {
+          if (stage.id === stageId) {
+            const updatedSubStages = stage.subStages.map(subStage => {
+              if (subStage.id === subStageId && !subStage.completed) {
+                setCoins(prevCoins => prevCoins + subStageCoins);
+                setTreasureChestRefreshKey(prev => prev + 1);
+                
+                // Trigger action video
+                triggerActionVideo('Substage Complete! 🎯', subStageCoins);
+                
+                return { ...subStage, completed: true };
+              }
+              return subStage;
+            });
+
+            const allSubstagesComplete = updatedSubStages.every(sub => sub.completed);
+            return { 
+              ...stage, 
+              subStages: updatedSubStages,
+              completed: allSubstagesComplete ? true : stage.completed
+            };
+          }
+          return stage;
+        })
+      );
+      return;
+    }
+
+    try {
+      const response = await apiRequest(API_ENDPOINTS.LITIGATION.COMPLETE_SUBSTAGE, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          stageId: stageId,
+          substageId: subStageId,
+          coinsEarned: subStageCoins
+        })
+      });
+
+      // Update local state
+      setLitigationStages(prevStages =>
+        prevStages.map(stage => {
+          if (stage.id === stageId) {
+            const updatedSubStages = stage.subStages.map(subStage => {
+              if (subStage.id === subStageId && !subStage.completed) {
+                return { ...subStage, completed: true };
+              }
+              return subStage;
+            });
+
+            const allSubstagesComplete = updatedSubStages.every(sub => sub.completed);
+            return { 
+              ...stage, 
+              subStages: updatedSubStages,
+              completed: allSubstagesComplete ? true : stage.completed
+            };
+          }
+          return stage;
+        })
+      );
+
+      const actualCoinsEarned = response.coinsEarned || 0;
+      setCoins(prevCoins => prevCoins + actualCoinsEarned);
+      setTreasureChestRefreshKey(prev => prev + 1);
+
+      // Trigger action video
+      if (actualCoinsEarned > 0) {
+        triggerActionVideo('Substage Complete! 🎯', actualCoinsEarned);
+      }
+
+    } catch (error) {
+      console.error('Failed to complete substage:', error);
+    }
+  };
+
+  // UPDATE handleCompleteStage
+  const handleCompleteStage = async (stageId, stageCoins) => {
+    if (!user || !user.token) {
+      // Offline mode
+      setLitigationStages(prevStages => 
+        prevStages.map(s => 
+          s.id === stageId && !s.completed ? { ...s, completed: true } : s
+        )
+      );
+      setCoins(prevCoins => prevCoins + stageCoins);
+      setTreasureChestRefreshKey(prev => prev + 1);
+      
+      // Trigger action video
+      triggerActionVideo('Stage Complete! 🏆', stageCoins);
+      
+      return;
+    }
+
+    try {
+      const stage = litigationStages.find(s => s.id === stageId);
+      
+      const response = await apiRequest(API_ENDPOINTS.LITIGATION.COMPLETE_STAGE, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          stageId: stageId,
+          stageName: stage?.name || `Stage ${stageId}`,
+          coinsEarned: stageCoins,
+          allSubstagesCompleted: true
+        })
+      });
+      
+      setLitigationStages(prevStages => 
+        prevStages.map(s => 
+          s.id === stageId && !s.completed ? { ...s, completed: true } : s
+        )
+      );
+      
+      const actualCoinsEarned = response.coinsEarned || 0;
+      setCoins(prevCoins => prevCoins + actualCoinsEarned);
+      setTreasureChestRefreshKey(prev => prev + 1);
+      
+      // Trigger action video
+      if (actualCoinsEarned > 0) {
+        triggerActionVideo('Stage Complete! 🏆', actualCoinsEarned);
+      }
+
+    } catch (error) {
+      console.error('Failed to complete stage:', error);
+    }
+  };
+
+  // UPDATE handleClaimDailyBonus
+  const handleClaimDailyBonus = async () => {
+    if (!user || !user.token) {
+      Alert.alert('Error', 'You must be logged in to claim daily rewards');
+      return;
+    }
+
+    try {
+      const response = await apiRequest(API_ENDPOINTS.COINS.CLAIM_DAILY, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (response.success) {
+        setCoins(response.totalCoins);
+        setLoginStreak(response.newStreak);
+        
+        // Trigger action video
+        const bonusAmount = response.totalCoins - coins;
+        triggerActionVideo(`Daily Bonus Claimed! 🎉\nDay ${response.newStreak} Streak`, bonusAmount);
+      }
+    } catch (error) {
+      if (error.message && error.message.includes('already claimed')) {
+        Alert.alert('Already Claimed', 'You have already claimed your daily reward today. Come back tomorrow!');
+      } else {
+        console.error('Error claiming daily bonus:', error);
+        Alert.alert('Error', error.message || 'Failed to claim daily reward');
+      }
+    }
+  };
+
+  // ... existing return statement with all screens ...
+
+  return (
+    <SafeAreaView style={commonStyles.safeArea}>
+      {/* ... all your existing screens ... */}
+
+      {/* ADD THIS AT THE END, BEFORE </SafeAreaView> */}
+      
+      {/* Global Action Video Modal */}
+      {user && user.avatarType && (
+        <ActionVideoModal
+          visible={showActionVideo}
+          onClose={() => setShowActionVideo(false)}
+          avatarType={user.avatarType}
+          message={actionVideoData.message}
+          coinsEarned={actionVideoData.coinsEarned}
+        />
+      )}
+    </SafeAreaView>
+  );
+};
