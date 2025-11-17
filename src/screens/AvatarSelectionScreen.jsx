@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   thumbnailImageAdjusted: {
-    top: 40,
+    top: 80,
   },
   placeholderImage: {
     width: '100%',
