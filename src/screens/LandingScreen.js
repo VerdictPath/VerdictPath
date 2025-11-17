@@ -1,18 +1,38 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { theme } from '../styles/theme';
 
 const LandingScreen = ({ onNavigate }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playAsync();
+    }
+  }, []);
+
   return (
     <View style={commonStyles.container}>
-      <View style={styles.heroSection}>
-        <Image 
-          source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
+      <Video
+        ref={videoRef}
+        source={require('../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4')}
+        style={styles.backgroundVideo}
+        resizeMode={ResizeMode.COVER}
+        isLooping
+        isMuted
+        shouldPlay
+      />
+      
+      <View style={styles.overlay}>
+        <View style={styles.heroSection}>
+          <Image 
+            source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
@@ -82,11 +102,26 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Evidence Locker</Text>
         </View>
       </View>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundVideo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 1,
+  },
   heroSection: {
     alignItems: 'center',
     paddingVertical: 40,
