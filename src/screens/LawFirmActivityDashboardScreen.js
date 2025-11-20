@@ -102,7 +102,21 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
           ]}
           style={styles.background}
         />
-        <Text style={styles.loadingText}>Loading activity data...</Text>
+        
+        {/* Header with Back Button */}
+        <BlurView intensity={20} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Activity Analytics</Text>
+            <View style={{ width: 60 }} />
+          </View>
+        </BlurView>
+        
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading activity data...</Text>
+        </View>
       </View>
     );
   }
@@ -529,11 +543,15 @@ const styles = StyleSheet.create({
     color: lawFirmTheme.colors.lightGray,
     fontSize: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingText: {
     color: '#FFFFFF',
     fontSize: 18,
     textAlign: 'center',
-    marginTop: 100,
   },
 });
 
