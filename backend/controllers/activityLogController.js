@@ -28,10 +28,10 @@ exports.getActivityLogs = async (req, res) => {
       offset: parseInt(offset)
     });
 
-    res.json({ logs, total: logs.length });
+    res.json({ success: true, logs, total: logs.length });
   } catch (error) {
     console.error('Error fetching activity logs:', error);
-    res.status(500).json({ message: 'Error fetching activity logs', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching activity logs', error: error.message });
   }
 };
 
@@ -50,10 +50,10 @@ exports.getActivityStatistics = async (req, res) => {
       endDate: endDate ? new Date(endDate) : null
     });
 
-    res.json({ statistics });
+    res.json({ success: true, statistics });
   } catch (error) {
     console.error('Error fetching activity statistics:', error);
-    res.status(500).json({ message: 'Error fetching statistics', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching statistics', error: error.message });
   }
 };
 
@@ -73,10 +73,10 @@ exports.getMostActiveUsers = async (req, res) => {
       limit: parseInt(limit)
     });
 
-    res.json({ users });
+    res.json({ success: true, users });
   } catch (error) {
     console.error('Error fetching most active users:', error);
-    res.status(500).json({ message: 'Error fetching user activity', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching user activity', error: error.message });
   }
 };
 
@@ -94,10 +94,83 @@ exports.getFailedActivities = async (req, res) => {
       limit: parseInt(limit)
     });
 
-    res.json({ activities });
+    res.json({ success: true, activities });
   } catch (error) {
     console.error('Error fetching failed activities:', error);
-    res.json({ message: 'Error fetching failed activities', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching failed activities', error: error.message });
+  }
+};
+
+/**
+ * Get activity timeline for a specific user
+ */
+exports.getUserActivityTimeline = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { userId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    // Permission check handled by requirePermission middleware
+
+    // Get user details
+    const userResult = await require('../config/db').query(
+      `SELECT id, first_name, last_name, email, user_code, role 
+       FROM law_firm_users 
+       WHERE id = $1 AND law_firm_id = $2`,
+      [userId, lawFirmId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const targetUser = userResult.rows[0];
+
+    // Get activities for this user with pagination
+    const offset = (page - 1) * limit;
+    const activities = await activityLogger.getLogs(lawFirmId, {
+      userId: parseInt(userId),
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    // Get total count for pagination
+    const countResult = await require('../config/db').query(
+      `SELECT COUNT(*) as total 
+       FROM law_firm_activity_logs 
+       WHERE law_firm_id = $1 AND user_id = $2`,
+      [lawFirmId, userId]
+    );
+
+    const totalCount = parseInt(countResult.rows[0].total);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    res.json({
+      success: true,
+      user: {
+        id: targetUser.id,
+        name: `${targetUser.first_name} ${targetUser.last_name}`,
+        email: targetUser.email,
+        userCode: targetUser.user_code,
+        role: targetUser.role
+      },
+      activities: activities.map(log => ({
+        id: log.id,
+        _id: log.id,  // Keep for frontend compatibility
+        action: log.action,
+        actionCategory: log.action_category,
+        targetName: log.target_name,
+        timestamp: log.timestamp,
+        metadata: log.metadata
+      })),
+      count: activities.length,
+      totalCount,
+      currentPage: parseInt(page),
+      totalPages
+    });
+  } catch (error) {
+    console.error('Error fetching user activity timeline:', error);
+    res.status(500).json({ success: false, message: 'Error fetching timeline', error: error.message });
   }
 };
 
@@ -156,9 +229,9 @@ exports.getActivitySummary = async (req, res) => {
       }))
     };
 
-    res.json({ summary });
+    res.json({ success: true, summary });
   } catch (error) {
     console.error('Error fetching activity summary:', error);
-    res.status(500).json({ message: 'Error fetching activity summary', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching activity summary', error: error.message });
   }
 };

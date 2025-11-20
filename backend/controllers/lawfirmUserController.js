@@ -34,7 +34,7 @@ exports.createLawFirmUser = async (req, res) => {
       );
 
       if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
-        return res.status(403).json({ message: 'You do not have permission to create users' });
+        return res.status(403).json({ success: false, message: 'You do not have permission to create users' });
       }
       
       requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
@@ -46,7 +46,7 @@ exports.createLawFirmUser = async (req, res) => {
     );
 
     if (lawFirmResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Law firm not found' });
+      return res.status(404).json({ success: false, message: 'Law firm not found' });
     }
 
     const lawFirm = lawFirmResult.rows[0];
@@ -59,6 +59,7 @@ exports.createLawFirmUser = async (req, res) => {
     const userCount = parseInt(userCountResult.rows[0].count);
     if (userCount >= lawFirm.max_users) {
       return res.status(403).json({ 
+        success: false,
         message: `Maximum users (${lawFirm.max_users}) reached for your subscription tier. Please upgrade or deactivate existing users.` 
       });
     }
@@ -69,7 +70,7 @@ exports.createLawFirmUser = async (req, res) => {
     );
 
     if (emailCheckResult.rows.length > 0) {
-      return res.status(400).json({ message: 'Email already in use' });
+      return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -169,7 +170,7 @@ exports.createLawFirmUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating law firm user:', error);
-    res.status(500).json({ message: 'Error creating user', error: error.message });
+    res.status(500).json({ success: false, message: 'Error creating user', error: error.message });
   }
 };
 
@@ -219,10 +220,10 @@ exports.getLawFirmUsers = async (req, res) => {
       createdBy: user.created_by_first_name ? `${user.created_by_first_name} ${user.created_by_last_name}` : null
     }));
 
-    res.json({ users });
+    res.json({ success: true, users });
   } catch (error) {
     console.error('Error fetching law firm users:', error);
-    res.status(500).json({ message: 'Error fetching users', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching users', error: error.message });
   }
 };
 
@@ -248,7 +249,7 @@ exports.updateLawFirmUser = async (req, res) => {
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
-      return res.status(403).json({ message: 'You do not have permission to update users' });
+      return res.status(403).json({ success: false, message: 'You do not have permission to update users' });
     }
     
     const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
@@ -259,7 +260,7 @@ exports.updateLawFirmUser = async (req, res) => {
     );
 
     if (userCheck.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     const permissionsObj = permissions || {};
@@ -345,7 +346,7 @@ exports.updateLawFirmUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating law firm user:', error);
-    res.status(500).json({ message: 'Error updating user', error: error.message });
+    res.status(500).json({ success: false, message: 'Error updating user', error: error.message });
   }
 };
 
@@ -361,13 +362,13 @@ exports.deactivateLawFirmUser = async (req, res) => {
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
-      return res.status(403).json({ message: 'You do not have permission to deactivate users' });
+      return res.status(403).json({ success: false, message: 'You do not have permission to deactivate users' });
     }
     
     const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
 
     if (parseInt(userId) === req.user.lawFirmUserId) {
-      return res.status(400).json({ message: 'You cannot deactivate yourself' });
+      return res.status(400).json({ success: false, message: 'You cannot deactivate yourself' });
     }
 
     const result = await db.query(
@@ -383,7 +384,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found or already deactivated' });
+      return res.status(404).json({ success: false, message: 'User not found or already deactivated' });
     }
 
     await auditLogger.log({
@@ -423,7 +424,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
     res.json({ success: true, message: 'User deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating law firm user:', error);
-    res.status(500).json({ message: 'Error deactivating user', error: error.message });
+    res.status(500).json({ success: false, message: 'Error deactivating user', error: error.message });
   }
 };
 
@@ -438,7 +439,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
-      return res.status(403).json({ message: 'You do not have permission to reactivate users' });
+      return res.status(403).json({ success: false, message: 'You do not have permission to reactivate users' });
     }
     
     const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
@@ -456,7 +457,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found or not deactivated' });
+      return res.status(404).json({ success: false, message: 'User not found or not deactivated' });
     }
 
     await auditLogger.log({
@@ -494,6 +495,6 @@ exports.reactivateLawFirmUser = async (req, res) => {
     res.json({ success: true, message: 'User reactivated successfully' });
   } catch (error) {
     console.error('Error reactivating law firm user:', error);
-    res.status(500).json({ message: 'Error reactivating user', error: error.message });
+    res.status(500).json({ success: false, message: 'Error reactivating user', error: error.message });
   }
 };
