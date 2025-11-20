@@ -27,7 +27,7 @@ const LandingScreen = ({ onNavigate }) => {
       />
       
       <View style={styles.overlay}>
-        <View style={styles.heroSection}>
+        <View style={styles.logoContainer}>
           <FeatheredImage 
             source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
             style={styles.logo}
@@ -124,19 +124,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     zIndex: 1,
   },
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
+  logoContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 10,
   },
   logo: {
-    width: 350,
-    height: 350,
-    marginBottom: 10,
+    width: 120,
+    height: 120,
   },
   buttonContainer: {
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 160,
   },
   featuresContainer: {
     padding: 30,
