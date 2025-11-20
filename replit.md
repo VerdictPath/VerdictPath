@@ -27,9 +27,10 @@ Key technical features include:
 - **Enhanced Gamification**: 16 achievements, 8 pirate-themed badges with rarity, progress tracking, and a leaderboard system.
 - **Stripe Payment Integration**: Full Stripe payment processing for subscriptions and one-time payments, supporting Apple Pay and Google Pay, including a Coin Purchase System.
 - **Settlement Disbursement System**: Law firm portal feature for tracking settlement disbursements, including Stripe Connect for account onboarding and payment processing.
+- **Multi-User Law Firm Accounts**: Complete role-based permission system for law firms. Auto-provisions admin user during registration, supports role hierarchy (admin/attorney/staff), granular permissions (can_manage_users, can_manage_clients, can_view_all_clients, can_send_notifications, can_manage_disbursements, can_view_analytics, can_manage_settings), user limits based on subscription tier, and full CRUD operations (create, list, update, deactivate, reactivate). Includes bootstrap fallback logic for legacy firms and audit logging for all user management actions.
 
 ### Feature Specifications
-- **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers.
+- **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers. Law firms support multi-user accounts with role-based permissions (admin, attorney, staff).
 - **Subscription Pricing Structure**: Tiered pricing for law firms (8 tiers), individuals (3 tiers), and medical providers (4 tiers).
 - **Interactive Pirate Map**: A 9-stage litigation journey with progress tracking, detailed substages, modal descriptions, and interactive audio.
 - **Video Library**: Integrated educational tutorials.

@@ -449,14 +449,38 @@ exports.login = async (req, res) => {
     
     let tokenPayload;
     if (userType === 'lawfirm') {
+      // Defensive fallback: if no law firm user found, try to find any active admin
+      let lawFirmUserId = account.law_firm_user_id;
+      let lawFirmUserRole = account.law_firm_user_role;
+      
+      // If no law firm user found via JOIN, try to find one directly
+      if (!lawFirmUserId) {
+        const fallbackUserResult = await db.query(
+          `SELECT id, role FROM law_firm_users 
+           WHERE law_firm_id = $1 AND status = 'active' AND role = 'admin'
+           LIMIT 1`,
+          [account.id]
+        );
+        
+        if (fallbackUserResult.rows.length > 0) {
+          // Found an admin user
+          lawFirmUserId = fallbackUserResult.rows[0].id;
+          lawFirmUserRole = fallbackUserResult.rows[0].role;
+        } else {
+          // No users exist - bootstrap scenario
+          lawFirmUserId = -1;
+          lawFirmUserRole = 'admin';
+        }
+      }
+      
       tokenPayload = { 
         id: account.id, 
         email: account.email, 
         userType: 'lawfirm', 
         firmCode: account.firm_code,
-        lawFirmUserId: account.law_firm_user_id || null,
-        lawFirmUserRole: account.law_firm_user_role || null,
-        isLawFirmUser: !!account.law_firm_user_id
+        lawFirmUserId: lawFirmUserId || null,
+        lawFirmUserRole: lawFirmUserRole || null,
+        isLawFirmUser: !!lawFirmUserId
       };
     } else if (userType === 'medical_provider') {
       tokenPayload = { id: account.id, email: account.email, userType: 'medical_provider', providerCode: account.provider_code };
@@ -490,13 +514,13 @@ exports.login = async (req, res) => {
     if (userType === 'lawfirm') {
       responseData = {
         id: account.id,
-        lawFirmUserId: account.law_firm_user_id || null,
+        lawFirmUserId: tokenPayload.lawFirmUserId || null,
         firmName: account.name,
         email: account.email,
         userType: 'lawfirm',
         firmCode: account.firm_code,
-        role: account.law_firm_user_role || null,
-        isLawFirmUser: !!account.law_firm_user_id
+        role: tokenPayload.lawFirmUserRole || null,
+        isLawFirmUser: tokenPayload.isLawFirmUser
       };
     } else if (userType === 'medical_provider') {
       responseData = {
