@@ -154,6 +154,7 @@ exports.createLawFirmUser = async (req, res) => {
     });
 
     res.status(201).json({
+      success: true,
       message: 'Law firm user created successfully',
       user: {
         id: newUser.id,
@@ -338,6 +339,7 @@ exports.updateLawFirmUser = async (req, res) => {
     });
 
     res.json({
+      success: true,
       message: 'User updated successfully',
       user: updatedUser
     });
@@ -418,7 +420,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
       status: 'success'
     });
 
-    res.json({ message: 'User deactivated successfully' });
+    res.json({ success: true, message: 'User deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating law firm user:', error);
     res.status(500).json({ message: 'Error deactivating user', error: error.message });
@@ -489,7 +491,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
       status: 'success'
     });
 
-    res.json({ message: 'User reactivated successfully' });
+    res.json({ success: true, message: 'User reactivated successfully' });
   } catch (error) {
     console.error('Error reactivating law firm user:', error);
     res.status(500).json({ message: 'Error reactivating user', error: error.message });

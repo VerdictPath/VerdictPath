@@ -12,10 +12,16 @@ router.get('/',
   activityLogController.getActivityLogs
 );
 
-// Get activity statistics/summary (requires analytics permission)
+// Get activity statistics (requires analytics permission)
 router.get('/statistics',
   requirePermission('canViewAnalytics'),
   activityLogController.getActivityStatistics
+);
+
+// Get activity summary for dashboard (requires analytics permission)
+router.get('/summary',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getActivitySummary
 );
 
 // Get most active users (requires analytics permission)
