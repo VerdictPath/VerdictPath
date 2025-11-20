@@ -115,35 +115,36 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     prevScreenRef.current = currentScreen;
   }, [currentScreen]);
 
+  // Load user's litigation progress function (defined outside useEffect so it can be reused)
+  const loadUserProgress = async () => {
+    if (!user || !user.token || user.type !== USER_TYPES.INDIVIDUAL) {
+      return;
+    }
+
+    try {
+      console.log('[App] Loading user litigation progress...');
+      const progressData = await apiRequest(API_ENDPOINTS.LITIGATION.PROGRESS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      console.log('[App] Progress loaded:', progressData);
+      
+      // Merge backend progress with static LITIGATION_STAGES
+      const mergedStages = mergeCompletedSubstages(progressData);
+      setLitigationStages(mergedStages);
+      
+      console.log('[App] Litigation stages updated with user progress');
+    } catch (error) {
+      console.error('[App] Error loading litigation progress:', error);
+      // On error, keep using default LITIGATION_STAGES
+    }
+  };
+
   // Load user's litigation progress when they log in
   useEffect(() => {
-    const loadUserProgress = async () => {
-      if (!user || !user.token || user.type !== USER_TYPES.INDIVIDUAL) {
-        return;
-      }
-
-      try {
-        console.log('[App] Loading user litigation progress...');
-        const progressData = await apiRequest(API_ENDPOINTS.LITIGATION.PROGRESS, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
-        });
-
-        console.log('[App] Progress loaded:', progressData);
-        
-        // Merge backend progress with static LITIGATION_STAGES
-        const mergedStages = mergeCompletedSubstages(progressData);
-        setLitigationStages(mergedStages);
-        
-        console.log('[App] Litigation stages updated with user progress');
-      } catch (error) {
-        console.error('[App] Error loading litigation progress:', error);
-        // On error, keep using default LITIGATION_STAGES
-      }
-    };
-
     loadUserProgress();
   }, [user?.token, user?.id]);
 
@@ -880,19 +881,25 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           })
         });
         
-        // Update local state to reflect the revert
-        setLitigationStages(prevStages => 
-          prevStages.map(stage => {
-            if (stage.id === stageId && stage.completed) {
-              const updatedSubStages = stage.subStages?.map(subStage => {
-                return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
-              }) || [];
-              
-              return { ...stage, completed: false, subStages: updatedSubStages };
-            }
-            return stage;
-          })
-        );
+        // Reload user progress from backend to ensure UI is in sync
+        try {
+          await loadUserProgress();
+        } catch (refreshError) {
+          console.error('Failed to refresh progress after revert:', refreshError);
+          // Fallback: update local state optimistically
+          setLitigationStages(prevStages => 
+            prevStages.map(stage => {
+              if (stage.id === stageId && stage.completed) {
+                const updatedSubStages = stage.subStages?.map(subStage => {
+                  return { ...subStage, completed: false, uploaded: false, uploadedFiles: [], enteredData: null };
+                }) || [];
+                
+                return { ...stage, completed: false, subStages: updatedSubStages };
+              }
+              return stage;
+            })
+          );
+        }
         
         Alert.alert(
           'Stage Reverted',
