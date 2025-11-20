@@ -8,15 +8,44 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('7days');
+  const [clients, setClients] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [showClientPicker, setShowClientPicker] = useState(false);
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, selectedClientId]);
+
+  const fetchClients = async () => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.LAWFIRM.CLIENTS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      if (response.clients) {
+        setClients(response.clients);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
 
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest(`${API_ENDPOINTS.NOTIFICATIONS.ANALYTICS}?timeRange=${timeRange}`, {
+      let url = `${API_ENDPOINTS.NOTIFICATIONS.ANALYTICS}?timeRange=${timeRange}`;
+      if (selectedClientId) {
+        url += `&clientId=${selectedClientId}`;
+      }
+      
+      const response = await apiRequest(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -71,6 +100,53 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>📊 Analytics</Text>
         <View style={styles.placeholder} />
+      </View>
+
+      {/* Client Filter */}
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterLabel}>Filter by Client:</Text>
+        <TouchableOpacity
+          style={styles.clientPickerButton}
+          onPress={() => setShowClientPicker(!showClientPicker)}
+        >
+          <Text style={styles.clientPickerText}>
+            {selectedClientId 
+              ? clients.find(c => c.id === selectedClientId)?.first_name + ' ' + clients.find(c => c.id === selectedClientId)?.last_name
+              : 'All Clients'}
+          </Text>
+          <Text style={styles.dropdownIcon}>{showClientPicker ? '▲' : '▼'}</Text>
+        </TouchableOpacity>
+        
+        {showClientPicker && (
+          <View style={styles.clientPickerDropdown}>
+            <TouchableOpacity
+              style={[styles.clientOption, !selectedClientId && styles.clientOptionSelected]}
+              onPress={() => {
+                setSelectedClientId(null);
+                setShowClientPicker(false);
+              }}
+            >
+              <Text style={[styles.clientOptionText, !selectedClientId && styles.clientOptionTextSelected]}>
+                All Clients
+              </Text>
+            </TouchableOpacity>
+            {clients.map(client => (
+              <TouchableOpacity
+                key={client.id}
+                style={[styles.clientOption, selectedClientId === client.id && styles.clientOptionSelected]}
+                onPress={() => {
+                  setSelectedClientId(client.id);
+                  setShowClientPicker(false);
+                }}
+              >
+                <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
+                  {client.first_name} {client.last_name}
+                </Text>
+                {client.email && <Text style={styles.clientEmailText}>{client.email}</Text>}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Time Range Selector */}
@@ -273,6 +349,81 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 60,
+  },
+  filterContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    position: 'relative',
+    zIndex: 1000,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  clientPickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  clientPickerText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  dropdownIcon: {
+    fontSize: 12,
+    color: '#666',
+  },
+  clientPickerDropdown: {
+    position: 'absolute',
+    top: 80,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    maxHeight: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 1001,
+  },
+  clientOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  clientOptionSelected: {
+    backgroundColor: '#f0f8ff',
+  },
+  clientOptionText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  clientOptionTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: '700',
+  },
+  clientEmailText: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
   },
   timeRangeContainer: {
     flexDirection: 'row',

@@ -1637,3 +1637,156 @@ exports.updatePreferences = async (req, res) => {
     res.status(500).json({ error: 'Failed to update notification preferences' });
   }
 };
+
+exports.getNotificationAnalytics = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { timeRange = '7days', clientId } = req.query;
+
+    // Only law firms and medical providers can view analytics
+    if (deviceType !== 'law_firm' && deviceType !== 'medical_provider') {
+      return res.status(403).json({ error: 'Only law firms and medical providers can view analytics' });
+    }
+
+    // Calculate date range
+    let daysAgo;
+    switch (timeRange) {
+      case '7days':
+        daysAgo = 7;
+        break;
+      case '30days':
+        daysAgo = 30;
+        break;
+      case '90days':
+        daysAgo = 90;
+        break;
+      default:
+        daysAgo = 7;
+    }
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysAgo);
+
+    // Build query conditions
+    const senderType = deviceType === 'law_firm' ? 'law_firm' : 'medical_provider';
+    const conditions = ['sender_type = $1', 'sender_id = $2', 'created_at >= $3'];
+    const params = [senderType, entityId, startDate];
+
+    // Add client filter if provided
+    if (clientId) {
+      conditions.push(`recipient_id = $${params.length + 1}`);
+      params.push(parseInt(clientId));
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Get analytics data
+    const analyticsQuery = `
+      SELECT 
+        COUNT(*) as total_sent,
+        COUNT(delivered_at) as total_delivered,
+        COUNT(read_at) as total_read,
+        COUNT(clicked_at) as total_clicked,
+        COUNT(CASE WHEN priority = 'urgent' THEN 1 END) as urgent_count,
+        COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_count,
+        COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_count,
+        COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_count,
+        COUNT(CASE WHEN type = 'task_assigned' THEN 1 END) as task_assigned_count,
+        COUNT(CASE WHEN type = 'task_reminder' THEN 1 END) as task_reminder_count,
+        COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
+        COUNT(CASE WHEN type = 'deadline_reminder' THEN 1 END) as deadline_reminder_count,
+        COUNT(CASE WHEN type = 'appointment_reminder' THEN 1 END) as appointment_reminder_count,
+        COUNT(CASE WHEN type = 'general' THEN 1 END) as general_count
+      FROM notifications
+      WHERE ${whereClause}
+    `;
+
+    const analyticsResult = await pool.query(analyticsQuery, params);
+    const stats = analyticsResult.rows[0];
+
+    // Get recent notifications for activity timeline
+    const recentQuery = `
+      SELECT 
+        id,
+        recipient_id,
+        title,
+        type,
+        priority,
+        created_at,
+        delivered_at,
+        read_at,
+        clicked_at
+      FROM notifications
+      WHERE ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT 20
+    `;
+
+    const recentResult = await pool.query(recentQuery, params);
+
+    // Get recipient names for recent notifications
+    const recipientIds = [...new Set(recentResult.rows.map(n => n.recipient_id))];
+    const recipientNames = {};
+
+    if (recipientIds.length > 0) {
+      const recipientsQuery = `
+        SELECT id, first_name, last_name 
+        FROM users 
+        WHERE id = ANY($1)
+      `;
+      const recipientsResult = await pool.query(recipientsQuery, [recipientIds]);
+      recipientsResult.rows.forEach(r => {
+        recipientNames[r.id] = `${r.first_name} ${r.last_name}`;
+      });
+    }
+
+    const recentNotifications = recentResult.rows.map(n => ({
+      id: n.id,
+      recipientId: n.recipient_id,
+      recipientName: recipientNames[n.recipient_id] || 'Unknown',
+      title: n.title,
+      type: n.type,
+      priority: n.priority,
+      createdAt: n.created_at,
+      deliveredAt: n.delivered_at,
+      readAt: n.read_at,
+      clickedAt: n.clicked_at,
+      status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
+    }));
+
+    res.json({
+      success: true,
+      analytics: {
+        totalSent: parseInt(stats.total_sent) || 0,
+        totalDelivered: parseInt(stats.total_delivered) || 0,
+        totalRead: parseInt(stats.total_read) || 0,
+        totalClicked: parseInt(stats.total_clicked) || 0,
+        byPriority: {
+          urgent: parseInt(stats.urgent_count) || 0,
+          high: parseInt(stats.high_count) || 0,
+          medium: parseInt(stats.medium_count) || 0,
+          low: parseInt(stats.low_count) || 0
+        },
+        byType: {
+          taskAssigned: parseInt(stats.task_assigned_count) || 0,
+          taskReminder: parseInt(stats.task_reminder_count) || 0,
+          documentRequest: parseInt(stats.document_request_count) || 0,
+          deadlineReminder: parseInt(stats.deadline_reminder_count) || 0,
+          appointmentReminder: parseInt(stats.appointment_reminder_count) || 0,
+          general: parseInt(stats.general_count) || 0
+        },
+        recentNotifications: recentNotifications
+      },
+      timeRange,
+      clientId: clientId || null
+    });
+  } catch (error) {
+    console.error('Error fetching notification analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch notification analytics' });
+  }
+};

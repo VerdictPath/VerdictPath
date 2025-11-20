@@ -26,4 +26,6 @@ router.put('/:notificationId/clicked', authenticateToken, notificationsControlle
 router.get('/preferences', authenticateToken, notificationsController.getPreferences);
 router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
 
+router.get('/analytics', authenticateToken, notificationsController.getNotificationAnalytics);
+
 module.exports = router;

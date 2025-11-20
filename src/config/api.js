@@ -100,6 +100,8 @@ export const API_ENDPOINTS = {
     REGISTER_DEVICE: `${API_BASE_URL}/api/notifications/register-device`,
     UNREGISTER_DEVICE: `${API_BASE_URL}/api/notifications/unregister-device`,
     SEND: `${API_BASE_URL}/api/notifications/send`,
+    SEND_TO_CLIENTS: `${API_BASE_URL}/api/notifications/send-to-clients`,
+    ANALYTICS: `${API_BASE_URL}/api/notifications/analytics`,
   },
 
   // Negotiations
