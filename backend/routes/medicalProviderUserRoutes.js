@@ -8,51 +8,46 @@ const {
 } = require('../middleware/medicalProviderAuth');
 const { logMedicalActivity } = require('../middleware/medicalProviderActivityLogger');
 
-// Note: Login is handled by /api/auth/login/medicalprovider-user
-
-// All routes require authentication
 router.use(verifyMedicalProviderUser);
 
-// Admin only routes
 router.post(
-  '/create',
+  '/users',
   requireAdmin,
   logMedicalActivity('user_created'),
   medicalProviderUserController.createUser
 );
 
-router.patch(
-  '/:userId/deactivate',
-  requireAdmin,
-  logMedicalActivity('user_deactivated'),
-  medicalProviderUserController.deactivateUser
-);
-
-router.patch(
-  '/:userId/reactivate',
-  requireAdmin,
-  logMedicalActivity('user_reactivated'),
-  medicalProviderUserController.reactivateUser
-);
-
-// Routes requiring permission
 router.get(
-  '/all',
+  '/users',
   checkPermission('can_manage_users'),
   medicalProviderUserController.getAllUsers
 );
 
 router.get(
-  '/:userId',
+  '/users/:userId',
   checkPermission('can_manage_users'),
   medicalProviderUserController.getUserById
 );
 
-router.patch(
-  '/:userId',
+router.put(
+  '/users/:userId',
   checkPermission('can_manage_users'),
   logMedicalActivity('user_updated'),
   medicalProviderUserController.updateUser
+);
+
+router.post(
+  '/users/:userId/deactivate',
+  requireAdmin,
+  logMedicalActivity('user_deactivated'),
+  medicalProviderUserController.deactivateUser
+);
+
+router.post(
+  '/users/:userId/reactivate',
+  requireAdmin,
+  logMedicalActivity('user_reactivated'),
+  medicalProviderUserController.reactivateUser
 );
 
 module.exports = router;
