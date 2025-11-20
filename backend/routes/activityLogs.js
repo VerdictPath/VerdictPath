@@ -36,4 +36,10 @@ router.get('/failed',
   activityLogController.getFailedActivities
 );
 
+// Get user activity timeline (requires analytics permission)
+router.get('/user/:userId/timeline',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getUserActivityTimeline
+);
+
 module.exports = router;
