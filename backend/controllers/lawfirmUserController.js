@@ -5,6 +5,9 @@ const { JWT_SECRET } = require('../middleware/auth');
 const auditLogger = require('../services/auditLogger');
 const activityLogger = require('../services/activityLogger');
 const { generateUniqueCode } = require('../utils/codeGenerator');
+const { generateSecurePassword, getPasswordExpiryDate } = require('../utils/tempPasswordGenerator');
+const { sendCredentialEmail } = require('../services/emailService');
+const { sendCredentialSMS } = require('../services/smsService');
 
 exports.createLawFirmUser = async (req, res) => {
   try {
@@ -20,7 +23,9 @@ exports.createLawFirmUser = async (req, res) => {
       phoneNumber,
       title,
       barNumber,
-      department
+      department,
+      sendCredentials,
+      notificationMethod
     } = req.body;
 
     // Bootstrap scenario: allow creation if lawFirmUserId is -1 (no users exist yet)
@@ -73,7 +78,19 @@ exports.createLawFirmUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let temporaryPassword = null;
+    let passwordToHash = password;
+    let mustChangePassword = false;
+    let passwordExpiresAt = null;
+
+    if (sendCredentials && (notificationMethod === 'email' || notificationMethod === 'sms' || notificationMethod === 'both')) {
+      temporaryPassword = generateSecurePassword(12);
+      passwordToHash = temporaryPassword;
+      mustChangePassword = true;
+      passwordExpiresAt = getPasswordExpiryDate(72);
+    }
+
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
 
     let userCode = '';
     let isUnique = false;
@@ -93,8 +110,9 @@ exports.createLawFirmUser = async (req, res) => {
         law_firm_id, first_name, last_name, email, password, user_code, role,
         can_manage_users, can_manage_clients, can_view_all_clients, 
         can_send_notifications, can_manage_disbursements, can_view_analytics, 
-        can_manage_settings, phone_number, title, bar_number, department, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        can_manage_settings, phone_number, title, bar_number, department, created_by,
+        must_change_password, temporary_password_expires_at, notification_preference
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING id, law_firm_id, first_name, last_name, email, user_code, role, status, created_at`,
       [
         lawFirmId,
@@ -115,7 +133,10 @@ exports.createLawFirmUser = async (req, res) => {
         title || null,
         barNumber || null,
         department || null,
-        isBootstrap ? null : req.user.lawFirmUserId
+        isBootstrap ? null : req.user.lawFirmUserId,
+        mustChangePassword,
+        passwordExpiresAt,
+        notificationMethod || 'email'
       ]
     );
 
@@ -154,6 +175,41 @@ exports.createLawFirmUser = async (req, res) => {
       status: 'success'
     });
 
+    // Send credentials if requested
+    const credentialResults = {
+      email: { sent: false },
+      sms: { sent: false }
+    };
+
+    if (sendCredentials && temporaryPassword) {
+      const userData = {
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        email: newUser.email,
+        userCode: newUser.user_code
+      };
+
+      if (notificationMethod === 'email' || notificationMethod === 'both') {
+        const emailResult = await sendCredentialEmail(
+          newUser.email,
+          userData,
+          temporaryPassword,
+          'lawfirm'
+        );
+        credentialResults.email = emailResult;
+      }
+
+      if ((notificationMethod === 'sms' || notificationMethod === 'both') && phoneNumber) {
+        const smsResult = await sendCredentialSMS(
+          phoneNumber,
+          userData,
+          temporaryPassword,
+          'lawfirm'
+        );
+        credentialResults.sms = smsResult;
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Law firm user created successfully',
@@ -166,7 +222,9 @@ exports.createLawFirmUser = async (req, res) => {
         role: newUser.role,
         status: newUser.status,
         createdAt: newUser.created_at
-      }
+      },
+      credentialsSent: sendCredentials,
+      notificationResults: credentialResults
     });
   } catch (error) {
     console.error('Error creating law firm user:', error);
