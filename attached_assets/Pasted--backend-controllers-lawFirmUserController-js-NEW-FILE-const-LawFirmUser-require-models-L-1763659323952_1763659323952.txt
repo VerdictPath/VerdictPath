@@ -1,0 +1,502 @@
+// backend/controllers/lawFirmUserController.js - NEW FILE
+
+const LawFirmUser = require('../models/LawFirmUser');
+const LawFirm = require('../models/LawFirm');
+const ActivityLog = require('../models/ActivityLog');
+const jwt = require('jsonwebtoken');
+const { createActivityLog } = require('../middleware/activityLogger');
+
+// Generate unique user code
+const generateUserCode = async (firmCode) => {
+  let userCode;
+  let exists = true;
+  
+  while (exists) {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    userCode = `${firmCode}-USER-${randomNum}`;
+    
+    const existing = await LawFirmUser.findOne({ userCode });
+    exists = !!existing;
+  }
+  
+  return userCode;
+};
+
+// Admin creates new user
+exports.createUser = async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+      permissions,
+      title,
+      barNumber,
+      phoneNumber,
+      department,
+    } = req.body;
+
+    // Get law firm
+    const lawFirm = await LawFirm.findById(req.lawFirmId);
+    
+    if (!lawFirm) {
+      return res.status(404).json({
+        success: false,
+        message: 'Law firm not found',
+      });
+    }
+
+    // Check user limit based on subscription
+    const currentUserCount = await LawFirmUser.countDocuments({
+      lawFirmId: req.lawFirmId,
+      status: 'active',
+    });
+
+    if (currentUserCount >= lawFirm.settings.maxUsers) {
+      return res.status(400).json({
+        success: false,
+        message: `User limit reached. Your ${lawFirm.subscriptionTier} plan allows ${lawFirm.settings.maxUsers} users.`,
+        currentUsers: currentUserCount,
+        maxUsers: lawFirm.settings.maxUsers,
+      });
+    }
+
+    // Check if email already exists
+    const existingUser = await LawFirmUser.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered',
+      });
+    }
+
+    // Generate unique user code
+    const userCode = await generateUserCode(lawFirm.firmCode);
+
+    // Set default permissions based on role
+    let finalPermissions = permissions || {};
+    if (role === 'admin') {
+      finalPermissions = {
+        canManageUsers: true,
+        canManageClients: true,
+        canViewAllClients: true,
+        canSendNotifications: true,
+        canManageDisbursements: true,
+        canViewAnalytics: true,
+        canManageSettings: true,
+      };
+    }
+
+    // Create user
+    const user = await LawFirmUser.create({
+      lawFirmId: req.lawFirmId,
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password,
+      userCode,
+      role: role || 'attorney',
+      permissions: finalPermissions,
+      title,
+      barNumber,
+      phoneNumber,
+      department,
+      createdBy: req.user._id,
+    });
+
+    // Log activity
+    await createActivityLog({
+      lawFirmId: req.lawFirmId,
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userName: `${req.user.firstName} ${req.user.lastName}`,
+      action: 'user_created',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: user._id,
+      targetName: `${user.firstName} ${user.lastName}`,
+      metadata: {
+        role: user.role,
+        userCode: user.userCode,
+      },
+      status: 'success',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        userCode: user.userCode,
+        role: user.role,
+        permissions: user.permissions,
+        status: user.status,
+      },
+    });
+
+  } catch (error) {
+    console.error('[UserController] Create user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create user',
+      error: error.message,
+    });
+  }
+};
+
+// Get all users in firm
+exports.getAllUsers = async (req, res) => {
+  try {
+    const { status, role, search } = req.query;
+
+    let query = { lawFirmId: req.lawFirmId };
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (role) {
+      query.role = role;
+    }
+
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { userCode: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const users = await LawFirmUser.find(query)
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: users.length,
+      users: users,
+    });
+
+  } catch (error) {
+    console.error('[UserController] Get users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+    });
+  }
+};
+
+// Get single user details
+exports.getUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await LawFirmUser.findOne({
+      _id: userId,
+      lawFirmId: req.lawFirmId,
+    })
+      .select('-password')
+      .populate('createdBy', 'firstName lastName email')
+      .populate('deactivatedBy', 'firstName lastName email');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Get user's recent activity
+    const recentActivity = await ActivityLog.find({
+      userId: user._id,
+    })
+      .sort({ timestamp: -1 })
+      .limit(20);
+
+    res.json({
+      success: true,
+      user: user,
+      recentActivity: recentActivity,
+    });
+
+  } catch (error) {
+    console.error('[UserController] Get user details error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user details',
+    });
+  }
+};
+
+// Update user
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const updates = req.body;
+
+    // Don't allow changing certain fields
+    delete updates.lawFirmId;
+    delete updates.userCode;
+    delete updates.createdBy;
+    delete updates.createdAt;
+
+    const user = await LawFirmUser.findOneAndUpdate(
+      { _id: userId, lawFirmId: req.lawFirmId },
+      { ...updates, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Log activity
+    await createActivityLog({
+      lawFirmId: req.lawFirmId,
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userName: `${req.user.firstName} ${req.user.lastName}`,
+      action: 'user_updated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: user._id,
+      targetName: `${user.firstName} ${user.lastName}`,
+      metadata: { updates },
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      user: user,
+    });
+
+  } catch (error) {
+    console.error('[UserController] Update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user',
+    });
+  }
+};
+
+// Deactivate user (soft delete)
+exports.deactivateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason } = req.body;
+
+    // Can't deactivate yourself
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot deactivate your own account',
+      });
+    }
+
+    const user = await LawFirmUser.findOneAndUpdate(
+      { _id: userId, lawFirmId: req.lawFirmId },
+      {
+        status: 'deactivated',
+        deactivatedAt: Date.now(),
+        deactivatedBy: req.user._id,
+        deactivationReason: reason,
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Log activity
+    await createActivityLog({
+      lawFirmId: req.lawFirmId,
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userName: `${req.user.firstName} ${req.user.lastName}`,
+      action: 'user_deactivated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: user._id,
+      targetName: `${user.firstName} ${user.lastName}`,
+      metadata: { reason },
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: 'User deactivated successfully',
+      user: user,
+    });
+
+  } catch (error) {
+    console.error('[UserController] Deactivate user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to deactivate user',
+    });
+  }
+};
+
+// Reactivate user
+exports.reactivateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await LawFirmUser.findOneAndUpdate(
+      { _id: userId, lawFirmId: req.lawFirmId },
+      {
+        status: 'active',
+        deactivatedAt: null,
+        deactivatedBy: null,
+        deactivationReason: null,
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Log activity
+    await createActivityLog({
+      lawFirmId: req.lawFirmId,
+      userId: req.user._id,
+      userEmail: req.user.email,
+      userName: `${req.user.firstName} ${req.user.lastName}`,
+      action: 'user_reactivated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: user._id,
+      targetName: `${user.firstName} ${user.lastName}`,
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: 'User reactivated successfully',
+      user: user,
+    });
+
+  } catch (error) {
+    console.error('[UserController] Reactivate user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reactivate user',
+    });
+  }
+};
+
+// User login
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user
+    const user = await LawFirmUser.findOne({ email: email.toLowerCase() })
+      .populate('lawFirmId', 'firmName firmCode isActive');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been deactivated. Please contact your administrator.',
+      });
+    }
+
+    // Check if law firm is active
+    if (!user.lawFirmId.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Law firm account is not active.',
+      });
+    }
+
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Update last login
+    user.lastLogin = Date.now();
+    user.lastActivity = Date.now();
+    await user.save();
+
+    // Generate token
+    const token = jwt.sign(
+      {
+        id: user._id,
+        lawFirmId: user.lawFirmId._id,
+        userType: 'lawfirm_user',
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Log activity
+    await createActivityLog({
+      lawFirmId: user.lawFirmId._id,
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      action: 'user_login',
+      actionCategory: 'security',
+      status: 'success',
+    });
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token: token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        userCode: user.userCode,
+        role: user.role,
+        permissions: user.permissions,
+        lawFirm: {
+          id: user.lawFirmId._id,
+          name: user.lawFirmId.firmName,
+          code: user.lawFirmId.firmCode,
+        },
+      },
+    });
+
+  } catch (error) {
+    console.error('[UserController] Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+    });
+  }
+};

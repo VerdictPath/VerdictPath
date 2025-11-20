@@ -1,0 +1,119 @@
+// backend/models/ActivityLog.js - NEW MODEL
+
+const mongoose = require('mongoose');
+
+const activityLogSchema = new mongoose.Schema({
+  lawFirmId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LawFirm',
+    required: true,
+    index: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LawFirmUser',
+    required: true,
+    index: true,
+  },
+  userEmail: {
+    type: String,
+    required: true,
+  },
+  userName: {
+    type: String,
+    required: true,
+  },
+  action: {
+    type: String,
+    required: true,
+    enum: [
+      // User Management
+      'user_created',
+      'user_updated',
+      'user_deactivated',
+      'user_reactivated',
+      'user_login',
+      'user_logout',
+      
+      // Client Actions
+      'client_viewed',
+      'client_updated',
+      'client_created',
+      'client_deleted',
+      
+      // Document Actions
+      'document_uploaded',
+      'document_downloaded',
+      'document_deleted',
+      'document_shared',
+      
+      // Financial Actions
+      'disbursement_initiated',
+      'disbursement_completed',
+      'payment_received',
+      
+      // Communication
+      'notification_sent',
+      'message_sent',
+      'email_sent',
+      
+      // Case Management
+      'case_stage_updated',
+      'case_note_added',
+      'case_status_changed',
+      
+      // Settings
+      'settings_updated',
+      'subscription_changed',
+      
+      // Security
+      'password_changed',
+      'password_reset_requested',
+      'two_factor_enabled',
+      'two_factor_disabled',
+    ],
+  },
+  actionCategory: {
+    type: String,
+    enum: ['user', 'client', 'document', 'financial', 'communication', 'case', 'settings', 'security'],
+    required: true,
+  },
+  targetType: {
+    type: String, // 'Client', 'Document', 'User', etc.
+  },
+  targetId: {
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  targetName: {
+    type: String,
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed, // Flexible object for action-specific data
+  },
+  ipAddress: {
+    type: String,
+  },
+  userAgent: {
+    type: String,
+  },
+  status: {
+    type: String,
+    enum: ['success', 'failed', 'pending'],
+    default: 'success',
+  },
+  errorMessage: {
+    type: String,
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+    index: true,
+  },
+});
+
+// Compound indexes for efficient querying
+activityLogSchema.index({ lawFirmId: 1, timestamp: -1 });
+activityLogSchema.index({ userId: 1, timestamp: -1 });
+activityLogSchema.index({ lawFirmId: 1, actionCategory: 1, timestamp: -1 });
+
+module.exports = mongoose.model('ActivityLog', activityLogSchema);

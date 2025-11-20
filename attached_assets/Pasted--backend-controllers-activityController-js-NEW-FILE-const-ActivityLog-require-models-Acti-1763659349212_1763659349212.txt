@@ -1,0 +1,213 @@
+// backend/controllers/activityController.js - NEW FILE
+
+const ActivityLog = require('../models/ActivityLog');
+const LawFirmUser = require('../models/LawFirmUser');
+
+// Get activity logs with filters
+exports.getActivityLogs = async (req, res) => {
+  try {
+    const {
+      userId,
+      actionCategory,
+      action,
+      startDate,
+      endDate,
+      limit = 50,
+      page = 1,
+    } = req.query;
+
+    let query = { lawFirmId: req.lawFirmId };
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    if (actionCategory) {
+      query.actionCategory = actionCategory;
+    }
+
+    if (action) {
+      query.action = action;
+    }
+
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate);
+      }
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [logs, totalCount] = await Promise.all([
+      ActivityLog.find(query)
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit))
+        .skip(skip)
+        .populate('userId', 'firstName lastName email userCode role'),
+      ActivityLog.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      count: logs.length,
+      totalCount: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      logs: logs,
+    });
+
+  } catch (error) {
+    console.error('[Activity] Get logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity logs',
+    });
+  }
+};
+
+// Get activity summary/analytics
+exports.getActivitySummary = async (req, res) => {
+  try {
+    const { startDate, endDate, userId } = req.query;
+
+    let matchQuery = { lawFirmId: req.lawFirmId };
+
+    if (userId) {
+      matchQuery.userId = userId;
+    }
+
+    if (startDate || endDate) {
+      matchQuery.timestamp = {};
+      if (startDate) {
+        matchQuery.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        matchQuery.timestamp.$lte = new Date(endDate);
+      }
+    }
+
+    const [
+      totalActivities,
+      activitiesByCategory,
+      activitiesByUser,
+      recentActivities,
+    ] = await Promise.all([
+      // Total count
+      ActivityLog.countDocuments(matchQuery),
+      
+      // Group by category
+      ActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$actionCategory',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+      
+      // Group by user
+      ActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$userId',
+            count: { $sum: 1 },
+            userName: { $first: '$userName' },
+            userEmail: { $first: '$userEmail' },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
+      
+      // Recent activities
+      ActivityLog.find(matchQuery)
+        .sort({ timestamp: -1 })
+        .limit(10)
+        .populate('userId', 'firstName lastName email'),
+    ]);
+
+    res.json({
+      success: true,
+      summary: {
+        totalActivities,
+        activitiesByCategory,
+        topUsers: activitiesByUser,
+        recentActivities,
+      },
+    });
+
+  } catch (error) {
+    console.error('[Activity] Get summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity summary',
+    });
+  }
+};
+
+// Get user activity timeline
+exports.getUserActivityTimeline = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 20, page = 1 } = req.query;
+
+    // Verify user belongs to firm
+    const user = await LawFirmUser.findOne({
+      _id: userId,
+      lawFirmId: req.lawFirmId,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [activities, totalCount] = await Promise.all([
+      ActivityLog.find({
+        lawFirmId: req.lawFirmId,
+        userId: userId,
+      })
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit))
+        .skip(skip),
+      ActivityLog.countDocuments({
+        lawFirmId: req.lawFirmId,
+        userId: userId,
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        userCode: user.userCode,
+        role: user.role,
+      },
+      count: activities.length,
+      totalCount: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      activities: activities,
+    });
+
+  } catch (error) {
+    console.error('[Activity] Get user timeline error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user activity timeline',
+    });
+  }
+};
