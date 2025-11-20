@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { JWT_SECRET } = require('../middleware/auth');
 const auditLogger = require('../services/auditLogger');
+const activityLogger = require('../services/activityLogger');
 const { generateUniqueCode } = require('../utils/codeGenerator');
 
 exports.createLawFirmUser = async (req, res) => {
@@ -24,16 +25,19 @@ exports.createLawFirmUser = async (req, res) => {
 
     // Bootstrap scenario: allow creation if lawFirmUserId is -1 (no users exist yet)
     const isBootstrap = req.user.lawFirmUserId === -1;
+    let requesterName = 'System';
     
     if (!isBootstrap) {
       const requesterResult = await db.query(
-        'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
+        'SELECT can_manage_users, first_name, last_name FROM law_firm_users WHERE id = $1',
         [req.user.lawFirmUserId]
       );
 
       if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
         return res.status(403).json({ message: 'You do not have permission to create users' });
       }
+      
+      requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
     }
 
     const lawFirmResult = await db.query(
@@ -128,6 +132,27 @@ exports.createLawFirmUser = async (req, res) => {
       metadata: { email: newUser.email, role: newUser.role, userCode: newUser.user_code, isBootstrap }
     });
 
+    // Log activity
+    await activityLogger.log({
+      lawFirmId,
+      userId: isBootstrap ? null : req.user.lawFirmUserId,
+      userEmail: req.user.email,
+      userName: requesterName,
+      action: 'user_created',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: newUser.id,
+      targetName: `${firstName} ${lastName}`,
+      metadata: { 
+        targetEmail: newUser.email, 
+        targetRole: newUser.role, 
+        targetUserCode: newUser.user_code 
+      },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
+    });
+
     res.status(201).json({
       message: 'Law firm user created successfully',
       user: {
@@ -217,13 +242,15 @@ exports.updateLawFirmUser = async (req, res) => {
     } = req.body;
 
     const requesterResult = await db.query(
-      'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
+      'SELECT can_manage_users, first_name, last_name FROM law_firm_users WHERE id = $1',
       [req.user.lawFirmUserId]
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
       return res.status(403).json({ message: 'You do not have permission to update users' });
     }
+    
+    const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
 
     const userCheck = await db.query(
       'SELECT id FROM law_firm_users WHERE id = $1 AND law_firm_id = $2',
@@ -290,6 +317,26 @@ exports.updateLawFirmUser = async (req, res) => {
       metadata: { updatedFields: Object.keys(req.body) }
     });
 
+    // Log activity
+    await activityLogger.log({
+      lawFirmId,
+      userId: req.user.lawFirmUserId,
+      userEmail: req.user.email,
+      userName: requesterName,
+      action: 'user_updated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: userId,
+      targetName: `${updatedUser.first_name} ${updatedUser.last_name}`,
+      metadata: { 
+        targetEmail: updatedUser.email,
+        updatedFields: Object.keys(req.body) 
+      },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
+    });
+
     res.json({
       message: 'User updated successfully',
       user: updatedUser
@@ -307,13 +354,15 @@ exports.deactivateLawFirmUser = async (req, res) => {
     const { reason } = req.body;
 
     const requesterResult = await db.query(
-      'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
+      'SELECT can_manage_users, first_name, last_name FROM law_firm_users WHERE id = $1',
       [req.user.lawFirmUserId]
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
       return res.status(403).json({ message: 'You do not have permission to deactivate users' });
     }
+    
+    const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
 
     if (parseInt(userId) === req.user.lawFirmUserId) {
       return res.status(400).json({ message: 'You cannot deactivate yourself' });
@@ -327,7 +376,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
         deactivation_reason = $2,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $3 AND law_firm_id = $4 AND status != 'deactivated'
-      RETURNING id, email`,
+      RETURNING id, email, first_name, last_name`,
       [req.user.lawFirmUserId, reason || null, userId, lawFirmId]
     );
 
@@ -347,6 +396,28 @@ exports.deactivateLawFirmUser = async (req, res) => {
       metadata: { reason }
     });
 
+    const deactivatedUser = result.rows[0];
+    
+    // Log activity
+    await activityLogger.log({
+      lawFirmId,
+      userId: req.user.lawFirmUserId,
+      userEmail: req.user.email,
+      userName: requesterName,
+      action: 'user_deactivated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: userId,
+      targetName: `${deactivatedUser.first_name} ${deactivatedUser.last_name}`,
+      metadata: { 
+        targetEmail: deactivatedUser.email,
+        reason 
+      },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
+    });
+
     res.json({ message: 'User deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating law firm user:', error);
@@ -360,13 +431,15 @@ exports.reactivateLawFirmUser = async (req, res) => {
     const { userId } = req.params;
 
     const requesterResult = await db.query(
-      'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
+      'SELECT can_manage_users, first_name, last_name FROM law_firm_users WHERE id = $1',
       [req.user.lawFirmUserId]
     );
 
     if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
       return res.status(403).json({ message: 'You do not have permission to reactivate users' });
     }
+    
+    const requesterName = `${requesterResult.rows[0].first_name} ${requesterResult.rows[0].last_name}`;
 
     const result = await db.query(
       `UPDATE law_firm_users SET
@@ -376,7 +449,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
         deactivation_reason = NULL,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND law_firm_id = $2 AND status = 'deactivated'
-      RETURNING id, email`,
+      RETURNING id, email, first_name, last_name`,
       [userId, lawFirmId]
     );
 
@@ -393,6 +466,27 @@ exports.reactivateLawFirmUser = async (req, res) => {
       status: 'SUCCESS',
       ipAddress: req.ip || req.connection.remoteAddress,
       userAgent: req.get('user-agent')
+    });
+
+    const reactivatedUser = result.rows[0];
+    
+    // Log activity
+    await activityLogger.log({
+      lawFirmId,
+      userId: req.user.lawFirmUserId,
+      userEmail: req.user.email,
+      userName: requesterName,
+      action: 'user_reactivated',
+      actionCategory: 'user',
+      targetType: 'LawFirmUser',
+      targetId: userId,
+      targetName: `${reactivatedUser.first_name} ${reactivatedUser.last_name}`,
+      metadata: { 
+        targetEmail: reactivatedUser.email 
+      },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
     });
 
     res.json({ message: 'User reactivated successfully' });

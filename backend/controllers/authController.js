@@ -4,6 +4,7 @@ const db = require('../config/db');
 const { JWT_SECRET } = require('../middleware/auth');
 const encryption = require('../services/encryption');
 const auditLogger = require('../services/auditLogger');
+const activityLogger = require('../services/activityLogger');
 const { handleFailedLogin, handleSuccessfulLogin } = require('../middleware/security');
 const consentController = require('./consentController');
 const { generateUniqueCode } = require('../utils/codeGenerator');
@@ -638,6 +639,20 @@ exports.loginLawFirmUser = async (req, res) => {
       ipAddress: req.ip || req.connection.remoteAddress,
       userAgent: req.get('user-agent'),
       success: true
+    });
+
+    // Log activity
+    await activityLogger.log({
+      lawFirmId: lawFirmUser.law_firm_id,
+      userId: lawFirmUser.id,
+      userEmail: lawFirmUser.email,
+      userName: `${lawFirmUser.first_name} ${lawFirmUser.last_name}`,
+      action: 'user_login',
+      actionCategory: 'user',
+      metadata: { role: lawFirmUser.role },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
     });
 
     res.json({
