@@ -1,0 +1,128 @@
+// backend/middleware/medicalActivityLogger.js - NEW FILE (HIPAA-Compliant)
+
+const MedicalActivityLog = require('../models/MedicalActivityLog');
+
+// Determine sensitivity level based on action
+const getSensitivityLevel = (action, actionCategory) => {
+  const criticalActions = [
+    'patient_phi_viewed',
+    'medical_record_viewed',
+    'medical_record_updated',
+    'medical_record_deleted',
+    'xray_viewed',
+    'lab_result_viewed',
+    'unauthorized_access_attempt',
+  ];
+
+  const highActions = [
+    'patient_record_accessed',
+    'patient_viewed',
+    'medical_record_created',
+    'billing_record_accessed',
+    'prescription_created',
+  ];
+
+  if (criticalActions.includes(action)) return 'critical';
+  if (highActions.includes(action)) return 'high';
+  if (actionCategory === 'security') return 'high';
+  if (actionCategory === 'medical_record') return 'high';
+  
+  return 'medium';
+};
+
+// Middleware to log medical activities (HIPAA-compliant)
+exports.logMedicalActivity = (action, actionCategory) => {
+  return async (req, res, next) => {
+    // Store original res.json
+    const originalJson = res.json;
+
+    // Override res.json
+    res.json = function(data) {
+      // Log all activities (success and failure) for HIPAA compliance
+      setImmediate(async () => {
+        try {
+          const sensitivityLevel = getSensitivityLevel(action, actionCategory);
+          
+          const logData = {
+            medicalProviderId: req.medicalProviderId,
+            userId: req.user._id,
+            userEmail: req.user.email,
+            userName: `${req.user.firstName} ${req.user.lastName}`,
+            userRole: req.user.role,
+            action: action,
+            actionCategory: actionCategory,
+            sensitivityLevel: sensitivityLevel,
+            targetType: req.body?.targetType || null,
+            targetId: req.body?.targetId || null,
+            targetName: req.body?.targetName || null,
+            patientId: req.body?.patientId || req.params?.patientId || null,
+            patientName: req.body?.patientName || null,
+            metadata: {
+              method: req.method,
+              path: req.path,
+              body: sanitizeMetadata(req.body, actionCategory),
+              params: req.params,
+              query: req.query,
+            },
+            ipAddress: req.ip || req.connection.remoteAddress,
+            userAgent: req.headers['user-agent'],
+            deviceInfo: req.headers['user-agent'],
+            status: data.success !== false ? 'success' : 'failed',
+            errorMessage: data.message || null,
+            hipaaCompliant: true,
+            auditRequired: sensitivityLevel === 'critical',
+          };
+
+          // Set retention period from provider settings
+          if (req.providerSettings?.dataRetentionDays) {
+            const retentionMs = req.providerSettings.dataRetentionDays * 24 * 60 * 60 * 1000;
+            logData.expiresAt = new Date(Date.now() + retentionMs);
+          }
+
+          await MedicalActivityLog.create(logData);
+        } catch (error) {
+          console.error('[MedicalActivityLogger] Failed to log activity:', error);
+          // Don't fail the request if logging fails, but log the error
+        }
+      });
+
+      // Call original json method
+      return originalJson.call(this, data);
+    };
+
+    next();
+  };
+};
+
+// Sanitize metadata to remove sensitive PHI before storing
+const sanitizeMetadata = (body, actionCategory) => {
+  if (!body) return {};
+  
+  const sanitized = { ...body };
+  
+  // Remove highly sensitive fields from logs
+  const sensitiveFields = [
+    'password',
+    'ssn',
+    'socialSecurityNumber',
+    'creditCard',
+    'bankAccount',
+  ];
+  
+  sensitiveFields.forEach(field => {
+    if (sanitized[field]) {
+      sanitized[field] = '[REDACTED]';
+    }
+  });
+  
+  return sanitized;
+};
+
+// Manual activity logging function
+exports.createMedicalActivityLog = async (data) => {
+  try {
+    await MedicalActivityLog.create(data);
+  } catch (error) {
+    console.error('[MedicalActivityLogger] Failed to create log:', error);
+  }
+};

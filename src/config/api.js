@@ -85,10 +85,12 @@ export const API_ENDPOINTS = {
     WEBHOOK: `${API_BASE_URL}/api/subscriptions/webhook`, // Backend only
   },
 
-  // Subscription Management (Law Firms)
+  // Subscription Management
   SUBSCRIPTION: {
     LAWFIRM_CURRENT: `${API_BASE_URL}/api/subscription/lawfirm/current`,
     LAWFIRM_UPDATE: `${API_BASE_URL}/api/subscription/lawfirm/update`,
+    MEDICALPROVIDER_CURRENT: `${API_BASE_URL}/api/subscription/medicalprovider/current`,
+    MEDICALPROVIDER_UPDATE: `${API_BASE_URL}/api/subscription/medicalprovider/update`,
   },
 
   // Notifications

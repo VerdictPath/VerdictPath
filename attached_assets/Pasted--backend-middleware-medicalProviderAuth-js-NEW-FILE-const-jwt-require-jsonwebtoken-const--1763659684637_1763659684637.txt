@@ -1,0 +1,152 @@
+// backend/middleware/medicalProviderAuth.js - NEW FILE
+
+const jwt = require('jsonwebtoken');
+const MedicalProviderUser = require('../models/MedicalProviderUser');
+const MedicalProvider = require('../models/MedicalProvider');
+
+// Verify medical provider user token
+exports.verifyMedicalProviderUser = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No authentication token provided',
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if it's a medical provider user
+    if (decoded.userType !== 'medical_provider_user') {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid user type',
+      });
+    }
+
+    const user = await MedicalProviderUser.findById(decoded.id)
+      .populate('medicalProviderId', 'providerName providerCode isActive settings');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'User account is not active',
+      });
+    }
+
+    // Check if medical provider is active
+    if (!user.medicalProviderId.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Medical provider account is not active',
+      });
+    }
+
+    // Check HIPAA training expiry
+    if (user.hipaaTrainingExpiry && new Date() > user.hipaaTrainingExpiry) {
+      return res.status(403).json({
+        success: false,
+        message: 'HIPAA training has expired. Please complete recertification.',
+      });
+    }
+
+    req.user = user;
+    req.medicalProviderId = user.medicalProviderId._id;
+    req.providerSettings = user.medicalProviderId.settings;
+    
+    // Update last activity
+    user.lastActivity = new Date();
+    await user.save();
+    
+    next();
+  } catch (error) {
+    console.error('[MedicalAuth] Verification error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or expired token',
+    });
+  }
+};
+
+// Check if user has specific permission
+exports.requirePermission = (permissionKey) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+      });
+    }
+
+    // Admins have all permissions
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
+    // Check specific permission
+    if (!req.user.permissions[permissionKey]) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions',
+        requiredPermission: permissionKey,
+      });
+    }
+
+    next();
+  };
+};
+
+// Require admin role
+exports.requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required',
+    });
+  }
+  next();
+};
+
+// Require any of the specified roles
+exports.requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient role privileges',
+        requiredRoles: roles,
+      });
+    }
+    next();
+  };
+};
+
+// Check PHI access permission (HIPAA Critical)
+exports.requirePHIAccess = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required',
+    });
+  }
+
+  if (!req.user.permissions.canAccessPHI) {
+    return res.status(403).json({
+      success: false,
+      message: 'You do not have permission to access Protected Health Information (PHI)',
+      hipaaViolation: true,
+    });
+  }
+
+  next();
+};

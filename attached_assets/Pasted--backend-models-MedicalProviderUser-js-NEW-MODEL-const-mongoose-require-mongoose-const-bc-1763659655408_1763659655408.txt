@@ -1,0 +1,135 @@
+// backend/models/MedicalProviderUser.js - NEW MODEL
+
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const medicalProviderUserSchema = new mongoose.Schema({
+  medicalProviderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MedicalProvider',
+    required: true,
+    index: true,
+  },
+  firstName: {
+    type: String,
+    required: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  userCode: {
+    type: String,
+    required: true,
+    unique: true,
+    // Format: PROVIDERCODE-USER-XXXX (e.g., MED-5829-USER-1234)
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'doctor', 'nurse', 'medical_assistant', 'billing_specialist', 'staff'],
+    default: 'doctor',
+  },
+  credentials: {
+    type: String, // e.g., "MD", "DO", "RN", "NP", "PA"
+  },
+  licenseNumber: {
+    type: String,
+  },
+  npiNumber: {
+    type: String, // Individual NPI for providers
+  },
+  specialties: [{
+    type: String,
+  }],
+  permissions: {
+    canManageUsers: { type: Boolean, default: false },
+    canManagePatients: { type: Boolean, default: true },
+    canViewAllPatients: { type: Boolean, default: true },
+    canSendNotifications: { type: Boolean, default: true },
+    canViewMedicalRecords: { type: Boolean, default: true },
+    canEditMedicalRecords: { type: Boolean, default: false },
+    canManageDisbursements: { type: Boolean, default: false },
+    canViewAnalytics: { type: Boolean, default: true },
+    canManageSettings: { type: Boolean, default: false },
+    canAccessPHI: { type: Boolean, default: true }, // Protected Health Information
+  },
+  status: {
+    type: String,
+    enum: ['active', 'suspended', 'deactivated'],
+    default: 'active',
+  },
+  lastLogin: {
+    type: Date,
+  },
+  lastActivity: {
+    type: Date,
+  },
+  profileImage: {
+    type: String,
+  },
+  phoneNumber: {
+    type: String,
+  },
+  title: {
+    type: String, // e.g., "Chief of Staff", "Attending Physician", "Nurse Practitioner"
+  },
+  department: {
+    type: String, // e.g., "Orthopedics", "Radiology", "Physical Therapy"
+  },
+  hipaaTrainingDate: {
+    type: Date, // Date of last HIPAA training
+  },
+  hipaaTrainingExpiry: {
+    type: Date,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MedicalProviderUser',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  deactivatedAt: {
+    type: Date,
+  },
+  deactivatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MedicalProviderUser',
+  },
+  deactivationReason: {
+    type: String,
+  },
+});
+
+// Hash password before saving
+medicalProviderUserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Method to compare passwords
+medicalProviderUserSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.model('MedicalProviderUser', medicalProviderUserSchema);
