@@ -6,6 +6,9 @@ import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
 import ConnectionsModal from '../components/ConnectionsModal';
 import LawFirmSubscriptionScreen from './LawFirmSubscriptionScreen';
+import LawFirmUserManagementScreen from './LawFirmUserManagementScreen';
+import LawFirmActivityDashboardScreen from './LawFirmActivityDashboardScreen';
+import LawFirmUserActivityTimelineScreen from './LawFirmUserActivityTimelineScreen';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -119,6 +122,24 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
             <Text style={styles.quickActionsTitle}>⚡ Quick Actions</Text>
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('lawfirm-user-management')}
+              >
+                <Text style={styles.quickActionIcon}>👥</Text>
+                <Text style={styles.quickActionText}>Manage Users</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('lawfirm-activity-dashboard')}
+              >
+                <Text style={styles.quickActionIcon}>📊</Text>
+                <Text style={styles.quickActionText}>Activity Logs</Text>
+              </TouchableOpacity>
+            </View>
+            
             <View style={styles.quickActionsRow}>
               <TouchableOpacity 
                 style={styles.quickActionButton}
