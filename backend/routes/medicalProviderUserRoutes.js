@@ -11,40 +11,40 @@ const { logMedicalActivity } = require('../middleware/medicalProviderActivityLog
 router.use(verifyMedicalProviderUser);
 
 router.post(
-  '/users',
+  '/',
   requireAdmin,
   logMedicalActivity('user_created'),
   medicalProviderUserController.createUser
 );
 
 router.get(
-  '/users',
+  '/',
   checkPermission('can_manage_users'),
   medicalProviderUserController.getAllUsers
 );
 
 router.get(
-  '/users/:userId',
+  '/:userId',
   checkPermission('can_manage_users'),
   medicalProviderUserController.getUserById
 );
 
 router.put(
-  '/users/:userId',
+  '/:userId',
   checkPermission('can_manage_users'),
   logMedicalActivity('user_updated'),
   medicalProviderUserController.updateUser
 );
 
 router.post(
-  '/users/:userId/deactivate',
+  '/:userId/deactivate',
   requireAdmin,
   logMedicalActivity('user_deactivated'),
   medicalProviderUserController.deactivateUser
 );
 
 router.post(
-  '/users/:userId/reactivate',
+  '/:userId/reactivate',
   requireAdmin,
   logMedicalActivity('user_reactivated'),
   medicalProviderUserController.reactivateUser

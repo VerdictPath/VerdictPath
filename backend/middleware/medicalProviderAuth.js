@@ -1,4 +1,6 @@
+const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { JWT_SECRET } = require('./auth');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -8,11 +10,25 @@ const pool = new Pool({
 // Middleware to verify medical provider user authentication
 const verifyMedicalProviderUser = async (req, res, next) => {
   try {
-    // Check if user is authenticated
-    if (!req.user || req.user.type !== 'medicalprovider') {
+    // Extract JWT token from Authorization header or cookies
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1] || req.signedCookies?.token || req.cookies?.token;
+    
+    if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Medical provider authentication required'
+        message: 'No authentication token provided'
+      });
+    }
+
+    // Decode and verify JWT token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Check if it's a medical provider user
+    if (decoded.userType !== 'medical_provider' || !decoded.isMedicalProviderUser) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid user type - medical provider user credentials required'
       });
     }
 
@@ -21,12 +37,13 @@ const verifyMedicalProviderUser = async (req, res, next) => {
       SELECT 
         mpu.*,
         mp.provider_name,
+        mp.provider_code,
         mp.enable_activity_tracking,
         mp.hipaa_compliance_mode
       FROM medical_provider_users mpu
       JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
       WHERE mpu.id = $1 AND mpu.status = 'active'
-    `, [req.user.medicalProviderUserId]);
+    `, [decoded.medicalProviderUserId]);
 
     if (userResult.rows.length === 0) {
       return res.status(403).json({
@@ -35,14 +52,39 @@ const verifyMedicalProviderUser = async (req, res, next) => {
       });
     }
 
-    req.medicalProviderUser = userResult.rows[0];
-    req.medicalProviderId = userResult.rows[0].medical_provider_id;
+    const user = userResult.rows[0];
+
+    // Set req.user for consistency with law firm pattern
+    req.user = {
+      id: user.medical_provider_id,
+      medicalProviderUserId: user.id,
+      email: user.email,
+      userType: 'medical_provider',
+      providerCode: user.provider_code,
+      medicalProviderUserRole: user.role,
+      isMedicalProviderUser: true,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      userCode: user.user_code,
+      enableActivityTracking: user.enable_activity_tracking,
+      hipaaComplianceMode: user.hipaa_compliance_mode
+    };
+
+    req.medicalProviderUser = user;
+    req.medicalProviderId = user.medical_provider_id;
+    
+    // Update last activity
+    await pool.query(
+      'UPDATE medical_provider_users SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
+      [user.id]
+    );
+    
     next();
   } catch (error) {
     console.error('Medical provider auth error:', error);
-    res.status(500).json({
+    res.status(401).json({
       success: false,
-      message: 'Authentication error'
+      message: 'Invalid or expired token'
     });
   }
 };

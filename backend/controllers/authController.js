@@ -360,12 +360,44 @@ exports.registerMedicalProvider = async (req, res) => {
 
     const medicalProvider = result.rows[0];
 
+    // Auto-create admin user for the medical provider
+    const adminUserCode = `${medicalProvider.provider_code}-USER-0001`;
+    const adminUserResult = await db.query(
+      `INSERT INTO medical_provider_users (
+        medical_provider_id, first_name, last_name, email, password, user_code, role,
+        can_manage_users, can_manage_patients, can_view_all_patients,
+        can_access_phi, can_view_medical_records, can_edit_medical_records,
+        can_manage_billing, can_view_analytics, can_manage_settings,
+        can_send_notifications, title, status, hipaa_training_date, hipaa_training_expiry
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+      RETURNING id`,
+      [
+        medicalProvider.id,
+        'Admin',
+        'User',
+        medicalProvider.email,
+        hashedPassword,
+        adminUserCode,
+        'admin',
+        true, true, true, true, true, true, true, true, true, true,
+        'Provider Administrator',
+        'active',
+        new Date().toISOString().split('T')[0], // Today's date
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 1 year from now
+      ]
+    );
+    
+    const adminUser = adminUserResult.rows[0];
+
     const token = jwt.sign(
       { 
-        id: medicalProvider.id, 
+        id: medicalProvider.id,
+        medicalProviderUserId: adminUser.id,
         email: medicalProvider.email, 
         userType: 'medical_provider',
-        providerCode: medicalProvider.provider_code
+        providerCode: medicalProvider.provider_code,
+        medicalProviderUserRole: 'admin',
+        isMedicalProviderUser: true
       },
       JWT_SECRET,
       { expiresIn: '30d' }
@@ -376,9 +408,13 @@ exports.registerMedicalProvider = async (req, res) => {
       token,
       medicalProvider: {
         id: medicalProvider.id,
+        medicalProviderUserId: adminUser.id,
         providerName: medicalProvider.provider_name,
         providerCode: medicalProvider.provider_code,
-        email: medicalProvider.email
+        email: medicalProvider.email,
+        userCode: adminUserCode,
+        role: 'admin',
+        isMedicalProviderUser: true
       }
     });
   } catch (error) {
