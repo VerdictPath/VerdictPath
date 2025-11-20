@@ -34,6 +34,9 @@ const notificationQueueRoutes = require('./routes/notification-queue');
 const app = express();
 const PORT = process.env.PORT || 3000; // Railway sets PORT automatically, Expo uses 5000 for webview
 
+// Enable trust proxy for Railway/Replit deployments (fixes X-Forwarded-For header)
+app.set('trust proxy', true);
+
 // Get the base URL for the server (for self-referencing API calls)
 const getBaseUrl = () => {
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
