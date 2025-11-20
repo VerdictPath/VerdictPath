@@ -124,7 +124,8 @@ const styles = StyleSheet.create({
   logo: {
     position: 'absolute',
     top: 20,
-    left: 20,
+    left: '50%',
+    marginLeft: -60,
     width: 120,
     height: 120,
     zIndex: 10,
