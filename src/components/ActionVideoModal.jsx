@@ -158,7 +158,7 @@ const ActionVideoModal = ({
             style={styles.skipButton}
             onPress={handleClose}
           >
-            <Text style={styles.skipText}>Skip ✕</Text>
+            <Text style={styles.skipText}>Close ✕</Text>
           </TouchableOpacity>
         </Animated.View>
       </BlurView>
