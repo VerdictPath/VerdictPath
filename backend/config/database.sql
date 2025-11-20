@@ -222,3 +222,31 @@ CREATE TABLE IF NOT EXISTS user_invites (
 CREATE INDEX idx_user_invites_referrer_user_id ON user_invites(referrer_user_id);
 CREATE INDEX idx_user_invites_invite_code ON user_invites(invite_code);
 CREATE INDEX idx_user_invites_status ON user_invites(status);
+
+-- Notification queue table for quiet hours delivery (no foreign key dependencies)
+CREATE TABLE IF NOT EXISTS notification_queue (
+  id SERIAL PRIMARY KEY,
+  sender_type VARCHAR(50) NOT NULL,
+  sender_id INTEGER NOT NULL,
+  sender_name VARCHAR(255),
+  recipient_type VARCHAR(50) NOT NULL CHECK (recipient_type IN ('user', 'law_firm', 'medical_provider')),
+  recipient_id INTEGER NOT NULL,
+  type VARCHAR(100),
+  priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  title VARCHAR(255) NOT NULL,
+  body TEXT NOT NULL,
+  action_url VARCHAR(500),
+  action_data JSONB,
+  status VARCHAR(50) DEFAULT 'queued' CHECK (status IN ('queued', 'sent', 'failed', 'cancelled')),
+  scheduled_for TIMESTAMP,
+  queued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  sent_at TIMESTAMP,
+  attempts INTEGER DEFAULT 0,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_queue_status ON notification_queue(status);
+CREATE INDEX IF NOT EXISTS idx_notification_queue_scheduled ON notification_queue(scheduled_for);
+CREATE INDEX IF NOT EXISTS idx_notification_queue_recipient ON notification_queue(recipient_type, recipient_id);
