@@ -125,9 +125,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 20,
     left: '50%',
-    marginLeft: -60,
-    width: 120,
-    height: 120,
+    marginLeft: -90,
+    width: 180,
+    height: 180,
     zIndex: 10,
   },
   buttonContainer: {
