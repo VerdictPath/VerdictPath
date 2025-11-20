@@ -124,6 +124,22 @@ exports.getDashboard = async (req, res) => {
         total_substages_completed: 0
       };
       
+      // Check for recent uploads (within last 7 days)
+      const recentUploadResult = await db.query(
+        `SELECT COUNT(*) as count FROM medical_records 
+         WHERE user_id = $1 AND uploaded_at > NOW() - INTERVAL '7 days'`,
+        [patient.id]
+      );
+      const hasRecentUpload = parseInt(recentUploadResult.rows[0].count) > 0;
+      
+      // Check for records that need review (any record without a review status or with pending status)
+      const needsReviewResult = await db.query(
+        `SELECT COUNT(*) as count FROM medical_records 
+         WHERE user_id = $1 AND (review_status IS NULL OR review_status = 'pending')`,
+        [patient.id]
+      );
+      const hasRecordsNeedingReview = parseInt(needsReviewResult.rows[0].count) > 0;
+      
       return {
         id: patient.id,
         firstName: firstName,
@@ -141,8 +157,8 @@ exports.getDashboard = async (req, res) => {
         litigationProgress: Math.round(litigationProgress.progress_percentage || 0),
         // Analytics flags expected by dashboard
         hasRecords: recordCount > 0,
-        recentUpload: false, // TODO: Calculate based on uploaded_date
-        needsReview: false // TODO: Calculate based on review status
+        recentUpload: hasRecentUpload,
+        needsReview: hasRecordsNeedingReview
       };
     }));
     
