@@ -11,6 +11,7 @@ import {
   Alert,
   Modal,
   Switch,
+  ImageBackground,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -286,9 +287,14 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
-      <BlurView intensity={90} style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Add New User</Text>
+      <ImageBackground
+        source={require('../../attached_assets/Ship_1763681250752.png')}
+        style={styles.modalContainer}
+        resizeMode="cover"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New User</Text>
 
           <ScrollView>
             <TextInput
@@ -385,7 +391,8 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </BlurView>
+        </View>
+      </ImageBackground>
     </Modal>
   );
 };
@@ -554,40 +561,53 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
+    width: '100%',
   },
   modalContent: {
     width: '100%',
     maxHeight: '90%',
-    backgroundColor: lawFirmTheme.colors.midnightBlue,
+    backgroundColor: 'rgba(20, 30, 48, 0.95)',
     borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
-    borderColor: lawFirmTheme.colors.accentBlue,
+    borderWidth: 2,
+    borderColor: '#d4af37',
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#d4af37',
     marginBottom: 20,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
     padding: 15,
     color: '#FFFFFF',
     fontSize: 16,
     marginBottom: 15,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(212, 175, 55, 0.6)',
   },
   label: {
-    color: '#FFFFFF',
+    color: '#d4af37',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
     marginTop: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   roleSelector: {
     flexDirection: 'row',
@@ -598,15 +618,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginRight: 10,
     marginBottom: 10,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(212, 175, 55, 0.6)',
   },
   roleOptionActive: {
-    backgroundColor: lawFirmTheme.colors.accentBlue,
-    borderColor: lawFirmTheme.colors.accentBlue,
+    backgroundColor: '#d4af37',
+    borderColor: '#d4af37',
   },
   roleOptionText: {
     color: '#FFFFFF',
@@ -614,7 +634,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   roleOptionTextActive: {
-    color: '#FFFFFF',
+    color: '#1e3a5f',
   },
   modalActions: {
     flexDirection: 'row',
@@ -625,9 +645,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginRight: 10,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   cancelButtonText: {
     color: '#FFFFFF',
@@ -638,11 +660,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: lawFirmTheme.colors.accentBlue,
+    backgroundColor: '#d4af37',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#d4af37',
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: '#1e3a5f',
     fontSize: 16,
     fontWeight: '700',
   },
