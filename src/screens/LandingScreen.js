@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { theme } from '../styles/theme';
+import FeatheredImage from '../components/FeatheredImage';
 
 const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
@@ -27,10 +28,11 @@ const LandingScreen = ({ onNavigate }) => {
       
       <View style={styles.overlay}>
         <View style={styles.heroSection}>
-          <Image 
+          <FeatheredImage 
             source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
             style={styles.logo}
             resizeMode="contain"
+            featherAmount={0.2}
           />
         </View>
 
