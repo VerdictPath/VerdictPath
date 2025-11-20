@@ -28,6 +28,7 @@ const adminTempRoutes = require('./routes/admin-temp');
 const negotiationsRoutes = require('./routes/negotiations');
 const clientRelationshipsRoutes = require('./routes/client-relationships');
 const avatarRoutes = require('./routes/avatarRoutes');
+const notificationQueueRoutes = require('./routes/notification-queue');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -160,6 +161,7 @@ app.use('/api/connections', connectionsRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/notification-queue', notificationQueueRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/disbursements', disbursementsRoutes);
