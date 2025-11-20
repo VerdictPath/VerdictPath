@@ -10,5 +10,6 @@ router.post('/register/medicalprovider', authController.registerMedicalProvider)
 // HIPAA: Add account lockout middleware to login route
 router.post('/login', checkAccountLockout, authController.login);
 router.post('/login/lawfirm-user', checkAccountLockout, authController.loginLawFirmUser);
+router.post('/login/medicalprovider-user', checkAccountLockout, authController.loginMedicalProviderUser);
 
 module.exports = router;

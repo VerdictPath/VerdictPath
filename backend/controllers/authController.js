@@ -686,3 +686,139 @@ exports.loginLawFirmUser = async (req, res) => {
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
+
+exports.loginMedicalProviderUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const result = await db.query(
+      `SELECT mpu.id, mpu.medical_provider_id, mpu.first_name, mpu.last_name, mpu.email, 
+              mpu.password, mpu.user_code, mpu.role, mpu.status,
+              mpu.can_manage_users, mpu.can_manage_patients, mpu.can_view_all_patients,
+              mpu.can_send_notifications, mpu.can_manage_billing, 
+              mpu.can_view_analytics, mpu.can_manage_settings,
+              mp.provider_code, mp.provider_name
+       FROM medical_provider_users mpu
+       JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
+       WHERE mpu.email = $1`,
+      [email.toLowerCase()]
+    );
+
+    if (result.rows.length === 0) {
+      await auditLogger.logAuth({
+        userId: null,
+        email: email,
+        action: 'MEDICALPROVIDER_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'User not found'
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const medicalProviderUser = result.rows[0];
+
+    if (medicalProviderUser.status !== 'active') {
+      await auditLogger.logAuth({
+        userId: medicalProviderUser.id,
+        email: email,
+        action: 'MEDICALPROVIDER_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: `Account ${medicalProviderUser.status}`
+      });
+      return res.status(403).json({ 
+        message: `Account is ${medicalProviderUser.status}. Please contact your administrator.` 
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, medicalProviderUser.password);
+
+    if (!isValidPassword) {
+      await auditLogger.logAuth({
+        userId: medicalProviderUser.id,
+        email: email,
+        action: 'MEDICALPROVIDER_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'Invalid password'
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    await db.query(
+      'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [medicalProviderUser.id]
+    );
+
+    const token = jwt.sign(
+      { 
+        id: medicalProviderUser.medical_provider_id,
+        medicalProviderUserId: medicalProviderUser.id,
+        email: medicalProviderUser.email,
+        userType: 'medicalprovider',
+        providerCode: medicalProviderUser.provider_code,
+        medicalProviderUserRole: medicalProviderUser.role,
+        isMedicalProviderUser: true
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    await auditLogger.logAuth({
+      userId: medicalProviderUser.id,
+      email: email,
+      action: 'MEDICALPROVIDER_USER_LOGIN',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
+
+    // Log activity to medical provider activity logs
+    const { logActivity } = require('../middleware/medicalProviderActivityLogger');
+    await logActivity({
+      medicalProviderId: medicalProviderUser.medical_provider_id,
+      userId: medicalProviderUser.id,
+      userEmail: medicalProviderUser.email,
+      userName: `${medicalProviderUser.first_name} ${medicalProviderUser.last_name}`,
+      action: 'user_login',
+      metadata: { role: medicalProviderUser.role },
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      status: 'success'
+    });
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: medicalProviderUser.medical_provider_id,
+        medicalProviderUserId: medicalProviderUser.id,
+        providerName: medicalProviderUser.provider_name,
+        firstName: medicalProviderUser.first_name,
+        lastName: medicalProviderUser.last_name,
+        email: medicalProviderUser.email,
+        userType: 'medicalprovider',
+        providerCode: medicalProviderUser.provider_code,
+        userCode: medicalProviderUser.user_code,
+        role: medicalProviderUser.role,
+        isMedicalProviderUser: true,
+        permissions: {
+          canManageUsers: medicalProviderUser.can_manage_users,
+          canManagePatients: medicalProviderUser.can_manage_patients,
+          canViewAllPatients: medicalProviderUser.can_view_all_patients,
+          canSendNotifications: medicalProviderUser.can_send_notifications,
+          canManageBilling: medicalProviderUser.can_manage_billing,
+          canViewAnalytics: medicalProviderUser.can_view_analytics,
+          canManageSettings: medicalProviderUser.can_manage_settings
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error logging in medical provider user:', error);
+    res.status(500).json({ message: 'Error logging in', error: error.message });
+  }
+};
