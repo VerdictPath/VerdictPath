@@ -21,7 +21,7 @@ Key technical features include:
 - **Bill Negotiations Portal**: Full-featured negotiation system for law firms and medical providers to negotiate medical bills, including initiation, counter-offers, acceptance, and negotiation history.
 - **Client-Medical Provider Relationship Management**: Secure system for tracking client-medical provider relationships, controlled by law firms.
 - **Premium Access Control for Settlement Disbursements**: Gating of settlement disbursement features for premium law firm subscribers.
-- **Push Notification System**: Targeted notifications, 22 templates, Expo push integration, deep linking, and real-time badge count synchronization.
+- **Push Notification System**: Targeted notifications, 22 templates, Expo push integration, deep linking, real-time badge count synchronization, client-specific analytics with filtering, and real-time client search in send notification screen.
 - **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards.
 - **Calendar Integration**: Full device calendar sync via Expo Calendar API.
 - **Enhanced Gamification**: 16 achievements, 8 pirate-themed badges with rarity, progress tracking, and a leaderboard system.
