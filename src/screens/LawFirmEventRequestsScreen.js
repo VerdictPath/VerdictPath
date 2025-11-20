@@ -29,6 +29,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const [location, setLocation] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('60');
   const [notes, setNotes] = useState('');
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -159,6 +160,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     setLocation('');
     setDurationMinutes('60');
     setNotes('');
+    setClientSearchQuery('');
   };
 
   const getStatusColor = (status) => {
@@ -254,26 +256,83 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Create Event Request</Text>
             
-            <ScrollView style={styles.formScroll}>
+            <ScrollView 
+              style={styles.formScroll}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+            >
               <Text style={styles.label}>Select Client *</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clientScroll}>
-                {clients.map((client) => (
+              
+              {/* Client Search Bar */}
+              <View style={styles.searchContainer}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  value={clientSearchQuery}
+                  onChangeText={setClientSearchQuery}
+                  placeholder="Search clients by name or email..."
+                  placeholderTextColor="#999"
+                />
+                {clientSearchQuery.length > 0 && (
                   <TouchableOpacity
-                    key={client.id}
-                    style={[
-                      styles.clientChip,
-                      selectedClient?.id === client.id && styles.clientChipSelected
-                    ]}
-                    onPress={() => setSelectedClient(client)}
+                    style={styles.clearSearchButton}
+                    onPress={() => setClientSearchQuery('')}
                   >
-                    <Text style={[
-                      styles.clientChipText,
-                      selectedClient?.id === client.id && styles.clientChipTextSelected
-                    ]}>
-                      {client.name}
-                    </Text>
+                    <Text style={styles.clearSearchText}>✕</Text>
                   </TouchableOpacity>
-                ))}
+                )}
+              </View>
+              
+              {/* Client List */}
+              <ScrollView 
+                style={styles.clientListContainer}
+                nestedScrollEnabled={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                {clients
+                  .filter(client => {
+                    if (!clientSearchQuery.trim()) return true;
+                    const query = clientSearchQuery.toLowerCase();
+                    const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+                    const email = client.email?.toLowerCase() || '';
+                    return fullName.includes(query) || email.includes(query);
+                  })
+                  .map((client) => (
+                    <TouchableOpacity
+                      key={client.id}
+                      style={[
+                        styles.clientCard,
+                        selectedClient?.id === client.id && styles.clientCardSelected
+                      ]}
+                      onPress={() => setSelectedClient(client)}
+                    >
+                      <View style={styles.clientCardContent}>
+                        <Text style={[
+                          styles.clientName,
+                          selectedClient?.id === client.id && styles.clientNameSelected
+                        ]}>
+                          {client.first_name} {client.last_name}
+                        </Text>
+                        {client.email && (
+                          <Text style={styles.clientEmail}>{client.email}</Text>
+                        )}
+                      </View>
+                      {selectedClient?.id === client.id && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                {clients.filter(client => {
+                  if (!clientSearchQuery.trim()) return true;
+                  const query = clientSearchQuery.toLowerCase();
+                  const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+                  const email = client.email?.toLowerCase() || '';
+                  return fullName.includes(query) || email.includes(query);
+                }).length === 0 && (
+                  <View style={styles.noResultsContainer}>
+                    <Text style={styles.noResultsText}>No clients found</Text>
+                  </View>
+                )}
               </ScrollView>
 
               <Text style={styles.label}>Event Type *</Text>
@@ -610,6 +669,86 @@ const styles = StyleSheet.create({
   clientChipTextSelected: {
     color: '#FFF',
     fontWeight: '600',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+    color: '#666',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    padding: 0,
+  },
+  clearSearchButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  clearSearchText: {
+    fontSize: 16,
+    color: '#999',
+    fontWeight: 'bold',
+  },
+  clientListContainer: {
+    maxHeight: 200,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fafafa',
+  },
+  clientCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  clientCardSelected: {
+    backgroundColor: '#e8f4f8',
+    borderLeftWidth: 4,
+    borderLeftColor: '#8B4513',
+  },
+  clientCardContent: {
+    flex: 1,
+  },
+  clientNameSelected: {
+    color: '#8B4513',
+    fontWeight: 'bold',
+  },
+  clientEmail: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  checkmark: {
+    fontSize: 20,
+    color: '#8B4513',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  noResultsContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  noResultsText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
   },
   typeButtonsRow: {
     flexDirection: 'row',
