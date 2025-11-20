@@ -6,6 +6,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
 const lawfirmUsersRoutes = require('./routes/lawfirmUsers');
+const activityLogRoutes = require('./routes/activityLogs');
 const medicalproviderRoutes = require('./routes/medicalprovider');
 const consentRoutes = require('./routes/consent');
 const coinsRoutes = require('./routes/coins');
@@ -123,6 +124,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/lawfirm', lawfirmUsersRoutes);
+app.use('/api/lawfirm/activity-logs', activityLogRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/coins', coinsRoutes);
