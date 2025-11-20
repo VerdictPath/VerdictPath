@@ -373,6 +373,34 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                 <Text style={styles.quickActionText}>Disbursements</Text>
               </TouchableOpacity>
             </View>
+            
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-user-management', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>👥</Text>
+                <Text style={styles.quickActionText}>Manage Users</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-activity-dashboard', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>📊</Text>
+                <Text style={styles.quickActionText}>Activity Logs</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-hipaa-dashboard', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>🔒</Text>
+                <Text style={styles.quickActionText}>HIPAA Report</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           
           {patients.length === 0 ? (
