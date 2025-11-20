@@ -219,8 +219,48 @@ exports.registerLawFirm = async (req, res) => {
     
     const lawFirm = result.rows[0];
     
+    // Auto-create admin user for the law firm
+    const adminUserCode = `${lawFirm.firm_code}-USER-0001`;
+    const adminUserResult = await db.query(
+      `INSERT INTO law_firm_users (
+        law_firm_id, first_name, last_name, email, password, user_code, role,
+        can_manage_users, can_manage_clients, can_view_all_clients,
+        can_send_notifications, can_manage_disbursements, can_view_analytics,
+        can_manage_settings, title, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      RETURNING id`,
+      [
+        lawFirm.id,
+        'Admin',
+        'User',
+        lawFirm.email,
+        hashedPassword,
+        adminUserCode,
+        'admin',
+        true, true, true, true, true, true, true,
+        'Firm Administrator',
+        'active'
+      ]
+    );
+    
+    const adminUser = adminUserResult.rows[0];
+    
+    // Update law firm with admin user ID
+    await db.query(
+      'UPDATE law_firms SET admin_user_id = $1 WHERE id = $2',
+      [adminUser.id, lawFirm.id]
+    );
+    
     const token = jwt.sign(
-      { id: lawFirm.id, email: lawFirm.email, userType: 'lawfirm', firmCode: lawFirm.firm_code },
+      { 
+        id: lawFirm.id,
+        lawFirmUserId: adminUser.id,
+        email: lawFirm.email,
+        userType: 'lawfirm',
+        firmCode: lawFirm.firm_code,
+        lawFirmUserRole: 'admin',
+        isLawFirmUser: true
+      },
       JWT_SECRET,
       { expiresIn: '30d' }
     );
@@ -230,11 +270,15 @@ exports.registerLawFirm = async (req, res) => {
       token,
       lawFirm: {
         id: lawFirm.id,
+        lawFirmUserId: adminUser.id,
         firmName: lawFirm.firm_name,
         firmCode: lawFirm.firm_code,
         email: lawFirm.email,
         subscriptionTier: lawFirm.subscription_tier,
-        firmSize: lawFirm.firm_size
+        firmSize: lawFirm.firm_size,
+        userCode: adminUserCode,
+        role: 'admin',
+        isLawFirmUser: true
       }
     });
   } catch (error) {
@@ -352,7 +396,11 @@ exports.login = async (req, res) => {
     
     if (userType === 'lawfirm') {
       result = await db.query(
-        'SELECT id, firm_name as name, email, password, firm_code FROM law_firms WHERE email = $1',
+        `SELECT lf.id, lf.firm_name as name, lf.email, lf.password, lf.firm_code,
+                lfu.id as law_firm_user_id, lfu.role as law_firm_user_role
+         FROM law_firms lf
+         LEFT JOIN law_firm_users lfu ON lfu.law_firm_id = lf.id AND lfu.email = lf.email AND lfu.status = 'active'
+         WHERE lf.email = $1`,
         [email.toLowerCase()]
       );
     } else if (userType === 'medical_provider') {
@@ -401,7 +449,15 @@ exports.login = async (req, res) => {
     
     let tokenPayload;
     if (userType === 'lawfirm') {
-      tokenPayload = { id: account.id, email: account.email, userType: 'lawfirm', firmCode: account.firm_code };
+      tokenPayload = { 
+        id: account.id, 
+        email: account.email, 
+        userType: 'lawfirm', 
+        firmCode: account.firm_code,
+        lawFirmUserId: account.law_firm_user_id || null,
+        lawFirmUserRole: account.law_firm_user_role || null,
+        isLawFirmUser: !!account.law_firm_user_id
+      };
     } else if (userType === 'medical_provider') {
       tokenPayload = { id: account.id, email: account.email, userType: 'medical_provider', providerCode: account.provider_code };
     } else {
@@ -434,10 +490,13 @@ exports.login = async (req, res) => {
     if (userType === 'lawfirm') {
       responseData = {
         id: account.id,
+        lawFirmUserId: account.law_firm_user_id || null,
         firmName: account.name,
         email: account.email,
         userType: 'lawfirm',
-        firmCode: account.firm_code
+        firmCode: account.firm_code,
+        role: account.law_firm_user_role || null,
+        isLawFirmUser: !!account.law_firm_user_id
       };
     } else if (userType === 'medical_provider') {
       responseData = {
@@ -463,6 +522,128 @@ exports.login = async (req, res) => {
       user: responseData
     });
   } catch (error) {
+    res.status(500).json({ message: 'Error logging in', error: error.message });
+  }
+};
+
+exports.loginLawFirmUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const result = await db.query(
+      `SELECT lfu.id, lfu.law_firm_id, lfu.first_name, lfu.last_name, lfu.email, 
+              lfu.password, lfu.user_code, lfu.role, lfu.status,
+              lfu.can_manage_users, lfu.can_manage_clients, lfu.can_view_all_clients,
+              lfu.can_send_notifications, lfu.can_manage_disbursements, 
+              lfu.can_view_analytics, lfu.can_manage_settings,
+              lf.firm_code, lf.firm_name
+       FROM law_firm_users lfu
+       JOIN law_firms lf ON lfu.law_firm_id = lf.id
+       WHERE lfu.email = $1`,
+      [email.toLowerCase()]
+    );
+
+    if (result.rows.length === 0) {
+      await auditLogger.logAuth({
+        userId: null,
+        email: email,
+        action: 'LAWFIRM_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'User not found'
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const lawFirmUser = result.rows[0];
+
+    if (lawFirmUser.status !== 'active') {
+      await auditLogger.logAuth({
+        userId: lawFirmUser.id,
+        email: email,
+        action: 'LAWFIRM_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: `Account ${lawFirmUser.status}`
+      });
+      return res.status(403).json({ 
+        message: `Account is ${lawFirmUser.status}. Please contact your administrator.` 
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, lawFirmUser.password);
+
+    if (!isValidPassword) {
+      await auditLogger.logAuth({
+        userId: lawFirmUser.id,
+        email: email,
+        action: 'LAWFIRM_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: 'Invalid password'
+      });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    await db.query(
+      'UPDATE law_firm_users SET last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = $1',
+      [lawFirmUser.id]
+    );
+
+    const token = jwt.sign(
+      { 
+        id: lawFirmUser.law_firm_id,
+        lawFirmUserId: lawFirmUser.id,
+        email: lawFirmUser.email,
+        userType: 'lawfirm',
+        firmCode: lawFirmUser.firm_code,
+        lawFirmUserRole: lawFirmUser.role,
+        isLawFirmUser: true
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    await auditLogger.logAuth({
+      userId: lawFirmUser.id,
+      email: email,
+      action: 'LAWFIRM_USER_LOGIN',
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: lawFirmUser.law_firm_id,
+        lawFirmUserId: lawFirmUser.id,
+        firmName: lawFirmUser.firm_name,
+        firstName: lawFirmUser.first_name,
+        lastName: lawFirmUser.last_name,
+        email: lawFirmUser.email,
+        userType: 'lawfirm',
+        firmCode: lawFirmUser.firm_code,
+        userCode: lawFirmUser.user_code,
+        role: lawFirmUser.role,
+        isLawFirmUser: true,
+        permissions: {
+          canManageUsers: lawFirmUser.can_manage_users,
+          canManageClients: lawFirmUser.can_manage_clients,
+          canViewAllClients: lawFirmUser.can_view_all_clients,
+          canSendNotifications: lawFirmUser.can_send_notifications,
+          canManageDisbursements: lawFirmUser.can_manage_disbursements,
+          canViewAnalytics: lawFirmUser.can_view_analytics,
+          canManageSettings: lawFirmUser.can_manage_settings
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error logging in law firm user:', error);
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
