@@ -32,27 +32,57 @@ const verifyMedicalProviderUser = async (req, res, next) => {
       });
     }
 
-    // Get medical provider user details
-    const userResult = await pool.query(`
-      SELECT 
-        mpu.*,
-        mp.provider_name,
-        mp.provider_code,
-        mp.enable_activity_tracking,
-        mp.hipaa_compliance_mode
-      FROM medical_provider_users mpu
-      JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
-      WHERE mpu.id = $1 AND mpu.status = 'active'
-    `, [decoded.medicalProviderUserId]);
+    let user;
+    
+    // Handle bootstrap scenario (first-time login before admin user is created)
+    if (decoded.medicalProviderUserId === -1) {
+      // Create minimal bootstrap stub for first admin creation
+      user = {
+        id: -1,
+        medical_provider_id: decoded.id,
+        first_name: 'Bootstrap',
+        last_name: 'Admin',
+        email: decoded.email,
+        user_code: 'BOOTSTRAP',
+        role: 'admin',
+        status: 'active',
+        provider_code: decoded.providerCode,
+        enable_activity_tracking: false,
+        hipaa_compliance_mode: false,
+        can_manage_users: true,
+        can_manage_patients: true,
+        can_view_all_patients: true,
+        can_send_notifications: true,
+        can_manage_billing: true,
+        can_view_analytics: true,
+        can_manage_settings: true,
+        can_access_phi: true,
+        can_view_medical_records: true,
+        can_edit_medical_records: true
+      };
+    } else {
+      // Normal flow: get medical provider user details from database
+      const userResult = await pool.query(`
+        SELECT 
+          mpu.*,
+          mp.provider_name,
+          mp.provider_code,
+          mp.enable_activity_tracking,
+          mp.hipaa_compliance_mode
+        FROM medical_provider_users mpu
+        JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
+        WHERE mpu.id = $1 AND mpu.status = 'active'
+      `, [decoded.medicalProviderUserId]);
 
-    if (userResult.rows.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: 'Medical provider user not found or inactive'
-      });
+      if (userResult.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'Medical provider user not found or inactive'
+        });
+      }
+
+      user = userResult.rows[0];
     }
-
-    const user = userResult.rows[0];
 
     // Set req.user for consistency with law firm pattern
     req.user = {
@@ -73,11 +103,13 @@ const verifyMedicalProviderUser = async (req, res, next) => {
     req.medicalProviderUser = user;
     req.medicalProviderId = user.medical_provider_id;
     
-    // Update last activity
-    await pool.query(
-      'UPDATE medical_provider_users SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
-      [user.id]
-    );
+    // Update last login (skip for bootstrap scenario)
+    if (user.id !== -1) {
+      await pool.query(
+        'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+        [user.id]
+      );
+    }
     
     next();
   } catch (error) {
