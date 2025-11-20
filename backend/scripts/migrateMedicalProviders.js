@@ -71,6 +71,7 @@ async function migrateMedicalProviders() {
           user_code,
           role,
           title,
+          credentials,
           can_manage_users,
           can_manage_patients,
           can_view_all_patients,
@@ -78,9 +79,14 @@ async function migrateMedicalProviders() {
           can_manage_billing,
           can_view_analytics,
           can_manage_settings,
+          can_access_phi,
+          can_view_medical_records,
+          can_edit_medical_records,
+          hipaa_training_date,
+          hipaa_training_expiry,
           status,
           created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_TIMESTAMP)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, CURRENT_TIMESTAMP)
         RETURNING id
       `, [
         provider.id,
@@ -91,6 +97,7 @@ async function migrateMedicalProviders() {
         userCode,
         'admin',
         'Administrator',
+        'Administrator', // credentials
         true,  // can_manage_users
         true,  // can_manage_patients
         true,  // can_view_all_patients
@@ -98,6 +105,11 @@ async function migrateMedicalProviders() {
         true,  // can_manage_billing
         true,  // can_view_analytics
         true,  // can_manage_settings
+        true,  // can_access_phi
+        true,  // can_view_medical_records
+        true,  // can_edit_medical_records
+        new Date(),  // hipaa_training_date
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // hipaa_training_expiry (1 year)
         'active'
       ]);
 
@@ -113,12 +125,16 @@ async function migrateMedicalProviders() {
           max_users = $1,
           enable_activity_tracking = true,
           hipaa_compliance_mode = true,
+          require_two_factor = false,
+          data_retention_days = 2555,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = $2
       `, [maxUsers, provider.id]);
 
       console.log(`   ✅ Admin created: ${userCode}`);
-      console.log(`   📊 Max users set to: ${maxUsers}\n`);
+      console.log(`   📊 Max users set to: ${maxUsers}`);
+      console.log(`   🏥 HIPAA training set (expires in 1 year)`);
+      console.log(`   📋 Data retention: 2555 days (7 years HIPAA compliant)\n`);
       migrated++;
     }
 
