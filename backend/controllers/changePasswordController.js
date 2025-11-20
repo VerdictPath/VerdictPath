@@ -5,6 +5,7 @@ const { JWT_SECRET } = require('../middleware/auth');
 const auditLogger = require('../services/auditLogger');
 const { sendPasswordChangeConfirmation } = require('../services/emailService');
 const { sendPasswordChangeSMS } = require('../services/smsService');
+const { validatePasswordComplexity } = require('../utils/passwordValidator');
 
 exports.changePasswordFirstLogin = async (req, res) => {
   try {
@@ -17,10 +18,12 @@ exports.changePasswordFirstLogin = async (req, res) => {
       });
     }
 
-    if (newPassword.length < 8) {
+    const passwordValidation = validatePasswordComplexity(newPassword);
+    if (!passwordValidation.isValid) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 8 characters long'
+        message: passwordValidation.message,
+        errors: passwordValidation.errors
       });
     }
 
