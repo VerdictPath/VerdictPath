@@ -8,8 +8,8 @@ import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
 import MedicalProviderSubscriptionScreen from './MedicalProviderSubscriptionScreen';
 
-const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate, onLogout }) => {
-  const [activeTab, setActiveTab] = useState('patients');
+const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient, onNavigate, onLogout }) => {
+  const [activeTab, setActiveTab] = useState(initialTab || 'patients');
   const [patients, setPatients] = useState([]);
   const [providerData, setProviderData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -21,6 +21,13 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
   const [lawFirms, setLawFirms] = useState([]);
   const [firmCode, setFirmCode] = useState('');
   const [addingFirm, setAddingFirm] = useState(false);
+
+  // Sync activeTab with initialTab when it changes
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -199,13 +206,13 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
   const handleNavigateToPaymentSetup = () => {
     if (onNavigate) {
-      onNavigate('medicalprovider-payment-setup');
+      onNavigate('medicalprovider-payment-setup', activeTab);
     }
   };
 
   const handleNavigateToDisbursements = () => {
     if (onNavigate) {
-      onNavigate('medicalprovider-disbursements');
+      onNavigate('medicalprovider-disbursements', activeTab);
     }
   };
 
@@ -352,7 +359,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
             <View style={styles.quickActionsRow}>
               <TouchableOpacity 
                 style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-negotiations')}
+                onPress={() => onNavigate && onNavigate('medicalprovider-negotiations', activeTab)}
               >
                 <Text style={styles.quickActionIcon}>💰</Text>
                 <Text style={styles.quickActionText}>Bill Negotiations</Text>
@@ -360,7 +367,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
               
               <TouchableOpacity 
                 style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-disbursements')}
+                onPress={() => onNavigate && onNavigate('medicalprovider-disbursements', activeTab)}
               >
                 <Text style={styles.quickActionIcon}>💵</Text>
                 <Text style={styles.quickActionText}>Disbursements</Text>
@@ -448,7 +455,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
           
           <TouchableOpacity 
             style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('medicalprovider-send-notification')}
+            onPress={() => onNavigate && onNavigate('medicalprovider-send-notification', activeTab)}
           >
             <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>📨</Text>
@@ -464,7 +471,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
           <TouchableOpacity 
             style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('medicalprovider-notification-analytics')}
+            onPress={() => onNavigate && onNavigate('medicalprovider-notification-analytics', activeTab)}
           >
             <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>📊</Text>
@@ -480,7 +487,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
           <TouchableOpacity 
             style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('medicalprovider-event-requests')}
+            onPress={() => onNavigate && onNavigate('medicalprovider-event-requests', activeTab)}
           >
             <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>📅</Text>
@@ -496,7 +503,7 @@ const MedicalProviderDashboardScreen = ({ user, onNavigateToPatient, onNavigate,
 
           <TouchableOpacity 
             style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('medicalprovider-negotiations')}
+            onPress={() => onNavigate && onNavigate('medicalprovider-negotiations', activeTab)}
           >
             <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>💰</Text>

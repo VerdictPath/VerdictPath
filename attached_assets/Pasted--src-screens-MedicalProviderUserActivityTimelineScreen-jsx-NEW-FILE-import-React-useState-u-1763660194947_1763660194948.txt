@@ -1,0 +1,305 @@
+// src/screens/MedicalProviderUserActivityTimelineScreen.jsx - NEW FILE
+
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import MedicalGlassCard from '../components/MedicalGlassCard';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
+import { apiRequest } from '../config/api';
+
+const MedicalProviderUserActivityTimelineScreen = ({ 
+  user, 
+  targetUserId, 
+  onBack 
+}) => {
+  const [activities, setActivities] = useState([]);
+  const [targetUser, setTargetUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    loadUserTimeline();
+  }, [page]);
+
+  const loadUserTimeline = async () => {
+    try {
+      if (page === 1) {
+        setLoading(true);
+      }
+
+      const response = await apiRequest(
+        `/api/medicalprovider/activity/user/${targetUserId}/timeline?page=${page}&limit=20`,
+        {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${user.token}` },
+        }
+      );
+
+      if (page === 1) {
+        setActivities(response.activities);
+        setTargetUser(response.user);
+      } else {
+        setActivities(prev => [...prev, ...response.activities]);
+      }
+
+      setHasMore(response.currentPage < response.totalPages);
+    } catch (error) {
+      console.error('[MedicalUserTimeline] Load error:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setPage(1);
+    loadUserTimeline();
+  };
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
+
+  const groupActivitiesByDate = (activities) => {
+    const groups = {};
+    
+    activities.forEach(activity => {
+      const date = new Date(activity.timestamp);
+      const dateKey = date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push(activity);
+    });
+
+    return groups;
+  };
+
+  const groupedActivities = groupActivitiesByDate(activities);
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[
+          medicalProviderTheme.colors.clinicalWhite,
+          medicalProviderTheme.colors.lightGray,
+        ]}
+        style={styles.background}
+      />
+
+      {/* Header */}
+      <LinearGradient
+        colors={[
+          medicalProviderTheme.colors.deepTeal,
+          medicalProviderTheme.colors.clinicalTeal,
+        ]}
+        style={styles.headerGradient}
+      >
+        <BlurView intensity={10} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Activity Timeline</Text>
+            <View style={{ width: 60 }} />
+          </View>
+        </BlurView>
+      </LinearGradient>
+
+      {/* User Info Card */}
+      {targetUser && (
+        <MedicalGlassCard variant="white" style={styles.userInfoCard}>
+          <View style={styles.userInfoContent}>
+            <View style={styles.userAvatar}>
+              <LinearGradient
+                colors={[
+                  medicalProviderTheme.colors.accentTeal,
+                  medicalProviderTheme.colors.clinicalTeal,
+                ]}
+                style={styles.avatarGradient}
+              >
+                <Text style={styles.userInitials}>
+                  {targetUser.name.split(' ').map(n => n[0]).join('')}
+                </Text>
+              </LinearGradient>
+            </View>
+            <View style={styles.userInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{targetUser.name}</Text>
+                {targetUser.credentials && (
+                  <Text style={styles.userCredentials}>, {targetUser.credentials}</Text>
+                )}
+              </View>
+              <Text style={styles.userEmail}>{targetUser.email}</Text>
+              <View style={styles.userMeta}>
+                <View style={styles.userBadge}>
+                  <Text style={styles.userBadgeText}>
+                    {targetUser.role.replace(/_/g, ' ').toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.userCode}>{targetUser.userCode}</Text>
+              </View>
+            </View>
+          </View>
+        </MedicalGlassCard>
+      )}
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={medicalProviderTheme.colors.accentTeal}
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+          
+          if (isCloseToBottom) {
+            loadMore();
+          }
+        }}
+        scrollEventThrottle={400}
+      >
+        {Object.entries(groupedActivities).map(([date, dayActivities]) => (
+          <View key={date} style={styles.dateGroup}>
+            <View style={styles.dateHeader}>
+              <View style={styles.dateLine} />
+              <Text style={styles.dateText}>{date}</Text>
+              <View style={styles.dateLine} />
+            </View>
+
+            {dayActivities.map((activity, index) => (
+              <TimelineActivityCard 
+                key={activity._id || index}
+                activity={activity}
+                isLast={index === dayActivities.length - 1}
+              />
+            ))}
+          </View>
+        ))}
+
+        {activities.length === 0 && !loading && (
+          <MedicalGlassCard variant="mint" style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No activity recorded yet</Text>
+          </MedicalGlassCard>
+        )}
+
+        {loading && page === 1 && (
+          <Text style={styles.loadingText}>Loading timeline...</Text>
+        )}
+
+        {loading && page > 1 && (
+          <Text style={styles.loadingMoreText}>Loading more...</Text>
+        )}
+
+        {!hasMore && activities.length > 0 && (
+          <Text style={styles.endText}>— End of timeline —</Text>
+        )}
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+    </View>
+  );
+};
+
+const TimelineActivityCard = ({ activity, isLast }) => {
+  const actionIcons = {
+    user_created: '➕',
+    user_updated: '✏️',
+    user_deactivated: '🚫',
+    user_login: '🔓',
+    user_logout: '🔒',
+    patient_viewed: '👁️',
+    patient_updated: '✏️',
+    patient_phi_viewed: '🔐',
+    medical_record_viewed: '📋',
+    medical_record_updated: '✏️',
+    medical_record_created: '📝',
+    document_uploaded: '📤',
+    document_downloaded: '📥',
+    document_deleted: '🗑️',
+    notification_sent: '📨',
+    prescription_created: '💊',
+    treatment_plan_created: '📝',
+    appointment_scheduled: '📅',
+    disbursement_initiated: '💸',
+    settings_updated: '⚙️',
+    password_changed: '🔑',
+  };
+
+  const actionColors = {
+    user: medicalProviderTheme.colors.accentTeal,
+    patient: medicalProviderTheme.colors.medicalTeal,
+    medical_record: medicalProviderTheme.colors.medicalBlue,
+    document: medicalProviderTheme.colors.prescriptionGreen,
+    financial: medicalProviderTheme.colors.healthy,
+    communication: medicalProviderTheme.colors.accentTeal,
+    treatment: medicalProviderTheme.colors.prescriptionGreen,
+    compliance: medicalProviderTheme.colors.stable,
+    settings: medicalProviderTheme.colors.darkGray,
+    security: medicalProviderTheme.colors.emergencyRed,
+  };
+
+  const sensitivityColors = {
+    low: medicalProviderTheme.colors.healthy,
+    medium: medicalProviderTheme.colors.stable,
+    high: medicalProviderTheme.colors.warning,
+    critical: medicalProviderTheme.colors.critical,
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  return (
+    <View style={styles.timelineItem}>
+      <View style={styles.timelineLeft}>
+        <View
+          style={[
+            styles.timelineDot,
+            { backgroundColor: actionColors[activity.actionCategory] || medicalProviderTheme.colors.accentTeal }
+          ]}
+        >
+          {activity.sensitivityLevel && (
+            <View
+              style={[
+                styles.sensitivityRing,
+                { borderColor: sensitivityColors[activity.sensitivityLevel] },
+              ]}
+            />
+          )}
+        </View>
+        {!isLast && <View style={styles.timelineLine} />}
+      </View>
+
+      <MedicalGlassCard variant="white" style={styles.activityCard}>
+        <View style={styles.activityHeader}>
+          <Text style={styles.activityIc

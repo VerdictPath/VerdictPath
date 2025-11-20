@@ -1,0 +1,801 @@
+// src/screens/MedicalProviderUserManagementScreen.jsx - NEW FILE
+
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import MedicalGlassCard from '../components/MedicalGlassCard';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
+import { apiRequest } from '../config/api';
+
+const { width } = Dimensions.get('window');
+
+const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('active');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    loadUsers();
+  }, [filterStatus]);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await apiRequest(
+        `/api/medicalprovider/users/all?status=${filterStatus}`,
+        {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${user.token}` },
+        }
+      );
+
+      setUsers(response.users || []);
+    } catch (error) {
+      console.error('[MedicalUserManagement] Load error:', error);
+      Alert.alert('Error', 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateUser = (userId, userName) => {
+    Alert.alert(
+      'Deactivate User',
+      `Are you sure you want to deactivate ${userName}? They will immediately lose access to all patient records and Protected Health Information (PHI).`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Deactivate',
+          style: 'destructive',
+          onPress: () => deactivateUser(userId),
+        },
+      ]
+    );
+  };
+
+  const deactivateUser = async (userId) => {
+    try {
+      const response = await apiRequest(
+        `/api/medicalprovider/users/${userId}/deactivate`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reason: 'Deactivated by admin',
+          }),
+        }
+      );
+
+      if (response.success) {
+        Alert.alert('Success', 'User deactivated successfully');
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('[MedicalUserManagement] Deactivate error:', error);
+      Alert.alert('Error', error.message || 'Failed to deactivate user');
+    }
+  };
+
+  const reactivateUser = async (userId) => {
+    try {
+      const response = await apiRequest(
+        `/api/medicalprovider/users/${userId}/reactivate`,
+        {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${user.token}` },
+        }
+      );
+
+      if (response.success) {
+        Alert.alert('Success', 'User reactivated successfully');
+        loadUsers();
+      }
+    } catch (error) {
+      console.error('[MedicalUserManagement] Reactivate error:', error);
+      Alert.alert('Error', 'Failed to reactivate user');
+    }
+  };
+
+  const filteredUsers = users.filter(u => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      u.firstName.toLowerCase().includes(query) ||
+      u.lastName.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query) ||
+      u.userCode.toLowerCase().includes(query) ||
+      (u.credentials && u.credentials.toLowerCase().includes(query))
+    );
+  });
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[
+          medicalProviderTheme.colors.clinicalWhite,
+          medicalProviderTheme.colors.lightGray,
+        ]}
+        style={styles.background}
+      />
+
+      {/* Header */}
+      <LinearGradient
+        colors={[
+          medicalProviderTheme.colors.deepTeal,
+          medicalProviderTheme.colors.clinicalTeal,
+        ]}
+        style={styles.headerGradient}
+      >
+        <BlurView intensity={10} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>User Management</Text>
+            <TouchableOpacity onPress={() => setShowAddUserModal(true)}>
+              <Text style={styles.addButton}>+ Add</Text>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+      </LinearGradient>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search users..."
+          placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      {/* Filter Tabs */}
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[
+            styles.filterTab,
+            filterStatus === 'active' && styles.filterTabActive,
+          ]}
+          onPress={() => setFilterStatus('active')}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              filterStatus === 'active' && styles.filterTextActive,
+            ]}
+          >
+            Active
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.filterTab,
+            filterStatus === 'deactivated' && styles.filterTabActive,
+          ]}
+          onPress={() => setFilterStatus('deactivated')}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              filterStatus === 'deactivated' && styles.filterTextActive,
+            ]}
+          >
+            Deactivated
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Users List */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {filteredUsers.map((u) => (
+          <MedicalUserCard
+            key={u._id}
+            user={u}
+            onDeactivate={() =>
+              handleDeactivateUser(u._id, `${u.firstName} ${u.lastName}`)
+            }
+            onReactivate={() => reactivateUser(u._id)}
+            onViewActivity={() => {
+              /* TODO: Navigate to activity screen */
+            }}
+          />
+        ))}
+
+        {filteredUsers.length === 0 && !loading && (
+          <MedicalGlassCard variant="mint" style={styles.emptyCard}>
+            <Text style={styles.emptyText}>
+              {filterStatus === 'active'
+                ? 'No active users found'
+                : 'No deactivated users'}
+            </Text>
+          </MedicalGlassCard>
+        )}
+
+        <View style={{ height: 100 }} />
+      </ScrollView>
+
+      {/* Add User Modal */}
+      <AddMedicalUserModal
+        visible={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onUserAdded={() => {
+          setShowAddUserModal(false);
+          loadUsers();
+        }}
+        providerToken={user.token}
+      />
+    </View>
+  );
+};
+
+const MedicalUserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
+  const roleColors = {
+    admin: medicalProviderTheme.colors.emergencyRed,
+    doctor: medicalProviderTheme.colors.accentTeal,
+    nurse: medicalProviderTheme.colors.prescriptionGreen,
+    medical_assistant: medicalProviderTheme.colors.medicalBlue,
+    billing_specialist: medicalProviderTheme.colors.darkGray,
+    staff: medicalProviderTheme.colors.mediumGray,
+  };
+
+  const checkHIPAAExpiry = (expiryDate) => {
+    if (!expiryDate) return null;
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const daysUntilExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilExpiry < 0) return 'expired';
+    if (daysUntilExpiry < 30) return 'expiring-soon';
+    return 'valid';
+  };
+
+  const hipaaStatus = checkHIPAAExpiry(user.hipaaTrainingExpiry);
+
+  return (
+    <MedicalGlassCard variant="white" style={styles.userCard}>
+      <View style={styles.userCardContent}>
+        <View style={styles.userAvatar}>
+          <LinearGradient
+            colors={[
+              roleColors[user.role] || medicalProviderTheme.colors.accentTeal,
+              medicalProviderTheme.colors.clinicalTeal,
+            ]}
+            style={styles.avatarGradient}
+          >
+            <Text style={styles.userInitials}>
+              {user.firstName[0]}
+              {user.lastName[0]}
+            </Text>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.userInfo}>
+          <View style={styles.userNameRow}>
+            <Text style={styles.userName}>
+              {user.firstName} {user.lastName}
+            </Text>
+            {user.credentials && (
+              <Text style={styles.credentials}>, {user.credentials}</Text>
+            )}
+          </View>
+          <Text style={styles.userEmail}>{user.email}</Text>
+          <View style={styles.userMeta}>
+            <View
+              style={[
+                styles.roleBadge,
+                { backgroundColor: roleColors[user.role] + '30' },
+              ]}
+            >
+              <Text
+                style={[styles.roleText, { color: roleColors[user.role] }]}
+              >
+                {user.role.replace(/_/g, ' ').toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.userCode}>{user.userCode}</Text>
+          </View>
+
+          {/* HIPAA Training Status */}
+          {hipaaStatus && (
+            <View
+              style={[
+                styles.hipaaBadge,
+                hipaaStatus === 'expired' && styles.hipaaExpired,
+                hipaaStatus === 'expiring-soon' && styles.hipaaExpiringSoon,
+              ]}
+            >
+              <Text style={styles.hipaaText}>
+                {hipaaStatus === 'expired'
+                  ? '⚠️ HIPAA Training Expired'
+                  : hipaaStatus === 'expiring-soon'
+                  ? '⚠️ HIPAA Expiring Soon'
+                  : '✓ HIPAA Current'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.userActions}>
+          {user.status === 'active' ? (
+            <>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={onViewActivity}
+              >
+                <Text style={styles.actionButtonText}>📊</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.dangerButton]}
+                onPress={onDeactivate}
+              >
+                <Text style={styles.actionButtonText}>🚫</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.successButton]}
+              onPress={onReactivate}
+            >
+              <Text style={styles.actionButtonText}>✅</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {user.lastLogin && (
+        <Text style={styles.lastLogin}>
+          Last login: {new Date(user.lastLogin).toLocaleString()}
+        </Text>
+      )}
+    </MedicalGlassCard>
+  );
+};
+
+const AddMedicalUserModal = ({ visible, onClose, onUserAdded, providerToken }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 'doctor',
+    credentials: '',
+    licenseNumber: '',
+    npiNumber: '',
+    title: '',
+    phoneNumber: '',
+    department: '',
+    hipaaTrainingDate: new Date().toISOString().split('T')[0],
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiRequest('/api/medicalprovider/users/create', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${providerToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.success) {
+        Alert.alert(
+          'Success',
+          `User created!\nUser Code: ${response.user.userCode}\nHIPAA Training Expiry: ${new Date(
+            response.user.hipaaTrainingExpiry
+          ).toLocaleDateString()}`
+        );
+        onUserAdded();
+      }
+    } catch (error) {
+      console.error('[AddMedicalUser] Error:', error);
+      Alert.alert('Error', error.message || 'Failed to create user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={true}>
+      <BlurView intensity={90} style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Add New Medical Staff</Text>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <TextInput
+              style={styles.input}
+              placeholder="First Name *"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.firstName}
+              onChangeText={(text) =>
+                setFormData({ ...formData, firstName: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Last Name *"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.lastName}
+              onChangeText={(text) =>
+                setFormData({ ...formData, lastName: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email *"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={formData.email}
+              onChangeText={(text) => setFormData({ ...formData, email: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password *"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              secureTextEntry
+              value={formData.password}
+              onChangeText={(text) =>
+                setFormData({ ...formData, password: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Credentials (e.g., MD, RN, NP)"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.credentials}
+              onChangeText={(text) =>
+                setFormData({ ...formData, credentials: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Title (e.g., Attending Physician)"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.title}
+              onChangeText={(text) => setFormData({ ...formData, title: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="License Number"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.licenseNumber}
+              onChangeText={(text) =>
+                setFormData({ ...formData, licenseNumber: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="NPI Number"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              keyboardType="numeric"
+              value={formData.npiNumber}
+              onChangeText={(text) =>
+                setFormData({ ...formData, npiNumber: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Department (e.g., Orthopedics)"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.department}
+              onChangeText={(text) =>
+                setFormData({ ...formData, department: text })
+              }
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              keyboardType="phone-pad"
+              value={formData.phoneNumber}
+              onChangeText={(text) =>
+                setFormData({ ...formData, phoneNumber: text })
+              }
+            />
+
+            {/* Role Selector */}
+            <Text style={styles.label}>Role:</Text>
+            <View style={styles.roleSelector}>
+              {['admin', 'doctor', 'nurse', 'medical_assistant', 'billing_specialist', 'staff'].map(
+                (role) => (
+                  <TouchableOpacity
+                    key={role}
+                    style={[
+                      styles.roleOption,
+                      formData.role === role && styles.roleOptionActive,
+                    ]}
+                    onPress={() => setFormData({ ...formData, role })}
+                  >
+                    <Text
+                      style={[
+                        styles.roleOptionText,
+                        formData.role === role && styles.roleOptionTextActive,
+                      ]}
+                    >
+                      {role.replace(/_/g, ' ')}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+
+            {/* HIPAA Training Date */}
+            <Text style={styles.label}>HIPAA Training Date:</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+              value={formData.hipaaTrainingDate}
+              onChangeText={(text) =>
+                setFormData({ ...formData, hipaaTrainingDate: text })
+              }
+            />
+            <Text style={styles.hipaaNote}>
+              Training expires 1 year from this date
+            </Text>
+          </ScrollView>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? 'Creating...' : 'Create User'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </BlurView>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+  },
+  background: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  headerGradient: {
+    paddingTop: 60,
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  addButton: {
+    color: medicalProviderTheme.colors.mintGreen,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  searchContainer: {
+    padding: 20,
+    paddingBottom: 10,
+  },
+  searchInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    color: medicalProviderTheme.colors.deepTeal,
+    borderWidth: 2,
+    borderColor: medicalProviderTheme.colors.lightGray,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  filterTab: {
+    flex: 1,
+    padding: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+    marginHorizontal: 5,
+    backgroundColor: medicalProviderTheme.colors.lightGray,
+  },
+  filterTabActive: {
+    backgroundColor: medicalProviderTheme.colors.accentTeal,
+  },
+  filterText: {
+    color: medicalProviderTheme.colors.darkGray,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  userCard: {
+    padding: 16,
+    marginBottom: 12,
+  },
+  userCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userAvatar: {
+    marginRight: 15,
+  },
+  avatarGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: medicalProviderTheme.colors.mintGreen,
+  },
+  userInitials: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  userName: {
+    color: medicalProviderTheme.colors.deepTeal,
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  credentials: {
+    color: medicalProviderTheme.colors.accentTeal,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  userEmail: {
+    color: medicalProviderTheme.colors.mediumGray,
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  userMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  roleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  roleText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  userCode: {
+    color: medicalProviderTheme.colors.mediumGray,
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  hipaaBadge: {
+    backgroundColor: medicalProviderTheme.colors.prescriptionGreen + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.prescriptionGreen,
+  },
+  hipaaExpired: {
+    backgroundColor: medicalProviderTheme.colors.emergencyRed + '20',
+    borderColor: medicalProviderTheme.colors.emergencyRed,
+  },
+  hipaaExpiringSoon: {
+    backgroundColor: medicalProviderTheme.colors.warning + '20',
+    borderColor: medicalProviderTheme.colors.warning,
+  },
+  hipaaText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: medicalProviderTheme.colors.deepTeal,
+  },
+  userActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: medicalProviderTheme.colors.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  dangerButton: {
+    backgroundColor: medicalProviderTheme.colors.emergencyRed + '30',
+  },
+  successButton: {
+    backgroundColor: medicalProviderTheme.colors.prescriptionGreen + '30',
+  },
+  actionButtonText: {
+    fontSize: 20,
+  },
+  lastLogin: {
+    color: medicalProviderTheme.colors.mediumGray,
+    fontSize: 11,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: medicalProviderTheme.colors.lightGray,
+  },
+  emptyCard: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: medicalProviderTheme.colors.darkGray,
+    fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    m

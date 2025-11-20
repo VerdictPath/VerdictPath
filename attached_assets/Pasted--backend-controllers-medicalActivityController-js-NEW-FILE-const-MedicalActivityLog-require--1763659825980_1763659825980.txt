@@ -1,0 +1,394 @@
+// backend/controllers/medicalActivityController.js - NEW FILE
+
+const MedicalActivityLog = require('../models/MedicalActivityLog');
+const MedicalProviderUser = require('../models/MedicalProviderUser');
+
+// Get activity logs with HIPAA-compliant filters
+exports.getActivityLogs = async (req, res) => {
+  try {
+    const {
+      userId,
+      actionCategory,
+      action,
+      sensitivityLevel,
+      patientId,
+      startDate,
+      endDate,
+      limit = 50,
+      page = 1,
+    } = req.query;
+
+    let query = { medicalProviderId: req.medicalProviderId };
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    if (actionCategory) {
+      query.actionCategory = actionCategory;
+    }
+
+    if (action) {
+      query.action = action;
+    }
+
+    if (sensitivityLevel) {
+      query.sensitivityLevel = sensitivityLevel;
+    }
+
+    if (patientId) {
+      query.patientId = patientId;
+    }
+
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate);
+      }
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [logs, totalCount] = await Promise.all([
+      MedicalActivityLog.find(query)
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit))
+        .skip(skip)
+        .populate('userId', 'firstName lastName email userCode role credentials'),
+      MedicalActivityLog.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      count: logs.length,
+      totalCount: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      logs: logs,
+    });
+
+  } catch (error) {
+    console.error('[MedicalActivity] Get logs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity logs',
+    });
+  }
+};
+
+// Get activity summary/analytics
+exports.getActivitySummary = async (req, res) => {
+  try {
+    const { startDate, endDate, userId } = req.query;
+
+    let matchQuery = { medicalProviderId: req.medicalProviderId };
+
+    if (userId) {
+      matchQuery.userId = mongoose.Types.ObjectId(userId);
+    }
+
+    if (startDate || endDate) {
+      matchQuery.timestamp = {};
+      if (startDate) {
+        matchQuery.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        matchQuery.timestamp.$lte = new Date(endDate);
+      }
+    }
+
+    const [
+      totalActivities,
+      activitiesByCategory,
+      activitiesBySensitivity,
+      activitiesByUser,
+      criticalActions,
+      recentActivities,
+    ] = await Promise.all([
+      // Total count
+      MedicalActivityLog.countDocuments(matchQuery),
+      
+      // Group by category
+      MedicalActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$actionCategory',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+      
+      // Group by sensitivity level (HIPAA compliance metric)
+      MedicalActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$sensitivityLevel',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+      
+      // Group by user
+      MedicalActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$userId',
+            count: { $sum: 1 },
+            userName: { $first: '$userName' },
+            userEmail: { $first: '$userEmail' },
+            userRole: { $first: '$userRole' },
+          },
+        },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+      ]),
+      
+      // Critical actions requiring audit
+      MedicalActivityLog.find({
+        ...matchQuery,
+        auditRequired: true,
+      })
+        .sort({ timestamp: -1 })
+        .limit(10)
+        .populate('userId', 'firstName lastName email credentials'),
+      
+      // Recent activities
+      MedicalActivityLog.find(matchQuery)
+        .sort({ timestamp: -1 })
+        .limit(15)
+        .populate('userId', 'firstName lastName email credentials role'),
+    ]);
+
+    res.json({
+      success: true,
+      summary: {
+        totalActivities,
+        activitiesByCategory,
+        activitiesBySensitivity,
+        topUsers: activitiesByUser,
+        criticalActions,
+        recentActivities,
+      },
+    });
+
+  } catch (error) {
+    console.error('[MedicalActivity] Get summary error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch activity summary',
+    });
+  }
+};
+
+// Get user activity timeline
+exports.getUserActivityTimeline = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 20, page = 1 } = req.query;
+
+    // Verify user belongs to provider
+    const user = await MedicalProviderUser.findOne({
+      _id: userId,
+      medicalProviderId: req.medicalProviderId,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [activities, totalCount] = await Promise.all([
+      MedicalActivityLog.find({
+        medicalProviderId: req.medicalProviderId,
+        userId: userId,
+      })
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit))
+        .skip(skip),
+      MedicalActivityLog.countDocuments({
+        medicalProviderId: req.medicalProviderId,
+        userId: userId,
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        userCode: user.userCode,
+        role: user.role,
+        credentials: user.credentials,
+      },
+      count: activities.length,
+      totalCount: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      activities: activities,
+    });
+
+  } catch (error) {
+    console.error('[MedicalActivity] Get user timeline error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user activity timeline',
+    });
+  }
+};
+
+// Get HIPAA compliance report
+exports.getHIPAAComplianceReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let matchQuery = { 
+      medicalProviderId: req.medicalProviderId,
+    };
+
+    if (startDate || endDate) {
+      matchQuery.timestamp = {};
+      if (startDate) {
+        matchQuery.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        matchQuery.timestamp.$lte = new Date(endDate);
+      }
+    }
+
+    const [
+      totalPHIAccess,
+      failedAccessAttempts,
+      criticalActions,
+      userAccessPatterns,
+      sensitivityBreakdown,
+    ] = await Promise.all([
+      // Count PHI access events
+      MedicalActivityLog.countDocuments({
+        ...matchQuery,
+        $or: [
+          { action: 'patient_phi_viewed' },
+          { action: 'patient_record_accessed' },
+          { action: 'medical_record_viewed' },
+        ],
+      }),
+      
+      // Failed access attempts
+      MedicalActivityLog.find({
+        ...matchQuery,
+        status: { $in: ['failed', 'blocked'] },
+      })
+        .sort({ timestamp: -1 })
+        .limit(20)
+        .populate('userId', 'firstName lastName email role'),
+      
+      // Critical actions requiring audit
+      MedicalActivityLog.countDocuments({
+        ...matchQuery,
+        auditRequired: true,
+      }),
+      
+      // User access patterns
+      MedicalActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: {
+              userId: '$userId',
+              sensitivityLevel: '$sensitivityLevel',
+            },
+            count: { $sum: 1 },
+            userName: { $first: '$userName' },
+            userRole: { $first: '$userRole' },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+      
+      // Sensitivity level breakdown
+      MedicalActivityLog.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: '$sensitivityLevel',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    res.json({
+      success: true,
+      hipaaReport: {
+        totalPHIAccess,
+        failedAccessAttempts: failedAccessAttempts.length,
+        failedAccessDetails: failedAccessAttempts,
+        criticalActionsRequiringAudit: criticalActions,
+        userAccessPatterns,
+        sensitivityBreakdown,
+        reportGeneratedAt: new Date(),
+      },
+    });
+
+  } catch (error) {
+    console.error('[MedicalActivity] HIPAA report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate HIPAA compliance report',
+    });
+  }
+};
+
+// Get patient access audit (who accessed which patient)
+exports.getPatientAccessAudit = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const { limit = 50, page = 1 } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    const [accesses, totalCount] = await Promise.all([
+      MedicalActivityLog.find({
+        medicalProviderId: req.medicalProviderId,
+        patientId: patientId,
+      })
+        .sort({ timestamp: -1 })
+        .limit(parseInt(limit))
+        .skip(skip)
+        .populate('userId', 'firstName lastName email role credentials'),
+      MedicalActivityLog.countDocuments({
+        medicalProviderId: req.medicalProviderId,
+        patientId: patientId,
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      patientId: patientId,
+      count: accesses.length,
+      totalCount: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      accesses: accesses,
+    });
+
+  } catch (error) {
+    console.error('[MedicalActivity] Patient audit error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch patient access audit',
+    });
+  }
+};
