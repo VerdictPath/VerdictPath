@@ -267,7 +267,8 @@ const tasksController = {
 
       const previousStatus = task.status;
       const now = new Date();
-      const completedAt = status === 'completed' ? now : task.completed_at;
+      const completedAt = status === 'completed' ? now : (status === 'pending' || status === 'in_progress' ? null : task.completed_at);
+      const completedByUserId = status === 'completed' ? userId : (status === 'pending' || status === 'in_progress' ? null : task.completed_by_user_id);
 
       await pool.query(
         `UPDATE law_firm_tasks 
@@ -281,7 +282,7 @@ const tasksController = {
           status,
           completionNotes || task.completion_notes,
           completedAt,
-          status === 'completed' ? userId : task.completed_by_user_id,
+          completedByUserId,
           now,
           taskId
         ]
@@ -304,35 +305,53 @@ const tasksController = {
       let coinsAwarded = 0;
       let treasureChestFull = false;
       let treasureChestMessage = null;
+      let coinsAlreadyEarned = false;
       
       if (status === 'completed' && task.coins_reward > 0 && (userType === 'individual' || userType === 'client')) {
-        // Check treasure chest capacity before awarding coins
-        const capacity = await checkTreasureChestCapacity(userId, task.coins_reward);
-        coinsAwarded = capacity.canAward;
-        treasureChestFull = capacity.isFull;
-        treasureChestMessage = capacity.message;
+        // Check if coins were already awarded for this task (prevents coin farming)
+        const existingTransaction = await pool.query(
+          `SELECT id FROM coin_transactions 
+          WHERE user_id = $1 
+          AND transaction_type = 'task_completion' 
+          AND metadata->>'taskId' = $2`,
+          [userId, task.id.toString()]
+        );
         
-        if (coinsAwarded > 0) {
-          await pool.query(
-            'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
-            [coinsAwarded, userId]
-          );
+        coinsAlreadyEarned = existingTransaction.rows.length > 0;
+        
+        // Only award coins if they haven't been earned before
+        if (!coinsAlreadyEarned) {
+          // Check treasure chest capacity before awarding coins
+          const capacity = await checkTreasureChestCapacity(userId, task.coins_reward);
+          coinsAwarded = capacity.canAward;
+          treasureChestFull = capacity.isFull;
+          treasureChestMessage = capacity.message;
+          
+          if (coinsAwarded > 0) {
+            await pool.query(
+              'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
+              [coinsAwarded, userId]
+            );
 
-          await pool.query(
-            `INSERT INTO coin_transactions (user_id, amount, transaction_type, description, metadata)
-            VALUES ($1, $2, $3, $4, $5)`,
-            [
-              userId,
-              coinsAwarded,
-              'task_completion',
-              `Task completed: ${task.task_title}`,
-              JSON.stringify({ taskId: task.id, taskType: task.task_type })
-            ]
-          );
+            await pool.query(
+              `INSERT INTO coin_transactions (user_id, amount, transaction_type, description, metadata)
+              VALUES ($1, $2, $3, $4, $5)`,
+              [
+                userId,
+                coinsAwarded,
+                'task_completion',
+                `Task completed: ${task.task_title}`,
+                JSON.stringify({ taskId: task.id, taskType: task.task_type })
+              ]
+            );
+          }
         }
       }
 
       let message = `Task ${status}`;
+      if (coinsAlreadyEarned && status === 'completed') {
+        message += ' (coins already earned previously)';
+      }
       if (treasureChestMessage) {
         message += `\n${treasureChestMessage}`;
       }
@@ -341,6 +360,7 @@ const tasksController = {
         success: true,
         message: message,
         coinsAwarded: coinsAwarded,
+        coinsAlreadyEarnedBefore: coinsAlreadyEarned,
         treasureChestFull: treasureChestFull,
         maxCoins: MAX_TOTAL_COINS
       });
