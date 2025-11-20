@@ -3,6 +3,7 @@ const router = express.Router();
 const coinsController = require('../controllers/coinsController');
 const { authenticateToken } = require('../middleware/auth');
 const { pool } = require('../config/db');
+const { rewardLimiter, purchaseLimiter } = require('../middleware/rateLimiter');
 
 /**
  * COINS API - Complete Coin Management System
@@ -58,8 +59,10 @@ router.get('/packages', authenticateToken, (req, res) => {
  * Create Stripe payment intent for coin purchase
  * Body: { packageId }
  * Returns: { clientSecret, amount, coins }
+ * 
+ * SECURITY: Rate limited to prevent payment intent spam
  */
-router.post('/create-payment-intent', authenticateToken, async (req, res) => {
+router.post('/create-payment-intent', purchaseLimiter, authenticateToken, async (req, res) => {
   try {
     const { packageId } = req.body;
     const userId = req.user.id;
@@ -107,32 +110,79 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
 /**
  * POST /api/coins/purchase
  * Credit coins after successful Stripe payment
- * Body: { paymentIntentId, packageId, coins, amountPaid }
+ * Body: { paymentIntentId }
+ * 
+ * SECURITY: Verifies payment with Stripe before awarding coins + rate limited
  */
-router.post('/purchase', authenticateToken, async (req, res) => {
+router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) => {
   const client = await pool.connect();
   
   try {
-    const { paymentIntentId, packageId, coins, amountPaid } = req.body;
+    const { paymentIntentId } = req.body;
     const userId = req.user.id;
 
     // Validate required fields
-    if (!paymentIntentId || !packageId || !coins || !amountPaid) {
+    if (!paymentIntentId) {
       return res.status(400).json({ 
-        message: 'Missing required fields: paymentIntentId, packageId, coins, amountPaid' 
+        message: 'Missing required field: paymentIntentId' 
       });
     }
 
-    // Validate package
-    if (!COIN_PACKAGES[packageId]) {
-      return res.status(400).json({ message: 'Invalid package selected' });
+    // Check if Stripe is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return res.status(503).json({ 
+        message: 'Payment processing is not configured. Please contact support.' 
+      });
     }
 
-    // Verify package details match
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+    // CRITICAL SECURITY FIX: Verify payment with Stripe
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    } catch (stripeError) {
+      console.error('Error retrieving payment intent from Stripe:', stripeError);
+      return res.status(400).json({ 
+        message: 'Invalid payment intent ID' 
+      });
+    }
+
+    // Verify payment succeeded
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({ 
+        message: 'Payment has not been completed',
+        paymentStatus: paymentIntent.status,
+        hint: 'Please complete the payment before claiming coins'
+      });
+    }
+
+    // Verify payment belongs to this user
+    if (paymentIntent.metadata.userId !== userId.toString()) {
+      console.error(`Payment verification failed: userId mismatch. Payment userId: ${paymentIntent.metadata.userId}, Request userId: ${userId}`);
+      return res.status(403).json({ 
+        message: 'Payment verification failed. This payment does not belong to your account.' 
+      });
+    }
+
+    // Extract values from STRIPE metadata (NOT from client)
+    const packageId = paymentIntent.metadata.packageId;
+    const coins = parseInt(paymentIntent.metadata.coinsToAward);
+    const amountPaid = paymentIntent.amount;
+
+    // Validate package exists
+    if (!COIN_PACKAGES[packageId]) {
+      return res.status(400).json({ 
+        message: 'Invalid package in payment metadata' 
+      });
+    }
+
+    // Verify package details match expected values (double-check)
     const expectedPackage = COIN_PACKAGES[packageId];
     if (expectedPackage.coins !== coins || expectedPackage.price !== amountPaid) {
+      console.error(`Package mismatch: expected ${expectedPackage.coins} coins / ${expectedPackage.price} cents, got ${coins} / ${amountPaid}`);
       return res.status(400).json({ 
-        message: 'Package details do not match expected values' 
+        message: 'Payment amount does not match package price' 
       });
     }
 
@@ -175,6 +225,8 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    console.log(`✅ Coin purchase verified and completed: User ${userId} received ${coins} coins from payment ${paymentIntentId}`);
 
     res.json({
       success: true,
@@ -231,6 +283,7 @@ router.get('/balance', authenticateToken, coinsController.getBalance);
 
 router.get('/conversion-history', authenticateToken, coinsController.getConversionHistory);
 
-router.post('/claim-daily', authenticateToken, coinsController.claimDailyReward);
+// SECURITY: Rate limit daily reward claims to prevent abuse
+router.post('/claim-daily', rewardLimiter, authenticateToken, coinsController.claimDailyReward);
 
 module.exports = router;

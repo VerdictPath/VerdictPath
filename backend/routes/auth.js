@@ -2,14 +2,16 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { checkAccountLockout } = require('../middleware/security');
+const { authLimiter } = require('../middleware/rateLimiter');
 
-router.post('/register/client', authController.registerClient);
-router.post('/register/lawfirm', authController.registerLawFirm);
-router.post('/register/medicalprovider', authController.registerMedicalProvider);
+// SECURITY: Rate limiting on registration endpoints (prevent spam accounts)
+router.post('/register/client', authLimiter, authController.registerClient);
+router.post('/register/lawfirm', authLimiter, authController.registerLawFirm);
+router.post('/register/medicalprovider', authLimiter, authController.registerMedicalProvider);
 
-// HIPAA: Add account lockout middleware to login route
-router.post('/login', checkAccountLockout, authController.login);
-router.post('/login/lawfirm-user', checkAccountLockout, authController.loginLawFirmUser);
-router.post('/login/medicalprovider-user', checkAccountLockout, authController.loginMedicalProviderUser);
+// SECURITY: Rate limiting + account lockout on login endpoints (prevent brute force)
+router.post('/login', authLimiter, checkAccountLockout, authController.login);
+router.post('/login/lawfirm-user', authLimiter, checkAccountLockout, authController.loginLawFirmUser);
+router.post('/login/medicalprovider-user', authLimiter, checkAccountLockout, authController.loginMedicalProviderUser);
 
 module.exports = router;
