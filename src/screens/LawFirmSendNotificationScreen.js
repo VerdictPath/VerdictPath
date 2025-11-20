@@ -93,6 +93,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [taskPriority, setTaskPriority] = useState('medium');
   const [taskDueDate, setTaskDueDate] = useState('');
   const [taskCoinsReward, setTaskCoinsReward] = useState('50');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchClients();
@@ -309,13 +310,39 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
             </TouchableOpacity>
           </View>
           
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search clients by name or email..."
+              placeholderTextColor="#999"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearSearchButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <Text style={styles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
           {clients.length === 0 ? (
             <View style={styles.emptyClients}>
               <Text style={styles.emptyClientsText}>No clients found</Text>
             </View>
           ) : (
             <View style={styles.clientsList}>
-              {clients.map(client => (
+              {clients.filter(client => {
+                if (!searchQuery.trim()) return true;
+                const query = searchQuery.toLowerCase();
+                const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+                const email = client.email.toLowerCase();
+                return fullName.includes(query) || email.includes(query);
+              }).map(client => (
                 <TouchableOpacity
                   key={client.id}
                   style={[
@@ -629,6 +656,37 @@ const styles = StyleSheet.create({
   emptyClientsText: {
     fontSize: 16,
     color: '#666',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
+    color: '#666',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    padding: 0,
+  },
+  clearSearchButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  clearSearchText: {
+    fontSize: 18,
+    color: '#999',
+    fontWeight: 'bold',
   },
   inputLabel: {
     fontSize: 14,
