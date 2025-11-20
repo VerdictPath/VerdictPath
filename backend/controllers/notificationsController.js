@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
+const { DateTime } = require('luxon');
 const pushNotificationService = require('../services/pushNotificationService');
+const { calculateQuietHoursEnd, queueNotification } = require('../services/notificationQueueService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -92,12 +94,13 @@ async function checkNotificationPreferences(recipientType, recipientId, notifica
 }
 
 // Helper function to check if current time is in quiet hours
+// Uses Luxon for timezone-safe calculations
 function checkIfQuietHours(startTime, endTime, timezone) {
   try {
-    const now = new Date();
-    const userTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-    const currentHour = userTime.getHours();
-    const currentMinute = userTime.getMinutes();
+    // Get current time in the user's timezone
+    const nowInUserTz = DateTime.now().setZone(timezone);
+    const currentHour = nowInUserTz.hour;
+    const currentMinute = nowInUserTz.minute;
 
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
@@ -115,61 +118,6 @@ function checkIfQuietHours(startTime, endTime, timezone) {
   } catch (error) {
     console.error('Error checking quiet hours:', error);
     return false;
-  }
-}
-
-// Helper function to calculate when quiet hours end
-function calculateQuietHoursEnd(endTime, timezone) {
-  try {
-    const now = new Date();
-    const userTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    
-    // Create a date for when quiet hours end today
-    const quietEnd = new Date(userTime);
-    quietEnd.setHours(endHour, endMin, 0, 0);
-    
-    // If the end time has already passed today, schedule for tomorrow
-    if (quietEnd <= userTime) {
-      quietEnd.setDate(quietEnd.getDate() + 1);
-    }
-    
-    return quietEnd;
-  } catch (error) {
-    console.error('Error calculating quiet hours end:', error);
-    // Default to 1 hour from now
-    const fallback = new Date();
-    fallback.setHours(fallback.getHours() + 1);
-    return fallback;
-  }
-}
-
-// Queue notification for later delivery
-async function queueNotification(notificationData) {
-  try {
-    const {
-      senderType, senderId, senderName, recipientType, recipientId,
-      type, priority, title, body, actionUrl, actionData, scheduledFor
-    } = notificationData;
-    
-    const query = `
-      INSERT INTO notification_queue (
-        sender_type, sender_id, sender_name, recipient_type, recipient_id,
-        type, priority, title, body, action_url, action_data, scheduled_for, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'queued')
-      RETURNING id, scheduled_for
-    `;
-    
-    const result = await pool.query(query, [
-      senderType, senderId, senderName, recipientType, recipientId,
-      type, priority, title, body, actionUrl,
-      JSON.stringify(actionData || {}), scheduledFor
-    ]);
-    
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error queuing notification:', error);
-    throw error;
   }
 }
 
@@ -359,7 +307,7 @@ exports.sendNotification = async (req, res) => {
         const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
         const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
         
-        const queuedNotification = await queueNotification({
+        const queuedNotification = await queueNotification(pool, {
           senderType, senderId, senderName, recipientType, recipientId,
           type, priority, title, body, actionUrl, actionData, scheduledFor
         });
@@ -893,7 +841,7 @@ exports.sendToClient = async (req, res) => {
         const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
         const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
         
-        const queuedNotification = await queueNotification({
+        const queuedNotification = await queueNotification(pool, {
           senderType: 'law_firm', senderId: lawFirmId, senderName,
           recipientType: 'user', recipientId: clientId,
           type, priority, title, body, actionUrl, actionData, scheduledFor
@@ -1274,7 +1222,7 @@ exports.sendToPatient = async (req, res) => {
         const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
         const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
         
-        const queuedNotification = await queueNotification({
+        const queuedNotification = await queueNotification(pool, {
           senderType: 'medical_provider', senderId: medicalProviderId, senderName,
           recipientType: 'user', recipientId: patientId,
           type, priority, title, body, actionUrl, actionData, scheduledFor

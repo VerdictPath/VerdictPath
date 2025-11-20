@@ -238,13 +238,13 @@ CREATE TABLE IF NOT EXISTS notification_queue (
   action_url VARCHAR(500),
   action_data JSONB,
   status VARCHAR(50) DEFAULT 'queued' CHECK (status IN ('queued', 'sent', 'failed', 'cancelled')),
-  scheduled_for TIMESTAMP,
-  queued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  sent_at TIMESTAMP,
+  scheduled_for TIMESTAMPTZ,
+  queued_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  sent_at TIMESTAMPTZ,
   attempts INTEGER DEFAULT 0,
   error_message TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_notification_queue_status ON notification_queue(status);

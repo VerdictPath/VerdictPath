@@ -20,10 +20,11 @@ async function processNotificationQueue() {
   
   try {
     // Get all queued notifications that are ready to send
+    // Use NOW() AT TIME ZONE 'UTC' to ensure UTC comparison
     const queuedNotifications = await client.query(`
       SELECT * FROM notification_queue
       WHERE status = 'queued'
-        AND scheduled_for <= NOW()
+        AND scheduled_for <= (NOW() AT TIME ZONE 'UTC')
         AND attempts < 3
       ORDER BY scheduled_for ASC
       LIMIT 100
@@ -76,6 +77,9 @@ async function processQueuedNotification(notification, client) {
     type, priority, title, body, action_url, action_data
   } = notification;
   
+  // Parse action_data if it's a string (from JSONB storage)
+  const parsedActionData = typeof action_data === 'string' ? JSON.parse(action_data) : action_data;
+  
   // Get recipient devices
   const deviceQuery = `
     SELECT expo_push_token FROM user_devices 
@@ -89,7 +93,7 @@ async function processQueuedNotification(notification, client) {
     return;
   }
   
-  // Insert into notifications table
+  // Insert into notifications table with properly parsed action_data
   const notificationQuery = `
     INSERT INTO notifications (
       sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -100,7 +104,8 @@ async function processQueuedNotification(notification, client) {
   
   const notificationResult = await client.query(notificationQuery, [
     sender_type, sender_id, sender_name, recipient_type, recipient_id,
-    type, priority, title, body, action_url, action_data
+    type, priority, title, body, action_url, 
+    parsedActionData ? JSON.stringify(parsedActionData) : null
   ]);
   
   const insertedNotification = notificationResult.rows[0];
@@ -115,7 +120,7 @@ async function processQueuedNotification(notification, client) {
         notificationId: insertedNotification.id,
         type,
         actionUrl: action_url,
-        ...(typeof action_data === 'string' ? JSON.parse(action_data) : action_data)
+        ...parsedActionData
       },
       priority
     })
