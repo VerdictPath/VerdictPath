@@ -442,7 +442,11 @@ exports.login = async (req, res) => {
       );
     } else if (userType === 'medical_provider') {
       result = await db.query(
-        'SELECT id, provider_name as name, email, password, provider_code FROM medical_providers WHERE email = $1',
+        `SELECT mp.id, mp.provider_name as name, mp.email, mp.password, mp.provider_code,
+                mpu.id as medical_provider_user_id, mpu.role as medical_provider_user_role
+         FROM medical_providers mp
+         LEFT JOIN medical_provider_users mpu ON mpu.medical_provider_id = mp.id AND mpu.email = mp.email AND mpu.status = 'active'
+         WHERE mp.email = $1`,
         [email.toLowerCase()]
       );
     } else {
@@ -520,7 +524,39 @@ exports.login = async (req, res) => {
         isLawFirmUser: !!lawFirmUserId
       };
     } else if (userType === 'medical_provider') {
-      tokenPayload = { id: account.id, email: account.email, userType: 'medical_provider', providerCode: account.provider_code };
+      // Defensive fallback: if no medical provider user found, try to find any active admin
+      let medicalProviderUserId = account.medical_provider_user_id;
+      let medicalProviderUserRole = account.medical_provider_user_role;
+      
+      // If no medical provider user found via JOIN, try to find one directly
+      if (!medicalProviderUserId) {
+        const fallbackUserResult = await db.query(
+          `SELECT id, role FROM medical_provider_users 
+           WHERE medical_provider_id = $1 AND status = 'active' AND role = 'admin'
+           LIMIT 1`,
+          [account.id]
+        );
+        
+        if (fallbackUserResult.rows.length > 0) {
+          // Found an admin user
+          medicalProviderUserId = fallbackUserResult.rows[0].id;
+          medicalProviderUserRole = fallbackUserResult.rows[0].role;
+        } else {
+          // No users exist - bootstrap scenario
+          medicalProviderUserId = -1;
+          medicalProviderUserRole = 'admin';
+        }
+      }
+      
+      tokenPayload = { 
+        id: account.id, 
+        email: account.email, 
+        userType: 'medical_provider', 
+        providerCode: account.provider_code,
+        medicalProviderUserId: medicalProviderUserId || null,
+        medicalProviderUserRole: medicalProviderUserRole || null,
+        isMedicalProviderUser: !!medicalProviderUserId
+      };
     } else {
       tokenPayload = { id: account.id, email: account.email, userType: account.user_type };
     }
@@ -562,10 +598,13 @@ exports.login = async (req, res) => {
     } else if (userType === 'medical_provider') {
       responseData = {
         id: account.id,
+        medicalProviderUserId: tokenPayload.medicalProviderUserId || null,
         providerName: account.name,
         email: account.email,
         userType: 'medical_provider',
-        providerCode: account.provider_code
+        providerCode: account.provider_code,
+        role: tokenPayload.medicalProviderUserRole || null,
+        isMedicalProviderUser: tokenPayload.isMedicalProviderUser
       };
     } else {
       responseData = {
