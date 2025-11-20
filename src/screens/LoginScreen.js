@@ -29,7 +29,7 @@ const LoginScreen = ({
           ref={videoRef}
           source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
           style={styles.backgroundVideo}
-          resizeMode={ResizeMode.COVER}
+          resizeMode={ResizeMode.CONTAIN}
           isLooping
           isMuted
           shouldPlay

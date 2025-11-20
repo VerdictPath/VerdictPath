@@ -20,7 +20,7 @@ const LandingScreen = ({ onNavigate }) => {
         ref={videoRef}
         source={require('../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4')}
         style={styles.backgroundVideo}
-        resizeMode={ResizeMode.COVER}
+        resizeMode={ResizeMode.CONTAIN}
         isLooping
         isMuted
         shouldPlay
