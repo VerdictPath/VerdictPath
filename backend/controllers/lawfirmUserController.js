@@ -22,13 +22,18 @@ exports.createLawFirmUser = async (req, res) => {
       department
     } = req.body;
 
-    const requesterResult = await db.query(
-      'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
-      [req.user.lawFirmUserId]
-    );
+    // Bootstrap scenario: allow creation if lawFirmUserId is -1 (no users exist yet)
+    const isBootstrap = req.user.lawFirmUserId === -1;
+    
+    if (!isBootstrap) {
+      const requesterResult = await db.query(
+        'SELECT can_manage_users FROM law_firm_users WHERE id = $1',
+        [req.user.lawFirmUserId]
+      );
 
-    if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
-      return res.status(403).json({ message: 'You do not have permission to create users' });
+      if (requesterResult.rows.length === 0 || !requesterResult.rows[0].can_manage_users) {
+        return res.status(403).json({ message: 'You do not have permission to create users' });
+      }
     }
 
     const lawFirmResult = await db.query(
@@ -105,14 +110,14 @@ exports.createLawFirmUser = async (req, res) => {
         title || null,
         barNumber || null,
         department || null,
-        req.user.lawFirmUserId
+        isBootstrap ? null : req.user.lawFirmUserId
       ]
     );
 
     const newUser = result.rows[0];
 
     await auditLogger.log({
-      actorId: req.user.lawFirmUserId,
+      actorId: isBootstrap ? null : req.user.lawFirmUserId,
       actorType: 'lawfirm_user',
       action: 'CREATE_USER',
       entityType: 'LawFirmUser',
@@ -120,7 +125,7 @@ exports.createLawFirmUser = async (req, res) => {
       status: 'SUCCESS',
       ipAddress: req.ip || req.connection.remoteAddress,
       userAgent: req.get('user-agent'),
-      metadata: { email: newUser.email, role: newUser.role, userCode: newUser.user_code }
+      metadata: { email: newUser.email, role: newUser.role, userCode: newUser.user_code, isBootstrap }
     });
 
     res.status(201).json({
