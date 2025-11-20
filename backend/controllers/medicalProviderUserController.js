@@ -2,6 +2,9 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const { logActivity } = require('../middleware/medicalProviderActivityLogger');
 const auditLogger = require('../services/auditLogger');
+const { generateSecurePassword, getPasswordExpiryDate } = require('../utils/tempPasswordGenerator');
+const { sendCredentialEmail } = require('../services/emailService');
+const { sendCredentialSMS } = require('../services/smsService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -32,7 +35,9 @@ exports.createUser = async (req, res) => {
       credentials,
       trainingDate,
       trainingExpiry,
-      permissions = {}
+      permissions = {},
+      sendCredentials,
+      notificationMethod
     } = req.body;
 
     const medicalProviderId = req.medicalProviderId;
@@ -120,7 +125,19 @@ exports.createUser = async (req, res) => {
       isUnique = codeCheck.rows.length === 0;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let temporaryPassword = null;
+    let passwordToHash = password;
+    let mustChangePassword = false;
+    let passwordExpiresAt = null;
+
+    if (sendCredentials && (notificationMethod === 'email' || notificationMethod === 'sms' || notificationMethod === 'both')) {
+      temporaryPassword = generateSecurePassword(12);
+      passwordToHash = temporaryPassword;
+      mustChangePassword = true;
+      passwordExpiresAt = getPasswordExpiryDate(72);
+    }
+
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
 
     let userPermissions = {
       canManageUsers: permissions.canManageUsers || false,
@@ -180,8 +197,11 @@ exports.createUser = async (req, res) => {
         can_edit_medical_records,
         status,
         created_by,
+        must_change_password,
+        temporary_password_expires_at,
+        notification_preference,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, CURRENT_TIMESTAMP)
       RETURNING 
         id, first_name, last_name, email, user_code, role, title, 
         npi_number, license_number, specialty, phone_number, department, credentials,
@@ -218,7 +238,10 @@ exports.createUser = async (req, res) => {
       userPermissions.canViewMedicalRecords,
       userPermissions.canEditMedicalRecords,
       'active',
-      isBootstrap ? null : createdBy
+      isBootstrap ? null : createdBy,
+      mustChangePassword,
+      passwordExpiresAt,
+      notificationMethod || 'email'
     ]);
 
     const newUser = result.rows[0];
@@ -258,6 +281,41 @@ exports.createUser = async (req, res) => {
       userAgent: req.get('user-agent')
     });
 
+    // Send credentials if requested
+    const credentialResults = {
+      email: { sent: false },
+      sms: { sent: false }
+    };
+
+    if (sendCredentials && temporaryPassword) {
+      const userData = {
+        firstName: newUser.first_name,
+        lastName: newUser.last_name,
+        email: newUser.email,
+        userCode: newUser.user_code
+      };
+
+      if (notificationMethod === 'email' || notificationMethod === 'both') {
+        const emailResult = await sendCredentialEmail(
+          newUser.email,
+          userData,
+          temporaryPassword,
+          'medicalprovider'
+        );
+        credentialResults.email = emailResult;
+      }
+
+      if ((notificationMethod === 'sms' || notificationMethod === 'both') && phoneNumber) {
+        const smsResult = await sendCredentialSMS(
+          phoneNumber,
+          userData,
+          temporaryPassword,
+          'medicalprovider'
+        );
+        credentialResults.sms = smsResult;
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Medical provider user created successfully',
@@ -291,7 +349,9 @@ exports.createUser = async (req, res) => {
         },
         status: newUser.status,
         createdAt: newUser.created_at
-      }
+      },
+      credentialsSent: sendCredentials,
+      notificationResults: credentialResults
     });
   } catch (error) {
     console.error('Create user error:', error);
