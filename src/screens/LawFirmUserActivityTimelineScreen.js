@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import GlassCard from '../components/GlassCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -120,7 +119,7 @@ const LawFirmUserActivityTimelineScreen = ({
 
       {/* User Info Card */}
       {targetUser && (
-        <GlassCard variant="dark" style={styles.userInfoCard}>
+        <View style={styles.glassCard}>
           <View style={styles.userInfoContent}>
             <View style={styles.userAvatar}>
               <Text style={styles.userInitials}>
@@ -138,7 +137,7 @@ const LawFirmUserActivityTimelineScreen = ({
               </View>
             </View>
           </View>
-        </GlassCard>
+        </View>
       )}
 
       <ScrollView
@@ -181,9 +180,9 @@ const LawFirmUserActivityTimelineScreen = ({
         ))}
 
         {activities.length === 0 && !loading && (
-          <GlassCard variant="light" style={styles.emptyCard}>
+          <View style={styles.glassCard}>
             <Text style={styles.emptyText}>No activity recorded yet</Text>
-          </GlassCard>
+          </View>
         )}
 
         {loading && page === 1 && (
@@ -256,7 +255,7 @@ const TimelineActivityCard = ({ activity, isLast }) => {
         {!isLast && <View style={styles.timelineLine} />}
       </View>
 
-      <GlassCard variant="medium" style={styles.activityCard}>
+      <View style={styles.glassCard}>
         <View style={styles.activityHeader}>
           <Text style={styles.activityIcon}>
             {actionIcons[activity.action] || '📊'}
@@ -302,7 +301,7 @@ const TimelineActivityCard = ({ activity, isLast }) => {
             {activity.actionCategory.toUpperCase()}
           </Text>
         </View>
-      </GlassCard>
+      </View>
     </View>
   );
 };

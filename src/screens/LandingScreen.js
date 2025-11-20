@@ -26,12 +26,13 @@ const LandingScreen = ({ onNavigate }) => {
       />
       
       <View style={styles.overlay}>
+        {/* Verdict Path Logo - Top Left Corner */}
         <Image 
           source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
           style={styles.logo}
           resizeMode="contain"
         />
-
+        
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={commonStyles.primaryButton}
