@@ -142,6 +142,26 @@ export const API_ENDPOINTS = {
     GET_FAILED: `${API_BASE_URL}/api/lawfirm/activity/failed`,
     GET_USER_TIMELINE: (userId) => `${API_BASE_URL}/api/lawfirm/activity/user/${userId}/timeline`,
   },
+
+  // Medical Provider Users (Multi-User Management)
+  MEDICAL_PROVIDER_USERS: {
+    LOGIN: `${API_BASE_URL}/api/medicalprovider/users/login`,
+    CREATE: `${API_BASE_URL}/api/medicalprovider/users/create`,
+    GET_ALL: `${API_BASE_URL}/api/medicalprovider/users/all`,
+    GET_DETAILS: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}`,
+    UPDATE: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}`,
+    DEACTIVATE: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}/deactivate`,
+    REACTIVATE: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}/reactivate`,
+  },
+
+  // Medical Provider Activity Tracking (HIPAA-Compliant)
+  MEDICAL_PROVIDER_ACTIVITY: {
+    GET_LOGS: `${API_BASE_URL}/api/medicalprovider/activity/logs`,
+    GET_SUMMARY: `${API_BASE_URL}/api/medicalprovider/activity/summary`,
+    GET_USER_TIMELINE: (userId) => `${API_BASE_URL}/api/medicalprovider/activity/user/${userId}/timeline`,
+    HIPAA_REPORT: `${API_BASE_URL}/api/medicalprovider/activity/hipaa-report`,
+    PATIENT_AUDIT: (patientId) => `${API_BASE_URL}/api/medicalprovider/activity/patient/${patientId}/audit`,
+  },
 };
 
 // ============================================================================
