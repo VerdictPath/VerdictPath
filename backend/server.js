@@ -80,7 +80,21 @@ const corsOptions = {
   credentials: true
 };
 
-app.use(cors(corsOptions));
+// SECURITY: Wrap cors() to return 403 for rejected origins instead of 500
+const corsMiddleware = (req, res, next) => {
+  cors(corsOptions)(req, res, err => {
+    if (err) {
+      console.warn(`⚠️  CORS rejected: ${req.headers.origin}`);
+      return res.status(403).json({
+        message: 'CORS policy: Origin not allowed',
+        origin: req.headers.origin
+      });
+    }
+    next();
+  });
+};
+
+app.use(corsMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Use cookieParser with secret for signed cookies (uses JWT_SECRET if COOKIE_SECRET not set)
@@ -296,6 +310,7 @@ app.get('*', (req, res) => {
   }
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ ERROR:', err.stack);
   res.status(500).json({ 
