@@ -118,34 +118,41 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
         </TouchableOpacity>
         
         {showClientPicker && (
-          <View style={styles.clientPickerDropdown}>
-            <TouchableOpacity
-              style={[styles.clientOption, !selectedClientId && styles.clientOptionSelected]}
-              onPress={() => {
-                setSelectedClientId(null);
-                setShowClientPicker(false);
-              }}
-            >
-              <Text style={[styles.clientOptionText, !selectedClientId && styles.clientOptionTextSelected]}>
-                All Clients
-              </Text>
-            </TouchableOpacity>
-            {clients.map(client => (
+          <>
+            <TouchableOpacity 
+              style={styles.dropdownBackdrop} 
+              activeOpacity={1}
+              onPress={() => setShowClientPicker(false)}
+            />
+            <ScrollView style={styles.clientPickerDropdown} nestedScrollEnabled>
               <TouchableOpacity
-                key={client.id}
-                style={[styles.clientOption, selectedClientId === client.id && styles.clientOptionSelected]}
+                style={[styles.clientOption, !selectedClientId && styles.clientOptionSelected]}
                 onPress={() => {
-                  setSelectedClientId(client.id);
+                  setSelectedClientId(null);
                   setShowClientPicker(false);
                 }}
               >
-                <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
-                  {client.first_name} {client.last_name}
+                <Text style={[styles.clientOptionText, !selectedClientId && styles.clientOptionTextSelected]}>
+                  All Clients
                 </Text>
-                {client.email && <Text style={styles.clientEmailText}>{client.email}</Text>}
               </TouchableOpacity>
-            ))}
-          </View>
+              {clients.map(client => (
+                <TouchableOpacity
+                  key={client.id}
+                  style={[styles.clientOption, selectedClientId === client.id && styles.clientOptionSelected]}
+                  onPress={() => {
+                    setSelectedClientId(client.id);
+                    setShowClientPicker(false);
+                  }}
+                >
+                  <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
+                    {client.first_name} {client.last_name}
+                  </Text>
+                  {client.email && <Text style={styles.clientEmailText}>{client.email}</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
         )}
       </View>
 
@@ -385,28 +392,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  dropdownBackdrop: {
+    position: 'absolute',
+    top: 80,
+    left: 0,
+    right: 0,
+    bottom: -1000,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    zIndex: 1000,
+  },
   clientPickerDropdown: {
     position: 'absolute',
     top: 80,
     left: 20,
     right: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#d4a574',
     maxHeight: 300,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 8,
     zIndex: 1001,
+    opacity: 1,
   },
   clientOption: {
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    backgroundColor: '#ffffff',
   },
   clientOptionSelected: {
     backgroundColor: '#f0f8ff',
