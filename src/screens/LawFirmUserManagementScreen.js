@@ -102,16 +102,14 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[
-          lawFirmTheme.colors.deepNavy,
-          lawFirmTheme.colors.midnightBlue,
-        ]}
+      <ImageBackground
+        source={require('../../attached_assets/Ship_1763681596533.png')}
         style={styles.background}
+        resizeMode="cover"
       />
 
       {/* Header */}
-      <BlurView intensity={20} style={styles.header}>
+      <BlurView intensity={30} style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={onBack}>
             <Text style={styles.backText}>← Back</Text>
@@ -420,19 +418,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: lawFirmTheme.colors.accentBlue,
+    color: '#d4af37',
     fontSize: 16,
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   addButton: {
-    color: lawFirmTheme.colors.gold,
+    color: '#d4af37',
     fontSize: 16,
     fontWeight: '700',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   filterContainer: {
     flexDirection: 'row',
@@ -445,18 +452,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginHorizontal: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(20, 30, 48, 0.5)',
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   filterTabActive: {
-    backgroundColor: lawFirmTheme.colors.accentBlue,
+    backgroundColor: 'rgba(212, 175, 55, 0.8)',
+    borderColor: '#d4af37',
   },
   filterText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   filterTextActive: {
-    color: '#FFFFFF',
+    color: '#1e3a5f',
   },
   scrollView: {
     flex: 1,
@@ -468,6 +481,10 @@ const styles = StyleSheet.create({
   userCard: {
     padding: 16,
     marginBottom: 12,
+    backgroundColor: 'rgba(20, 30, 48, 0.7)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.6)',
   },
   userCardContent: {
     flexDirection: 'row',
@@ -495,11 +512,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   userEmail: {
-    color: lawFirmTheme.colors.lightGray,
+    color: '#d4af37',
     fontSize: 14,
     marginBottom: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   userMeta: {
     flexDirection: 'row',
@@ -552,10 +575,17 @@ const styles = StyleSheet.create({
   emptyCard: {
     padding: 40,
     alignItems: 'center',
+    backgroundColor: 'rgba(20, 30, 48, 0.7)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.6)',
   },
   emptyText: {
-    color: lawFirmTheme.colors.lightGray,
+    color: '#d4af37',
     fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   modalContainer: {
     flex: 1,
