@@ -48,6 +48,10 @@ import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen
 import LawFirmUserManagementScreen from './src/screens/LawFirmUserManagementScreen';
 import LawFirmActivityDashboardScreen from './src/screens/LawFirmActivityDashboardScreen';
 import LawFirmUserActivityTimelineScreen from './src/screens/LawFirmUserActivityTimelineScreen';
+import MedicalProviderUserManagementScreen from './src/screens/MedicalProviderUserManagementScreen';
+import MedicalProviderActivityDashboardScreen from './src/screens/MedicalProviderActivityDashboardScreen';
+import MedicalProviderHIPAADashboardScreen from './src/screens/MedicalProviderHIPAADashboardScreen';
+import MedicalProviderUserActivityTimelineScreen from './src/screens/MedicalProviderUserActivityTimelineScreen';
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import TreasureChestScreen from './src/screens/TreasureChestScreen';
@@ -97,6 +101,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [medicalProviderReturnTab, setMedicalProviderReturnTab] = useState('patients');
   const [currentLawFirmUser, setCurrentLawFirmUser] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [currentMedicalProviderUser, setCurrentMedicalProviderUser] = useState(null);
+  const [selectedMedicalUserId, setSelectedMedicalUserId] = useState(null);
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -1383,6 +1389,42 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={currentLawFirmUser || user}
           targetUserId={selectedUserId}
           onBack={() => setCurrentScreen('lawfirm-activity-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-user-management' && (
+        <MedicalProviderUserManagementScreen
+          user={currentMedicalProviderUser || user}
+          onBack={() => setCurrentScreen('medicalprovider-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-activity-dashboard' && (
+        <MedicalProviderActivityDashboardScreen
+          user={currentMedicalProviderUser || user}
+          onBack={() => setCurrentScreen('medicalprovider-dashboard')}
+          onNavigateToUser={(userId) => {
+            setSelectedMedicalUserId(userId);
+            setCurrentScreen('medicalprovider-user-timeline');
+          }}
+          onNavigateToHIPAAReport={() => {
+            setCurrentScreen('medicalprovider-hipaa-dashboard');
+          }}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-hipaa-dashboard' && (
+        <MedicalProviderHIPAADashboardScreen
+          user={currentMedicalProviderUser || user}
+          onBack={() => setCurrentScreen('medicalprovider-activity-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-user-timeline' && (
+        <MedicalProviderUserActivityTimelineScreen
+          user={currentMedicalProviderUser || user}
+          targetUserId={selectedMedicalUserId}
+          onBack={() => setCurrentScreen('medicalprovider-activity-dashboard')}
         />
       )}
 
