@@ -177,9 +177,10 @@ exports.createLawFirmUser = async (req, res) => {
 exports.getLawFirmUsers = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
+    const { status } = req.query;
 
-    const result = await db.query(
-      `SELECT 
+    // Build query based on status filter
+    let query = `SELECT 
         lfu.id, lfu.first_name, lfu.last_name, lfu.email, lfu.user_code, lfu.role,
         lfu.can_manage_users, lfu.can_manage_clients, lfu.can_view_all_clients,
         lfu.can_send_notifications, lfu.can_manage_disbursements, lfu.can_view_analytics,
@@ -188,10 +189,22 @@ exports.getLawFirmUsers = async (req, res) => {
         creator.first_name as created_by_first_name, creator.last_name as created_by_last_name
       FROM law_firm_users lfu
       LEFT JOIN law_firm_users creator ON lfu.created_by = creator.id
-      WHERE lfu.law_firm_id = $1 AND lfu.status != $2
-      ORDER BY lfu.created_at DESC`,
-      [lawFirmId, 'deactivated']
-    );
+      WHERE lfu.law_firm_id = $1`;
+    
+    const params = [lawFirmId];
+    
+    // Filter by status if provided
+    if (status === 'active') {
+      query += ` AND lfu.status = $2`;
+      params.push('active');
+    } else if (status === 'deactivated') {
+      query += ` AND lfu.status = $2`;
+      params.push('deactivated');
+    }
+    
+    query += ` ORDER BY lfu.created_at DESC`;
+
+    const result = await db.query(query, params);
 
     const users = result.rows.map(user => ({
       id: user.id,

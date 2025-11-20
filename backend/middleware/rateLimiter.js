@@ -4,7 +4,20 @@ const rateLimit = require('express-rate-limit');
  * Rate Limiting Configuration
  * 
  * SECURITY: Prevents brute force attacks, credential stuffing, and API abuse
+ * 
+ * NOTE: We use a custom key generator to safely handle proxy environments.
+ * This prevents the ERR_ERL_PERMISSIVE_TRUST_PROXY warning when trust proxy is enabled.
  */
+
+// Custom key generator that safely handles proxy headers
+const getClientIdentifier = (req) => {
+  // In production (Railway/Replit), use X-Forwarded-For if available
+  // Otherwise fall back to connection.remoteAddress
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+         req.connection.remoteAddress || 
+         req.socket.remoteAddress ||
+         'unknown';
+};
 
 // Strict rate limit for authentication endpoints
 const authLimiter = rateLimit({
@@ -16,8 +29,9 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  keyGenerator: getClientIdentifier,
   handler: (req, res) => {
-    console.warn(`⚠️  Rate limit exceeded for ${req.ip} on ${req.path}`);
+    console.warn(`⚠️  Rate limit exceeded for ${getClientIdentifier(req)} on ${req.path}`);
     res.status(429).json({
       message: 'Too many authentication attempts. Please try again in 15 minutes.',
       retryAfter: '15 minutes'
@@ -35,6 +49,7 @@ const rewardLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: getClientIdentifier,
   skipSuccessfulRequests: false // Count all requests
 });
 
@@ -47,7 +62,8 @@ const purchaseLimiter = rateLimit({
     retryAfter: '1 hour'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  keyGenerator: getClientIdentifier
 });
 
 // General API rate limit
@@ -60,6 +76,7 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: getClientIdentifier,
   skip: (req) => {
     // Skip rate limiting for health checks
     return req.path === '/health';
@@ -75,7 +92,8 @@ const passwordResetLimiter = rateLimit({
     retryAfter: '1 hour'
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  keyGenerator: getClientIdentifier
 });
 
 module.exports = {
