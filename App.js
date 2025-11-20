@@ -45,6 +45,9 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
+import LawFirmUserManagementScreen from './src/screens/LawFirmUserManagementScreen';
+import LawFirmActivityDashboardScreen from './src/screens/LawFirmActivityDashboardScreen';
+import LawFirmUserActivityTimelineScreen from './src/screens/LawFirmUserActivityTimelineScreen';
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import TreasureChestScreen from './src/screens/TreasureChestScreen';
@@ -92,6 +95,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedNotificationId, setSelectedNotificationId] = useState(null);
   const [lawFirmReturnTab, setLawFirmReturnTab] = useState('clients');
   const [medicalProviderReturnTab, setMedicalProviderReturnTab] = useState('patients');
+  const [currentLawFirmUser, setCurrentLawFirmUser] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -1352,6 +1357,32 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           user={user}
           onBack={handleBackToLawFirmDashboard}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-user-management' && (
+        <LawFirmUserManagementScreen
+          user={currentLawFirmUser || user}
+          onBack={() => setCurrentScreen('lawfirm-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-activity-dashboard' && (
+        <LawFirmActivityDashboardScreen
+          user={currentLawFirmUser || user}
+          onBack={() => setCurrentScreen('lawfirm-dashboard')}
+          onNavigateToUser={(userId) => {
+            setSelectedUserId(userId);
+            setCurrentScreen('lawfirm-user-timeline');
+          }}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-user-timeline' && (
+        <LawFirmUserActivityTimelineScreen
+          user={currentLawFirmUser || user}
+          targetUserId={selectedUserId}
+          onBack={() => setCurrentScreen('lawfirm-activity-dashboard')}
         />
       )}
 
