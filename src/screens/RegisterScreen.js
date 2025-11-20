@@ -48,7 +48,7 @@ const RegisterScreen = ({
           ref={videoRef}
           source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
           style={styles.backgroundVideo}
-          resizeMode={ResizeMode.COVER}
+          resizeMode={ResizeMode.CONTAIN}
           isLooping
           isMuted
           shouldPlay
