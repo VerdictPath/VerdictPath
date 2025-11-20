@@ -97,6 +97,68 @@ exports.getFailedActivities = async (req, res) => {
     res.json({ activities });
   } catch (error) {
     console.error('Error fetching failed activities:', error);
-    res.status(500).json({ message: 'Error fetching failed activities', error: error.message });
+    res.json({ message: 'Error fetching failed activities', error: error.message });
+  }
+};
+
+/**
+ * Get activity summary (combines statistics, top users, and recent activities)
+ * For frontend dashboard consumption
+ */
+exports.getActivitySummary = async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { startDate, endDate } = req.query;
+
+    // Permission check handled by requirePermission middleware
+
+    const options = {
+      startDate: startDate ? new Date(startDate) : null,
+      endDate: endDate ? new Date(endDate) : null
+    };
+
+    // Get all data in parallel
+    const [statistics, topUsers, recentLogs] = await Promise.all([
+      activityLogger.getStatistics(lawFirmId, options),
+      activityLogger.getMostActiveUsers(lawFirmId, { ...options, limit: 10 }),
+      activityLogger.getLogs(lawFirmId, { ...options, limit: 20, offset: 0 })
+    ]);
+
+    // Calculate total activities
+    const totalActivities = statistics.reduce((sum, cat) => sum + parseInt(cat.count), 0);
+
+    // Format response for frontend
+    const summary = {
+      totalActivities,
+      activitiesByCategory: statistics.map(stat => ({
+        _id: stat.action_category,  // Keep _id for frontend compatibility
+        count: parseInt(stat.count),
+        uniqueUsers: parseInt(stat.unique_users)
+      })),
+      topUsers: topUsers.map(user => ({
+        _id: user.user_id,  // Keep _id for frontend compatibility
+        userId: user.user_id,
+        userName: user.user_name,
+        userEmail: user.user_email,
+        count: parseInt(user.activity_count),
+        lastActivity: user.last_activity
+      })),
+      recentActivities: recentLogs.map(log => ({
+        _id: log.id,  // Keep _id for frontend compatibility
+        id: log.id,
+        userName: log.user_name,
+        userEmail: log.user_email,
+        action: log.action,
+        actionCategory: log.action_category,
+        targetName: log.target_name,
+        timestamp: log.timestamp,
+        status: log.status
+      }))
+    };
+
+    res.json({ summary });
+  } catch (error) {
+    console.error('Error fetching activity summary:', error);
+    res.status(500).json({ message: 'Error fetching activity summary', error: error.message });
   }
 };
