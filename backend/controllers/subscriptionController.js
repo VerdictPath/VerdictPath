@@ -11,11 +11,6 @@ const INDIVIDUAL_PRICING = {
 const updateLawFirmSubscription = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
-    
-    // DEBUG: Log the entire request body to see what's being received
-    console.log('[Subscription Update] Request body:', JSON.stringify(req.body, null, 2));
-    console.log('[Subscription Update] Content-Type:', req.headers['content-type']);
-    
     const { subscriptionTier, firmSize, planType: topLevelPlanType } = req.body;
 
     if (!subscriptionTier) {
