@@ -11,8 +11,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import GlassCard from '../components/GlassCard';
-import StatCard from '../components/StatCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -164,12 +162,12 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Total Activities */}
-        <GlassCard variant="dark" style={styles.totalCard}>
+        <View style={styles.glassCard}>
           <Text style={styles.totalLabel}>Total Activities</Text>
           <Text style={styles.totalValue}>
             {summary.totalActivities.toLocaleString()}
           </Text>
-        </GlassCard>
+        </View>
 
         {/* Activities by Category */}
         <Text style={styles.sectionTitle}>Activity Breakdown</Text>
@@ -201,9 +199,9 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
         ))}
 
         {summary.topUsers.length === 0 && (
-          <GlassCard variant="light" style={styles.emptyCard}>
+          <View style={styles.glassCard}>
             <Text style={styles.emptyText}>No activity data for this period</Text>
-          </GlassCard>
+          </View>
         )}
 
         {/* Recent Activities */}
@@ -219,7 +217,7 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
 };
 
 const CategoryCard = ({ name, count, icon, color }) => (
-  <GlassCard variant="dark" style={styles.categoryCard}>
+  <View style={styles.glassCard}>
     <LinearGradient
       colors={[color + '40', color + '10']}
       style={styles.categoryIconBg}
@@ -228,7 +226,7 @@ const CategoryCard = ({ name, count, icon, color }) => (
     </LinearGradient>
     <Text style={styles.categoryCount}>{count}</Text>
     <Text style={styles.categoryName}>{name}</Text>
-  </GlassCard>
+  </View>
 );
 
 const UserActivityCard = ({ userName, userEmail, activityCount, rank, onPress }) => {
@@ -239,7 +237,7 @@ const UserActivityCard = ({ userName, userEmail, activityCount, rank, onPress })
   };
 
   return (
-    <GlassCard variant="dark" onPress={onPress} style={styles.userActivityCard}>
+    <View style={styles.glassCard}>
       <View style={styles.userActivityContent}>
         <View
           style={[
@@ -260,7 +258,7 @@ const UserActivityCard = ({ userName, userEmail, activityCount, rank, onPress })
           <Text style={styles.activityCountLabel}>actions</Text>
         </View>
       </View>
-    </GlassCard>
+    </View>
   );
 };
 
@@ -292,7 +290,7 @@ const ActivityLogCard = ({ activity }) => {
   };
 
   return (
-    <GlassCard variant="medium" style={styles.activityLogCard}>
+    <View style={styles.glassCard}>
       <View style={styles.activityLogContent}>
         <Text style={styles.activityIcon}>
           {actionIcons[activity.action] || '📊'}
@@ -310,7 +308,7 @@ const ActivityLogCard = ({ activity }) => {
 
         <Text style={styles.activityTime}>{getTimeAgo(activity.timestamp)}</Text>
       </View>
-    </GlassCard>
+    </View>
   );
 };
 

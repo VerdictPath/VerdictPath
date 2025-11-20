@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import GlassCard from '../components/GlassCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -156,11 +155,11 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
         ))}
 
         {users.length === 0 && (
-          <GlassCard variant="light" style={styles.emptyCard}>
+          <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>
               {filterStatus === 'active' ? 'No active users' : 'No deactivated users'}
             </Text>
-          </GlassCard>
+          </View>
         )}
       </ScrollView>
 
@@ -187,7 +186,7 @@ const UserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
   };
 
   return (
-    <GlassCard variant="dark" style={styles.userCard}>
+    <View style={styles.userCard}>
       <View style={styles.userCardContent}>
         <View style={styles.userAvatar}>
           <Text style={styles.userInitials}>
@@ -239,7 +238,7 @@ const UserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
           Last login: {new Date(user.lastLogin).toLocaleString()}
         </Text>
       )}
-    </GlassCard>
+    </View>
   );
 };
 
