@@ -31,6 +31,9 @@ const ChangePasswordScreen = ({ route, navigation }) => {
     if (!/[0-9]/.test(password)) {
       return 'Password must contain at least one number';
     }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Password must contain at least one special character';
+    }
     return null;
   };
 
@@ -128,6 +131,7 @@ const ChangePasswordScreen = ({ route, navigation }) => {
             <Text style={styles.requirementItem}>• At least one uppercase letter (A-Z)</Text>
             <Text style={styles.requirementItem}>• At least one lowercase letter (a-z)</Text>
             <Text style={styles.requirementItem}>• At least one number (0-9)</Text>
+            <Text style={styles.requirementItem}>• At least one special character (!@#$%^&*)</Text>
           </View>
 
           <TextInput
