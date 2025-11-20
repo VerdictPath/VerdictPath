@@ -331,7 +331,7 @@ exports.getAllUsers = async (req, res) => {
         mpu.can_manage_users, mpu.can_manage_patients, mpu.can_view_all_patients,
         mpu.can_send_notifications, mpu.can_manage_billing, mpu.can_view_analytics,
         mpu.can_manage_settings, mpu.can_access_phi, mpu.can_view_medical_records,
-        mpu.can_edit_medical_records, mpu.status, mpu.last_login, mpu.created_at,
+        mpu.can_edit_medical_records, mpu.status, mpu.last_login, mpu.last_activity, mpu.created_at,
         creator.first_name as created_by_first_name, creator.last_name as created_by_last_name
       FROM medical_provider_users mpu
       LEFT JOIN medical_provider_users creator ON mpu.created_by = creator.id
@@ -383,6 +383,7 @@ exports.getAllUsers = async (req, res) => {
       },
       status: user.status,
       lastLogin: user.last_login,
+      lastActivity: user.last_activity,
       createdAt: user.created_at,
       createdBy: user.created_by_first_name ? `${user.created_by_first_name} ${user.created_by_last_name}` : null
     }));
@@ -414,7 +415,7 @@ exports.getUserById = async (req, res) => {
         mpu.can_manage_users, mpu.can_manage_patients, mpu.can_view_all_patients,
         mpu.can_send_notifications, mpu.can_manage_billing, mpu.can_view_analytics,
         mpu.can_manage_settings, mpu.can_access_phi, mpu.can_view_medical_records,
-        mpu.can_edit_medical_records, mpu.status, mpu.last_login,
+        mpu.can_edit_medical_records, mpu.status, mpu.last_login, mpu.last_activity,
         mpu.created_at, mpu.deactivated_at, mpu.deactivation_reason,
         creator.first_name as created_by_first_name, creator.last_name as created_by_last_name
       FROM medical_provider_users mpu
@@ -463,6 +464,7 @@ exports.getUserById = async (req, res) => {
         },
         status: user.status,
         lastLogin: user.last_login,
+        lastActivity: user.last_activity,
         createdAt: user.created_at,
         createdBy: user.created_by_first_name ? `${user.created_by_first_name} ${user.created_by_last_name}` : null,
         deactivatedAt: user.deactivated_at,

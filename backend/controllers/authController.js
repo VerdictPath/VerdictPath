@@ -825,7 +825,7 @@ exports.loginMedicalProviderUser = async (req, res) => {
     }
 
     await db.query(
-      'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [medicalProviderUser.id]
     );
 
@@ -834,7 +834,7 @@ exports.loginMedicalProviderUser = async (req, res) => {
         id: medicalProviderUser.medical_provider_id,
         medicalProviderUserId: medicalProviderUser.id,
         email: medicalProviderUser.email,
-        userType: 'medicalprovider',
+        userType: 'medical_provider',
         providerCode: medicalProviderUser.provider_code,
         medicalProviderUserRole: medicalProviderUser.role,
         isMedicalProviderUser: true
@@ -876,7 +876,7 @@ exports.loginMedicalProviderUser = async (req, res) => {
         firstName: medicalProviderUser.first_name,
         lastName: medicalProviderUser.last_name,
         email: medicalProviderUser.email,
-        userType: 'medicalprovider',
+        userType: 'medical_provider',
         providerCode: medicalProviderUser.provider_code,
         userCode: medicalProviderUser.user_code,
         role: medicalProviderUser.role,
