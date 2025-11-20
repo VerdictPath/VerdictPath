@@ -206,7 +206,12 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
         Alert.alert('Success', 'Subscription updated successfully!');
       }
       
-      await fetchSubscriptionDetails();
+      // Try to refresh subscription details, but don't show error if it fails
+      try {
+        await fetchSubscriptionDetails();
+      } catch (refreshError) {
+        console.log('Could not refresh subscription details after update:', refreshError);
+      }
     } catch (error) {
       console.error('Error updating subscription:', error);
       if (Platform.OS === 'web') {

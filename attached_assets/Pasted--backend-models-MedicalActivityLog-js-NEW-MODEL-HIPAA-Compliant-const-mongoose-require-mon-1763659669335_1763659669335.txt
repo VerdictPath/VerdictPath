@@ -1,0 +1,188 @@
+// backend/models/MedicalActivityLog.js - NEW MODEL (HIPAA-Compliant)
+
+const mongoose = require('mongoose');
+
+const medicalActivityLogSchema = new mongoose.Schema({
+  medicalProviderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MedicalProvider',
+    required: true,
+    index: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MedicalProviderUser',
+    required: true,
+    index: true,
+  },
+  userEmail: {
+    type: String,
+    required: true,
+  },
+  userName: {
+    type: String,
+    required: true,
+  },
+  userRole: {
+    type: String,
+    required: true,
+  },
+  action: {
+    type: String,
+    required: true,
+    enum: [
+      // User Management
+      'user_created',
+      'user_updated',
+      'user_deactivated',
+      'user_reactivated',
+      'user_login',
+      'user_logout',
+      
+      // Patient Actions (HIPAA Critical)
+      'patient_viewed',
+      'patient_updated',
+      'patient_created',
+      'patient_record_accessed',
+      'patient_phi_viewed', // Protected Health Information
+      
+      // Medical Records
+      'medical_record_created',
+      'medical_record_updated',
+      'medical_record_viewed',
+      'medical_record_deleted',
+      'medical_report_generated',
+      
+      // Document Actions
+      'document_uploaded',
+      'document_downloaded',
+      'document_deleted',
+      'document_shared',
+      'xray_viewed',
+      'lab_result_viewed',
+      
+      // Financial Actions
+      'disbursement_initiated',
+      'disbursement_completed',
+      'payment_received',
+      'billing_record_accessed',
+      
+      // Communication
+      'notification_sent',
+      'message_sent',
+      'email_sent',
+      'patient_contacted',
+      
+      // Treatment/Care
+      'treatment_plan_created',
+      'treatment_plan_updated',
+      'prescription_created',
+      'appointment_scheduled',
+      'appointment_completed',
+      
+      // Compliance
+      'hipaa_audit_log_viewed',
+      'consent_form_signed',
+      'privacy_policy_accepted',
+      
+      // Settings
+      'settings_updated',
+      'subscription_changed',
+      
+      // Security
+      'password_changed',
+      'password_reset_requested',
+      'two_factor_enabled',
+      'two_factor_disabled',
+      'unauthorized_access_attempt',
+    ],
+  },
+  actionCategory: {
+    type: String,
+    enum: ['user', 'patient', 'medical_record', 'document', 'financial', 'communication', 'treatment', 'compliance', 'settings', 'security'],
+    required: true,
+    index: true,
+  },
+  sensitivityLevel: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'critical'], // For HIPAA risk assessment
+    default: 'medium',
+  },
+  targetType: {
+    type: String, // 'Patient', 'MedicalRecord', 'Document', 'User', etc.
+  },
+  targetId: {
+    type: mongoose.Schema.Types.ObjectId,
+  },
+  targetName: {
+    type: String,
+  },
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // Reference to patient (if applicable)
+    index: true,
+  },
+  patientName: {
+    type: String, // Encrypted or hashed for HIPAA
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+  },
+  ipAddress: {
+    type: String,
+    required: true,
+  },
+  userAgent: {
+    type: String,
+  },
+  location: {
+    type: String, // Geographic location if available
+  },
+  deviceInfo: {
+    type: String,
+  },
+  status: {
+    type: String,
+    enum: ['success', 'failed', 'pending', 'blocked'],
+    default: 'success',
+  },
+  errorMessage: {
+    type: String,
+  },
+  hipaaCompliant: {
+    type: Boolean,
+    default: true,
+  },
+  auditRequired: {
+    type: Boolean,
+    default: false, // Flag for actions requiring additional audit review
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+    index: true,
+  },
+  expiresAt: {
+    type: Date,
+    index: { expires: 0 }, // TTL index for automatic deletion based on retention policy
+  },
+});
+
+// Compound indexes for efficient querying
+medicalActivityLogSchema.index({ medicalProviderId: 1, timestamp: -1 });
+medicalActivityLogSchema.index({ userId: 1, timestamp: -1 });
+medicalActivityLogSchema.index({ medicalProviderId: 1, actionCategory: 1, timestamp: -1 });
+medicalActivityLogSchema.index({ patientId: 1, timestamp: -1 });
+medicalActivityLogSchema.index({ medicalProviderId: 1, sensitivityLevel: 1 });
+
+// Set expiration based on retention policy
+medicalActivityLogSchema.pre('save', function(next) {
+  if (!this.expiresAt) {
+    // Default 7 years for HIPAA compliance
+    const retentionDays = 2555;
+    this.expiresAt = new Date(Date.now() + (retentionDays * 24 * 60 * 60 * 1000));
+  }
+  next();
+});
+
+module.exports = mongoose.model('MedicalActivityLog', medicalActivityLogSchema);
