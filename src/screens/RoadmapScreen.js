@@ -341,6 +341,14 @@ const RoadmapScreen = ({
     
     if (!currentStage.subStages || currentStage.subStages.length === 0) {
       onCompleteStage(currentStage.id, currentStage.coins);
+      
+      // Trigger celebration for stage completion
+      if (currentStage.coins > 0) {
+        setCompletedMilestone(`${currentStage.name} Complete! 🏆`);
+        setCelebrationCoins(currentStage.coins);
+        setShowCelebration(true);
+      }
+      
       closeModal();
     } else {
       const incompleteSubs = currentStage.subStages.filter(sub => !sub.completed);
@@ -358,6 +366,14 @@ const RoadmapScreen = ({
               incompleteSubs.forEach(sub => {
                 onCompleteSubStage(currentStage.id, sub.id, sub.coins);
               });
+              
+              // Trigger celebration for stage completion
+              if (totalCoins > 0) {
+                setCompletedMilestone(`${currentStage.name} Complete! 🏆`);
+                setCelebrationCoins(totalCoins);
+                setShowCelebration(true);
+              }
+              
               closeModal();
             }
           }

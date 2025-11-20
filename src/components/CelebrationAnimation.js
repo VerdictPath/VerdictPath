@@ -101,14 +101,14 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
       try {
         await videoRef.current.unloadAsync();
         await videoRef.current.loadAsync(
-          require('../../attached_assets/celebration_raining_coins_v2.mp4'),
+          require('../../attached_assets/raining_small_gold_coins_from_the_sky_1763657334815.mp4'),
           {
             shouldPlay: true,
             isLooping: false,
             volume: 0.8,
           }
         );
-        console.log('[CelebrationAnimation] Playing celebration_raining_coins_v2 video');
+        console.log('[CelebrationAnimation] Playing NEW raining coins video');
       } catch (error) {
         console.error('[CelebrationAnimation] Video error:', error);
       }
