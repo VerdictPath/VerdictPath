@@ -22,7 +22,7 @@ Key technical features include:
 - **Client-Medical Provider Relationship Management**: Secure system for tracking client-medical provider relationships, controlled by law firms.
 - **Premium Access Control for Settlement Disbursements**: Gating of settlement disbursement features for premium law firm subscribers.
 - **Push Notification System**: Targeted notifications, 22 templates, Expo push integration, deep linking, real-time badge count synchronization, client-specific analytics with filtering, and real-time client search in send notification screen.
-- **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards.
+- **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards. Individual users can view, complete, and revert tasks via Action Dashboard. Task reversion preserves coins (anti-farming mechanism) and prevents duplicate coin awards on re-completion.
 - **Calendar Integration**: Full device calendar sync via Expo Calendar API.
 - **Enhanced Gamification**: 16 achievements, 8 pirate-themed badges with rarity, progress tracking, and a leaderboard system.
 - **Stripe Payment Integration**: Full Stripe payment processing for subscriptions and one-time payments, supporting Apple Pay and Google Pay, including a Coin Purchase System.
