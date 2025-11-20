@@ -145,9 +145,8 @@ export const API_ENDPOINTS = {
 
   // Medical Provider Users (Multi-User Management)
   MEDICAL_PROVIDER_USERS: {
-    LOGIN: `${API_BASE_URL}/api/medicalprovider/users/login`,
-    CREATE: `${API_BASE_URL}/api/medicalprovider/users/create`,
-    GET_ALL: `${API_BASE_URL}/api/medicalprovider/users/all`,
+    CREATE: `${API_BASE_URL}/api/medicalprovider/users`,
+    GET_ALL: `${API_BASE_URL}/api/medicalprovider/users`,
     GET_DETAILS: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}`,
     UPDATE: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}`,
     DEACTIVATE: (userId) => `${API_BASE_URL}/api/medicalprovider/users/${userId}/deactivate`,
