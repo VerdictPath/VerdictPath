@@ -103,10 +103,10 @@ const verifyMedicalProviderUser = async (req, res, next) => {
     req.medicalProviderUser = user;
     req.medicalProviderId = user.medical_provider_id;
     
-    // Update last login (skip for bootstrap scenario)
+    // Update last activity (skip for bootstrap scenario)
     if (user.id !== -1) {
       await pool.query(
-        'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+        'UPDATE medical_provider_users SET last_activity = CURRENT_TIMESTAMP WHERE id = $1',
         [user.id]
       );
     }
