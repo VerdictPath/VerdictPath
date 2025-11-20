@@ -8,7 +8,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
   const tabs = [
     { name: 'Dashboard', icon: '🏠', screen: 'dashboard', badge: unreadCount },
     { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
-    { name: 'Medical', icon: '⚕️', screen: 'medical' },
+    { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
     { name: 'Videos', icon: '🎬', screen: 'videos' },
     { name: 'Actions', icon: '⚓', screen: 'actions' },
   ];
@@ -34,7 +34,7 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
                   resizeMode="contain"
                 />
               ) : (
-                <Text style={styles.icon}>{tab.icon}</Text>
+                <Text style={[styles.icon, tab.iconColor && { color: tab.iconColor }]}>{tab.icon}</Text>
               )}
               {showBadge && (
                 <View style={styles.badge}>
