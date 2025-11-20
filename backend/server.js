@@ -125,8 +125,8 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
-app.use('/api/lawfirm', lawfirmUsersRoutes);
-app.use('/api/lawfirm/activity-logs', activityLogRoutes);
+app.use('/api/lawfirm/users', lawfirmUsersRoutes);
+app.use('/api/lawfirm/activity', activityLogRoutes);
 app.use('/api/medicalprovider', medicalproviderRoutes);
 app.use('/api/consent', consentRoutes);
 app.use('/api/coins', coinsRoutes);
