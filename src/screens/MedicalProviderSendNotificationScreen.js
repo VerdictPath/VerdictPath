@@ -77,6 +77,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
   const [actionScreen, setActionScreen] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchPatients();
@@ -256,13 +257,39 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
             </TouchableOpacity>
           </View>
           
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search patients by name or email..."
+              placeholderTextColor="#999"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearSearchButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <Text style={styles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
           {patients.length === 0 ? (
             <View style={styles.emptyPatients}>
               <Text style={styles.emptyPatientsText}>No patients found</Text>
             </View>
           ) : (
             <View style={styles.patientsList}>
-              {patients.map(patient => (
+              {patients.filter(patient => {
+                if (!searchQuery.trim()) return true;
+                const query = searchQuery.toLowerCase();
+                const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
+                const email = patient.email.toLowerCase();
+                return fullName.includes(query) || email.includes(query);
+              }).map(patient => (
                 <TouchableOpacity
                   key={patient.id}
                   style={[
@@ -441,6 +468,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+  clearSearchText: {
+    fontSize: 20,
+    color: '#999',
+    fontWeight: 'bold',
   },
   patientsList: {
     gap: 10,
