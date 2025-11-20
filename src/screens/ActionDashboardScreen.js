@@ -64,8 +64,15 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
     if (task.status === 'completed') {
       Alert.alert(
         '✅ Task Completed',
-        `${task.title}\n\nCompleted on: ${new Date(task.completedAt).toLocaleDateString()}\n${task.completionNotes ? `\nNotes: ${task.completionNotes}` : ''}`,
-        [{ text: 'OK' }]
+        `${task.title}\n\nCompleted on: ${new Date(task.completedAt).toLocaleDateString()}\n${task.completionNotes ? `\nNotes: ${task.completionNotes}` : ''}\n\n💰 Note: If you revert this task, previously earned coins (${task.coinsReward} coins) are preserved and cannot be earned again when you re-complete.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: '🔄 Revert to Incomplete',
+            style: 'destructive',
+            onPress: () => revertTask(task)
+          }
+        ]
       );
       return;
     }
@@ -120,6 +127,21 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
           text: 'Complete',
           style: 'default',
           onPress: () => updateTaskStatus(task.id, 'completed')
+        }
+      ]
+    );
+  };
+
+  const revertTask = (task) => {
+    Alert.alert(
+      '🔄 Revert Task',
+      `Mark "${task.title}" as incomplete?\n\n💰 Note: Previously earned coins (${task.coinsReward} coins) will be preserved and cannot be earned again when you re-complete this task.\n\nThis prevents coin farming while allowing you to update your progress.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Revert',
+          style: 'destructive',
+          onPress: () => updateTaskStatus(task.id, 'pending')
         }
       ]
     );
