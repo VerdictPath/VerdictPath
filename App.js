@@ -63,6 +63,7 @@ import LawFirmSubscriptionScreen from './src/screens/LawFirmSubscriptionScreen';
 import MedicalProviderSubscriptionScreen from './src/screens/MedicalProviderSubscriptionScreen';
 import NegotiationsScreen from './src/screens/NegotiationsScreen';
 import AvatarSelectionScreen from './src/screens/AvatarSelectionScreen';
+import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
@@ -103,6 +104,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [currentMedicalProviderUser, setCurrentMedicalProviderUser] = useState(null);
   const [selectedMedicalUserId, setSelectedMedicalUserId] = useState(null);
+  const [changePasswordData, setChangePasswordData] = useState(null);
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -610,7 +612,20 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         body: JSON.stringify({ email, password, userType: apiUserType })
       });
       
-      console.log('[Login] Login successful, user:', response.user);
+      console.log('[Login] Login successful, response:', response);
+      
+      if (response.mustChangePassword) {
+        console.log('[Login] User must change password before accessing account');
+        setChangePasswordData({
+          changePasswordToken: response.changePasswordToken,
+          email: response.user.email,
+          firstName: response.user.firstName,
+          lastName: response.user.lastName,
+          userType: apiUserType
+        });
+        setCurrentScreen('change-password');
+        return;
+      }
       
       let userData;
       
@@ -1227,6 +1242,26 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onNavigate={handleNavigateInternal}
           userType={userType}
           setUserType={setUserType}
+        />
+      )}
+
+      {currentScreen === 'change-password' && changePasswordData && (
+        <ChangePasswordScreen
+          route={{
+            params: {
+              changePasswordToken: changePasswordData.changePasswordToken,
+              email: changePasswordData.email,
+              firstName: changePasswordData.firstName,
+              lastName: changePasswordData.lastName,
+              userType: changePasswordData.userType
+            }
+          }}
+          navigation={{
+            reset: ({ routes }) => {
+              setCurrentScreen(routes[0].name.toLowerCase());
+              setChangePasswordData(null);
+            }
+          }}
         />
       )}
       
