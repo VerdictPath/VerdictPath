@@ -75,4 +75,17 @@ router.get(
   medicalProviderActivityController.getActivityStatistics
 );
 
+// HIPAA Compliance Routes
+router.get(
+  '/activity/hipaa-report',
+  requireAdmin,
+  medicalProviderActivityController.getHIPAAComplianceReport
+);
+
+router.get(
+  '/activity/patient/:patientId/audit',
+  checkPermission('can_view_medical_records'),
+  medicalProviderActivityController.getPatientAccessAudit
+);
+
 module.exports = router;
