@@ -125,14 +125,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 20,
     left: '50%',
-    marginLeft: -90,
-    width: 180,
-    height: 180,
+    marginLeft: -100,
+    width: 200,
+    height: 200,
     zIndex: 10,
   },
   buttonContainer: {
     paddingHorizontal: 20,
-    marginTop: 220,
+    marginTop: 240,
   },
   featuresContainer: {
     padding: 30,
