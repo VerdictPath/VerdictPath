@@ -380,13 +380,20 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
           body: JSON.stringify(requestBody)
         });
 
+        // Try to refresh subscription details, but don't show error if it fails
+        // since the update itself was successful
+        try {
+          await fetchSubscriptionDetails();
+        } catch (fetchError) {
+          console.error('Error refreshing subscription details:', fetchError);
+          // Silently fail - update was successful, just couldn't refresh
+        }
+
         if (Platform.OS === 'web') {
           alert('Subscription updated successfully!');
         } else {
           Alert.alert('Success', 'Subscription updated successfully!');
         }
-        
-        await fetchSubscriptionDetails();
       } catch (error) {
         console.error('Error updating subscription:', error);
         if (Platform.OS === 'web') {

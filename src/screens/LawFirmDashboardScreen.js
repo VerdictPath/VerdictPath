@@ -25,35 +25,35 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     try {
       console.log('[Dashboard] Fetching dashboard data...');
       console.log('[Dashboard] Token:', user?.token ? 'Present' : 'Missing');
-      console.log('[Dashboard] API URL:', `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.DASHBOARD}`);
+      console.log('[Dashboard] API URL:', API_ENDPOINTS.LAWFIRM.DASHBOARD);
       
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.DASHBOARD}`, {
+      const data = await apiRequest(API_ENDPOINTS.LAWFIRM.DASHBOARD, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
       
-      console.log('[Dashboard] Response status:', response.status);
+      console.log('[Dashboard] Data received:', data);
+      console.log('[Dashboard] Clients count:', data.clients?.length || 0);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[Dashboard] Data received:', data);
-        console.log('[Dashboard] Clients count:', data.clients?.length || 0);
-        
-        setFirmData(data);
-        setClients(data.clients || []);
-        
-        // Use analytics from backend
-        setAnalytics(data.analytics || {
-          totalClients: data.clients?.length || 0,
-          preLitigationCount: 0,
-          litigationCount: 0,
-          trialCount: 0
-        });
-      } else {
-        const errorData = await response.json();
-        console.error('[Dashboard] Failed response:', response.status, errorData);
-      }
+      // Extract firm metadata only (not bulk data)
+      setFirmData({
+        firmName: data.firmName,
+        firmCode: data.firmCode,
+        totalClients: data.totalClients
+      });
+      
+      // Set clients array in dedicated state
+      setClients(data.clients || []);
+      
+      // Set analytics in dedicated state
+      setAnalytics(data.analytics || {
+        totalClients: data.totalClients || 0,
+        preLitigationCount: 0,
+        litigationCount: 0,
+        trialCount: 0
+      });
     } catch (error) {
       console.error('[Dashboard] Error fetching dashboard:', error);
     } finally {

@@ -1,0 +1,80 @@
+// backend/scripts/migrateLawFirms.js - NEW FILE
+
+const mongoose = require('mongoose');
+const LawFirm = require('../models/LawFirm');
+const LawFirmUser = require('../models/LawFirmUser');
+require('dotenv').config();
+
+async function migrateLawFirms() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
+
+    // Find all existing law firms
+    const lawFirms = await LawFirm.find({});
+    console.log(`Found ${lawFirms.length} law firms to migrate`);
+
+    for (const firm of lawFirms) {
+      // Check if admin user already exists
+      const existingAdmin = await LawFirmUser.findOne({
+        lawFirmId: firm._id,
+        role: 'admin',
+      });
+
+      if (existingAdmin) {
+        console.log(`Admin already exists for ${firm.firmName}, skipping...`);
+        continue;
+      }
+
+      // Create admin user from existing law firm credentials
+      const adminUser = await LawFirmUser.create({
+        lawFirmId: firm._id,
+        firstName: firm.firmName.split(' ')[0],
+        lastName: 'Admin',
+        email: firm.email,
+        password: firm.password, // Already hashed
+        userCode: `${firm.firmCode}-USER-0001`,
+        role: 'admin',
+        permissions: {
+          canManageUsers: true,
+          canManageClients: true,
+          canViewAllClients: true,
+          canSendNotifications: true,
+          canManageDisbursements: true,
+          canViewAnalytics: true,
+          canManageSettings: true,
+        },
+        status: 'active',
+      });
+
+      // Update law firm with admin reference
+      firm.adminUserId = adminUser._id;
+      firm.settings = {
+        maxUsers: getMaxUsersByTier(firm.subscriptionTier),
+        enableActivityTracking: true,
+        requireTwoFactor: false,
+      };
+      await firm.save();
+
+      console.log(`✓ Created admin user for ${firm.firmName}`);
+    }
+
+    console.log('\n✅ Migration complete!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Migration error:', error);
+    process.exit(1);
+  }
+}
+
+function getMaxUsersByTier(tier) {
+  const limits = {
+    free: 3,
+    basic: 5,
+    professional: 15,
+    enterprise: 50,
+  };
+  return limits[tier] || 5;
+}
+
+migrateLawFirms();

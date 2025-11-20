@@ -1,0 +1,116 @@
+// backend/models/LawFirmUser.js - NEW MODEL
+
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const lawFirmUserSchema = new mongoose.Schema({
+  lawFirmId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LawFirm',
+    required: true,
+  },
+  firstName: {
+    type: String,
+    required: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  userCode: {
+    type: String,
+    required: true,
+    unique: true,
+    // Format: FIRMCODE-USER-XXXX (e.g., PRSLW-USER-1234)
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'attorney', 'paralegal', 'staff'],
+    default: 'attorney',
+  },
+  permissions: {
+    canManageUsers: { type: Boolean, default: false },
+    canManageClients: { type: Boolean, default: true },
+    canViewAllClients: { type: Boolean, default: true },
+    canSendNotifications: { type: Boolean, default: true },
+    canManageDisbursements: { type: Boolean, default: false },
+    canViewAnalytics: { type: Boolean, default: true },
+    canManageSettings: { type: Boolean, default: false },
+  },
+  status: {
+    type: String,
+    enum: ['active', 'suspended', 'deactivated'],
+    default: 'active',
+  },
+  lastLogin: {
+    type: Date,
+  },
+  lastActivity: {
+    type: Date,
+  },
+  profileImage: {
+    type: String,
+  },
+  phoneNumber: {
+    type: String,
+  },
+  title: {
+    type: String, // e.g., "Senior Partner", "Associate Attorney"
+  },
+  barNumber: {
+    type: String, // State bar registration number
+  },
+  department: {
+    type: String,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LawFirmUser',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  deactivatedAt: {
+    type: Date,
+  },
+  deactivatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'LawFirmUser',
+  },
+  deactivationReason: {
+    type: String,
+  },
+});
+
+// Hash password before saving
+lawFirmUserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) {
+    return next();
+  }
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Method to compare passwords
+lawFirmUserSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
+
+module.exports = mongoose.model('LawFirmUser', lawFirmUserSchema);

@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
 
   // Law Firm
   LAWFIRM: {
+    DASHBOARD: `${API_BASE_URL}/api/lawfirm/dashboard`,
     CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
     CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}`,
     CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}/progress`,
