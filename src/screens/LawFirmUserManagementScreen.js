@@ -251,6 +251,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
     title: '',
     barNumber: '',
     phoneNumber: '',
+    notificationMethod: 'email',
   });
   const [loading, setLoading] = useState(false);
 
@@ -342,12 +343,48 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
             />
             <TextInput
               style={styles.input}
-              placeholder="Phone Number"
+              placeholder="Phone Number (required for SMS notifications)"
               placeholderTextColor="#999"
               keyboardType="phone-pad"
               value={formData.phoneNumber}
               onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
             />
+
+            {/* Notification Method Selector */}
+            <Text style={styles.label}>Send credentials via:</Text>
+            <View style={styles.notificationSelector}>
+              {[
+                { value: 'email', label: '📧 Email', desc: 'Email only' },
+                { value: 'sms', label: '📱 SMS', desc: 'Text message only' },
+                { value: 'both', label: '📧📱 Both', desc: 'Email & SMS' }
+              ].map((method) => (
+                <TouchableOpacity
+                  key={method.value}
+                  style={[
+                    styles.notificationOption,
+                    formData.notificationMethod === method.value && styles.notificationOptionActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, notificationMethod: method.value })}
+                >
+                  <Text
+                    style={[
+                      styles.notificationOptionLabel,
+                      formData.notificationMethod === method.value && styles.notificationOptionLabelActive,
+                    ]}
+                  >
+                    {method.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.notificationOptionDesc,
+                      formData.notificationMethod === method.value && styles.notificationOptionDescActive,
+                    ]}
+                  >
+                    {method.desc}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             {/* Role Selector */}
             <Text style={styles.label}>Role:</Text>
@@ -638,6 +675,41 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  notificationSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 10,
+  },
+  notificationOption: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.5)',
+    alignItems: 'center',
+  },
+  notificationOptionActive: {
+    backgroundColor: 'rgba(212, 175, 55, 0.25)',
+    borderColor: 'rgba(212, 175, 55, 1)',
+  },
+  notificationOptionLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 4,
+  },
+  notificationOptionLabelActive: {
+    color: '#D4AF37',
+  },
+  notificationOptionDesc: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  notificationOptionDescActive: {
+    color: 'rgba(212, 175, 55, 0.9)',
   },
   roleSelector: {
     flexDirection: 'row',
