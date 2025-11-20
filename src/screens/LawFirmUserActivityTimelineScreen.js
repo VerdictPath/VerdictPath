@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import GlassCard from '../components/GlassCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const LawFirmUserActivityTimelineScreen = ({ 
   user, 
@@ -39,7 +39,7 @@ const LawFirmUserActivityTimelineScreen = ({
       }
 
       const response = await apiRequest(
-        `/api/lawfirm/activity/user/${targetUserId}/timeline?page=${page}&limit=20`,
+        `${API_ENDPOINTS.LAWFIRM_ACTIVITY.GET_USER_TIMELINE(targetUserId)}?page=${page}&limit=20`,
         {
           method: 'GET',
           headers: { 'Authorization': `Bearer ${user.token}` },

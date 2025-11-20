@@ -14,7 +14,7 @@ import { BlurView } from 'expo-blur';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -35,7 +35,7 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
       const queryString = new URLSearchParams(dateFilters).toString();
       
       const response = await apiRequest(
-        `/api/lawfirm/activity/summary?${queryString}`,
+        `${API_ENDPOINTS.LAWFIRM_ACTIVITY.GET_SUMMARY}?${queryString}`,
         {
           method: 'GET',
           headers: { 'Authorization': `Bearer ${user.token}` },
