@@ -56,32 +56,76 @@ exports.getActivitySummary = async (req, res) => {
       ORDER BY count DESC
     `, params);
 
-    // Get top users
-    const topUsersResult = await pool.query(`
+    // Get activity by sensitivity level (NULL as 'unknown')
+    const sensitivityResult = await pool.query(`
       SELECT 
-        user_id,
-        user_name,
-        user_email,
+        COALESCE(sensitivity_level, 'unknown') as sensitivity_level,
         COUNT(*) as count
       FROM medical_provider_activity_logs
-      WHERE ${whereClause} AND user_id IS NOT NULL
-      GROUP BY user_id, user_name, user_email
-      ORDER BY count DESC
-      LIMIT 10
+      WHERE ${whereClause}
+      GROUP BY COALESCE(sensitivity_level, 'unknown')
+      ORDER BY 
+        CASE COALESCE(sensitivity_level, 'unknown')
+          WHEN 'critical' THEN 1
+          WHEN 'high' THEN 2
+          WHEN 'medium' THEN 3
+          WHEN 'low' THEN 4
+          WHEN 'unknown' THEN 5
+        END
     `, params);
 
-    // Get recent activities
-    const recentResult = await pool.query(`
+    // Get critical actions requiring audit
+    const criticalActionsResult = await pool.query(`
       SELECT 
         id,
         action,
         action_category,
         user_name,
+        COALESCE(user_role, 'unknown') as user_role,
+        patient_name,
+        sensitivity_level,
+        timestamp as created_at
+      FROM medical_provider_activity_logs
+      WHERE ${whereClause} AND audit_required = true
+      ORDER BY timestamp DESC
+      LIMIT 20
+    `, params);
+
+    // Get top users with role
+    const topUsersResult = await pool.query(`
+      SELECT 
+        user_id,
+        user_name,
         user_email,
+        COALESCE(user_role, 'unknown') as user_role,
+        COUNT(*) as count
+      FROM medical_provider_activity_logs
+      WHERE ${whereClause} AND user_id IS NOT NULL
+      GROUP BY user_id, user_name, user_email, COALESCE(user_role, 'unknown')
+      ORDER BY count DESC
+      LIMIT 10
+    `, params);
+
+    // Get recent activities with all fields (preserve NULLs for compliance visibility)
+    const recentResult = await pool.query(`
+      SELECT 
+        id,
+        action,
+        action_category,
+        user_id,
+        user_name,
+        user_email,
+        COALESCE(user_role, 'unknown') as user_role,
         target_type,
+        target_id,
         target_name,
+        patient_id,
+        patient_name,
+        COALESCE(sensitivity_level, 'unknown') as sensitivity_level,
+        audit_required,
+        hipaa_compliant,
         status,
-        timestamp
+        timestamp as created_at
       FROM medical_provider_activity_logs
       WHERE ${whereClause}
       ORDER BY timestamp DESC
@@ -101,6 +145,8 @@ exports.getActivitySummary = async (req, res) => {
         totalActivities: parseInt(totalResult.rows[0].total),
         failedActivities: parseInt(failedResult.rows[0].count),
         activitiesByCategory: categoryResult.rows,
+        activitiesBySensitivity: sensitivityResult.rows,
+        criticalActions: criticalActionsResult.rows,
         topUsers: topUsersResult.rows,
         recentActivities: recentResult.rows
       }
