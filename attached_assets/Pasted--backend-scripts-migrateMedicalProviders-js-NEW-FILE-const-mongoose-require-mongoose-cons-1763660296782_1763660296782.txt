@@ -1,0 +1,88 @@
+// backend/scripts/migrateMedicalProviders.js - NEW FILE
+
+const mongoose = require('mongoose');
+const MedicalProvider = require('../models/MedicalProvider');
+const MedicalProviderUser = require('../models/MedicalProviderUser');
+require('dotenv').config();
+
+async function migrateMedicalProviders() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected to MongoDB');
+
+    // Find all existing medical providers
+    const providers = await MedicalProvider.find({});
+    console.log(`Found ${providers.length} medical providers to migrate`);
+
+    for (const provider of providers) {
+      // Check if admin user already exists
+      const existingAdmin = await MedicalProviderUser.findOne({
+        medicalProviderId: provider._id,
+        role: 'admin',
+      });
+
+      if (existingAdmin) {
+        console.log(`Admin already exists for ${provider.providerName}, skipping...`);
+        continue;
+      }
+
+      // Create admin user from existing medical provider credentials
+      const adminUser = await MedicalProviderUser.create({
+        medicalProviderId: provider._id,
+        firstName: provider.providerName.split(' ')[0],
+        lastName: 'Admin',
+        email: provider.email,
+        password: provider.password, // Already hashed
+        userCode: `${provider.providerCode}-USER-0001`,
+        role: 'admin',
+        credentials: 'Administrator',
+        permissions: {
+          canManageUsers: true,
+          canManagePatients: true,
+          canViewAllPatients: true,
+          canSendNotifications: true,
+          canViewMedicalRecords: true,
+          canEditMedicalRecords: true,
+          canManageDisbursements: true,
+          canViewAnalytics: true,
+          canManageSettings: true,
+          canAccessPHI: true,
+        },
+        status: 'active',
+        hipaaTrainingDate: new Date(),
+        hipaaTrainingExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+      });
+
+      // Update medical provider with admin reference
+      provider.adminUserId = adminUser._id;
+      provider.settings = {
+        maxUsers: getMaxUsersByTier(provider.subscriptionTier),
+        enableActivityTracking: true,
+        hipaaComplianceMode: true,
+        requireTwoFactor: false,
+        dataRetentionDays: 2555, // 7 years for HIPAA
+      };
+      await provider.save();
+
+      console.log(`✓ Created admin user for ${provider.providerName}`);
+    }
+
+    console.log('\n✅ Migration complete!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Migration error:', error);
+    process.exit(1);
+  }
+}
+
+function getMaxUsersByTier(tier) {
+  const limits = {
+    free: 3,
+    basic: 5,
+    professional: 15,
+    enterprise: 50,
+  };
+  return limits[tier] || 5;
+}
+
+migrateMedicalProviders();

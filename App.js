@@ -90,6 +90,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [clientRoadmapData, setClientRoadmapData] = useState(null);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
   const [selectedNotificationId, setSelectedNotificationId] = useState(null);
+  const [lawFirmReturnTab, setLawFirmReturnTab] = useState('clients');
+  const [medicalProviderReturnTab, setMedicalProviderReturnTab] = useState('patients');
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -1095,13 +1097,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setCurrentScreen('lawfirm-client-details');
   };
 
-  const handleBackToLawFirmDashboard = () => {
+  const handleBackToLawFirmDashboard = (returnTab = null) => {
     setSelectedClientId(null);
+    // Set the return tab (or reset to default 'clients' if not specified)
+    setLawFirmReturnTab(returnTab || 'clients');
     setCurrentScreen('lawfirm-dashboard');
   };
 
-  const handleBackToMedicalProviderDashboard = () => {
+  const handleBackToMedicalProviderDashboard = (returnTab = null) => {
     setSelectedPatientId(null);
+    // Set the return tab (or reset to default 'patients' if not specified)
+    setMedicalProviderReturnTab(returnTab || 'patients');
     setCurrentScreen('medicalprovider-dashboard');
   };
 
@@ -1404,11 +1410,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'medicalprovider-dashboard' && (
         <MedicalProviderDashboardScreen
           user={user}
+          initialTab={medicalProviderReturnTab}
           onNavigateToPatient={(patientId) => {
             setSelectedPatientId(patientId);
             setCurrentScreen('medicalprovider-patient-details');
           }}
-          onNavigate={handleNavigateInternal}
+          onNavigate={(screen, currentTab) => {
+            if (currentTab) {
+              setMedicalProviderReturnTab(currentTab);
+            }
+            handleNavigateInternal(screen);
+          }}
           onLogout={handleLogout}
         />
       )}
@@ -1427,28 +1439,28 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'medicalprovider-send-notification' && (
         <MedicalProviderSendNotificationScreen
           user={user}
-          onBack={handleBackToMedicalProviderDashboard}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
         />
       )}
 
       {currentScreen === 'medicalprovider-notification-analytics' && (
         <LawFirmNotificationAnalyticsScreen
           user={user}
-          onBack={handleBackToMedicalProviderDashboard}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
         />
       )}
 
       {currentScreen === 'medicalprovider-event-requests' && (
         <MedicalProviderEventRequestsScreen
           user={user}
-          onBack={handleBackToMedicalProviderDashboard}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
         />
       )}
 
       {currentScreen === 'medicalprovider-negotiations' && (
         <NegotiationsScreen
           user={user}
-          onBack={handleBackToMedicalProviderDashboard}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
         />
       )}
 
