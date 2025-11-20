@@ -16,17 +16,7 @@ exports.getActivityLogs = async (req, res) => {
       offset = 0
     } = req.query;
 
-    // Check if user has permission to view analytics
-    if (req.user.lawFirmUserId) {
-      const permCheck = await require('../config/db').query(
-        'SELECT can_view_analytics FROM law_firm_users WHERE id = $1',
-        [req.user.lawFirmUserId]
-      );
-      
-      if (permCheck.rows.length === 0 || !permCheck.rows[0].can_view_analytics) {
-        return res.status(403).json({ message: 'You do not have permission to view activity logs' });
-      }
-    }
+    // Permission check handled by requirePermission middleware
 
     const logs = await activityLogger.getLogs(lawFirmId, {
       userId: userId ? parseInt(userId) : null,
@@ -53,17 +43,7 @@ exports.getActivityStatistics = async (req, res) => {
     const lawFirmId = req.user.id;
     const { startDate, endDate } = req.query;
 
-    // Check if user has permission to view analytics
-    if (req.user.lawFirmUserId) {
-      const permCheck = await require('../config/db').query(
-        'SELECT can_view_analytics FROM law_firm_users WHERE id = $1',
-        [req.user.lawFirmUserId]
-      );
-      
-      if (permCheck.rows.length === 0 || !permCheck.rows[0].can_view_analytics) {
-        return res.status(403).json({ message: 'You do not have permission to view statistics' });
-      }
-    }
+    // Permission check handled by requirePermission middleware
 
     const statistics = await activityLogger.getStatistics(lawFirmId, {
       startDate: startDate ? new Date(startDate) : null,
@@ -85,17 +65,7 @@ exports.getMostActiveUsers = async (req, res) => {
     const lawFirmId = req.user.id;
     const { startDate, endDate, limit = 10 } = req.query;
 
-    // Check if user has permission to view analytics
-    if (req.user.lawFirmUserId) {
-      const permCheck = await require('../config/db').query(
-        'SELECT can_view_analytics FROM law_firm_users WHERE id = $1',
-        [req.user.lawFirmUserId]
-      );
-      
-      if (permCheck.rows.length === 0 || !permCheck.rows[0].can_view_analytics) {
-        return res.status(403).json({ message: 'You do not have permission to view user activity' });
-      }
-    }
+    // Permission check handled by requirePermission middleware
 
     const users = await activityLogger.getMostActiveUsers(lawFirmId, {
       startDate: startDate ? new Date(startDate) : null,
@@ -118,17 +88,7 @@ exports.getFailedActivities = async (req, res) => {
     const lawFirmId = req.user.id;
     const { limit = 50 } = req.query;
 
-    // Check if user has permission to view analytics
-    if (req.user.lawFirmUserId) {
-      const permCheck = await require('../config/db').query(
-        'SELECT can_view_analytics FROM law_firm_users WHERE id = $1',
-        [req.user.lawFirmUserId]
-      );
-      
-      if (permCheck.rows.length === 0 || !permCheck.rows[0].can_view_analytics) {
-        return res.status(403).json({ message: 'You do not have permission to view failed activities' });
-      }
-    }
+    // Permission check handled by requirePermission middleware
 
     const activities = await activityLogger.getFailedActivities(lawFirmId, {
       limit: parseInt(limit)

@@ -1,22 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const activityLogController = require('../controllers/activityLogController');
-const { authenticateToken, isLawFirm } = require('../middleware/auth');
+const { verifyLawFirmUser, requirePermission } = require('../middleware/lawFirmAuth');
 
 // All routes require law firm authentication
-router.use(authenticateToken);
-router.use(isLawFirm);
+router.use(verifyLawFirmUser);
 
-// Get activity logs
-router.get('/', activityLogController.getActivityLogs);
+// Get activity logs (requires analytics permission)
+router.get('/',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getActivityLogs
+);
 
-// Get activity statistics
-router.get('/statistics', activityLogController.getActivityStatistics);
+// Get activity statistics/summary (requires analytics permission)
+router.get('/statistics',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getActivityStatistics
+);
 
-// Get most active users
-router.get('/most-active-users', activityLogController.getMostActiveUsers);
+// Get most active users (requires analytics permission)
+router.get('/most-active-users',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getMostActiveUsers
+);
 
-// Get failed activities
-router.get('/failed', activityLogController.getFailedActivities);
+// Get failed activities (requires analytics permission)
+router.get('/failed',
+  requirePermission('canViewAnalytics'),
+  activityLogController.getFailedActivities
+);
 
 module.exports = router;
