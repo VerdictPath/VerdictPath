@@ -47,6 +47,7 @@ const getBaseUrl = () => {
 const BASE_URL = getBaseUrl();
 
 // CORS configuration - allow Railway domains and Replit
+// SECURITY FIX: Reject unauthorized origins
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, Postman, curl)
@@ -55,6 +56,7 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:5000',
       'http://localhost:19006', // Expo web dev
+      'http://localhost:3000',  // Backend dev
       /\.railway\.app$/,
       /\.replit\.dev$/,
       /\.repl\.co$/
@@ -70,7 +72,9 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all for now (can restrict later)
+      // SECURITY: Reject unauthorized origins
+      console.warn(`⚠️  CORS blocked request from unauthorized origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'), false);
     }
   },
   credentials: true

@@ -31,6 +31,23 @@ exports.verifyLawFirmUser = async (req, res, next) => {
       });
     }
 
+    // SECURITY FIX: Bootstrap scenario validation
+    // If this is a bootstrap token (lawFirmUserId === -1), verify no users exist
+    if (decoded.lawFirmUserId === -1) {
+      const userCount = await db.query(
+        'SELECT COUNT(*) as count FROM law_firm_users WHERE law_firm_id = $1',
+        [decoded.id]
+      );
+      
+      if (parseInt(userCount.rows[0].count) > 0) {
+        console.error(`⚠️  SECURITY: Bootstrap token used but ${userCount.rows[0].count} users exist for law firm ${decoded.id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bootstrap scenario no longer valid. Users already exist. Please login with your user credentials.',
+        });
+      }
+    }
+
     // Fetch user details with law firm info
     const result = await db.query(
       `SELECT lfu.id, lfu.law_firm_id, lfu.first_name, lfu.last_name, lfu.email, 

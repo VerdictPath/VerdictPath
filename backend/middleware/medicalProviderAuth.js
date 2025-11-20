@@ -36,6 +36,19 @@ const verifyMedicalProviderUser = async (req, res, next) => {
     
     // Handle bootstrap scenario (first-time login before admin user is created)
     if (decoded.medicalProviderUserId === -1) {
+      // SECURITY FIX: Verify no users exist before allowing bootstrap access
+      const userCount = await pool.query(
+        'SELECT COUNT(*) as count FROM medical_provider_users WHERE medical_provider_id = $1',
+        [decoded.id]
+      );
+      
+      if (parseInt(userCount.rows[0].count) > 0) {
+        console.error(`⚠️  SECURITY: Bootstrap token used but ${userCount.rows[0].count} users exist for medical provider ${decoded.id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Bootstrap scenario no longer valid. Users already exist. Please login with your user credentials.'
+        });
+      }
       // Create minimal bootstrap stub for first admin creation
       user = {
         id: -1,
