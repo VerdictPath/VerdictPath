@@ -430,6 +430,7 @@ exports.login = async (req, res) => {
     const { email, password, userType } = req.body;
     
     let query, result;
+    let isSubUser = false;
     
     if (userType === 'lawfirm') {
       result = await db.query(
@@ -440,6 +441,26 @@ exports.login = async (req, res) => {
          WHERE lf.email = $1`,
         [email.toLowerCase()]
       );
+      
+      if (result.rows.length === 0) {
+        const subUserResult = await db.query(
+          `SELECT lfu.id, lfu.law_firm_id, lfu.first_name, lfu.last_name, lfu.email, 
+                  lfu.password, lfu.user_code, lfu.role, lfu.status,
+                  lfu.can_manage_users, lfu.can_manage_clients, lfu.can_view_all_clients,
+                  lfu.can_send_notifications, lfu.can_manage_disbursements, 
+                  lfu.can_view_analytics, lfu.can_manage_settings,
+                  lf.firm_code, lf.firm_name
+           FROM law_firm_users lfu
+           JOIN law_firms lf ON lfu.law_firm_id = lf.id
+           WHERE lfu.email = $1`,
+          [email.toLowerCase()]
+        );
+        
+        if (subUserResult.rows.length > 0) {
+          isSubUser = true;
+          result = subUserResult;
+        }
+      }
     } else if (userType === 'medical_provider') {
       result = await db.query(
         `SELECT mp.id, mp.provider_name as name, mp.email, mp.password, mp.provider_code,
@@ -449,6 +470,26 @@ exports.login = async (req, res) => {
          WHERE mp.email = $1`,
         [email.toLowerCase()]
       );
+      
+      if (result.rows.length === 0) {
+        const subUserResult = await db.query(
+          `SELECT mpu.id, mpu.medical_provider_id, mpu.first_name, mpu.last_name, mpu.email, 
+                  mpu.password, mpu.user_code, mpu.role, mpu.status,
+                  mpu.can_manage_users, mpu.can_manage_patients, mpu.can_view_all_patients,
+                  mpu.can_send_notifications, mpu.can_manage_billing, 
+                  mpu.can_view_analytics, mpu.can_manage_settings,
+                  mp.provider_code, mp.provider_name
+           FROM medical_provider_users mpu
+           JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
+           WHERE mpu.email = $1`,
+          [email.toLowerCase()]
+        );
+        
+        if (subUserResult.rows.length > 0) {
+          isSubUser = true;
+          result = subUserResult;
+        }
+      }
     } else {
       result = await db.query(
         'SELECT id, first_name, last_name, email, password, user_type FROM users WHERE email = $1',
@@ -471,6 +512,37 @@ exports.login = async (req, res) => {
     }
     
     const account = result.rows[0];
+    
+    if (isSubUser && userType === 'lawfirm' && account.status !== 'active') {
+      await auditLogger.logAuth({
+        userId: account.id,
+        email: email,
+        action: 'LAWFIRM_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: `Account ${account.status}`
+      });
+      return res.status(403).json({ 
+        message: `Account is ${account.status}. Please contact your administrator.` 
+      });
+    }
+    
+    if (isSubUser && userType === 'medical_provider' && account.status !== 'active') {
+      await auditLogger.logAuth({
+        userId: account.id,
+        email: email,
+        action: 'MEDICALPROVIDER_USER_LOGIN_FAILED',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false,
+        failureReason: `Account ${account.status}`
+      });
+      return res.status(403).json({ 
+        message: `Account is ${account.status}. Please contact your administrator.` 
+      });
+    }
+    
     const isValidPassword = await bcrypt.compare(password, account.password);
     
     if (!isValidPassword) {
@@ -490,73 +562,89 @@ exports.login = async (req, res) => {
     
     let tokenPayload;
     if (userType === 'lawfirm') {
-      // Defensive fallback: if no law firm user found, try to find any active admin
-      let lawFirmUserId = account.law_firm_user_id;
-      let lawFirmUserRole = account.law_firm_user_role;
-      
-      // If no law firm user found via JOIN, try to find one directly
-      if (!lawFirmUserId) {
-        const fallbackUserResult = await db.query(
-          `SELECT id, role FROM law_firm_users 
-           WHERE law_firm_id = $1 AND status = 'active' AND role = 'admin'
-           LIMIT 1`,
-          [account.id]
-        );
+      if (isSubUser) {
+        tokenPayload = { 
+          id: account.law_firm_id, 
+          lawFirmUserId: account.id,
+          email: account.email, 
+          userType: 'lawfirm', 
+          firmCode: account.firm_code,
+          lawFirmUserRole: account.role,
+          isLawFirmUser: true
+        };
+      } else {
+        let lawFirmUserId = account.law_firm_user_id;
+        let lawFirmUserRole = account.law_firm_user_role;
         
-        if (fallbackUserResult.rows.length > 0) {
-          // Found an admin user
-          lawFirmUserId = fallbackUserResult.rows[0].id;
-          lawFirmUserRole = fallbackUserResult.rows[0].role;
-        } else {
-          // No users exist - bootstrap scenario
-          lawFirmUserId = -1;
-          lawFirmUserRole = 'admin';
+        if (!lawFirmUserId) {
+          const fallbackUserResult = await db.query(
+            `SELECT id, role FROM law_firm_users 
+             WHERE law_firm_id = $1 AND status = 'active' AND role = 'admin'
+             LIMIT 1`,
+            [account.id]
+          );
+          
+          if (fallbackUserResult.rows.length > 0) {
+            lawFirmUserId = fallbackUserResult.rows[0].id;
+            lawFirmUserRole = fallbackUserResult.rows[0].role;
+          } else {
+            lawFirmUserId = -1;
+            lawFirmUserRole = 'admin';
+          }
         }
+        
+        tokenPayload = { 
+          id: account.id, 
+          email: account.email, 
+          userType: 'lawfirm', 
+          firmCode: account.firm_code,
+          lawFirmUserId: lawFirmUserId || null,
+          lawFirmUserRole: lawFirmUserRole || null,
+          isLawFirmUser: !!lawFirmUserId
+        };
       }
-      
-      tokenPayload = { 
-        id: account.id, 
-        email: account.email, 
-        userType: 'lawfirm', 
-        firmCode: account.firm_code,
-        lawFirmUserId: lawFirmUserId || null,
-        lawFirmUserRole: lawFirmUserRole || null,
-        isLawFirmUser: !!lawFirmUserId
-      };
     } else if (userType === 'medical_provider') {
-      // Defensive fallback: if no medical provider user found, try to find any active admin
-      let medicalProviderUserId = account.medical_provider_user_id;
-      let medicalProviderUserRole = account.medical_provider_user_role;
-      
-      // If no medical provider user found via JOIN, try to find one directly
-      if (!medicalProviderUserId) {
-        const fallbackUserResult = await db.query(
-          `SELECT id, role FROM medical_provider_users 
-           WHERE medical_provider_id = $1 AND status = 'active' AND role = 'admin'
-           LIMIT 1`,
-          [account.id]
-        );
+      if (isSubUser) {
+        tokenPayload = { 
+          id: account.medical_provider_id, 
+          medicalProviderUserId: account.id,
+          email: account.email, 
+          userType: 'medical_provider', 
+          providerCode: account.provider_code,
+          medicalProviderUserRole: account.role,
+          isMedicalProviderUser: true
+        };
+      } else {
+        let medicalProviderUserId = account.medical_provider_user_id;
+        let medicalProviderUserRole = account.medical_provider_user_role;
         
-        if (fallbackUserResult.rows.length > 0) {
-          // Found an admin user
-          medicalProviderUserId = fallbackUserResult.rows[0].id;
-          medicalProviderUserRole = fallbackUserResult.rows[0].role;
-        } else {
-          // No users exist - bootstrap scenario
-          medicalProviderUserId = -1;
-          medicalProviderUserRole = 'admin';
+        if (!medicalProviderUserId) {
+          const fallbackUserResult = await db.query(
+            `SELECT id, role FROM medical_provider_users 
+             WHERE medical_provider_id = $1 AND status = 'active' AND role = 'admin'
+             LIMIT 1`,
+            [account.id]
+          );
+          
+          if (fallbackUserResult.rows.length > 0) {
+            medicalProviderUserId = fallbackUserResult.rows[0].id;
+            medicalProviderUserRole = fallbackUserResult.rows[0].role;
+          } else {
+            medicalProviderUserId = -1;
+            medicalProviderUserRole = 'admin';
+          }
         }
+        
+        tokenPayload = { 
+          id: account.id, 
+          email: account.email, 
+          userType: 'medical_provider', 
+          providerCode: account.provider_code,
+          medicalProviderUserId: medicalProviderUserId || null,
+          medicalProviderUserRole: medicalProviderUserRole || null,
+          isMedicalProviderUser: !!medicalProviderUserId
+        };
       }
-      
-      tokenPayload = { 
-        id: account.id, 
-        email: account.email, 
-        userType: 'medical_provider', 
-        providerCode: account.provider_code,
-        medicalProviderUserId: medicalProviderUserId || null,
-        medicalProviderUserRole: medicalProviderUserRole || null,
-        isMedicalProviderUser: !!medicalProviderUserId
-      };
     } else {
       tokenPayload = { id: account.id, email: account.email, userType: account.user_type };
     }
@@ -576,7 +664,17 @@ exports.login = async (req, res) => {
       success: true
     });
     
-    if (userType !== 'lawfirm' && userType !== 'medical_provider') {
+    if (userType === 'lawfirm' && isSubUser) {
+      await db.query(
+        'UPDATE law_firm_users SET last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = $1',
+        [account.id]
+      );
+    } else if (userType === 'medical_provider' && isSubUser) {
+      await db.query(
+        'UPDATE medical_provider_users SET last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+        [account.id]
+      );
+    } else if (userType !== 'lawfirm' && userType !== 'medical_provider') {
       await db.query(
         'UPDATE users SET last_login_date = CURRENT_DATE WHERE id = $1',
         [account.id]
@@ -585,27 +683,59 @@ exports.login = async (req, res) => {
     
     let responseData;
     if (userType === 'lawfirm') {
-      responseData = {
-        id: account.id,
-        lawFirmUserId: tokenPayload.lawFirmUserId || null,
-        firmName: account.name,
-        email: account.email,
-        userType: 'lawfirm',
-        firmCode: account.firm_code,
-        role: tokenPayload.lawFirmUserRole || null,
-        isLawFirmUser: tokenPayload.isLawFirmUser
-      };
+      if (isSubUser) {
+        responseData = {
+          id: account.law_firm_id,
+          lawFirmUserId: account.id,
+          firstName: account.first_name,
+          lastName: account.last_name,
+          firmName: account.firm_name,
+          email: account.email,
+          userType: 'lawfirm',
+          firmCode: account.firm_code,
+          role: account.role,
+          userCode: account.user_code,
+          isLawFirmUser: true
+        };
+      } else {
+        responseData = {
+          id: account.id,
+          lawFirmUserId: tokenPayload.lawFirmUserId || null,
+          firmName: account.name,
+          email: account.email,
+          userType: 'lawfirm',
+          firmCode: account.firm_code,
+          role: tokenPayload.lawFirmUserRole || null,
+          isLawFirmUser: tokenPayload.isLawFirmUser
+        };
+      }
     } else if (userType === 'medical_provider') {
-      responseData = {
-        id: account.id,
-        medicalProviderUserId: tokenPayload.medicalProviderUserId || null,
-        providerName: account.name,
-        email: account.email,
-        userType: 'medical_provider',
-        providerCode: account.provider_code,
-        role: tokenPayload.medicalProviderUserRole || null,
-        isMedicalProviderUser: tokenPayload.isMedicalProviderUser
-      };
+      if (isSubUser) {
+        responseData = {
+          id: account.medical_provider_id,
+          medicalProviderUserId: account.id,
+          firstName: account.first_name,
+          lastName: account.last_name,
+          providerName: account.provider_name,
+          email: account.email,
+          userType: 'medical_provider',
+          providerCode: account.provider_code,
+          role: account.role,
+          userCode: account.user_code,
+          isMedicalProviderUser: true
+        };
+      } else {
+        responseData = {
+          id: account.id,
+          medicalProviderUserId: tokenPayload.medicalProviderUserId || null,
+          providerName: account.name,
+          email: account.email,
+          userType: 'medical_provider',
+          providerCode: account.provider_code,
+          role: tokenPayload.medicalProviderUserRole || null,
+          isMedicalProviderUser: tokenPayload.isMedicalProviderUser
+        };
+      }
     } else {
       responseData = {
         id: account.id,
