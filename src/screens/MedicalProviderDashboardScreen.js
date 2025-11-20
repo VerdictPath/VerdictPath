@@ -592,6 +592,24 @@ const renderAnalyticsTab = () => {
             </View>
           </View>
         </View>
+
+        <TouchableOpacity 
+          style={styles.hipaaActivityCard}
+          onPress={() => onNavigate && onNavigate('medicalprovider-activity-dashboard', activeTab)}
+        >
+          <View style={styles.hipaaActivityHeader}>
+            <View style={styles.hipaaActivityIcon}>
+              <Text style={styles.hipaaActivityIconText}>🔒</Text>
+            </View>
+            <View style={styles.hipaaActivityContent}>
+              <Text style={styles.hipaaActivityTitle}>HIPAA Activity Dashboard</Text>
+              <Text style={styles.hipaaActivityDescription}>
+                View staff activity, patient access audits, and compliance reports
+              </Text>
+            </View>
+            <Text style={styles.hipaaActivityArrow}>→</Text>
+          </View>
+        </TouchableOpacity>
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🎯 Patient Phase Distribution</Text>
@@ -1000,6 +1018,54 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: theme.colors.primary,
     fontWeight: 'bold',
+  },
+  hipaaActivityCard: {
+    backgroundColor: '#E0F7FA',
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#00BCD4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  hipaaActivityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hipaaActivityIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#00BCD4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  hipaaActivityIconText: {
+    fontSize: 28,
+  },
+  hipaaActivityContent: {
+    flex: 1,
+  },
+  hipaaActivityTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#006B7D',
+    marginBottom: 4,
+  },
+  hipaaActivityDescription: {
+    fontSize: 14,
+    color: '#37474F',
+    lineHeight: 20,
+  },
+  hipaaActivityArrow: {
+    fontSize: 24,
+    color: '#00BCD4',
+    marginLeft: 8,
   },
   templatesList: {
     gap: 12,
