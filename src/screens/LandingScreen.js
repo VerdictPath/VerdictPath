@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 20,
-    marginTop: 160,
+    marginTop: 220,
   },
   featuresContainer: {
     padding: 30,
