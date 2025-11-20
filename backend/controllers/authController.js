@@ -449,6 +449,7 @@ exports.login = async (req, res) => {
                   lfu.can_manage_users, lfu.can_manage_clients, lfu.can_view_all_clients,
                   lfu.can_send_notifications, lfu.can_manage_disbursements, 
                   lfu.can_view_analytics, lfu.can_manage_settings,
+                  lfu.must_change_password, lfu.temporary_password_expires_at,
                   lf.firm_code, lf.firm_name
            FROM law_firm_users lfu
            JOIN law_firms lf ON lfu.law_firm_id = lf.id
@@ -478,6 +479,7 @@ exports.login = async (req, res) => {
                   mpu.can_manage_users, mpu.can_manage_patients, mpu.can_view_all_patients,
                   mpu.can_send_notifications, mpu.can_manage_billing, 
                   mpu.can_view_analytics, mpu.can_manage_settings,
+                  mpu.must_change_password, mpu.temporary_password_expires_at,
                   mp.provider_code, mp.provider_name
            FROM medical_provider_users mpu
            JOIN medical_providers mp ON mpu.medical_provider_id = mp.id
@@ -558,6 +560,65 @@ exports.login = async (req, res) => {
         failureReason: 'Invalid password'
       });
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check for temporary password expiry
+    if (isSubUser && account.temporary_password_expires_at) {
+      const expiryDate = new Date(account.temporary_password_expires_at);
+      const now = new Date();
+      
+      if (now > expiryDate) {
+        await auditLogger.logAuth({
+          userId: account.id,
+          email: email,
+          action: 'LOGIN_FAILED',
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get('user-agent'),
+          success: false,
+          failureReason: 'Temporary password expired'
+        });
+        return res.status(403).json({ 
+          message: 'Your temporary password has expired. Please contact your administrator to reset your password.',
+          passwordExpired: true
+        });
+      }
+    }
+
+    // Check if password change is required
+    if (isSubUser && account.must_change_password) {
+      await auditLogger.logAuth({
+        userId: account.id,
+        email: email,
+        action: 'LOGIN_REQUIRES_PASSWORD_CHANGE',
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: true,
+        metadata: { mustChangePassword: true }
+      });
+      
+      // Generate a special token for password change flow
+      const changePasswordToken = jwt.sign(
+        { 
+          id: account.id,
+          email: account.email,
+          userType: userType,
+          mustChangePassword: true,
+          tempAuth: true
+        },
+        JWT_SECRET,
+        { expiresIn: '30m' }
+      );
+      
+      return res.status(200).json({
+        mustChangePassword: true,
+        changePasswordToken,
+        message: 'You must change your password before accessing your account',
+        user: {
+          email: account.email,
+          firstName: account.first_name,
+          lastName: account.last_name
+        }
+      });
     }
     
     let tokenPayload;
