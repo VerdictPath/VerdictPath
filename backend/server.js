@@ -77,7 +77,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// Use cookieParser with secret for signed cookies (uses JWT_SECRET if COOKIE_SECRET not set)
+const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'verdict-path-cookie-secret';
+app.use(cookieParser(COOKIE_SECRET));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -199,7 +201,7 @@ app.post('/portal/login', async (req, res) => {
     const data = await response.json();
     
     if (response.ok) {
-      res.cookie('token', data.token, { httpOnly: true });
+      res.cookie('token', data.token, { httpOnly: true, signed: true, sameSite: 'lax' });
       res.redirect('/portal/dashboard');
     } else {
       res.render('lawfirm-login', { 
@@ -217,7 +219,7 @@ app.post('/portal/login', async (req, res) => {
 
 app.get('/portal/dashboard', async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.signedCookies.token || req.cookies.token;
     if (!token) {
       return res.redirect('/portal');
     }
@@ -239,7 +241,7 @@ app.get('/portal/dashboard', async (req, res) => {
 
 app.get('/portal/client/:clientId', async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.signedCookies.token || req.cookies.token;
     if (!token) {
       return res.redirect('/portal');
     }
@@ -261,7 +263,7 @@ app.get('/portal/client/:clientId', async (req, res) => {
 
 app.get('/portal/forms', async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const token = req.signedCookies.token || req.cookies.token;
     if (!token) {
       return res.redirect('/portal');
     }
