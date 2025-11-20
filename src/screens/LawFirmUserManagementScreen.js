@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import GlassCard from '../components/GlassCard';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const LawFirmUserManagementScreen = ({ user, onBack }) => {
   const [users, setUsers] = useState([]);
@@ -31,7 +31,7 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const response = await apiRequest(`/api/lawfirm/users?status=${filterStatus}`, {
+      const response = await apiRequest(`${API_ENDPOINTS.LAWFIRM_USERS.GET_ALL}?status=${filterStatus}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
@@ -62,8 +62,8 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   const deactivateUser = async (userId) => {
     try {
-      const response = await apiRequest(`/api/lawfirm/users/${userId}/deactivate`, {
-        method: 'PATCH',
+      const response = await apiRequest(API_ENDPOINTS.LAWFIRM_USERS.DEACTIVATE(userId), {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json',
@@ -85,8 +85,8 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   const reactivateUser = async (userId) => {
     try {
-      const response = await apiRequest(`/api/lawfirm/users/${userId}/reactivate`, {
-        method: 'PATCH',
+      const response = await apiRequest(API_ENDPOINTS.LAWFIRM_USERS.REACTIVATE(userId), {
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
 
@@ -264,7 +264,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
 
     try {
       setLoading(true);
-      const response = await apiRequest('/api/lawfirm/users', {
+      const response = await apiRequest(API_ENDPOINTS.LAWFIRM_USERS.CREATE, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${lawFirmToken}`,

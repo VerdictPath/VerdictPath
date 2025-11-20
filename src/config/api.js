@@ -122,6 +122,26 @@ export const API_ENDPOINTS = {
     SELECT: `${API_BASE_URL}/api/avatar/select`,
     CURRENT: `${API_BASE_URL}/api/avatar/current`,
   },
+
+  // Law Firm Users (Multi-User Management)
+  LAWFIRM_USERS: {
+    CREATE: `${API_BASE_URL}/api/lawfirm/users`,
+    GET_ALL: `${API_BASE_URL}/api/lawfirm/users`,
+    GET_DETAILS: (userId) => `${API_BASE_URL}/api/lawfirm/users/${userId}`,
+    UPDATE: (userId) => `${API_BASE_URL}/api/lawfirm/users/${userId}`,
+    DEACTIVATE: (userId) => `${API_BASE_URL}/api/lawfirm/users/${userId}/deactivate`,
+    REACTIVATE: (userId) => `${API_BASE_URL}/api/lawfirm/users/${userId}/reactivate`,
+  },
+
+  // Law Firm Activity Tracking
+  LAWFIRM_ACTIVITY: {
+    GET_LOGS: `${API_BASE_URL}/api/lawfirm/activity`,
+    GET_STATISTICS: `${API_BASE_URL}/api/lawfirm/activity/statistics`,
+    GET_SUMMARY: `${API_BASE_URL}/api/lawfirm/activity/summary`,
+    GET_MOST_ACTIVE: `${API_BASE_URL}/api/lawfirm/activity/most-active-users`,
+    GET_FAILED: `${API_BASE_URL}/api/lawfirm/activity/failed`,
+    GET_USER_TIMELINE: (userId) => `${API_BASE_URL}/api/lawfirm/activity/user/${userId}/timeline`,
+  },
 };
 
 // ============================================================================
