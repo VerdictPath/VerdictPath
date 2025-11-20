@@ -118,6 +118,61 @@ function checkIfQuietHours(startTime, endTime, timezone) {
   }
 }
 
+// Helper function to calculate when quiet hours end
+function calculateQuietHoursEnd(endTime, timezone) {
+  try {
+    const now = new Date();
+    const userTime = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    // Create a date for when quiet hours end today
+    const quietEnd = new Date(userTime);
+    quietEnd.setHours(endHour, endMin, 0, 0);
+    
+    // If the end time has already passed today, schedule for tomorrow
+    if (quietEnd <= userTime) {
+      quietEnd.setDate(quietEnd.getDate() + 1);
+    }
+    
+    return quietEnd;
+  } catch (error) {
+    console.error('Error calculating quiet hours end:', error);
+    // Default to 1 hour from now
+    const fallback = new Date();
+    fallback.setHours(fallback.getHours() + 1);
+    return fallback;
+  }
+}
+
+// Queue notification for later delivery
+async function queueNotification(notificationData) {
+  try {
+    const {
+      senderType, senderId, senderName, recipientType, recipientId,
+      type, priority, title, body, actionUrl, actionData, scheduledFor
+    } = notificationData;
+    
+    const query = `
+      INSERT INTO notification_queue (
+        sender_type, sender_id, sender_name, recipient_type, recipient_id,
+        type, priority, title, body, action_url, action_data, scheduled_for, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'queued')
+      RETURNING id, scheduled_for
+    `;
+    
+    const result = await pool.query(query, [
+      senderType, senderId, senderName, recipientType, recipientId,
+      type, priority, title, body, actionUrl,
+      JSON.stringify(actionData || {}), scheduledFor
+    ]);
+    
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error queuing notification:', error);
+    throw error;
+  }
+}
+
 function getEntityInfo(req) {
   const userType = req.user?.userType;
   const entityId = req.user?.id;
@@ -294,10 +349,26 @@ exports.sendNotification = async (req, res) => {
     
     if (!prefCheck.allowed) {
       if (prefCheck.queue) {
-        // TODO: Implement notification queuing for quiet hours
+        // Get user preferences to calculate when to send
+        const prefsResult = await pool.query(
+          `SELECT quiet_hours_end, timezone FROM notification_preferences 
+           WHERE ${recipientType === 'user' ? 'user_id' : recipientType === 'law_firm' ? 'law_firm_id' : 'medical_provider_id'} = $1`,
+          [recipientId]
+        );
+        
+        const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
+        const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
+        
+        const queuedNotification = await queueNotification({
+          senderType, senderId, senderName, recipientType, recipientId,
+          type, priority, title, body, actionUrl, actionData, scheduledFor
+        });
+        
         return res.status(202).json({ 
           message: 'Notification queued for later delivery during non-quiet hours',
-          reason: prefCheck.reason
+          reason: prefCheck.reason,
+          queuedId: queuedNotification.id,
+          scheduledFor: queuedNotification.scheduled_for
         });
       }
       return res.status(403).json({ 
@@ -813,10 +884,26 @@ exports.sendToClient = async (req, res) => {
     
     if (!prefCheck.allowed) {
       if (prefCheck.queue) {
-        // TODO: Implement notification queuing for quiet hours
+        // Get user preferences to calculate when to send
+        const prefsResult = await pool.query(
+          `SELECT quiet_hours_end, timezone FROM notification_preferences WHERE user_id = $1`,
+          [clientId]
+        );
+        
+        const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
+        const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
+        
+        const queuedNotification = await queueNotification({
+          senderType: 'law_firm', senderId: lawFirmId, senderName,
+          recipientType: 'user', recipientId: clientId,
+          type, priority, title, body, actionUrl, actionData, scheduledFor
+        });
+        
         return res.status(202).json({ 
           message: 'Notification queued for later delivery during non-quiet hours',
-          reason: prefCheck.reason
+          reason: prefCheck.reason,
+          queuedId: queuedNotification.id,
+          scheduledFor: queuedNotification.scheduled_for
         });
       }
       return res.status(403).json({ 
@@ -1178,10 +1265,26 @@ exports.sendToPatient = async (req, res) => {
     
     if (!prefCheck.allowed) {
       if (prefCheck.queue) {
-        // TODO: Implement notification queuing for quiet hours
+        // Get user preferences to calculate when to send
+        const prefsResult = await pool.query(
+          `SELECT quiet_hours_end, timezone FROM notification_preferences WHERE user_id = $1`,
+          [patientId]
+        );
+        
+        const prefs = prefsResult.rows[0] || { quiet_hours_end: '08:00', timezone: 'America/New_York' };
+        const scheduledFor = calculateQuietHoursEnd(prefs.quiet_hours_end, prefs.timezone);
+        
+        const queuedNotification = await queueNotification({
+          senderType: 'medical_provider', senderId: medicalProviderId, senderName,
+          recipientType: 'user', recipientId: patientId,
+          type, priority, title, body, actionUrl, actionData, scheduledFor
+        });
+        
         return res.status(202).json({ 
           message: 'Notification queued for later delivery during non-quiet hours',
-          reason: prefCheck.reason
+          reason: prefCheck.reason,
+          queuedId: queuedNotification.id,
+          scheduledFor: queuedNotification.scheduled_for
         });
       }
       return res.status(403).json({ 
