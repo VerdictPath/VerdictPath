@@ -6,6 +6,11 @@ Verdict Path is a React Native mobile application designed as a legal case manag
 ## User Preferences
 I want to work with an AI agent that is autonomous and proactive. It should make decisions and implement changes without constant oversight. I prefer that the agent proceed with tasks independently, only seeking clarification if absolutely necessary. I also prefer detailed explanations of the code and the logic behind any changes made.
 
+## Recent Changes (November 21, 2025)
+- **Fixed Law Firm User Creation Hanging Bug**: Added connection timeouts (5 seconds) to email service (nodemailer) to prevent indefinite hanging when SMTP credentials are not configured or server is unreachable. Added early return if SMTP credentials are missing.
+- **Required Phone Number for Individual Registration**: Added required `phoneNumber` field to individual user registration form with frontend validation and backend database integration. Phone number is now stored in the `phone_number` column of the `users` table.
+- **Law Firm Bottom Navigation Menu**: Created new `LawFirmBottomNavigation` component with sticky bottom menu featuring 5 tabs: Dashboard (📊), Notifications (🔔), Users (👥), Disbursements (💰), and Negotiations (🤝). Navigation uses law firm theme colors (navy #1e3a5f with gold #d4af37 accents) and matches existing screens: lawfirm-dashboard, lawfirm-send-notification, lawfirm-user-management, lawfirm-disbursements, lawfirm-negotiations.
+
 ## System Architecture
 The application is a React Native mobile app built with the Expo framework, featuring a "pirate treasure map" theme. The backend is a Node.js/Express server with a PostgreSQL database.
 

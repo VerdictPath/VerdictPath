@@ -7,7 +7,10 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD
-  }
+  },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000
 });
 
 async function sendCredentialEmail(toEmail, userData, temporaryPassword, userType) {
@@ -91,6 +94,12 @@ async function sendCredentialEmail(toEmail, userData, temporaryPassword, userTyp
   };
 
   try {
+    // Check if SMTP is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.warn('⚠️ SMTP not configured, skipping email send');
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ Credential email sent to ${toEmail}:`, info.messageId);
     return { success: true, messageId: info.messageId };
