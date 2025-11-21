@@ -2,6 +2,8 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 
 const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
+  console.log('[MedicalProviderBottomNavigation] Rendering for screen:', currentScreen);
+  
   const tabs = [
     { name: 'Dashboard', icon: '🏠', screen: 'medicalprovider-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-send-notification', badge: notificationCount },
@@ -61,6 +63,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 10,
+    zIndex: 1000,
   },
   tab: {
     flex: 1,
