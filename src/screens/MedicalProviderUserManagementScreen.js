@@ -87,7 +87,11 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
 
   const deactivateUser = async (userId) => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.MEDICAL_PROVIDER_USERS.DEACTIVATE(userId), {
+      console.log('[MedProvider UserManagement] Deactivating user:', userId);
+      const url = API_ENDPOINTS.MEDICAL_PROVIDER_USERS.DEACTIVATE(userId);
+      console.log('[MedProvider UserManagement] Deactivate URL:', url);
+      
+      const response = await apiRequest(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -98,30 +102,39 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
         }),
       });
 
+      console.log('[MedProvider UserManagement] Deactivate response:', response);
+
       if (response.success) {
         showAlert('Success', 'User deactivated successfully');
         loadUsers();
+      } else {
+        showAlert('Error', response.message || 'Failed to deactivate user');
       }
     } catch (error) {
-      console.error('[UserManagement] Deactivate error:', error);
+      console.error('[MedProvider UserManagement] Deactivate error:', error);
       showAlert('Error', error.message || 'Failed to deactivate user');
     }
   };
 
   const reactivateUser = async (userId) => {
     try {
+      console.log('[MedProvider UserManagement] Reactivating user:', userId);
       const response = await apiRequest(API_ENDPOINTS.MEDICAL_PROVIDER_USERS.REACTIVATE(userId), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
 
+      console.log('[MedProvider UserManagement] Reactivate response:', response);
+
       if (response.success) {
         showAlert('Success', 'User reactivated successfully');
         loadUsers();
+      } else {
+        showAlert('Error', response.message || 'Failed to reactivate user');
       }
     } catch (error) {
-      console.error('[UserManagement] Reactivate error:', error);
-      showAlert('Error', 'Failed to reactivate user');
+      console.error('[MedProvider UserManagement] Reactivate error:', error);
+      showAlert('Error', error.message || 'Failed to reactivate user');
     }
   };
 
