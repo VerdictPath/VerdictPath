@@ -21,6 +21,8 @@ const RegisterScreen = ({
   setFirstName,
   lastName,
   setLastName,
+  phoneNumber,
+  setPhoneNumber,
   firmName,
   setFirmName,
   providerName,
@@ -108,6 +110,14 @@ const RegisterScreen = ({
               value={lastName}
               onChangeText={setLastName}
               autoCapitalize="words"
+            />
+            <TextInput
+              style={commonStyles.input}
+              placeholder="Cell Phone Number"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+              autoComplete="tel"
             />
           </>
         )}
