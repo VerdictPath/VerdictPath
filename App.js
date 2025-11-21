@@ -65,6 +65,7 @@ import NegotiationsScreen from './src/screens/NegotiationsScreen';
 import AvatarSelectionScreen from './src/screens/AvatarSelectionScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import BottomNavigation from './src/components/BottomNavigation';
+import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
@@ -1665,6 +1666,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           <BottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
+          />
+        )}
+        
+        {/* Law Firm Bottom Navigation */}
+        {['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-disbursements', 'lawfirm-negotiations'].includes(currentScreen) && (
+          <LawFirmBottomNavigation 
+            currentScreen={currentScreen}
+            onNavigate={handleNavigateInternal}
+            notificationCount={0}
           />
         )}
 
