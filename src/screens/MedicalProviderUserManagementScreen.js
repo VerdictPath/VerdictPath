@@ -189,11 +189,11 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
         ))}
 
         {users.length === 0 && (
-          <MedicalGlassCard variant="light" style={styles.emptyCard}>
+          <View style={styles.emptyCard}>
             <Text style={styles.emptyText}>
               {filterStatus === 'active' ? 'No active users' : 'No deactivated users'}
             </Text>
-          </MedicalGlassCard>
+          </View>
         )}
       </ScrollView>
 
@@ -220,7 +220,7 @@ const UserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
   };
 
   return (
-    <MedicalGlassCard variant="dark" style={styles.userCard}>
+    <View style={styles.userCard}>
       <View style={styles.userCardContent}>
         <View style={styles.userAvatar}>
           <Text style={styles.userInitials}>
@@ -272,7 +272,7 @@ const UserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
           Last login: {new Date(user.lastLogin).toLocaleString()}
         </Text>
       )}
-    </MedicalGlassCard>
+    </View>
   );
 };
 
@@ -523,12 +523,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginHorizontal: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(20, 30, 48, 0.5)',
     borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   filterTabActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.25)',
+    backgroundColor: 'rgba(212, 175, 55, 0.8)',
     borderColor: '#d4af37',
   },
   filterText: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   userCard: {
     padding: 16,
     marginBottom: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(20, 30, 48, 0.7)',
     borderRadius: 16,
     borderWidth: 2,
     borderColor: 'rgba(212, 175, 55, 0.4)',
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     padding: 40,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(20, 30, 48, 0.7)',
     borderRadius: 16,
     borderWidth: 2,
     borderColor: 'rgba(212, 175, 55, 0.4)',
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderRadius: 12,
     padding: 15,
     color: '#FFFFFF',
@@ -720,14 +720,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     borderWidth: 2,
-    borderColor: 'rgba(74, 144, 226, 0.5)',
+    borderColor: 'rgba(212, 175, 55, 0.5)',
     alignItems: 'center',
   },
   notificationOptionActive: {
-    backgroundColor: 'rgba(74, 144, 226, 0.25)',
-    borderColor: '#4a90e2',
+    backgroundColor: 'rgba(212, 175, 55, 0.25)',
+    borderColor: '#d4af37',
   },
   notificationOptionLabel: {
     fontSize: 16,
@@ -754,14 +754,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     marginRight: 10,
     marginBottom: 10,
     borderWidth: 2,
     borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   roleOptionActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.3)',
+    backgroundColor: 'rgba(212, 175, 55, 0.95)',
     borderColor: '#d4af37',
   },
   roleOptionText: {
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     marginRight: 10,
     alignItems: 'center',
     borderWidth: 2,
@@ -799,7 +799,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.4)',
+    backgroundColor: 'rgba(212, 175, 55, 0.95)',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#d4af37',
