@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 
-const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
+const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'lawfirm-dashboard' },
-    { name: 'Notifications', icon: '🔔', screen: 'lawfirm-send-notification', badge: notificationCount },
-    { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
-    { name: 'Disbursements', icon: '💰', screen: 'lawfirm-disbursements' },
-    { name: 'Negotiations', icon: '🤝', screen: 'lawfirm-negotiations' },
+    { name: 'Dashboard', icon: '🏠', screen: 'medicalprovider-dashboard' },
+    { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-send-notification', badge: notificationCount },
+    { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
+    { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
+    { name: 'Activity', icon: '📋', screen: 'medicalprovider-activity-dashboard' },
   ];
 
   return (
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#1e3a5f',
+    backgroundColor: '#0d4d4d',
     borderTopWidth: 2,
     borderTopColor: '#d4af37',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
@@ -117,4 +117,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LawFirmBottomNavigation;
+export default MedicalProviderBottomNavigation;
