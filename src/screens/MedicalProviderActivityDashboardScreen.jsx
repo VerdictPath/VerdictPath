@@ -43,6 +43,9 @@ const MedicalProviderActivityDashboardScreen = ({
         `/api/medicalprovider/activity/summary?${queryString}`,
         {
           method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+          },
         }
       );
 
