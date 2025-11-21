@@ -1671,7 +1671,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         )}
         
         {/* Law Firm Bottom Navigation */}
-        {['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-disbursements', 'lawfirm-negotiations'].includes(currentScreen) && (
+        {(() => {
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-disbursements', 'lawfirm-negotiations'];
+          const shouldShow = lawFirmScreens.includes(currentScreen);
+          console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
+          return shouldShow;
+        })() && (
           <LawFirmBottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
@@ -1680,7 +1685,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         )}
         
         {/* Medical Provider Bottom Navigation */}
-        {['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard'].includes(currentScreen) && (
+        {(() => {
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard'];
+          const shouldShow = medProviderScreens.includes(currentScreen);
+          console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
+          return shouldShow;
+        })() && (
           <MedicalProviderBottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
