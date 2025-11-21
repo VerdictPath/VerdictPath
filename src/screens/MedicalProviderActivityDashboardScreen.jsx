@@ -14,7 +14,7 @@ import { BlurView } from 'expo-blur';
 import MedicalGlassCard from '../components/MedicalGlassCard';
 import MedicalStatCard from '../components/MedicalStatCard';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
-import { apiRequest } from '../config/api';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -39,8 +39,11 @@ const MedicalProviderActivityDashboardScreen = ({
       const dateFilters = getDateFilters(timeFilter);
       const queryString = new URLSearchParams(dateFilters).toString();
       
+      console.log('[MedicalActivityDashboard] Loading summary with token:', user.token ? 'Present' : 'Missing');
+      console.log('[MedicalActivityDashboard] API URL:', `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`);
+      
       const response = await apiRequest(
-        `/api/medicalprovider/activity/summary?${queryString}`,
+        `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`,
         {
           method: 'GET',
           headers: {
@@ -49,6 +52,7 @@ const MedicalProviderActivityDashboardScreen = ({
         }
       );
 
+      console.log('[MedicalActivityDashboard] Summary loaded successfully:', response);
       setSummary(response.summary);
     } catch (error) {
       console.error('[MedicalActivityDashboard] Load error:', error);
