@@ -11,12 +11,28 @@ import {
   Alert,
   Modal,
   ImageBackground,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import MedicalGlassCard from '../components/MedicalGlassCard';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+
+// Cross-platform alert helper
+const showAlert = (title, message) => {
+  if (Platform.OS === 'web') {
+    if (title === 'Success') {
+      window.alert(`✅ ${message}`);
+    } else if (title === 'Error') {
+      window.alert(`❌ ${message}`);
+    } else {
+      window.alert(`${title}\n${message}`);
+    }
+  } else {
+    Alert.alert(title, message);
+  }
+};
 
 const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
   const [users, setUsers] = useState([]);
@@ -39,25 +55,34 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
       setUsers(response.users || []);
     } catch (error) {
       console.error('[UserManagement] Load error:', error);
-      Alert.alert('Error', 'Failed to load users');
+      showAlert('Error', 'Failed to load users');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeactivateUser = (userId, userName) => {
-    Alert.alert(
-      'Deactivate User',
-      `Are you sure you want to deactivate ${userName}? They will immediately lose access to the portal.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Deactivate',
-          style: 'destructive',
-          onPress: () => deactivateUser(userId),
-        },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        `Are you sure you want to deactivate ${userName}? They will immediately lose access to the portal.`
+      );
+      if (confirmed) {
+        deactivateUser(userId);
+      }
+    } else {
+      Alert.alert(
+        'Deactivate User',
+        `Are you sure you want to deactivate ${userName}? They will immediately lose access to the portal.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Deactivate',
+            style: 'destructive',
+            onPress: () => deactivateUser(userId),
+          },
+        ]
+      );
+    }
   };
 
   const deactivateUser = async (userId) => {
@@ -74,12 +99,12 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
       });
 
       if (response.success) {
-        Alert.alert('Success', 'User deactivated successfully');
+        showAlert('Success', 'User deactivated successfully');
         loadUsers();
       }
     } catch (error) {
       console.error('[UserManagement] Deactivate error:', error);
-      Alert.alert('Error', error.message || 'Failed to deactivate user');
+      showAlert('Error', error.message || 'Failed to deactivate user');
     }
   };
 
@@ -91,12 +116,12 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
       });
 
       if (response.success) {
-        Alert.alert('Success', 'User reactivated successfully');
+        showAlert('Success', 'User reactivated successfully');
         loadUsers();
       }
     } catch (error) {
       console.error('[UserManagement] Reactivate error:', error);
-      Alert.alert('Error', 'Failed to reactivate user');
+      showAlert('Error', 'Failed to reactivate user');
     }
   };
 
@@ -254,7 +279,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded, providerToken }) => {
 
   const handleSubmit = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showAlert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -270,12 +295,12 @@ const AddUserModal = ({ visible, onClose, onUserAdded, providerToken }) => {
       });
 
       if (response.success) {
-        Alert.alert('Success', `User created! User code: ${response.user.userCode}`);
+        showAlert('Success', `User created! User code: ${response.user.userCode}`);
         onUserAdded();
       }
     } catch (error) {
       console.error('[AddUser] Error:', error);
-      Alert.alert('Error', error.message || 'Failed to create user');
+      showAlert('Error', error.message || 'Failed to create user');
     } finally {
       setLoading(false);
     }
