@@ -66,6 +66,7 @@ import AvatarSelectionScreen from './src/screens/AvatarSelectionScreen';
 import ChangePasswordScreen from './src/screens/ChangePasswordScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
+import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
@@ -1672,6 +1673,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         {/* Law Firm Bottom Navigation */}
         {['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-disbursements', 'lawfirm-negotiations'].includes(currentScreen) && (
           <LawFirmBottomNavigation 
+            currentScreen={currentScreen}
+            onNavigate={handleNavigateInternal}
+            notificationCount={0}
+          />
+        )}
+        
+        {/* Medical Provider Bottom Navigation */}
+        {['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard'].includes(currentScreen) && (
+          <MedicalProviderBottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
             notificationCount={0}
