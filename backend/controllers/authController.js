@@ -12,7 +12,7 @@ const { checkLawFirmLimit } = require('../utils/subscriptionLimits');
 
 exports.registerClient = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice, privacyAccepted } = req.body;
+    const { firstName, lastName, phoneNumber, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice, privacyAccepted } = req.body;
     
     // Privacy policy acceptance check temporarily disabled
     // if (!privacyAccepted) {
@@ -60,12 +60,12 @@ exports.registerClient = async (req, res) => {
     }
     
     const userResult = await db.query(
-      `INSERT INTO users (first_name, last_name, email, email_hash, password, user_type, law_firm_code, 
+      `INSERT INTO users (first_name, last_name, phone_number, email, email_hash, password, user_type, law_firm_code, 
        connected_law_firm_id, avatar_type, subscription_tier, subscription_price,
        first_name_encrypted, last_name_encrypted, privacy_accepted_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP) 
        RETURNING id, email, first_name, last_name, user_type`,
-      [firstName, lastName, email.toLowerCase(), emailHash, hashedPassword, 'client', 
+      [firstName, lastName, phoneNumber || null, email.toLowerCase(), emailHash, hashedPassword, 'client', 
        lawFirmCode ? lawFirmCode.toUpperCase() : null, connectedLawFirmId, 
        avatarType || 'captain', subscriptionTier || 'free', subscriptionPrice || 0,
        encryptedFirstName, encryptedLastName]

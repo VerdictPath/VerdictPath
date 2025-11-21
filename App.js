@@ -78,6 +78,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [firmName, setFirmName] = useState('');
   const [providerName, setProviderName] = useState('');
   const [firmCode, setFirmCode] = useState('');
@@ -283,6 +284,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return;
     }
     
+    // Phone number validation for individual users
+    if (userType === USER_TYPES.INDIVIDUAL && !phoneNumber) {
+      alert('Error: Please enter your cell phone number');
+      return;
+    }
+    
     if (userType === USER_TYPES.LAW_FIRM && !firmName) {
       alert('Error: Please enter your law firm name');
       return;
@@ -405,6 +412,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             body: JSON.stringify({
               firstName: firstName,
               lastName: lastName,
+              phoneNumber: phoneNumber,
               email: email,
               password: password,
               lawFirmCode: firmCode || null,
@@ -540,6 +548,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             body: JSON.stringify({
               firstName: firstName,
               lastName: lastName,
+              phoneNumber: phoneNumber,
               email: email,
               password: password,
               lawFirmCode: firmCode || null,
@@ -1170,6 +1179,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           setFirstName={setFirstName}
           lastName={lastName}
           setLastName={setLastName}
+          phoneNumber={phoneNumber}
+          setPhoneNumber={setPhoneNumber}
           firmName={firmName}
           setFirmName={setFirmName}
           providerName={providerName}
