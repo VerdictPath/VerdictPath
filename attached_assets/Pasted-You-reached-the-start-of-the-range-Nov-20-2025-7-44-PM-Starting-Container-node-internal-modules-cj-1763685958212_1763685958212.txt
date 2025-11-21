@@ -1,0 +1,119 @@
+You reached the start of the range
+Nov 20, 2025, 7:44 PM
+Starting Container
+node:internal/modules/cjs/loader:1143
+  throw err;
+  ^
+Error: Cannot find module 'twilio'
+Require stack:
+- /app/services/smsService.js
+- /app/controllers/changePasswordController.js
+- /app/routes/auth.js
+- /app/server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/app/services/smsService.js:1:16)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/app/services/smsService.js',
+    '/app/controllers/changePasswordController.js',
+    '/app/routes/auth.js',
+    '/app/server.js'
+  ]
+}
+Node.js v18.20.8
+node:internal/modules/cjs/loader:1143
+  throw err;
+  code: 'MODULE_NOT_FOUND',
+Error: Cannot find module 'twilio'
+  ^
+  requireStack: [
+Require stack:
+    '/app/services/smsService.js',
+- /app/server.js
+- /app/services/smsService.js
+    '/app/controllers/changePasswordController.js',
+- /app/controllers/changePasswordController.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+- /app/routes/auth.js
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at require (node:internal/modules/helpers:177:18)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at Object.<anonymous> (/app/services/smsService.js:1:16)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19) {
+    '/app/routes/auth.js',
+    '/app/server.js'
+  ]
+}
+Node.js v18.20.8
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+node:internal/modules/cjs/loader:1143
+  throw err;
+    at Object.<anonymous> (/app/services/smsService.js:1:16)
+  ^
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+Error: Cannot find module 'twilio'
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+Require stack:
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+- /app/services/smsService.js
+    at Module.require (node:internal/modules/cjs/loader:1231:19) {
+- /app/controllers/changePasswordController.js
+  code: 'MODULE_NOT_FOUND',
+- /app/routes/auth.js
+  requireStack: [
+- /app/server.js
+    '/app/services/smsService.js',
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    '/app/controllers/changePasswordController.js',
+    '/app/routes/auth.js',
+    '/app/server.js'
+  ]
+}
+Node.js v18.20.8
+- /app/controllers/changePasswordController.js
+    '/app/controllers/changePasswordController.js',
+- /app/routes/auth.js
+- /app/server.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1140:15)
+    at Module._load (node:internal/modules/cjs/loader:981:27)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/app/services/smsService.js:1:16)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+node:internal/modules/cjs/loader:1143
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+  throw err;
+  ^
+    at Module.require (node:internal/modules/cjs/loader:1231:19) {
+  code: 'MODULE_NOT_FOUND',
+Error: Cannot find module 'twilio'
+Require stack:
+  requireStack: [
+- /app/services/smsService.js
+    '/app/services/smsService.js',
+    '/app/routes/auth.js',
+    '/app/server.js'
+  ]
+}
+Node.js v18.20.8
+node:internal/modules/cjs/loader:1143
+    at require (node:internal/modules/helpers:177:18)
+  throw err;
+  ^
