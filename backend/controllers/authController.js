@@ -514,6 +514,7 @@ exports.login = async (req, res) => {
     }
     
     const account = result.rows[0];
+
     
     if (isSubUser && userType === 'lawfirm' && account.status !== 'active') {
       await auditLogger.logAuth({
