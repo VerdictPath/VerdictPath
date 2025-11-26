@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ImageBackground, Platform } from 'react-native';
 import { theme } from '../styles/theme';
 import { useNotifications } from '../contexts/NotificationContext';
+
+const pirateShipBackground = require('../../assets/images/pirate-notification-ship.png');
 
 const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
   const { notifications, isLoading, refreshNotifications, markAllAsRead } = useNotifications();
@@ -83,8 +85,8 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
     </TouchableOpacity>
   );
 
-  return (
-    <View style={styles.container}>
+  const renderContent = () => (
+    <View style={styles.contentContainer}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -143,7 +145,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
       {/* Notification List */}
       {isLoading && notifications.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color="#FFD700" />
           <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
       ) : filteredNotifications.length === 0 ? (
@@ -168,19 +170,40 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={[theme.colors.primary]}
+              colors={['#FFD700']}
+              tintColor="#FFD700"
             />
           }
         />
       )}
     </View>
   );
+
+  return (
+    <ImageBackground
+      source={pirateShipBackground}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay}>
+        {renderContent()}
+      </View>
+    </ImageBackground>
+  );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  contentContainer: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -188,32 +211,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: theme.colors.primary,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     borderBottomWidth: 2,
-    borderBottomColor: '#d4a574',
+    borderBottomColor: 'rgba(255, 215, 0, 0.5)',
   },
   backButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   backButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#FFD700',
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFD700',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   placeholder: {
     width: 60,
   },
   filterContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: 'rgba(255, 215, 0, 0.3)',
   },
   filterTab: {
     flex: 1,
@@ -223,38 +254,36 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeFilterTab: {
-    borderBottomColor: theme.colors.primary,
+    borderBottomColor: '#FFD700',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
   },
   filterText: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '500',
   },
   activeFilterText: {
-    color: theme.colors.primary,
+    color: '#FFD700',
     fontWeight: '700',
   },
   actionButtonContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(26, 26, 26, 0.75)',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: 'rgba(255, 215, 0, 0.3)',
   },
   markAllReadButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   markAllReadText: {
-    color: '#fff',
+    color: '#FFD700',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -263,22 +292,18 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   notificationCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   unreadCard: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: 'rgba(26, 26, 26, 0.95)',
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   notificationHeader: {
     flexDirection: 'row',
@@ -289,19 +314,19 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFD700',
     flex: 1,
   },
   unreadBadge: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#FFD700',
     marginLeft: 8,
   },
   notificationBody: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.85)',
     marginBottom: 12,
     lineHeight: 20,
   },
@@ -312,11 +337,11 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     fontSize: 12,
-    color: '#999',
+    color: 'rgba(255, 215, 0, 0.7)',
   },
   clickedLabel: {
     fontSize: 12,
-    color: '#27ae60',
+    color: '#4ade80',
     fontWeight: '600',
   },
   loadingContainer: {
@@ -327,13 +352,19 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: '#FFD700',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    backgroundColor: 'rgba(26, 26, 26, 0.75)',
+    margin: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    padding: 30,
   },
   emptyIcon: {
     fontSize: 64,
@@ -342,12 +373,15 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFD700',
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   emptyText: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
     lineHeight: 20,
   },
