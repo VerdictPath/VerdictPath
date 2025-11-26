@@ -712,6 +712,14 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                       (selectedNegotiation.status === 'counter_offered' || selectedNegotiation.status === 'pending') &&
                       selectedNegotiation.status !== 'accepted';
     const canCounterOffer = isMyTurn && selectedNegotiation.status !== 'accepted';
+    
+    // Determine who requested the call (for stalled status)
+    const myUserType = isLawFirm ? 'law_firm' : 'medical_provider';
+    const iRequestedCall = selectedNegotiation.status === 'stalled' && 
+                           selectedNegotiation.callRequestBy === myUserType;
+    const otherPartyRequestedCall = selectedNegotiation.status === 'stalled' && 
+                                    selectedNegotiation.callRequestBy && 
+                                    selectedNegotiation.callRequestBy !== myUserType;
 
     return (
       <Modal
@@ -808,6 +816,10 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
               <View style={styles.callRequestSection}>
                 <Text style={styles.sectionTitle}>📞 Call Requested</Text>
                 <View style={styles.callRequestDetails}>
+                  <Text style={styles.callRequestLabel}>Requested By:</Text>
+                  <Text style={styles.callRequestValue}>
+                    {selectedNegotiation.callRequestBy === 'law_firm' ? 'Law Firm' : 'Medical Provider'}
+                  </Text>
                   <Text style={styles.callRequestLabel}>Phone Number:</Text>
                   <Text style={styles.callRequestValue}>{selectedNegotiation.callRequestPhone}</Text>
                   {selectedNegotiation.callRequestNotes && (
@@ -820,7 +832,38 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
               </View>
             )}
 
-            {selectedNegotiation.status !== 'accepted' && isMyTurn && (
+            {/* Show waiting message when I requested the call */}
+            {iRequestedCall && (
+              <View style={styles.waitingSection}>
+                <Text style={styles.waitingText}>⏳ Waiting for the other party to respond to your call request...</Text>
+              </View>
+            )}
+
+            {/* Show action buttons when the other party requested a call */}
+            {otherPartyRequestedCall && (
+              <View style={styles.actionSection}>
+                <Text style={styles.callActionPrompt}>
+                  📞 The other party has requested a call. Please call them at the number above, then continue the negotiation:
+                </Text>
+                
+                <TouchableOpacity
+                  style={styles.acceptButton}
+                  onPress={() => handleAcceptOffer(selectedNegotiation.id)}
+                >
+                  <Text style={styles.acceptButtonText}>✓ Accept Current Offer</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.counterButton}
+                  onPress={() => setShowCounterOfferModal(true)}
+                >
+                  <Text style={styles.counterButtonText}>↔ Send Counter Offer</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Show normal action buttons when not stalled and it's my turn */}
+            {selectedNegotiation.status !== 'accepted' && selectedNegotiation.status !== 'stalled' && isMyTurn && (
               <View style={styles.actionSection}>
                 {canAccept && (
                   <TouchableOpacity
@@ -852,8 +895,8 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
               </View>
             )}
 
-            {/* Show waiting message when it's not your turn */}
-            {selectedNegotiation.status !== 'accepted' && !isMyTurn && (
+            {/* Show waiting message when it's not your turn (not stalled) */}
+            {selectedNegotiation.status !== 'accepted' && selectedNegotiation.status !== 'stalled' && !isMyTurn && (
               <View style={styles.waitingSection}>
                 <Text style={styles.waitingText}>⏳ Waiting for the other party to respond...</Text>
               </View>
@@ -1413,6 +1456,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: theme.colors.textSecondary,
     marginTop: 4,
+  },
+  callActionPrompt: {
+    fontSize: 14,
+    color: '#856404',
+    backgroundColor: '#FFF3CD',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   actionSection: {
     marginTop: 20,
