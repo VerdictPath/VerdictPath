@@ -330,6 +330,125 @@ app.get('/portal/forms', async (req, res) => {
   }
 });
 
+// Stripe Connect/Customer return pages
+app.get('/stripe/complete', (req, res) => {
+  const type = req.query.type || 'onboarding';
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Setup Complete - VerdictPath</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          margin: 0;
+          background: linear-gradient(135deg, #D2B48C 0%, #8B4513 100%);
+        }
+        .card {
+          background: white;
+          border-radius: 16px;
+          padding: 40px;
+          max-width: 400px;
+          text-align: center;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .icon { font-size: 64px; margin-bottom: 20px; }
+        h1 { color: #2d3748; margin: 0 0 16px; font-size: 24px; }
+        p { color: #718096; margin: 0 0 24px; line-height: 1.6; }
+        .btn {
+          display: inline-block;
+          background: #8B4513;
+          color: white;
+          padding: 14px 28px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background 0.2s;
+        }
+        .btn:hover { background: #654321; }
+        .note { font-size: 14px; color: #a0aec0; margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon">✅</div>
+        <h1>${type === 'billing' ? 'Payment Method Updated!' : 'Setup Complete!'}</h1>
+        <p>
+          ${type === 'billing' 
+            ? 'Your payment information has been updated successfully.'
+            : 'Your payment account has been set up successfully. You can now close this window and return to the app.'}
+        </p>
+        <a href="/" class="btn">Return to VerdictPath</a>
+        <p class="note">
+          You can close this window and return to the app.<br>
+          Click "Refresh Status" to see your updated account.
+        </p>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/stripe/reauth', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Session Expired - VerdictPath</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          margin: 0;
+          background: linear-gradient(135deg, #D2B48C 0%, #8B4513 100%);
+        }
+        .card {
+          background: white;
+          border-radius: 16px;
+          padding: 40px;
+          max-width: 400px;
+          text-align: center;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .icon { font-size: 64px; margin-bottom: 20px; }
+        h1 { color: #2d3748; margin: 0 0 16px; font-size: 24px; }
+        p { color: #718096; margin: 0 0 24px; line-height: 1.6; }
+        .btn {
+          display: inline-block;
+          background: #8B4513;
+          color: white;
+          padding: 14px 28px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: background 0.2s;
+        }
+        .btn:hover { background: #654321; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="icon">⚠️</div>
+        <h1>Session Expired</h1>
+        <p>
+          Your setup session has expired. Please return to the app and try again.
+        </p>
+        <a href="/" class="btn">Return to VerdictPath</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
 // Catch-all route for client-side routing - serve index.html for any unmatched routes
 // This must be AFTER all API and portal routes
 app.get('*', (req, res) => {

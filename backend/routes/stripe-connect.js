@@ -1,5 +1,6 @@
 // Backend: routes/stripe-connect.js
-// Handles Stripe Connect account creation for law firms, clients, and medical providers
+// Handles Stripe payment setup for law firms (as Customers) and 
+// Stripe Connect accounts for clients/medical providers (as recipients)
 
 const express = require('express');
 const router = express.Router();
@@ -7,16 +8,282 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { authenticateToken } = require('../middleware/auth');
 const db = require('../config/db');
 
-// Get frontend URL for redirects
-const getFrontendUrl = () => {
+// Get base URL for redirects
+const getBaseUrl = () => {
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  }
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
   }
-  if (process.env.RAILWAY_STATIC_URL) {
-    return process.env.RAILWAY_STATIC_URL;
-  }
   return 'http://localhost:5000';
 };
+
+// ============================================================
+// LAW FIRM ENDPOINTS (Stripe Customer - they PAY money)
+// ============================================================
+
+/**
+ * POST /api/stripe-connect/create-customer
+ * Create a Stripe Customer for law firm to make payments
+ */
+router.post('/create-customer', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ error: 'Only law firms can create customer accounts' });
+    }
+
+    // Get law firm details
+    const lawFirmResult = await db.query(
+      'SELECT id, firm_name, email, stripe_customer_id FROM law_firms WHERE id = $1',
+      [userId]
+    );
+
+    if (lawFirmResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Law firm not found' });
+    }
+
+    const lawFirm = lawFirmResult.rows[0];
+    let customerId = lawFirm.stripe_customer_id;
+
+    // Create customer if doesn't exist
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: lawFirm.email,
+        name: lawFirm.firm_name,
+        metadata: {
+          law_firm_id: lawFirm.id,
+          type: 'law_firm'
+        }
+      });
+
+      customerId = customer.id;
+
+      // Save customer ID to database
+      await db.query(
+        'UPDATE law_firms SET stripe_customer_id = $1 WHERE id = $2',
+        [customerId, userId]
+      );
+    }
+
+    res.json({
+      success: true,
+      customerId: customerId
+    });
+
+  } catch (error) {
+    console.error('Error creating Stripe customer:', error);
+    res.status(500).json({ error: 'Failed to create customer account' });
+  }
+});
+
+/**
+ * POST /api/stripe-connect/create-setup-intent
+ * Create a SetupIntent to save a payment method for law firm
+ */
+router.post('/create-setup-intent', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ error: 'Only law firms can set up payment methods' });
+    }
+
+    // Get or create customer first
+    let lawFirmResult = await db.query(
+      'SELECT stripe_customer_id, firm_name, email FROM law_firms WHERE id = $1',
+      [userId]
+    );
+
+    let customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+    if (!customerId) {
+      // Create customer first
+      const customer = await stripe.customers.create({
+        email: lawFirmResult.rows[0].email,
+        name: lawFirmResult.rows[0].firm_name,
+        metadata: {
+          law_firm_id: userId,
+          type: 'law_firm'
+        }
+      });
+
+      customerId = customer.id;
+
+      await db.query(
+        'UPDATE law_firms SET stripe_customer_id = $1 WHERE id = $2',
+        [customerId, userId]
+      );
+    }
+
+    // Create SetupIntent
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      usage: 'off_session',
+      metadata: {
+        law_firm_id: userId
+      }
+    });
+
+    res.json({
+      success: true,
+      clientSecret: setupIntent.client_secret,
+      setupIntentId: setupIntent.id
+    });
+
+  } catch (error) {
+    console.error('Error creating setup intent:', error);
+    res.status(500).json({ error: 'Failed to create payment setup' });
+  }
+});
+
+/**
+ * POST /api/stripe-connect/create-billing-portal
+ * Create a Stripe Billing Portal session for law firm to manage payment methods
+ */
+router.post('/create-billing-portal', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ error: 'Only law firms can access billing portal' });
+    }
+
+    const lawFirmResult = await db.query(
+      'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
+      [userId]
+    );
+
+    const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+    if (!customerId) {
+      return res.status(400).json({ error: 'No payment account found. Please set up payment first.' });
+    }
+
+    const baseUrl = getBaseUrl();
+    
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${baseUrl}/stripe/complete?type=billing`
+    });
+
+    res.json({
+      success: true,
+      url: session.url
+    });
+
+  } catch (error) {
+    console.error('Error creating billing portal:', error);
+    res.status(500).json({ error: 'Failed to access billing portal' });
+  }
+});
+
+/**
+ * GET /api/stripe-connect/customer-status
+ * Check law firm's Stripe Customer status and payment methods
+ */
+router.get('/customer-status', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ error: 'Only law firms can check customer status' });
+    }
+
+    const lawFirmResult = await db.query(
+      'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
+      [userId]
+    );
+
+    const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+    if (!customerId) {
+      return res.json({
+        hasCustomer: false,
+        hasPaymentMethod: false,
+        paymentMethods: []
+      });
+    }
+
+    // Get customer and their payment methods
+    const customer = await stripe.customers.retrieve(customerId);
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+      type: 'card'
+    });
+
+    const hasDefaultPayment = customer.invoice_settings?.default_payment_method || 
+                              paymentMethods.data.length > 0;
+
+    res.json({
+      hasCustomer: true,
+      hasPaymentMethod: hasDefaultPayment,
+      defaultPaymentMethodId: customer.invoice_settings?.default_payment_method,
+      paymentMethods: paymentMethods.data.map(pm => ({
+        id: pm.id,
+        brand: pm.card.brand,
+        last4: pm.card.last4,
+        expMonth: pm.card.exp_month,
+        expYear: pm.card.exp_year
+      }))
+    });
+
+  } catch (error) {
+    console.error('Error checking customer status:', error);
+    res.status(500).json({ error: 'Failed to check payment status' });
+  }
+});
+
+/**
+ * POST /api/stripe-connect/set-default-payment-method
+ * Set the default payment method for a law firm customer
+ */
+router.post('/set-default-payment-method', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+    const { paymentMethodId } = req.body;
+
+    if (userType !== 'lawfirm') {
+      return res.status(403).json({ error: 'Only law firms can set payment methods' });
+    }
+
+    const lawFirmResult = await db.query(
+      'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
+      [userId]
+    );
+
+    const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+    if (!customerId) {
+      return res.status(400).json({ error: 'No customer account found' });
+    }
+
+    await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId
+      }
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Error setting default payment method:', error);
+    res.status(500).json({ error: 'Failed to set default payment method' });
+  }
+});
+
+// ============================================================
+// RECIPIENT ENDPOINTS (Stripe Connect - they RECEIVE money)
+// For clients and medical providers
+// ============================================================
 
 /**
  * POST /api/stripe-connect/create-account
@@ -24,9 +291,17 @@ const getFrontendUrl = () => {
  */
 router.post('/create-account', authenticateToken, async (req, res) => {
   try {
-    const { accountType, email } = req.body; // accountType: 'client', 'medical_provider', 'law_firm'
+    const { email } = req.body;
     const userId = req.user.id;
     const userType = req.user.userType;
+
+    // Law firms should use customer endpoints, not connect
+    if (userType === 'lawfirm') {
+      return res.status(400).json({ 
+        error: 'Law firms should use /create-customer endpoint instead',
+        redirect: 'customer'
+      });
+    }
 
     // Check if user already has a Stripe account
     let checkQuery;
@@ -34,8 +309,6 @@ router.post('/create-account', authenticateToken, async (req, res) => {
       checkQuery = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       checkQuery = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
-    } else if (userType === 'lawfirm') {
-      checkQuery = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
     } else {
       return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
@@ -50,41 +323,35 @@ router.post('/create-account', authenticateToken, async (req, res) => {
         country: 'US',
         email: email,
         capabilities: {
-          card_payments: { requested: true },
           transfers: { requested: true }
         },
-        business_type: accountType === 'law_firm' ? 'company' : 'individual'
+        business_type: 'individual',
+        metadata: {
+          user_id: userId,
+          user_type: userType
+        }
       });
 
       accountId = account.id;
 
       // Store Stripe account ID in database
       let updateQuery;
-      let updateParams;
-
       if (userType === 'individual' || userType === 'client') {
         updateQuery = 'UPDATE users SET stripe_account_id = $1 WHERE id = $2';
-        updateParams = [accountId, userId];
       } else if (userType === 'medical_provider') {
         updateQuery = 'UPDATE medical_providers SET stripe_account_id = $1 WHERE id = $2';
-        updateParams = [accountId, userId];
-      } else if (userType === 'lawfirm') {
-        updateQuery = 'UPDATE law_firms SET stripe_account_id = $1 WHERE id = $2';
-        updateParams = [accountId, userId];
-      } else {
-        return res.status(400).json({ error: `Unsupported account type: ${userType}` });
       }
 
-      await db.query(updateQuery, updateParams);
+      await db.query(updateQuery, [accountId, userId]);
     }
 
-    const frontendUrl = getFrontendUrl();
+    const baseUrl = getBaseUrl();
 
-    // Create account link for onboarding (works for both new and existing accounts)
+    // Create account link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${frontendUrl}/stripe/reauth`,
-      return_url: `${frontendUrl}/stripe/complete`,
+      refresh_url: `${baseUrl}/stripe/reauth`,
+      return_url: `${baseUrl}/stripe/complete`,
       type: 'account_onboarding'
     });
 
@@ -102,45 +369,87 @@ router.post('/create-account', authenticateToken, async (req, res) => {
 
 /**
  * GET /api/stripe-connect/account-status
- * Check if user has completed Stripe onboarding
+ * Check user's Stripe account status (role-aware)
  */
 router.get('/account-status', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    let query;
-    let params = [userId];
+    // For law firms, redirect to customer-status
+    if (userType === 'lawfirm') {
+      const lawFirmResult = await db.query(
+        'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
+        [userId]
+      );
 
+      const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+      if (!customerId) {
+        return res.json({
+          hasAccount: false,
+          onboardingComplete: false,
+          isCustomer: true
+        });
+      }
+
+      // Get customer and payment methods
+      const customer = await stripe.customers.retrieve(customerId);
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card'
+      });
+
+      const hasPaymentMethod = customer.invoice_settings?.default_payment_method || 
+                               paymentMethods.data.length > 0;
+
+      return res.json({
+        hasAccount: true,
+        onboardingComplete: hasPaymentMethod,
+        isCustomer: true,
+        customerId: customerId,
+        hasPaymentMethod: hasPaymentMethod,
+        paymentMethods: paymentMethods.data.map(pm => ({
+          id: pm.id,
+          brand: pm.card.brand,
+          last4: pm.card.last4
+        }))
+      });
+    }
+
+    // For clients and medical providers (Connect accounts)
+    let query;
     if (userType === 'individual' || userType === 'client') {
       query = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
-    } else if (userType === 'lawfirm') {
-      query = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
     } else {
       return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
 
-    const result = await db.query(query, params);
+    const result = await db.query(query, [userId]);
     const stripeAccountId = result.rows[0]?.stripe_account_id;
 
     if (!stripeAccountId) {
       return res.json({
         hasAccount: false,
-        onboardingComplete: false
+        onboardingComplete: false,
+        isCustomer: false
       });
     }
 
     // Check account status with Stripe
     const account = await stripe.accounts.retrieve(stripeAccountId);
 
+    // For recipients, payouts_enabled is the key indicator
     res.json({
       hasAccount: true,
-      onboardingComplete: account.details_submitted && account.charges_enabled,
+      onboardingComplete: account.details_submitted && account.payouts_enabled,
+      isCustomer: false,
       accountId: stripeAccountId,
       chargesEnabled: account.charges_enabled,
-      payoutsEnabled: account.payouts_enabled
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted
     });
 
   } catch (error) {
@@ -151,20 +460,25 @@ router.get('/account-status', authenticateToken, async (req, res) => {
 
 /**
  * POST /api/stripe-connect/create-dashboard-link
- * Create a login link to Stripe Express Dashboard
+ * Create a login link to Stripe Express Dashboard (for recipients)
  */
 router.post('/create-dashboard-link', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const userType = req.user.userType;
 
+    // Law firms should use billing portal
+    if (userType === 'lawfirm') {
+      return res.status(400).json({ 
+        error: 'Law firms should use /create-billing-portal endpoint instead' 
+      });
+    }
+
     let query;
     if (userType === 'individual' || userType === 'client') {
       query = 'SELECT stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
       query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
-    } else if (userType === 'lawfirm') {
-      query = 'SELECT stripe_account_id FROM law_firms WHERE id = $1';
     } else {
       return res.status(400).json({ error: `Unsupported account type: ${userType}` });
     }
@@ -185,6 +499,55 @@ router.post('/create-dashboard-link', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error creating dashboard link:', error);
     res.status(500).json({ error: 'Failed to create dashboard link' });
+  }
+});
+
+/**
+ * POST /api/stripe-connect/create-onboarding-link
+ * Create a new onboarding link for incomplete accounts
+ */
+router.post('/create-onboarding-link', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (userType === 'lawfirm') {
+      return res.status(400).json({ error: 'Law firms do not use Connect onboarding' });
+    }
+
+    let query;
+    if (userType === 'individual' || userType === 'client') {
+      query = 'SELECT stripe_account_id FROM users WHERE id = $1';
+    } else if (userType === 'medical_provider') {
+      query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
+    } else {
+      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
+    }
+
+    const result = await db.query(query, [userId]);
+    const stripeAccountId = result.rows[0]?.stripe_account_id;
+
+    if (!stripeAccountId) {
+      return res.status(400).json({ error: 'No Stripe account found. Create one first.' });
+    }
+
+    const baseUrl = getBaseUrl();
+
+    const accountLink = await stripe.accountLinks.create({
+      account: stripeAccountId,
+      refresh_url: `${baseUrl}/stripe/reauth`,
+      return_url: `${baseUrl}/stripe/complete`,
+      type: 'account_onboarding'
+    });
+
+    res.json({
+      success: true,
+      onboardingUrl: accountLink.url
+    });
+
+  } catch (error) {
+    console.error('Error creating onboarding link:', error);
+    res.status(500).json({ error: 'Failed to create onboarding link' });
   }
 });
 
