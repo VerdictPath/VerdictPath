@@ -127,7 +127,9 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                   updatedAt: updated.updated_at || updated.updatedAt,
                   acceptedAt: updated.accepted_at || updated.acceptedAt,
                   callRequestPhone: updated.call_request_phone || updated.callRequestPhone,
-                  callRequestNotes: updated.call_request_notes || updated.callRequestNotes
+                  callRequestNotes: updated.call_request_notes || updated.callRequestNotes,
+                  callRequestBy: updated.call_request_by || updated.callRequestBy,
+                  history: updated.history || []
                 };
                 negotiationMap.set(updated.id, normalized);
               }
@@ -155,7 +157,9 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                 lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
                 interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || 0),
                 callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone,
-                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes
+                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes,
+                callRequestBy: updatedSelected.call_request_by || updatedSelected.callRequestBy,
+                history: updatedSelected.history || prev.history || []
               }));
             }
           }

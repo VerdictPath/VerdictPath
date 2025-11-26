@@ -413,6 +413,19 @@ async function syncNegotiationToFirebase(negotiation) {
       return new Date(date).toISOString();
     };
 
+    // Extract latest call request from history if available
+    let callRequestPhone = null;
+    let callRequestNotes = null;
+    let callRequestBy = null;
+    if (negotiation.history && Array.isArray(negotiation.history)) {
+      const callRequest = negotiation.history.find(h => h.action === 'call_requested');
+      if (callRequest) {
+        callRequestPhone = callRequest.phoneNumber || null;
+        callRequestNotes = callRequest.notes || null;
+        callRequestBy = callRequest.actionBy || null;
+      }
+    }
+
     const negotiationData = {
       id: negotiation.id,
       client_id: negotiation.client_id,
@@ -430,8 +443,10 @@ async function syncNegotiationToFirebase(negotiation) {
       initiated_by: negotiation.initiated_by,
       last_responded_by: negotiation.last_responded_by,
       interaction_count: parseInt(negotiation.interaction_count) || 0,
-      call_request_phone: negotiation.call_request_phone || null,
-      call_request_notes: negotiation.call_request_notes || null,
+      call_request_phone: callRequestPhone,
+      call_request_notes: callRequestNotes,
+      call_request_by: callRequestBy,
+      history: negotiation.history || [],
       created_at: toISOString(negotiation.created_at),
       updated_at: toISOString(negotiation.updated_at),
       accepted_at: toISOString(negotiation.accepted_at),
@@ -529,6 +544,19 @@ async function batchSyncNegotiations(negotiations) {
         return new Date(date).toISOString();
       };
 
+      // Extract latest call request from history if available
+      let callRequestPhone = null;
+      let callRequestNotes = null;
+      let callRequestBy = null;
+      if (neg.history && Array.isArray(neg.history)) {
+        const callRequest = neg.history.find(h => h.action === 'call_requested');
+        if (callRequest) {
+          callRequestPhone = callRequest.phoneNumber || null;
+          callRequestNotes = callRequest.notes || null;
+          callRequestBy = callRequest.actionBy || null;
+        }
+      }
+
       const negotiationData = {
         id: neg.id,
         client_id: neg.client_id,
@@ -546,8 +574,10 @@ async function batchSyncNegotiations(negotiations) {
         initiated_by: neg.initiated_by,
         last_responded_by: neg.last_responded_by,
         interaction_count: parseInt(neg.interaction_count) || 0,
-        call_request_phone: neg.call_request_phone || null,
-        call_request_notes: neg.call_request_notes || null,
+        call_request_phone: callRequestPhone,
+        call_request_notes: callRequestNotes,
+        call_request_by: callRequestBy,
+        history: neg.history || [],
         created_at: toISOString(neg.created_at),
         updated_at: toISOString(neg.updated_at),
         accepted_at: toISOString(neg.accepted_at),
