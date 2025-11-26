@@ -71,9 +71,17 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
   // Firebase real-time subscription refs
   const firebaseUnsubscribeRef = useRef(null);
   const [firebaseConnected, setFirebaseConnected] = useState(false);
+  
+  // Ref to track current selected negotiation for Firebase callback
+  const selectedNegotiationRef = useRef(null);
 
   const isLawFirm = user?.type === 'LAW_FIRM' || user?.userType === 'lawfirm';
   const isMedicalProvider = user?.type === 'MEDICAL_PROVIDER' || user?.userType === 'medical_provider';
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedNegotiationRef.current = selectedNegotiation;
+  }, [selectedNegotiation]);
 
   // Setup Firebase real-time listeners for negotiations
   const setupFirebaseListeners = useCallback(async () => {
@@ -144,9 +152,10 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
             return mergedList;
           });
           
-          // Also update selected negotiation if it was updated
-          if (selectedNegotiation) {
-            const updatedSelected = updatedNegotiations.find(n => n.id === selectedNegotiation.id);
+          // Also update selected negotiation if it was updated (use ref for current value)
+          const currentSelectedNegotiation = selectedNegotiationRef.current;
+          if (currentSelectedNegotiation) {
+            const updatedSelected = updatedNegotiations.find(n => n.id === currentSelectedNegotiation.id);
             if (updatedSelected) {
               console.log('🔄 Real-time update for selected negotiation:', {
                 id: updatedSelected.id,
@@ -154,36 +163,39 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                 lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
                 currentOffer: updatedSelected.current_offer || updatedSelected.currentOffer
               });
-              setSelectedNegotiation(prev => ({
-                ...prev,
-                ...updatedSelected,
-                // Critical fields for UI state (status, turn tracking)
-                status: updatedSelected.status || prev.status,
-                initiatedBy: updatedSelected.initiated_by || updatedSelected.initiatedBy || prev.initiatedBy,
-                lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
-                // Amount fields
-                billAmount: parseFloat(updatedSelected.bill_amount || updatedSelected.billAmount || prev.billAmount || 0),
-                currentOffer: parseFloat(updatedSelected.current_offer || updatedSelected.currentOffer || prev.currentOffer || 0),
-                billDescription: updatedSelected.bill_description || updatedSelected.billDescription || prev.billDescription,
-                // IDs and names
-                clientId: updatedSelected.client_id || updatedSelected.clientId || prev.clientId,
-                clientName: updatedSelected.client_name || updatedSelected.clientName || prev.clientName,
-                lawFirmId: updatedSelected.law_firm_id || updatedSelected.lawFirmId || prev.lawFirmId,
-                firmName: updatedSelected.firm_name || updatedSelected.firmName || prev.firmName,
-                medicalProviderId: updatedSelected.medical_provider_id || updatedSelected.medicalProviderId || prev.medicalProviderId,
-                providerName: updatedSelected.provider_name || updatedSelected.providerName || prev.providerName,
-                // Interaction tracking
-                interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || prev.interactionCount || 0),
-                // Call request details
-                callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone || prev.callRequestPhone,
-                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes || prev.callRequestNotes,
-                callRequestBy: updatedSelected.call_request_by || updatedSelected.callRequestBy || prev.callRequestBy,
-                // History
-                history: updatedSelected.history || prev.history || [],
-                // Timestamps
-                updatedAt: updatedSelected.updated_at || updatedSelected.updatedAt || prev.updatedAt,
-                acceptedAt: updatedSelected.accepted_at || updatedSelected.acceptedAt || prev.acceptedAt
-              }));
+              setSelectedNegotiation(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  ...updatedSelected,
+                  // Critical fields for UI state (status, turn tracking)
+                  status: updatedSelected.status || prev.status,
+                  initiatedBy: updatedSelected.initiated_by || updatedSelected.initiatedBy || prev.initiatedBy,
+                  lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
+                  // Amount fields
+                  billAmount: parseFloat(updatedSelected.bill_amount || updatedSelected.billAmount || prev.billAmount || 0),
+                  currentOffer: parseFloat(updatedSelected.current_offer || updatedSelected.currentOffer || prev.currentOffer || 0),
+                  billDescription: updatedSelected.bill_description || updatedSelected.billDescription || prev.billDescription,
+                  // IDs and names
+                  clientId: updatedSelected.client_id || updatedSelected.clientId || prev.clientId,
+                  clientName: updatedSelected.client_name || updatedSelected.clientName || prev.clientName,
+                  lawFirmId: updatedSelected.law_firm_id || updatedSelected.lawFirmId || prev.lawFirmId,
+                  firmName: updatedSelected.firm_name || updatedSelected.firmName || prev.firmName,
+                  medicalProviderId: updatedSelected.medical_provider_id || updatedSelected.medicalProviderId || prev.medicalProviderId,
+                  providerName: updatedSelected.provider_name || updatedSelected.providerName || prev.providerName,
+                  // Interaction tracking
+                  interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || prev.interactionCount || 0),
+                  // Call request details
+                  callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone || prev.callRequestPhone,
+                  callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes || prev.callRequestNotes,
+                  callRequestBy: updatedSelected.call_request_by || updatedSelected.callRequestBy || prev.callRequestBy,
+                  // History
+                  history: updatedSelected.history || prev.history || [],
+                  // Timestamps
+                  updatedAt: updatedSelected.updated_at || updatedSelected.updatedAt || prev.updatedAt,
+                  acceptedAt: updatedSelected.accepted_at || updatedSelected.acceptedAt || prev.acceptedAt
+                };
+              });
             }
           }
         }
@@ -197,7 +209,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       console.error('❌ Firebase negotiations setup failed:', error);
       setFirebaseConnected(false);
     }
-  }, [user?.token, user?.id, isLawFirm, selectedNegotiation]);
+  }, [user?.token, user?.id, isLawFirm]);
 
   useEffect(() => {
     loadNegotiations();
