@@ -25,8 +25,9 @@ exports.getClients = async (req, res) => {
       
       return {
         id: client.id,
-        first_name: firstName,
-        last_name: lastName,
+        firstName: firstName,
+        lastName: lastName,
+        displayName: `${lastName}, ${firstName}`,
         email: client.email
       };
     });
