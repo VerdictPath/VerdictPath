@@ -251,8 +251,8 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
         </View>
         {summary.overdue > 0 && (
           <View style={[styles.summaryCard, styles.overdueCard]}>
-            <Text style={[styles.summaryNumber, styles.overdueText, { fontSize: isDesktop ? 28 : 24 }]}>{summary.overdue}</Text>
-            <Text style={[styles.summaryLabel, styles.overdueText, { fontSize: isDesktop ? 13 : 11 }]}>Overdue</Text>
+            <Text style={[styles.summaryNumber, styles.overdueNumberText, { fontSize: isDesktop ? 28 : 24 }]}>{summary.overdue}</Text>
+            <Text style={[styles.summaryLabel, styles.overdueLabelText, { fontSize: isDesktop ? 13 : 11 }]}>Overdue</Text>
           </View>
         )}
       </View>
@@ -381,6 +381,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
               styles.scrollContent,
               { alignItems: isDesktop || isTablet ? 'center' : 'stretch' }
             ]}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFD700" />}
           >
             <View style={[
               styles.contentWrapper,
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   scrollView: {
     flex: 1,
@@ -482,12 +483,12 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   backButton: {
-    backgroundColor: 'rgba(139, 69, 19, 0.9)',
+    backgroundColor: 'rgba(40, 30, 20, 0.85)',
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     marginBottom: 12,
     alignSelf: 'flex-start',
     shadowColor: '#000',
@@ -497,8 +498,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   backButtonText: {
-    color: '#FFFFFF',
+    color: '#FFD700',
     fontWeight: '700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   headerContent: {
     marginTop: 4,
@@ -520,59 +524,68 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     gap: 10,
     marginHorizontal: 16,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(50, 40, 30, 0.9)',
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#8B4513',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   summaryNumber: {
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#FFD700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   summaryLabel: {
-    color: '#5D3A1A',
+    color: '#E8D5B0',
     marginTop: 4,
     fontWeight: '600',
   },
   overdueCard: {
-    backgroundColor: 'rgba(255, 230, 230, 0.95)',
+    backgroundColor: 'rgba(80, 30, 30, 0.9)',
+    borderColor: 'rgba(231, 76, 60, 0.6)',
   },
-  overdueText: {
-    color: '#e74c3c',
+  overdueNumberText: {
+    color: '#FF6B6B',
+  },
+  overdueLabelText: {
+    color: '#FF9999',
   },
   filterContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginHorizontal: 16,
     borderRadius: 10,
     marginBottom: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(60, 50, 40, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
     marginRight: 10,
-    borderWidth: 2,
-    borderColor: '#8B4513',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   activeFilterButton: {
-    backgroundColor: '#8B4513',
+    backgroundColor: 'rgba(180, 120, 40, 0.95)',
     borderColor: '#FFD700',
   },
   filterEmoji: {
@@ -580,7 +593,7 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontWeight: '700',
-    color: '#2c3e50',
+    color: '#E8D5B0',
   },
   activeFilterText: {
     color: '#FFFFFF',
@@ -588,16 +601,18 @@ const styles = StyleSheet.create({
   priorityFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginHorizontal: 16,
     borderRadius: 10,
     marginBottom: 15,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   priorityFilterLabel: {
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FFD700',
     marginRight: 12,
     textShadowColor: '#000',
     textShadowOffset: { width: 0, height: 1 },
@@ -609,7 +624,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     borderWidth: 2,
     marginRight: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(60, 50, 40, 0.9)',
   },
   priorityChipText: {
     fontWeight: '700',
@@ -621,21 +636,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   taskCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     borderRadius: 14,
     marginBottom: 12,
-    borderWidth: 3,
-    borderColor: '#8B4513',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.5,
     shadowRadius: 6,
     elevation: 8,
   },
   overdueTaskCard: {
     borderColor: '#e74c3c',
     borderWidth: 3,
-    backgroundColor: 'rgba(255, 245, 245, 0.98)',
+    backgroundColor: 'rgba(80, 30, 30, 0.92)',
   },
   taskHeader: {
     flexDirection: 'row',
@@ -659,11 +674,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   coinsBadge: {
-    backgroundColor: '#FFD700',
+    backgroundColor: 'rgba(255, 215, 0, 0.9)',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 14,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: '#8B4513',
   },
   coinsBadgeText: {
@@ -672,11 +687,14 @@ const styles = StyleSheet.create({
   },
   taskTitle: {
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFD700',
     marginBottom: 8,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   taskDescription: {
-    color: '#555',
+    color: '#E8D5B0',
     marginBottom: 12,
     lineHeight: 22,
   },
@@ -688,26 +706,26 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   taskLawFirm: {
-    color: '#5D3A1A',
+    color: '#B8A080',
     fontWeight: '700',
   },
   taskDueDate: {
-    color: '#555',
+    color: '#B8A080',
     fontWeight: '600',
   },
   overdueDueDate: {
-    color: '#e74c3c',
+    color: '#FF6B6B',
     fontWeight: '700',
   },
   taskActions: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#D4A574',
+    borderTopColor: 'rgba(255, 215, 0, 0.3)',
     alignItems: 'center',
   },
   taskActionHint: {
-    color: '#8B4513',
+    color: '#FFD700',
     fontStyle: 'italic',
     fontWeight: '600',
   },
@@ -715,10 +733,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(26, 26, 26, 0.92)',
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     marginTop: 20,
   },
   emptyStateIcon: {
@@ -733,12 +751,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   emptyStateText: {
-    color: '#FFFFFF',
+    color: '#E8D5B0',
     textAlign: 'center',
     lineHeight: 22,
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   bottomPadding: {
     height: 100,
