@@ -14,7 +14,7 @@ import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { alert } from '../utils/alert';
 
-const ActionDashboardScreen = ({ user, onNavigate }) => {
+const ActionDashboardScreen = ({ user, onNavigate, onSelectTask }) => {
   const { width, height } = useWindowDimensions();
   const [tasks, setTasks] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -304,7 +304,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
           overdue && styles.overdueTaskCard,
           { padding: isDesktop ? 20 : 16 }
         ]}
-        onPress={() => handleTaskAction(task)}
+        onPress={() => onSelectTask(task)}
         activeOpacity={0.7}
       >
         <View style={styles.taskHeader}>
@@ -343,11 +343,11 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
           )}
         </View>
 
-        {task.status !== 'completed' && (
-          <View style={styles.taskActions}>
-            <Text style={[styles.taskActionHint, { fontSize: isDesktop ? 14 : 12 }]}>Tap to update status</Text>
-          </View>
-        )}
+        <View style={styles.taskActions}>
+          <Text style={[styles.taskActionHint, { fontSize: isDesktop ? 14 : 12 }]}>
+            {task.status === 'completed' ? 'Tap to view details' : 'Tap to respond'}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };

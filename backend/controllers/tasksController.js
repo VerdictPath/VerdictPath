@@ -356,6 +356,62 @@ const tasksController = {
         message += `\n${treasureChestMessage}`;
       }
 
+      // Send notification to law firm when client updates task status
+      if ((userType === 'individual' || userType === 'client') && previousStatus !== status) {
+        try {
+          // Get client name
+          const clientResult = await pool.query(
+            'SELECT first_name, last_name, email FROM users WHERE id = $1',
+            [userId]
+          );
+          const client = clientResult.rows[0];
+          const clientName = client.first_name && client.last_name 
+            ? `${client.first_name} ${client.last_name}` 
+            : client.email;
+
+          let notificationTitle, notificationBody, notificationType;
+          
+          if (status === 'completed') {
+            notificationTitle = `✅ Task Completed: ${task.task_title}`;
+            notificationBody = `${clientName} has completed the task "${task.task_title}".`;
+            notificationType = 'task_completed';
+          } else if (status === 'in_progress') {
+            notificationTitle = `🔄 Task In Progress: ${task.task_title}`;
+            notificationBody = `${clientName} is now working on the task "${task.task_title}".`;
+            notificationType = 'task_started';
+          } else if (status === 'pending') {
+            notificationTitle = `↩️ Task Reverted: ${task.task_title}`;
+            notificationBody = `${clientName} has reverted the task "${task.task_title}" to pending.`;
+            notificationType = 'task_reverted';
+          }
+
+          if (notificationTitle) {
+            await pool.query(
+              `INSERT INTO notifications 
+                (sender_type, sender_id, sender_name, recipient_type, recipient_id, 
+                 type, priority, title, body, action_url, action_data, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+              [
+                'user',
+                userId,
+                clientName,
+                'law_firm',
+                task.law_firm_id,
+                notificationType,
+                'medium',
+                notificationTitle,
+                notificationBody,
+                'verdictpath://tasks',
+                JSON.stringify({ taskId: task.id, clientId: userId, newStatus: status }),
+                'pending'
+              ]
+            );
+          }
+        } catch (notifError) {
+          console.error('Error sending task update notification:', notifError);
+        }
+      }
+
       res.json({
         success: true,
         message: message,

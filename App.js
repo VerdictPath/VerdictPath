@@ -69,6 +69,7 @@ import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatConversationScreen from './src/screens/ChatConversationScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
+import TaskDetailScreen from './src/screens/TaskDetailScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
@@ -115,6 +116,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [currentMedicalProviderUser, setCurrentMedicalProviderUser] = useState(null);
   const [selectedMedicalUserId, setSelectedMedicalUserId] = useState(null);
   const [changePasswordData, setChangePasswordData] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -1352,6 +1354,21 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <ActionDashboardScreen 
           user={user}
           onNavigate={handleNavigateInternal}
+          onSelectTask={(task) => {
+            setSelectedTask(task);
+            setCurrentScreen('task-detail');
+          }}
+        />
+      )}
+
+      {currentScreen === 'task-detail' && selectedTask && (
+        <TaskDetailScreen 
+          user={user}
+          task={selectedTask}
+          onNavigate={handleNavigateInternal}
+          onTaskUpdated={() => {
+            setSelectedTask(null);
+          }}
         />
       )}
 
@@ -1814,7 +1831,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
       
         {/* Bottom Navigation - only show for individual user screens */}
-        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'profile'].includes(currentScreen) && (
+        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile'].includes(currentScreen) && (
           <BottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
