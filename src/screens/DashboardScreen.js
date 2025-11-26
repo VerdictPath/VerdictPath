@@ -191,7 +191,7 @@ const DashboardScreen = ({
           />
           <QuickActionButton
             imageSource={require('../../attached_assets/Fighting Ships_1764038386285.png')}
-            title="Actions"
+            title="Tasks"
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('actions')}
           />

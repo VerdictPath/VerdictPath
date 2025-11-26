@@ -404,7 +404,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
                   <Text style={[
                     styles.headerTitle,
                     { fontSize: isDesktop ? 34 : isTablet ? 30 : 28 }
-                  ]}>⚓ Action Dashboard</Text>
+                  ]}>⚓ Task Dashboard</Text>
                   <Text style={[
                     styles.headerSubtitle,
                     { fontSize: isDesktop ? 16 : 14 }
