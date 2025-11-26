@@ -107,10 +107,10 @@ router.get('/dashboard', async (req, res) => {
         (SELECT COUNT(*) FROM users WHERE user_type = 'individual') as individuals,
         (SELECT COUNT(*) FROM law_firms) as law_firms,
         (SELECT COUNT(*) FROM medical_providers) as medical_providers,
-        (SELECT COUNT(*) FROM law_firm_users WHERE is_active = true) as law_firm_users,
-        (SELECT COUNT(*) FROM medical_provider_users WHERE is_active = true) as medical_provider_users,
+        (SELECT COUNT(*) FROM law_firm_users WHERE status = 'active') as law_firm_users,
+        (SELECT COUNT(*) FROM medical_provider_users WHERE status = 'active') as medical_provider_users,
         (SELECT COUNT(*) FROM users WHERE subscription_tier != 'free' AND subscription_tier IS NOT NULL) as active_subscriptions,
-        (SELECT COALESCE(SUM(coins), 0) FROM users) as total_coins
+        (SELECT COALESCE(SUM(total_coins), 0) FROM users) as total_coins
     `);
     
     const stats = statsResult.rows[0];
