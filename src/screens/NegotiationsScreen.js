@@ -42,7 +42,7 @@ const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
   }
 };
 
-const NegotiationsScreen = ({ user, onBack, hideHeader = false }) => {
+const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 0 }) => {
   const [loading, setLoading] = useState(true);
   const [negotiations, setNegotiations] = useState([]);
   const [selectedNegotiation, setSelectedNegotiation] = useState(null);
@@ -1074,7 +1074,11 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false }) => {
           <Text style={styles.newNegotiationButtonText}>+ Start New Negotiation</Text>
         </TouchableOpacity>
 
-        <ScrollView style={styles.negotiationsList}>
+        <ScrollView 
+          style={styles.negotiationsList}
+          contentContainerStyle={{ paddingBottom: bottomPadding || 20 }}
+          showsVerticalScrollIndicator={true}
+        >
           {negotiations.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>

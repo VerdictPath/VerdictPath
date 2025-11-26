@@ -11,7 +11,7 @@ import {
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
-const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = false }) => {
+const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = false, bottomPadding = 0 }) => {
   const [disbursements, setDisbursements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -176,6 +176,8 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 
       <ScrollView
         style={styles.content}
+        contentContainerStyle={{ paddingBottom: bottomPadding || 20 }}
+        showsVerticalScrollIndicator={true}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

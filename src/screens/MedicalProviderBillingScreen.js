@@ -3,9 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Platform,
 } from 'react-native';
 import { theme } from '../styles/theme';
 import ReceivedDisbursementsScreen from './ReceivedDisbursementsScreen';
@@ -40,22 +40,24 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={true}
-        >
+        <View style={styles.content}>
           {activeTab === 'negotiations' ? (
-            <NegotiationsScreen user={user} onBack={onBack} hideHeader={true} />
+            <NegotiationsScreen 
+              user={user} 
+              onBack={onBack} 
+              hideHeader={true}
+              bottomPadding={100}
+            />
           ) : (
             <ReceivedDisbursementsScreen 
               user={user} 
               userType="medical_provider" 
               onBack={onBack}
               hideHeader={true}
+              bottomPadding={100}
             />
           )}
-        </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -111,10 +113,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  contentContainer: {
-    flexGrow: 1,
-    paddingBottom: 100,
+    marginBottom: Platform.OS === 'ios' ? 80 : 70,
   },
 });
 
