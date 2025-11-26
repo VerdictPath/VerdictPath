@@ -18,9 +18,11 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
   const [accountStatus, setAccountStatus] = useState(null);
   const [settingUpAccount, setSettingUpAccount] = useState(false);
 
-  const isLawFirm = user.userType === 'lawfirm';
-  const actionText = isLawFirm ? 'send' : 'receive';
-  const disbursementText = isLawFirm ? 'send settlement disbursements' : 'receive settlement disbursements';
+  const isLawFirm = user.userType === 'lawfirm' || user.userType === 'lawfirm_user';
+  const isMedicalProvider = user.userType === 'medical_provider' || user.userType === 'medical_provider_user';
+  const isIndividual = user.userType === 'individual' || user.userType === 'client';
+
+  console.log('[StripeOnboarding] User type:', user.userType, 'isLawFirm:', isLawFirm);
 
   useEffect(() => {
     checkAccountStatus();
@@ -45,12 +47,68 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
     }
   };
 
-  const handleSetupAccount = async () => {
+  const handleSetupLawFirmPayment = async () => {
     try {
       setSettingUpAccount(true);
 
-      const accountType = user.userType === 'lawfirm' ? 'law_firm' : 
-                         user.userType === 'medical_provider' ? 'medical_provider' : 'client';
+      // First create customer if needed
+      await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.CREATE_CUSTOMER, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      // Then open billing portal to add payment method
+      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.BILLING_PORTAL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (response.url) {
+        if (Platform.OS === 'web') {
+          window.open(response.url, '_blank');
+          Alert.alert(
+            'Payment Setup',
+            'A new window has opened for you to add your payment method. Complete the setup and return here.',
+            [
+              {
+                text: 'I Completed Setup',
+                onPress: () => checkAccountStatus()
+              },
+              {
+                text: 'Cancel',
+                style: 'cancel'
+              }
+            ]
+          );
+        } else {
+          await Linking.openURL(response.url);
+          Alert.alert(
+            'Payment Setup',
+            'Please add your payment method in the browser and return to the app.',
+            [
+              {
+                text: 'I Completed Setup',
+                onPress: () => checkAccountStatus()
+              }
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error setting up payment:', error);
+      Alert.alert('Error', error.message || 'Failed to set up payment method');
+    } finally {
+      setSettingUpAccount(false);
+    }
+  };
+
+  const handleSetupConnectAccount = async () => {
+    try {
+      setSettingUpAccount(true);
 
       const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.CREATE_ACCOUNT, {
         method: 'POST',
@@ -58,7 +116,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           'Authorization': `Bearer ${user.token}`
         },
         body: JSON.stringify({
-          accountType: accountType,
           email: user.email
         })
       });
@@ -102,25 +159,88 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
     }
   };
 
-  const handleAccessDashboard = async () => {
+  const handleResumeOnboarding = async () => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.DASHBOARD_LINK, {
+      setSettingUpAccount(true);
+
+      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.ONBOARDING_LINK, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
 
-      if (response.url) {
+      if (response.onboardingUrl) {
         if (Platform.OS === 'web') {
-          window.open(response.url, '_blank');
+          window.open(response.onboardingUrl, '_blank');
+          Alert.alert(
+            'Complete Setup',
+            'Please finish your account setup in the new window.',
+            [
+              {
+                text: 'I Completed Setup',
+                onPress: () => checkAccountStatus()
+              }
+            ]
+          );
         } else {
-          await Linking.openURL(response.url);
+          await Linking.openURL(response.onboardingUrl);
+          Alert.alert(
+            'Complete Setup',
+            'Please finish your account setup and return to the app.',
+            [
+              {
+                text: 'I Completed Setup',
+                onPress: () => checkAccountStatus()
+              }
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error resuming onboarding:', error);
+      Alert.alert('Error', error.message || 'Failed to resume setup');
+    } finally {
+      setSettingUpAccount(false);
+    }
+  };
+
+  const handleAccessDashboard = async () => {
+    try {
+      if (isLawFirm) {
+        const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.BILLING_PORTAL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (response.url) {
+          if (Platform.OS === 'web') {
+            window.open(response.url, '_blank');
+          } else {
+            await Linking.openURL(response.url);
+          }
+        }
+      } else {
+        const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.DASHBOARD_LINK, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (response.url) {
+          if (Platform.OS === 'web') {
+            window.open(response.url, '_blank');
+          } else {
+            await Linking.openURL(response.url);
+          }
         }
       }
     } catch (error) {
       console.error('Error accessing dashboard:', error);
-      Alert.alert('Error', 'Failed to access Stripe dashboard');
+      Alert.alert('Error', 'Failed to access payment dashboard');
     }
   };
 
@@ -141,8 +261,221 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
     );
   }
 
-  const isAccountComplete = accountStatus?.onboardingComplete;
   const hasAccount = accountStatus?.hasAccount;
+  const isComplete = accountStatus?.onboardingComplete;
+  const hasPaymentMethod = accountStatus?.hasPaymentMethod;
+  const paymentMethods = accountStatus?.paymentMethods || [];
+
+  const renderLawFirmContent = () => {
+    if (!hasAccount) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💳 Set Up Payment Method</Text>
+          <Text style={styles.description}>
+            To send settlement disbursements to clients and medical providers, 
+            you need to add a payment method to your account.
+          </Text>
+
+          <View style={styles.benefitsList}>
+            <Text style={styles.benefitItem}>✓ Securely process disbursements</Text>
+            <Text style={styles.benefitItem}>✓ Pay clients directly</Text>
+            <Text style={styles.benefitItem}>✓ Pay medical providers</Text>
+            <Text style={styles.benefitItem}>✓ Track all transactions</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, settingUpAccount && styles.disabledButton]}
+            onPress={handleSetupLawFirmPayment}
+            disabled={settingUpAccount}
+          >
+            {settingUpAccount ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Add Payment Method</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.secureNote}>
+            🔒 Your payment information is secure and encrypted via Stripe.
+          </Text>
+        </View>
+      );
+    }
+
+    if (!hasPaymentMethod) {
+      return (
+        <View style={styles.section}>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusBadgeText}>⚠️ No Payment Method</Text>
+          </View>
+
+          <Text style={styles.sectionTitle}>Add a Payment Method</Text>
+          <Text style={styles.description}>
+            Your account is created, but you need to add a payment method
+            to process disbursements.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, settingUpAccount && styles.disabledButton]}
+            onPress={handleSetupLawFirmPayment}
+            disabled={settingUpAccount}
+          >
+            {settingUpAccount ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Add Payment Method</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.section}>
+        <View style={[styles.statusBadge, styles.successBadge]}>
+          <Text style={styles.statusBadgeText}>✓ Payment Ready</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Payment Account Active!</Text>
+        <Text style={styles.description}>
+          Your payment method is set up and you're ready to process disbursements.
+        </Text>
+
+        {paymentMethods.length > 0 && (
+          <View style={styles.statusDetails}>
+            <Text style={styles.statusLabel}>Payment Methods:</Text>
+            {paymentMethods.map((pm, index) => (
+              <Text key={index} style={[styles.statusValue, styles.successText]}>
+                ✓ {pm.brand.toUpperCase()} •••• {pm.last4}
+              </Text>
+            ))}
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handleAccessDashboard}
+        >
+          <Text style={styles.secondaryButtonText}>Manage Payment Methods</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.dashboardNote}>
+          Update or change your payment method at any time.
+        </Text>
+      </View>
+    );
+  };
+
+  const renderRecipientContent = () => {
+    const userTypeLabel = isMedicalProvider ? 'medical provider' : 'client';
+
+    if (!hasAccount) {
+      return (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>💰 Set Up Your Payout Account</Text>
+          <Text style={styles.description}>
+            To receive settlement disbursements, you need to connect your bank account
+            through Stripe. This ensures you receive payments securely.
+          </Text>
+
+          <View style={styles.benefitsList}>
+            <Text style={styles.benefitItem}>✓ Secure bank account connection</Text>
+            <Text style={styles.benefitItem}>✓ Receive settlements directly</Text>
+            <Text style={styles.benefitItem}>✓ Fast payouts to your bank</Text>
+            <Text style={styles.benefitItem}>✓ Track all incoming payments</Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, settingUpAccount && styles.disabledButton]}
+            onPress={handleSetupConnectAccount}
+            disabled={settingUpAccount}
+          >
+            {settingUpAccount ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Set Up Payout Account</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.secureNote}>
+            🔒 Your information is secure and encrypted. Verdict Path uses Stripe for payment processing.
+          </Text>
+        </View>
+      );
+    }
+
+    if (!isComplete) {
+      return (
+        <View style={styles.section}>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusBadgeText}>⚠️ Setup Incomplete</Text>
+          </View>
+
+          <Text style={styles.sectionTitle}>Complete Your Account Setup</Text>
+          <Text style={styles.description}>
+            Your payout account has been created, but you need to complete the 
+            onboarding process to receive payments.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.primaryButton, settingUpAccount && styles.disabledButton]}
+            onPress={handleResumeOnboarding}
+            disabled={settingUpAccount}
+          >
+            {settingUpAccount ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Resume Setup</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.statusDetails}>
+            <Text style={styles.statusLabel}>Account Status:</Text>
+            <Text style={styles.statusValue}>
+              Details Submitted: {accountStatus.detailsSubmitted ? '✓ Yes' : '✗ No'}
+            </Text>
+            <Text style={styles.statusValue}>
+              Payouts: {accountStatus.payoutsEnabled ? '✓ Enabled' : '✗ Not Enabled'}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.section}>
+        <View style={[styles.statusBadge, styles.successBadge]}>
+          <Text style={styles.statusBadgeText}>✓ Account Active</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Your Payout Account is Ready!</Text>
+        <Text style={styles.description}>
+          Your bank account is connected and you're ready to receive settlement disbursements.
+        </Text>
+
+        <View style={styles.statusDetails}>
+          <Text style={styles.statusLabel}>Account Status:</Text>
+          <Text style={[styles.statusValue, styles.successText]}>
+            ✓ Payouts Enabled
+          </Text>
+          <Text style={[styles.statusValue, styles.successText]}>
+            ✓ Details Submitted
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handleAccessDashboard}
+        >
+          <Text style={styles.secondaryButtonText}>Access Stripe Dashboard</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.dashboardNote}>
+          View payment history, update banking information, and manage your account.
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -158,103 +491,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={true}
       >
-        {!hasAccount && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>💳 Set Up Your Payment Account</Text>
-            <Text style={styles.description}>
-              To {disbursementText}, you need to connect a bank account through Stripe.
-              This secure process ensures you can {actionText} payments directly {isLawFirm ? 'from' : 'to'} your account.
-            </Text>
-
-            <View style={styles.benefitsList}>
-              <Text style={styles.benefitItem}>✓ Secure bank account connection</Text>
-              <Text style={styles.benefitItem}>✓ {isLawFirm ? 'Send' : 'Receive'} settlement funds securely</Text>
-              <Text style={styles.benefitItem}>✓ Track all payments in one place</Text>
-              <Text style={styles.benefitItem}>✓ FDIC-insured transfers</Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, settingUpAccount && styles.disabledButton]}
-              onPress={handleSetupAccount}
-              disabled={settingUpAccount}
-            >
-              {settingUpAccount ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Set Up Payment Account</Text>
-              )}
-            </TouchableOpacity>
-
-            <Text style={styles.secureNote}>
-              🔒 Your information is secure and encrypted. Verdict Path uses Stripe for payment processing.
-            </Text>
-          </View>
-        )}
-
-        {hasAccount && !isAccountComplete && (
-          <View style={styles.section}>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>⚠️ Setup Incomplete</Text>
-            </View>
-
-            <Text style={styles.sectionTitle}>Complete Your Account Setup</Text>
-            <Text style={styles.description}>
-              Your payment account has been created, but you need to complete the onboarding process
-              to {disbursementText}.
-            </Text>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleSetupAccount}
-            >
-              <Text style={styles.primaryButtonText}>Resume Setup</Text>
-            </TouchableOpacity>
-
-            <View style={styles.statusDetails}>
-              <Text style={styles.statusLabel}>Account Status:</Text>
-              <Text style={styles.statusValue}>
-                Charges: {accountStatus.chargesEnabled ? '✓ Enabled' : '✗ Not Enabled'}
-              </Text>
-              <Text style={styles.statusValue}>
-                Payouts: {accountStatus.payoutsEnabled ? '✓ Enabled' : '✗ Not Enabled'}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {isAccountComplete && (
-          <View style={styles.section}>
-            <View style={[styles.statusBadge, styles.successBadge]}>
-              <Text style={styles.statusBadgeText}>✓ Account Active</Text>
-            </View>
-
-            <Text style={styles.sectionTitle}>Your Payment Account is Ready!</Text>
-            <Text style={styles.description}>
-              Your bank account is connected and you're ready to {disbursementText}.
-            </Text>
-
-            <View style={styles.statusDetails}>
-              <Text style={styles.statusLabel}>Account Status:</Text>
-              <Text style={[styles.statusValue, styles.successText]}>
-                ✓ Charges Enabled
-              </Text>
-              <Text style={[styles.statusValue, styles.successText]}>
-                ✓ Payouts Enabled
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleAccessDashboard}
-            >
-              <Text style={styles.secondaryButtonText}>Access Stripe Dashboard</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.dashboardNote}>
-              View your payment history, update banking information, and manage your account settings.
-            </Text>
-          </View>
-        )}
+        {isLawFirm ? renderLawFirmContent() : renderRecipientContent()}
 
         <TouchableOpacity
           style={styles.refreshButton}

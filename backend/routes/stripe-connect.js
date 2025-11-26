@@ -19,6 +19,26 @@ const getBaseUrl = () => {
   return 'http://localhost:5000';
 };
 
+// Helper to get law firm ID for law firm users
+const getLawFirmId = async (userId, userType) => {
+  if (userType === 'lawfirm') {
+    return userId;
+  }
+  if (userType === 'lawfirm_user') {
+    const result = await db.query(
+      'SELECT law_firm_id FROM law_firm_users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0]?.law_firm_id;
+  }
+  return null;
+};
+
+// Check if user is a law firm or law firm user
+const isLawFirmRole = (userType) => {
+  return userType === 'lawfirm' || userType === 'lawfirm_user';
+};
+
 // ============================================================
 // LAW FIRM ENDPOINTS (Stripe Customer - they PAY money)
 // ============================================================
@@ -32,14 +52,20 @@ router.post('/create-customer', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    if (userType !== 'lawfirm') {
+    if (!isLawFirmRole(userType)) {
       return res.status(403).json({ error: 'Only law firms can create customer accounts' });
+    }
+
+    // Get the law firm ID (for law firm users, look up parent firm)
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
     }
 
     // Get law firm details
     const lawFirmResult = await db.query(
       'SELECT id, firm_name, email, stripe_customer_id FROM law_firms WHERE id = $1',
-      [userId]
+      [lawFirmId]
     );
 
     if (lawFirmResult.rows.length === 0) {
@@ -65,7 +91,7 @@ router.post('/create-customer', authenticateToken, async (req, res) => {
       // Save customer ID to database
       await db.query(
         'UPDATE law_firms SET stripe_customer_id = $1 WHERE id = $2',
-        [customerId, userId]
+        [customerId, lawFirmId]
       );
     }
 
@@ -89,14 +115,19 @@ router.post('/create-setup-intent', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    if (userType !== 'lawfirm') {
+    if (!isLawFirmRole(userType)) {
       return res.status(403).json({ error: 'Only law firms can set up payment methods' });
+    }
+
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
     }
 
     // Get or create customer first
     let lawFirmResult = await db.query(
       'SELECT stripe_customer_id, firm_name, email FROM law_firms WHERE id = $1',
-      [userId]
+      [lawFirmId]
     );
 
     let customerId = lawFirmResult.rows[0]?.stripe_customer_id;
@@ -107,7 +138,7 @@ router.post('/create-setup-intent', authenticateToken, async (req, res) => {
         email: lawFirmResult.rows[0].email,
         name: lawFirmResult.rows[0].firm_name,
         metadata: {
-          law_firm_id: userId,
+          law_firm_id: lawFirmId,
           type: 'law_firm'
         }
       });
@@ -116,7 +147,7 @@ router.post('/create-setup-intent', authenticateToken, async (req, res) => {
 
       await db.query(
         'UPDATE law_firms SET stripe_customer_id = $1 WHERE id = $2',
-        [customerId, userId]
+        [customerId, lawFirmId]
       );
     }
 
@@ -126,7 +157,7 @@ router.post('/create-setup-intent', authenticateToken, async (req, res) => {
       payment_method_types: ['card'],
       usage: 'off_session',
       metadata: {
-        law_firm_id: userId
+        law_firm_id: lawFirmId
       }
     });
 
@@ -151,13 +182,18 @@ router.post('/create-billing-portal', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    if (userType !== 'lawfirm') {
+    if (!isLawFirmRole(userType)) {
       return res.status(403).json({ error: 'Only law firms can access billing portal' });
+    }
+
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
     }
 
     const lawFirmResult = await db.query(
       'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
-      [userId]
+      [lawFirmId]
     );
 
     const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
@@ -193,13 +229,18 @@ router.get('/customer-status', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    if (userType !== 'lawfirm') {
+    if (!isLawFirmRole(userType)) {
       return res.status(403).json({ error: 'Only law firms can check customer status' });
+    }
+
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
     }
 
     const lawFirmResult = await db.query(
       'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
-      [userId]
+      [lawFirmId]
     );
 
     const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
@@ -208,7 +249,8 @@ router.get('/customer-status', authenticateToken, async (req, res) => {
       return res.json({
         hasCustomer: false,
         hasPaymentMethod: false,
-        paymentMethods: []
+        paymentMethods: [],
+        flow: 'customer'
       });
     }
 
@@ -232,7 +274,8 @@ router.get('/customer-status', authenticateToken, async (req, res) => {
         last4: pm.card.last4,
         expMonth: pm.card.exp_month,
         expYear: pm.card.exp_year
-      }))
+      })),
+      flow: 'customer'
     });
 
   } catch (error) {
@@ -251,13 +294,18 @@ router.post('/set-default-payment-method', authenticateToken, async (req, res) =
     const userType = req.user.userType;
     const { paymentMethodId } = req.body;
 
-    if (userType !== 'lawfirm') {
+    if (!isLawFirmRole(userType)) {
       return res.status(403).json({ error: 'Only law firms can set payment methods' });
+    }
+
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
     }
 
     const lawFirmResult = await db.query(
       'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
-      [userId]
+      [lawFirmId]
     );
 
     const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
@@ -291,29 +339,35 @@ router.post('/set-default-payment-method', authenticateToken, async (req, res) =
  */
 router.post('/create-account', authenticateToken, async (req, res) => {
   try {
-    const { email } = req.body;
     const userId = req.user.id;
     const userType = req.user.userType;
 
     // Law firms should use customer endpoints, not connect
-    if (userType === 'lawfirm') {
+    if (isLawFirmRole(userType)) {
       return res.status(400).json({ 
         error: 'Law firms should use /create-customer endpoint instead',
-        redirect: 'customer'
+        redirect: 'customer',
+        flow: 'customer'
       });
     }
 
-    // Check if user already has a Stripe account
-    let checkQuery;
+    // Get user email from database (security: don't trust client-provided email)
+    let userQuery;
+    let emailField = 'email';
     if (userType === 'individual' || userType === 'client') {
-      checkQuery = 'SELECT stripe_account_id FROM users WHERE id = $1';
+      userQuery = 'SELECT email, stripe_account_id FROM users WHERE id = $1';
     } else if (userType === 'medical_provider') {
-      checkQuery = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
+      userQuery = 'SELECT email, stripe_account_id FROM medical_providers WHERE id = $1';
     } else {
-      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
+      return res.status(400).json({ error: `Unsupported account type: ${userType}`, flow: 'unknown' });
     }
 
-    const existingResult = await db.query(checkQuery, [userId]);
+    const existingResult = await db.query(userQuery, [userId]);
+    if (existingResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userEmail = existingResult.rows[0].email;
     let accountId = existingResult.rows[0]?.stripe_account_id;
 
     // Only create a new account if one doesn't exist
@@ -321,7 +375,7 @@ router.post('/create-account', authenticateToken, async (req, res) => {
       const account = await stripe.accounts.create({
         type: 'express',
         country: 'US',
-        email: email,
+        email: userEmail,
         capabilities: {
           transfers: { requested: true }
         },
@@ -376,11 +430,18 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    // For law firms, redirect to customer-status
-    if (userType === 'lawfirm') {
+    console.log('[account-status] Checking for userId:', userId, 'userType:', userType);
+
+    // For law firms and law firm users, check customer status
+    if (isLawFirmRole(userType)) {
+      const lawFirmId = await getLawFirmId(userId, userType);
+      if (!lawFirmId) {
+        return res.status(404).json({ error: 'Law firm not found' });
+      }
+
       const lawFirmResult = await db.query(
         'SELECT stripe_customer_id FROM law_firms WHERE id = $1',
-        [userId]
+        [lawFirmId]
       );
 
       const customerId = lawFirmResult.rows[0]?.stripe_customer_id;
@@ -389,7 +450,8 @@ router.get('/account-status', authenticateToken, async (req, res) => {
         return res.json({
           hasAccount: false,
           onboardingComplete: false,
-          isCustomer: true
+          isCustomer: true,
+          flow: 'customer'
         });
       }
 
@@ -407,6 +469,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
         hasAccount: true,
         onboardingComplete: hasPaymentMethod,
         isCustomer: true,
+        flow: 'customer',
         customerId: customerId,
         hasPaymentMethod: hasPaymentMethod,
         paymentMethods: paymentMethods.data.map(pm => ({
@@ -424,7 +487,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     } else if (userType === 'medical_provider') {
       query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
     } else {
-      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
+      return res.status(400).json({ error: `Unsupported account type: ${userType}`, flow: 'unknown' });
     }
 
     const result = await db.query(query, [userId]);
@@ -434,7 +497,8 @@ router.get('/account-status', authenticateToken, async (req, res) => {
       return res.json({
         hasAccount: false,
         onboardingComplete: false,
-        isCustomer: false
+        isCustomer: false,
+        flow: 'connect'
       });
     }
 
@@ -446,6 +510,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
       hasAccount: true,
       onboardingComplete: account.details_submitted && account.payouts_enabled,
       isCustomer: false,
+      flow: 'connect',
       accountId: stripeAccountId,
       chargesEnabled: account.charges_enabled,
       payoutsEnabled: account.payouts_enabled,
@@ -468,9 +533,10 @@ router.post('/create-dashboard-link', authenticateToken, async (req, res) => {
     const userType = req.user.userType;
 
     // Law firms should use billing portal
-    if (userType === 'lawfirm') {
+    if (isLawFirmRole(userType)) {
       return res.status(400).json({ 
-        error: 'Law firms should use /create-billing-portal endpoint instead' 
+        error: 'Law firms should use /create-billing-portal endpoint instead',
+        redirect: 'billing-portal'
       });
     }
 
@@ -511,8 +577,11 @@ router.post('/create-onboarding-link', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    if (userType === 'lawfirm') {
-      return res.status(400).json({ error: 'Law firms do not use Connect onboarding' });
+    if (isLawFirmRole(userType)) {
+      return res.status(400).json({ 
+        error: 'Law firms do not use Connect onboarding',
+        redirect: 'customer'
+      });
     }
 
     let query;

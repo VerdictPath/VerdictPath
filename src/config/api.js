@@ -207,10 +207,20 @@ export const API_ENDPOINTS = {
 
   // Stripe Connect (Payment Setup)
   STRIPE_CONNECT: {
-    CREATE_ACCOUNT: `${API_BASE_URL}/api/stripe-connect/create-account`,
+    // Shared endpoints (role-aware)
     ACCOUNT_STATUS: `${API_BASE_URL}/api/stripe-connect/account-status`,
-    ONBOARDING_LINK: `${API_BASE_URL}/api/stripe-connect/onboarding-link`,
-    DASHBOARD_LINK: `${API_BASE_URL}/api/stripe-connect/dashboard-link`,
+    
+    // Law Firm endpoints (Stripe Customer - they pay)
+    CREATE_CUSTOMER: `${API_BASE_URL}/api/stripe-connect/create-customer`,
+    CUSTOMER_STATUS: `${API_BASE_URL}/api/stripe-connect/customer-status`,
+    CREATE_SETUP_INTENT: `${API_BASE_URL}/api/stripe-connect/create-setup-intent`,
+    BILLING_PORTAL: `${API_BASE_URL}/api/stripe-connect/create-billing-portal`,
+    SET_DEFAULT_PAYMENT: `${API_BASE_URL}/api/stripe-connect/set-default-payment-method`,
+    
+    // Recipient endpoints (Stripe Connect - they receive)
+    CREATE_ACCOUNT: `${API_BASE_URL}/api/stripe-connect/create-account`,
+    ONBOARDING_LINK: `${API_BASE_URL}/api/stripe-connect/create-onboarding-link`,
+    DASHBOARD_LINK: `${API_BASE_URL}/api/stripe-connect/create-dashboard-link`,
   },
 };
 
