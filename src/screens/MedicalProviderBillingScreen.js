@@ -40,7 +40,11 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={true}
+        >
           {activeTab === 'negotiations' ? (
             <NegotiationsScreen user={user} onBack={onBack} hideHeader={true} />
           ) : (
@@ -51,7 +55,7 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
               hideHeader={true}
             />
           )}
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -107,6 +111,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 100,
   },
 });
 
