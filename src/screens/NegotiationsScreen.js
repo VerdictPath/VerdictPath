@@ -148,25 +148,41 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           if (selectedNegotiation) {
             const updatedSelected = updatedNegotiations.find(n => n.id === selectedNegotiation.id);
             if (updatedSelected) {
+              console.log('🔄 Real-time update for selected negotiation:', {
+                id: updatedSelected.id,
+                status: updatedSelected.status,
+                lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
+                currentOffer: updatedSelected.current_offer || updatedSelected.currentOffer
+              });
               setSelectedNegotiation(prev => ({
                 ...prev,
                 ...updatedSelected,
-                billAmount: parseFloat(updatedSelected.bill_amount || updatedSelected.billAmount || 0),
-                currentOffer: parseFloat(updatedSelected.current_offer || updatedSelected.currentOffer || 0),
-                billDescription: updatedSelected.bill_description || updatedSelected.billDescription,
-                clientId: updatedSelected.client_id || updatedSelected.clientId,
-                clientName: updatedSelected.client_name || updatedSelected.clientName,
-                lawFirmId: updatedSelected.law_firm_id || updatedSelected.lawFirmId,
-                firmName: updatedSelected.firm_name || updatedSelected.firmName,
-                medicalProviderId: updatedSelected.medical_provider_id || updatedSelected.medicalProviderId,
-                providerName: updatedSelected.provider_name || updatedSelected.providerName,
-                initiatedBy: updatedSelected.initiated_by || updatedSelected.initiatedBy,
+                // Critical fields for UI state (status, turn tracking)
+                status: updatedSelected.status || prev.status,
+                initiatedBy: updatedSelected.initiated_by || updatedSelected.initiatedBy || prev.initiatedBy,
                 lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
-                interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || 0),
-                callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone,
-                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes,
-                callRequestBy: updatedSelected.call_request_by || updatedSelected.callRequestBy,
-                history: updatedSelected.history || prev.history || []
+                // Amount fields
+                billAmount: parseFloat(updatedSelected.bill_amount || updatedSelected.billAmount || prev.billAmount || 0),
+                currentOffer: parseFloat(updatedSelected.current_offer || updatedSelected.currentOffer || prev.currentOffer || 0),
+                billDescription: updatedSelected.bill_description || updatedSelected.billDescription || prev.billDescription,
+                // IDs and names
+                clientId: updatedSelected.client_id || updatedSelected.clientId || prev.clientId,
+                clientName: updatedSelected.client_name || updatedSelected.clientName || prev.clientName,
+                lawFirmId: updatedSelected.law_firm_id || updatedSelected.lawFirmId || prev.lawFirmId,
+                firmName: updatedSelected.firm_name || updatedSelected.firmName || prev.firmName,
+                medicalProviderId: updatedSelected.medical_provider_id || updatedSelected.medicalProviderId || prev.medicalProviderId,
+                providerName: updatedSelected.provider_name || updatedSelected.providerName || prev.providerName,
+                // Interaction tracking
+                interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || prev.interactionCount || 0),
+                // Call request details
+                callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone || prev.callRequestPhone,
+                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes || prev.callRequestNotes,
+                callRequestBy: updatedSelected.call_request_by || updatedSelected.callRequestBy || prev.callRequestBy,
+                // History
+                history: updatedSelected.history || prev.history || [],
+                // Timestamps
+                updatedAt: updatedSelected.updated_at || updatedSelected.updatedAt || prev.updatedAt,
+                acceptedAt: updatedSelected.accepted_at || updatedSelected.acceptedAt || prev.acceptedAt
               }));
             }
           }
