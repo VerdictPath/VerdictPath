@@ -777,10 +777,12 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Settlement Disbursements</Text>
+        <View style={styles.headerRow}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Settlement Disbursements</Text>
+        </View>
       </View>
 
       {/* Stripe Connect Status Banner */}
@@ -860,18 +862,25 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: theme.colors.primary,
-    padding: 20,
-    paddingTop: 60
+    padding: 16,
+    paddingTop: 50,
+    paddingBottom: 16
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   backButton: {
-    marginBottom: 10
+    padding: 8,
+    marginRight: 12
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16
+    fontSize: 22,
+    fontWeight: '600'
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff'
   },

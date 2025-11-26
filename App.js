@@ -1465,11 +1465,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'lawfirm-disbursements' && (
-        <DisbursementDashboardScreen
-          user={user}
-          onBack={handleBackToLawFirmDashboard}
-          onNavigate={handleNavigateInternal}
-        />
+        <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
+          <DisbursementDashboardScreen
+            user={user}
+            onBack={handleBackToLawFirmDashboard}
+            onNavigate={handleNavigateInternal}
+          />
+        </View>
       )}
 
       {currentScreen === 'lawfirm-user-management' && (
