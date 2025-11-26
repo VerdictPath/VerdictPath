@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Linking
+  Linking,
+  ScrollView
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
@@ -128,7 +129,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Payment Account Setup</Text>
         </View>
@@ -147,12 +148,16 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Payment Account Setup</Text>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+      >
         {!hasAccount && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>💳 Set Up Your Payment Account</Text>
@@ -257,7 +262,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         >
           <Text style={styles.refreshButtonText}>🔄 Refresh Status</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -271,16 +276,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+    paddingTop: 50,
     backgroundColor: theme.colors.primary,
     borderBottomWidth: 2,
     borderBottomColor: '#8B4513'
   },
   backButton: {
+    padding: 8,
     marginRight: 12
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: '600'
   },
   title: {
@@ -299,8 +306,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary
   },
   content: {
-    flex: 1,
-    padding: 16
+    flex: 1
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 90
   },
   section: {
     backgroundColor: '#fff',
