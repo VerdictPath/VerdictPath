@@ -134,7 +134,14 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                 negotiationMap.set(updated.id, normalized);
               }
             });
-            return Array.from(negotiationMap.values());
+            // Sort by updatedAt descending (newest first) after merging updates
+            const mergedList = Array.from(negotiationMap.values());
+            mergedList.sort((a, b) => {
+              const dateA = new Date(a.updatedAt || a.updated_at || a.synced_at || 0);
+              const dateB = new Date(b.updatedAt || b.updated_at || b.synced_at || 0);
+              return dateB - dateA;
+            });
+            return mergedList;
           });
           
           // Also update selected negotiation if it was updated
@@ -231,7 +238,13 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
         callRequestNotes: neg.call_request_notes
       }));
       
-      setNegotiations(normalizedNegotiations);
+      // Sort by updatedAt descending (newest first)
+      const sortedNegotiations = normalizedNegotiations.sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.updated_at || 0);
+        const dateB = new Date(b.updatedAt || b.updated_at || 0);
+        return dateB - dateA;
+      });
+      setNegotiations(sortedNegotiations);
     } catch (error) {
       console.error('Error loading negotiations:', error);
       showAlert('Error', 'Failed to load negotiations');
