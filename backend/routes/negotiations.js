@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
+const { 
+  syncNegotiationToFirebase, 
+  syncNegotiationUpdateToFirebase 
+} = require('../services/firebaseSync');
 
 // Helper function to get user type from token
 const getUserType = (user) => {
@@ -211,6 +215,19 @@ router.post('/initiate', authenticateToken, async (req, res) => {
       [negotiation.id, 'initiated', userType, initialOffer, notes || null]
     );
 
+    // Get full negotiation details for Firebase sync
+    const fullNegotiationQuery = await db.query(
+      'SELECT * FROM negotiations_with_details WHERE id = $1',
+      [negotiation.id]
+    );
+    
+    // Sync to Firebase for real-time updates
+    if (fullNegotiationQuery.rows.length > 0) {
+      syncNegotiationToFirebase(fullNegotiationQuery.rows[0]).catch(err => {
+        console.error('Firebase sync failed for new negotiation:', err);
+      });
+    }
+
     // Send push notification to the other party (notifications disabled for now)
     // const otherPartyId = userType === 'law_firm' ? finalMedicalProviderId : lawFirmId;
     // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
@@ -306,6 +323,18 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
       [negotiationId, 'counter_offer', userType, counterOffer, notes || null]
     );
 
+    // Sync update to Firebase for real-time updates
+    const updatedNegotiationQuery = await db.query(
+      'SELECT * FROM negotiations_with_details WHERE id = $1',
+      [negotiationId]
+    );
+    
+    if (updatedNegotiationQuery.rows.length > 0) {
+      syncNegotiationToFirebase(updatedNegotiationQuery.rows[0]).catch(err => {
+        console.error('Firebase sync failed for counter offer:', err);
+      });
+    }
+
     // Send push notification to the other party (notifications disabled for now)
     // const otherPartyId = userType === 'law_firm' 
     //   ? negotiation.medical_provider_id 
@@ -375,6 +404,25 @@ router.post('/accept', authenticateToken, async (req, res) => {
       });
     }
 
+    // Check if negotiation is already accepted
+    if (negotiation.status === 'accepted') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This negotiation has already been accepted' 
+      });
+    }
+
+    // Verify user can accept - you can only accept offers made by the OTHER party
+    // If you made the last offer (last_responded_by = your type), you cannot accept your own offer
+    const lastRespondedBy = negotiation.last_responded_by;
+    
+    if (lastRespondedBy === userType) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'You cannot accept your own offer. Wait for the other party to respond.' 
+      });
+    }
+
     // Update negotiation to accepted
     await db.query(
       `UPDATE negotiations 
@@ -391,6 +439,18 @@ router.post('/accept', authenticateToken, async (req, res) => {
       ) VALUES ($1, $2, $3, $4)`,
       [negotiationId, 'accepted', userType, negotiation.current_offer]
     );
+
+    // Sync update to Firebase for real-time updates
+    const acceptedNegotiationQuery = await db.query(
+      'SELECT * FROM negotiations_with_details WHERE id = $1',
+      [negotiationId]
+    );
+    
+    if (acceptedNegotiationQuery.rows.length > 0) {
+      syncNegotiationToFirebase(acceptedNegotiationQuery.rows[0]).catch(err => {
+        console.error('Firebase sync failed for accepted offer:', err);
+      });
+    }
 
     // Send push notification to the other party (notifications disabled for now)
     // const otherPartyId = userType === 'law_firm' 
@@ -476,6 +536,18 @@ router.post('/request-call', authenticateToken, async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5)`,
       [negotiationId, 'call_requested', userType, phoneNumber, notes || null]
     );
+
+    // Sync update to Firebase for real-time updates
+    const stalledNegotiationQuery = await db.query(
+      'SELECT * FROM negotiations_with_details WHERE id = $1',
+      [negotiationId]
+    );
+    
+    if (stalledNegotiationQuery.rows.length > 0) {
+      syncNegotiationToFirebase(stalledNegotiationQuery.rows[0]).catch(err => {
+        console.error('Firebase sync failed for call request:', err);
+      });
+    }
 
     // Send push notification with phone number to the other party (notifications disabled for now)
     // const otherPartyId = userType === 'law_firm' 

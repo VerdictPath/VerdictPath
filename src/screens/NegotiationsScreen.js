@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,40 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  Linking
+  Linking,
+  Platform
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+import { 
+  initializeFirebase, 
+  subscribeToNegotiations, 
+  authenticateWithBackend 
+} from '../services/firebaseService';
 
-const NegotiationsScreen = ({ user, onBack }) => {
+// Cross-platform alert that works on both mobile and web
+const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
+  if (Platform.OS === 'web') {
+    // On web, use window.confirm for confirmation dialogs, window.alert for info
+    if (buttons.length > 1) {
+      const confirmed = window.confirm(`${title}\n\n${message}`);
+      if (confirmed && buttons[1]?.onPress) {
+        buttons[1].onPress();
+      } else if (!confirmed && buttons[0]?.onPress) {
+        buttons[0].onPress();
+      }
+    } else {
+      window.alert(`${title}\n\n${message}`);
+      if (buttons[0]?.onPress) {
+        buttons[0].onPress();
+      }
+    }
+  } else {
+    Alert.alert(title, message, buttons);
+  }
+};
+
+const NegotiationsScreen = ({ user, onBack, hideHeader = false }) => {
   const [loading, setLoading] = useState(true);
   const [negotiations, setNegotiations] = useState([]);
   const [selectedNegotiation, setSelectedNegotiation] = useState(null);
@@ -39,9 +67,110 @@ const NegotiationsScreen = ({ user, onBack }) => {
   // Call request state
   const [phoneNumber, setPhoneNumber] = useState('');
   const [callNotes, setCallNotes] = useState('');
+  
+  // Firebase real-time subscription refs
+  const firebaseUnsubscribeRef = useRef(null);
+  const [firebaseConnected, setFirebaseConnected] = useState(false);
 
   const isLawFirm = user?.type === 'LAW_FIRM' || user?.userType === 'lawfirm';
   const isMedicalProvider = user?.type === 'MEDICAL_PROVIDER' || user?.userType === 'medical_provider';
+
+  // Setup Firebase real-time listeners for negotiations
+  const setupFirebaseListeners = useCallback(async () => {
+    if (!user?.token) return;
+    
+    try {
+      console.log('🔥 Setting up Firebase real-time listeners for negotiations...');
+      
+      // Initialize Firebase
+      initializeFirebase();
+      
+      // Authenticate with backend to get Firebase custom token
+      const authResult = await authenticateWithBackend(user.token);
+      if (!authResult || !authResult.success) {
+        console.warn('⚠️ Firebase auth failed, falling back to polling');
+        return;
+      }
+      
+      // Determine user type and ID for subscription
+      const userType = isLawFirm ? 'law_firm' : 'medical_provider';
+      const userId = user.id;
+      
+      // Subscribe to negotiations updates
+      const unsubscribe = await subscribeToNegotiations(userType, userId, (updatedNegotiations) => {
+        console.log('🔔 Firebase negotiations update received:', updatedNegotiations?.length || 0);
+        if (updatedNegotiations && Array.isArray(updatedNegotiations)) {
+          // Merge Firebase updates with current state
+          setNegotiations(prevNegotiations => {
+            const negotiationMap = new Map(prevNegotiations.map(n => [n.id, n]));
+            updatedNegotiations.forEach(updated => {
+              if (updated && updated.id) {
+                // Normalize Firebase data from snake_case to camelCase
+                const normalized = {
+                  ...negotiationMap.get(updated.id),
+                  ...updated,
+                  billAmount: parseFloat(updated.bill_amount || updated.billAmount || 0),
+                  currentOffer: parseFloat(updated.current_offer || updated.currentOffer || 0),
+                  billDescription: updated.bill_description || updated.billDescription,
+                  clientId: updated.client_id || updated.clientId,
+                  clientName: updated.client_name || updated.clientName,
+                  lawFirmId: updated.law_firm_id || updated.lawFirmId,
+                  firmName: updated.firm_name || updated.firmName,
+                  lawFirmEmail: updated.law_firm_email || updated.lawFirmEmail,
+                  medicalProviderId: updated.medical_provider_id || updated.medicalProviderId,
+                  providerName: updated.provider_name || updated.providerName,
+                  medicalProviderEmail: updated.medical_provider_email || updated.medicalProviderEmail,
+                  initiatedBy: updated.initiated_by || updated.initiatedBy,
+                  lastRespondedBy: updated.last_responded_by || updated.lastRespondedBy,
+                  interactionCount: parseInt(updated.interaction_count || updated.interactionCount || 0),
+                  createdAt: updated.created_at || updated.createdAt,
+                  updatedAt: updated.updated_at || updated.updatedAt,
+                  acceptedAt: updated.accepted_at || updated.acceptedAt,
+                  callRequestPhone: updated.call_request_phone || updated.callRequestPhone,
+                  callRequestNotes: updated.call_request_notes || updated.callRequestNotes
+                };
+                negotiationMap.set(updated.id, normalized);
+              }
+            });
+            return Array.from(negotiationMap.values());
+          });
+          
+          // Also update selected negotiation if it was updated
+          if (selectedNegotiation) {
+            const updatedSelected = updatedNegotiations.find(n => n.id === selectedNegotiation.id);
+            if (updatedSelected) {
+              setSelectedNegotiation(prev => ({
+                ...prev,
+                ...updatedSelected,
+                billAmount: parseFloat(updatedSelected.bill_amount || updatedSelected.billAmount || 0),
+                currentOffer: parseFloat(updatedSelected.current_offer || updatedSelected.currentOffer || 0),
+                billDescription: updatedSelected.bill_description || updatedSelected.billDescription,
+                clientId: updatedSelected.client_id || updatedSelected.clientId,
+                clientName: updatedSelected.client_name || updatedSelected.clientName,
+                lawFirmId: updatedSelected.law_firm_id || updatedSelected.lawFirmId,
+                firmName: updatedSelected.firm_name || updatedSelected.firmName,
+                medicalProviderId: updatedSelected.medical_provider_id || updatedSelected.medicalProviderId,
+                providerName: updatedSelected.provider_name || updatedSelected.providerName,
+                initiatedBy: updatedSelected.initiated_by || updatedSelected.initiatedBy,
+                lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
+                interactionCount: parseInt(updatedSelected.interaction_count || updatedSelected.interactionCount || 0),
+                callRequestPhone: updatedSelected.call_request_phone || updatedSelected.callRequestPhone,
+                callRequestNotes: updatedSelected.call_request_notes || updatedSelected.callRequestNotes
+              }));
+            }
+          }
+        }
+      });
+      
+      firebaseUnsubscribeRef.current = unsubscribe;
+      setFirebaseConnected(true);
+      console.log('✅ Firebase negotiations listeners active');
+      
+    } catch (error) {
+      console.error('❌ Firebase negotiations setup failed:', error);
+      setFirebaseConnected(false);
+    }
+  }, [user?.token, user?.id, isLawFirm, selectedNegotiation]);
 
   useEffect(() => {
     loadNegotiations();
@@ -50,6 +179,18 @@ const NegotiationsScreen = ({ user, onBack }) => {
     } else if (isMedicalProvider) {
       loadPatients();
     }
+    
+    // Setup Firebase real-time listeners
+    setupFirebaseListeners();
+    
+    // Cleanup on unmount
+    return () => {
+      if (firebaseUnsubscribeRef.current && typeof firebaseUnsubscribeRef.current === 'function') {
+        console.log('🔥 Cleaning up Firebase negotiations listeners');
+        firebaseUnsubscribeRef.current();
+        firebaseUnsubscribeRef.current = null;
+      }
+    };
   }, []);
 
   const loadNegotiations = async () => {
@@ -81,13 +222,15 @@ const NegotiationsScreen = ({ user, onBack }) => {
         lawFirmEmail: neg.law_firm_email,
         providerName: neg.provider_name,
         medicalProviderEmail: neg.medical_provider_email,
-        interactionCount: parseInt(neg.interaction_count || 0)
+        interactionCount: parseInt(neg.interaction_count || 0),
+        callRequestPhone: neg.call_request_phone,
+        callRequestNotes: neg.call_request_notes
       }));
       
       setNegotiations(normalizedNegotiations);
     } catch (error) {
       console.error('Error loading negotiations:', error);
-      Alert.alert('Error', 'Failed to load negotiations');
+      showAlert('Error', 'Failed to load negotiations');
     } finally {
       setLoading(false);
     }
@@ -150,13 +293,13 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
   const handleInitiateNegotiation = async () => {
     if (!selectedClientId || !billDescription || !billAmount || !initialOffer) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showAlert('Error', 'Please fill in all required fields');
       return;
     }
 
     // Law firms must select a medical provider
     if (isLawFirm && !selectedMedicalProviderId) {
-      Alert.alert('Error', 'Please select a medical provider');
+      showAlert('Error', 'Please select a medical provider');
       return;
     }
 
@@ -164,12 +307,12 @@ const NegotiationsScreen = ({ user, onBack }) => {
     const initialOfferNum = parseFloat(initialOffer);
 
     if (isNaN(billAmountNum) || isNaN(initialOfferNum)) {
-      Alert.alert('Error', 'Please enter valid amounts');
+      showAlert('Error', 'Please enter valid amounts');
       return;
     }
 
     if (initialOfferNum >= billAmountNum) {
-      Alert.alert('Error', 'Initial offer must be less than the bill amount');
+      showAlert('Error', 'Initial offer must be less than the bill amount');
       return;
     }
 
@@ -201,7 +344,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
       console.log('📥 Negotiation response:', response);
 
-      Alert.alert(
+      showAlert(
         'Success',
         'Negotiation initiated! The other party has been notified.',
         [{ text: 'OK', onPress: () => {
@@ -212,7 +355,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
       );
     } catch (error) {
       console.error('Error initiating negotiation:', error);
-      Alert.alert('Error', error.message || 'Failed to initiate negotiation');
+      showAlert('Error', error.message || 'Failed to initiate negotiation');
     } finally {
       setLoading(false);
     }
@@ -220,13 +363,13 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
   const handleSendCounterOffer = async () => {
     if (!counterOfferAmount) {
-      Alert.alert('Error', 'Please enter a counter offer amount');
+      showAlert('Error', 'Please enter a counter offer amount');
       return;
     }
 
     const counterOfferNum = parseFloat(counterOfferAmount);
     if (isNaN(counterOfferNum)) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      showAlert('Error', 'Please enter a valid amount');
       return;
     }
 
@@ -238,21 +381,21 @@ const NegotiationsScreen = ({ user, onBack }) => {
     if (isLawFirm) {
       // Law firms try to pay less than current offer but more than zero
       if (counterOfferNum <= 0) {
-        Alert.alert('Error', 'Counter offer must be greater than zero');
+        showAlert('Error', 'Counter offer must be greater than zero');
         return;
       }
       if (counterOfferNum >= currentOffer) {
-        Alert.alert('Error', 'Counter offer should be less than the current offer of $' + (currentOffer || 0).toFixed(2));
+        showAlert('Error', 'Counter offer should be less than the current offer of $' + (currentOffer || 0).toFixed(2));
         return;
       }
     } else {
       // Medical providers try to get paid more than current offer but less than bill amount
       if (counterOfferNum <= currentOffer) {
-        Alert.alert('Error', 'Counter offer must be greater than the current offer of $' + (currentOffer || 0).toFixed(2));
+        showAlert('Error', 'Counter offer must be greater than the current offer of $' + (currentOffer || 0).toFixed(2));
         return;
       }
       if (counterOfferNum > billAmount) {
-        Alert.alert('Error', 'Counter offer cannot exceed the bill amount of $' + (billAmount || 0).toFixed(2));
+        showAlert('Error', 'Counter offer cannot exceed the bill amount of $' + (billAmount || 0).toFixed(2));
         return;
       }
     }
@@ -271,7 +414,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
         })
       });
 
-      Alert.alert(
+      showAlert(
         'Success',
         'Counter offer sent! The other party has been notified.',
         [{ text: 'OK', onPress: () => {
@@ -284,14 +427,14 @@ const NegotiationsScreen = ({ user, onBack }) => {
       );
     } catch (error) {
       console.error('Error sending counter offer:', error);
-      Alert.alert('Error', error.message || 'Failed to send counter offer');
+      showAlert('Error', error.message || 'Failed to send counter offer');
     } finally {
       setLoading(false);
     }
   };
 
   const handleAcceptOffer = async (negotiationId) => {
-    Alert.alert(
+    showAlert(
       'Accept Offer',
       'Are you sure you want to accept this offer? This will finalize the negotiation.',
       [
@@ -311,7 +454,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
                 })
               });
 
-              Alert.alert(
+              showAlert(
                 'Success',
                 'Offer accepted! Both parties will receive a full negotiation log.',
                 [{ text: 'OK', onPress: () => {
@@ -321,7 +464,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
               );
             } catch (error) {
               console.error('Error accepting offer:', error);
-              Alert.alert('Error', error.message || 'Failed to accept offer');
+              showAlert('Error', error.message || 'Failed to accept offer');
             } finally {
               setLoading(false);
             }
@@ -332,15 +475,17 @@ const NegotiationsScreen = ({ user, onBack }) => {
   };
 
   const handleRequestCall = async () => {
+    console.log('📞 handleRequestCall called', { phoneNumber, callNotes, selectedNegotiation: selectedNegotiation?.id });
+    
     if (!phoneNumber) {
-      Alert.alert('Error', 'Please enter a phone number');
+      showAlert('Error', 'Please enter a phone number');
       return;
     }
 
     // Basic phone validation
     const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
     if (!phoneRegex.test(phoneNumber)) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      showAlert('Error', 'Please enter a valid phone number');
       return;
     }
 
@@ -358,7 +503,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
         })
       });
 
-      Alert.alert(
+      showAlert(
         'Success',
         'Call request sent! The other party has been notified with your contact information.',
         [{ text: 'OK', onPress: () => {
@@ -370,7 +515,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
       );
     } catch (error) {
       console.error('Error requesting call:', error);
-      Alert.alert('Error', error.message || 'Failed to send call request');
+      showAlert('Error', error.message || 'Failed to send call request');
     } finally {
       setLoading(false);
     }
@@ -386,14 +531,14 @@ const NegotiationsScreen = ({ user, onBack }) => {
       });
 
       // In a real app, this would download a PDF or open a new screen
-      Alert.alert(
+      showAlert(
         'Negotiation Log',
         JSON.stringify(response.log, null, 2),
         [{ text: 'OK' }]
       );
     } catch (error) {
       console.error('Error downloading log:', error);
-      Alert.alert('Error', 'Failed to download negotiation log');
+      showAlert('Error', 'Failed to download negotiation log');
     }
   };
 
@@ -428,9 +573,18 @@ const NegotiationsScreen = ({ user, onBack }) => {
   };
 
   const renderNegotiationCard = (negotiation) => {
-    const isMyTurn = (isLawFirm && negotiation.lastRespondedBy === 'medical_provider') ||
-                     (isMedicalProvider && negotiation.lastRespondedBy === 'law_firm') ||
-                     negotiation.lastRespondedBy === null;
+    // Determine if it's this user's turn to respond
+    // If lastRespondedBy is null, check who initiated - the OTHER party should respond first
+    let isMyTurn = false;
+    if (negotiation.lastRespondedBy === null) {
+      // Initial state - the party who did NOT initiate should respond
+      isMyTurn = (isLawFirm && negotiation.initiatedBy === 'medical_provider') ||
+                 (isMedicalProvider && negotiation.initiatedBy === 'law_firm');
+    } else {
+      // After initial response - it's your turn if the other party last responded
+      isMyTurn = (isLawFirm && negotiation.lastRespondedBy === 'medical_provider') ||
+                 (isMedicalProvider && negotiation.lastRespondedBy === 'law_firm');
+    }
 
     return (
       <TouchableOpacity
@@ -476,11 +630,24 @@ const NegotiationsScreen = ({ user, onBack }) => {
   const renderNegotiationDetail = () => {
     if (!selectedNegotiation) return null;
 
-    const isMyTurn = (isLawFirm && selectedNegotiation.lastRespondedBy === 'medical_provider') ||
-                     (isMedicalProvider && selectedNegotiation.lastRespondedBy === 'law_firm') ||
-                     selectedNegotiation.lastRespondedBy === null;
+    // Determine if it's this user's turn to respond
+    // If lastRespondedBy is null, check who initiated - the OTHER party should respond first
+    let isMyTurn = false;
+    if (selectedNegotiation.lastRespondedBy === null) {
+      // Initial state - the party who did NOT initiate should respond
+      isMyTurn = (isLawFirm && selectedNegotiation.initiatedBy === 'medical_provider') ||
+                 (isMedicalProvider && selectedNegotiation.initiatedBy === 'law_firm');
+    } else {
+      // After initial response - it's your turn if the other party last responded
+      isMyTurn = (isLawFirm && selectedNegotiation.lastRespondedBy === 'medical_provider') ||
+                 (isMedicalProvider && selectedNegotiation.lastRespondedBy === 'law_firm');
+    }
 
-    const canAccept = selectedNegotiation.status === 'counter_offered' || selectedNegotiation.status === 'pending';
+    // You can only accept when it's your turn (meaning the OTHER party made the last offer)
+    // You cannot accept your own offer
+    const canAccept = isMyTurn && 
+                      (selectedNegotiation.status === 'counter_offered' || selectedNegotiation.status === 'pending') &&
+                      selectedNegotiation.status !== 'accepted';
     const canCounterOffer = isMyTurn && selectedNegotiation.status !== 'accepted';
 
     return (
@@ -561,7 +728,24 @@ const NegotiationsScreen = ({ user, onBack }) => {
               </TouchableOpacity>
             )}
 
-            {selectedNegotiation.status !== 'accepted' && (
+            {/* Show call request details when status is stalled */}
+            {selectedNegotiation.status === 'stalled' && selectedNegotiation.callRequestPhone && (
+              <View style={styles.callRequestSection}>
+                <Text style={styles.sectionTitle}>📞 Call Requested</Text>
+                <View style={styles.callRequestDetails}>
+                  <Text style={styles.callRequestLabel}>Phone Number:</Text>
+                  <Text style={styles.callRequestValue}>{selectedNegotiation.callRequestPhone}</Text>
+                  {selectedNegotiation.callRequestNotes && (
+                    <>
+                      <Text style={styles.callRequestLabel}>Message:</Text>
+                      <Text style={styles.callRequestValue}>{selectedNegotiation.callRequestNotes}</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {selectedNegotiation.status !== 'accepted' && isMyTurn && (
               <View style={styles.actionSection}>
                 {canAccept && (
                   <TouchableOpacity
@@ -583,10 +767,20 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
                 <TouchableOpacity
                   style={styles.callButton}
-                  onPress={() => setShowCallRequestModal(true)}
+                  onPress={() => {
+                    console.log('📞 Request Call button pressed');
+                    setShowCallRequestModal(true);
+                  }}
                 >
                   <Text style={styles.callButtonText}>📞 Request Call</Text>
                 </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Show waiting message when it's not your turn */}
+            {selectedNegotiation.status !== 'accepted' && !isMyTurn && (
+              <View style={styles.waitingSection}>
+                <Text style={styles.waitingText}>⏳ Waiting for the other party to respond...</Text>
               </View>
             )}
           </ScrollView>
@@ -846,12 +1040,14 @@ const NegotiationsScreen = ({ user, onBack }) => {
   if (loading && negotiations.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Bill Negotiations</Text>
-        </View>
+        {!hideHeader && (
+          <View style={styles.header}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>Bill Negotiations</Text>
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -861,12 +1057,14 @@ const NegotiationsScreen = ({ user, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Bill Negotiations</Text>
-      </View>
+      {!hideHeader && (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Bill Negotiations</Text>
+        </View>
+      )}
 
       <View style={styles.content}>
         <TouchableOpacity
@@ -1128,6 +1326,41 @@ const styles = StyleSheet.create({
   },
   actionSection: {
     marginTop: 20,
+  },
+  callRequestSection: {
+    backgroundColor: '#FFF3CD',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#FFD93D',
+  },
+  callRequestDetails: {
+    marginTop: 10,
+  },
+  callRequestLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#856404',
+    marginTop: 8,
+  },
+  callRequestValue: {
+    fontSize: 16,
+    color: '#333',
+    marginTop: 4,
+  },
+  waitingSection: {
+    backgroundColor: '#E3F2FD',
+    padding: 20,
+    borderRadius: 10,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  waitingText: {
+    fontSize: 16,
+    color: '#1565C0',
+    fontWeight: '500',
+    textAlign: 'center',
   },
   acceptButton: {
     backgroundColor: '#28a745',

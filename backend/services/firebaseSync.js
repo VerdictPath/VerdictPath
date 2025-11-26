@@ -71,7 +71,6 @@ async function syncNotificationToFirebase(notification) {
       notification.id
     );
 
-    // Helper to convert timestamps to ISO strings
     const toISOString = (date) => {
       if (!date) return null;
       if (typeof date === 'string') return date;
@@ -263,7 +262,6 @@ async function syncNewMessageToFirebase(message, encrypted) {
     }
     const conversationPath = `/chat/conversations/${message.conversation_id}`;
     
-    // Validate encrypted components before syncing (HIPAA compliance requirement)
     if (!encrypted || !encrypted.iv || !encrypted.authTag || !encrypted.ciphertext) {
       console.error('❌ Firebase sync failed: Invalid encryption components', {
         messageId: message.id,
@@ -274,7 +272,6 @@ async function syncNewMessageToFirebase(message, encrypted) {
       throw new Error('Cannot sync message with invalid encryption to Firebase');
     }
     
-    // Sync message to Firebase (with encrypted content only - HIPAA compliant)
     const messageData = {
       id: message.id,
       sender_type: message.sender_type,
@@ -289,10 +286,8 @@ async function syncNewMessageToFirebase(message, encrypted) {
       metadata: message.metadata || {}
     };
 
-    // Store message in Firebase
     await db.ref(`${conversationPath}/messages/${message.id}`).set(messageData);
 
-    // Update conversation metadata
     await db.ref(`${conversationPath}/metadata`).update({
       last_message_at: messageData.sent_at,
       last_message_preview: `${message.sender_name}: Message`,
@@ -385,6 +380,196 @@ async function syncChatUnreadCounts(participantType, participantId, unreadCounts
   }
 }
 
+/**
+ * Negotiation Firebase Sync Functions
+ * Path: /negotiations/{userType}s/{userId}/{negotiationId}
+ */
+
+function getNegotiationPath(userType, userId, negotiationId = null) {
+  let basePath;
+  
+  if (userType === 'law_firm') {
+    basePath = `/negotiations/law_firms/${userId}`;
+  } else if (userType === 'medical_provider') {
+    basePath = `/negotiations/medical_providers/${userId}`;
+  } else {
+    throw new Error(`Invalid user type for negotiations: ${userType}`);
+  }
+
+  return negotiationId ? `${basePath}/${negotiationId}` : basePath;
+}
+
+async function syncNegotiationToFirebase(negotiation) {
+  try {
+    const db = getDatabase();
+    if (!db) {
+      console.log('⚠️ Firebase not available - skipping negotiation sync');
+      return { success: false, error: 'Firebase not configured' };
+    }
+    
+    const toISOString = (date) => {
+      if (!date) return null;
+      if (typeof date === 'string') return date;
+      return new Date(date).toISOString();
+    };
+
+    const negotiationData = {
+      id: negotiation.id,
+      client_id: negotiation.client_id,
+      client_name: negotiation.client_name || null,
+      law_firm_id: negotiation.law_firm_id,
+      firm_name: negotiation.firm_name || null,
+      law_firm_email: negotiation.law_firm_email || null,
+      medical_provider_id: negotiation.medical_provider_id,
+      provider_name: negotiation.provider_name || null,
+      medical_provider_email: negotiation.medical_provider_email || null,
+      bill_description: negotiation.bill_description,
+      bill_amount: parseFloat(negotiation.bill_amount) || 0,
+      current_offer: parseFloat(negotiation.current_offer) || 0,
+      status: negotiation.status,
+      initiated_by: negotiation.initiated_by,
+      last_responded_by: negotiation.last_responded_by,
+      interaction_count: parseInt(negotiation.interaction_count) || 0,
+      call_request_phone: negotiation.call_request_phone || null,
+      call_request_notes: negotiation.call_request_notes || null,
+      created_at: toISOString(negotiation.created_at),
+      updated_at: toISOString(negotiation.updated_at),
+      accepted_at: toISOString(negotiation.accepted_at),
+      synced_at: new Date().toISOString()
+    };
+
+    const lawFirmPath = getNegotiationPath('law_firm', negotiation.law_firm_id, negotiation.id);
+    const providerPath = getNegotiationPath('medical_provider', negotiation.medical_provider_id, negotiation.id);
+
+    await Promise.all([
+      db.ref(lawFirmPath).set(negotiationData),
+      db.ref(providerPath).set(negotiationData)
+    ]);
+
+    console.log(`✅ Synced negotiation ${negotiation.id} to Firebase for both parties`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error syncing negotiation to Firebase:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function syncNegotiationUpdateToFirebase(negotiation, updates) {
+  try {
+    const db = getDatabase();
+    if (!db) {
+      return { success: false, error: 'Firebase not configured' };
+    }
+    
+    const toISOString = (date) => {
+      if (!date) return null;
+      if (typeof date === 'string') return date;
+      return new Date(date).toISOString();
+    };
+
+    const firebaseUpdates = {
+      ...updates,
+      synced_at: new Date().toISOString()
+    };
+
+    if (updates.updated_at) firebaseUpdates.updated_at = toISOString(updates.updated_at);
+    if (updates.accepted_at) firebaseUpdates.accepted_at = toISOString(updates.accepted_at);
+
+    const lawFirmPath = getNegotiationPath('law_firm', negotiation.law_firm_id, negotiation.id);
+    const providerPath = getNegotiationPath('medical_provider', negotiation.medical_provider_id, negotiation.id);
+
+    await Promise.all([
+      db.ref(lawFirmPath).update(firebaseUpdates),
+      db.ref(providerPath).update(firebaseUpdates)
+    ]);
+
+    console.log(`✅ Synced negotiation update ${negotiation.id} to Firebase`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error syncing negotiation update to Firebase:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function deleteNegotiationFromFirebase(lawFirmId, medicalProviderId, negotiationId) {
+  try {
+    const db = getDatabase();
+    if (!db) {
+      return { success: false, error: 'Firebase not configured' };
+    }
+    
+    const lawFirmPath = getNegotiationPath('law_firm', lawFirmId, negotiationId);
+    const providerPath = getNegotiationPath('medical_provider', medicalProviderId, negotiationId);
+
+    await Promise.all([
+      db.ref(lawFirmPath).remove(),
+      db.ref(providerPath).remove()
+    ]);
+
+    console.log(`✅ Deleted negotiation ${negotiationId} from Firebase`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error deleting negotiation from Firebase:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function batchSyncNegotiations(negotiations) {
+  try {
+    const db = getDatabase();
+    if (!db) {
+      return { success: false, error: 'Firebase not configured' };
+    }
+    const updates = {};
+
+    for (const neg of negotiations) {
+      const toISOString = (date) => {
+        if (!date) return null;
+        if (typeof date === 'string') return date;
+        return new Date(date).toISOString();
+      };
+
+      const negotiationData = {
+        id: neg.id,
+        client_id: neg.client_id,
+        client_name: neg.client_name || null,
+        law_firm_id: neg.law_firm_id,
+        firm_name: neg.firm_name || null,
+        law_firm_email: neg.law_firm_email || null,
+        medical_provider_id: neg.medical_provider_id,
+        provider_name: neg.provider_name || null,
+        medical_provider_email: neg.medical_provider_email || null,
+        bill_description: neg.bill_description,
+        bill_amount: parseFloat(neg.bill_amount) || 0,
+        current_offer: parseFloat(neg.current_offer) || 0,
+        status: neg.status,
+        initiated_by: neg.initiated_by,
+        last_responded_by: neg.last_responded_by,
+        interaction_count: parseInt(neg.interaction_count) || 0,
+        call_request_phone: neg.call_request_phone || null,
+        call_request_notes: neg.call_request_notes || null,
+        created_at: toISOString(neg.created_at),
+        updated_at: toISOString(neg.updated_at),
+        accepted_at: toISOString(neg.accepted_at),
+        synced_at: new Date().toISOString()
+      };
+
+      const lawFirmPath = getNegotiationPath('law_firm', neg.law_firm_id, neg.id);
+      const providerPath = getNegotiationPath('medical_provider', neg.medical_provider_id, neg.id);
+      
+      updates[lawFirmPath] = negotiationData;
+      updates[providerPath] = negotiationData;
+    }
+
+    await db.ref().update(updates);
+    console.log(`✅ Batch synced ${negotiations.length} negotiations to Firebase`);
+    return { success: true, count: negotiations.length };
+  } catch (error) {
+    console.error('❌ Error batch syncing negotiations to Firebase:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 initializeFirebase();
 
 module.exports = {
@@ -400,5 +585,11 @@ module.exports = {
   syncNewMessageToFirebase,
   syncConversationToFirebase,
   syncTypingIndicator,
-  syncChatUnreadCounts
+  syncChatUnreadCounts,
+  // Negotiation functions
+  getNegotiationPath,
+  syncNegotiationToFirebase,
+  syncNegotiationUpdateToFirebase,
+  deleteNegotiationFromFirebase,
+  batchSyncNegotiations
 };

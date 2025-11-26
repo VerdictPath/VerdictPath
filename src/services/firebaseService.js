@@ -549,6 +549,107 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
   };
 };
 
+/**
+ * Subscribe to real-time negotiation updates
+ * Path: /negotiations/{userType}s/{userId}/negotiations
+ */
+export const subscribeToNegotiations = async (userType, userId, onNegotiationsUpdate, authToken) => {
+  if (!database) {
+    console.error('Firebase database not initialized');
+    return null;
+  }
+
+  if (!isAuthenticated && authToken) {
+    console.log('🔐 Authenticating to Firebase before subscribing to negotiations...');
+    const authResult = await authenticateWithBackend(authToken);
+    if (!authResult.success) {
+      console.error('❌ Failed to authenticate to Firebase, cannot subscribe to negotiations');
+      return null;
+    }
+  } else if (!isAuthenticated) {
+    console.error('❌ No auth token provided for Firebase authentication');
+    return null;
+  }
+
+  let basePath;
+  if (userType === 'law_firm' || userType === 'lawfirm') {
+    basePath = 'law_firms';
+  } else if (userType === 'medical_provider') {
+    basePath = 'medical_providers';
+  } else {
+    console.error('⚠️ Unknown userType for negotiations:', userType);
+    return null;
+  }
+
+  const negotiationsPath = `negotiations/${basePath}/${userId}`;
+  const negotiationsRef = ref(database, negotiationsPath);
+
+  console.log(`💰 Setting up Firebase listener for negotiations: ${negotiationsPath}`);
+
+  const negotiationsUnsubscribe = onValue(
+    negotiationsRef,
+    (snapshot) => {
+      try {
+        const data = snapshot.val();
+        console.log(`💰 Firebase negotiations update received:`, 
+          data ? Object.keys(data).length : 0, 'negotiations');
+        
+        if (data) {
+          const negotiations = Object.entries(data).map(([id, neg]) => ({
+            id: parseInt(id) || id,
+            ...neg
+          }));
+          
+          // Sort by updated_at timestamp (most recent first)
+          negotiations.sort((a, b) => {
+            const dateA = new Date(a.updated_at || a.created_at || 0);
+            const dateB = new Date(b.updated_at || b.created_at || 0);
+            return dateB - dateA;
+          });
+          
+          console.log(`💰 Processed ${negotiations.length} negotiations from Firebase`);
+          onNegotiationsUpdate(negotiations);
+        } else {
+          onNegotiationsUpdate([]);
+        }
+      } catch (error) {
+        console.error('❌ Error processing Firebase negotiations:', error);
+      }
+    },
+    (error) => {
+      console.error('❌ Firebase negotiations listener error:', error);
+    }
+  );
+
+  const listenerId = `negotiations_${userType}_${userId}`;
+  activeListeners.set(listenerId, {
+    negotiationsRef,
+    negotiationsUnsubscribe
+  });
+
+  console.log(`✅ Firebase negotiations listener setup complete for ${userType} ${userId}`);
+
+  return () => {
+    off(negotiationsRef);
+    activeListeners.delete(listenerId);
+    console.log(`🔕 Unsubscribed from negotiations for ${userType} ${userId}`);
+  };
+};
+
+/**
+ * Unsubscribe from negotiations for a specific user
+ */
+export const unsubscribeFromNegotiations = (userType, userId) => {
+  const listenerId = `negotiations_${userType}_${userId}`;
+  const listener = activeListeners.get(listenerId);
+  
+  if (listener) {
+    off(listener.negotiationsRef);
+    activeListeners.delete(listenerId);
+    console.log(`🔕 Unsubscribed from negotiations for ${userType} ${userId}`);
+  }
+};
+
 export default {
   initializeFirebase,
   authenticateWithBackend,
@@ -562,5 +663,8 @@ export default {
   // Chat functions
   subscribeToChatMessages,
   unsubscribeFromChatMessages,
-  subscribeToChatConversations
+  subscribeToChatConversations,
+  // Negotiation functions
+  subscribeToNegotiations,
+  unsubscribeFromNegotiations
 };
