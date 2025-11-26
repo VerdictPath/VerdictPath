@@ -82,29 +82,21 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
   };
 
   const categoryColors = {
-    user: lawFirmTheme.colors.accentBlue,
-    client: lawFirmTheme.colors.lightBlue,
-    document: lawFirmTheme.colors.gold,
-    financial: '#10B981',
-    communication: '#8B5CF6',
-    case: lawFirmTheme.colors.accentBlue,
-    settings: lawFirmTheme.colors.mediumGray,
-    security: '#EF4444',
+    user: '#6B8E99',      // Warm blue
+    client: '#8B7355',    // Warm purple/brown
+    document: '#D4AF37',  // Warm gold
+    financial: '#5FAD56', // Success green
+    communication: '#D2691E', // Warm orange
+    case: '#8B6F47',      // Mahogany
+    settings: '#A0826D',  // Warm gray
+    security: '#8C3B2A',  // Deep maroon
   };
 
   if (loading || !summary) {
     return (
       <View style={styles.container}>
-        <LinearGradient
-          colors={[
-            lawFirmTheme.colors.deepNavy,
-            lawFirmTheme.colors.midnightBlue,
-          ]}
-          style={styles.background}
-        />
-        
         {/* Header with Back Button */}
-        <BlurView intensity={20} style={styles.header}>
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={onBack}>
               <Text style={styles.backText}>← Back</Text>
@@ -112,7 +104,7 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
             <Text style={styles.headerTitle}>Activity Analytics</Text>
             <View style={{ width: 60 }} />
           </View>
-        </BlurView>
+        </View>
         
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading activity data...</Text>
@@ -123,17 +115,9 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[
-          lawFirmTheme.colors.deepNavy,
-          lawFirmTheme.colors.midnightBlue,
-          lawFirmTheme.colors.professionalBlue,
-        ]}
-        style={styles.background}
-      />
 
       {/* Header */}
-      <BlurView intensity={20} style={styles.header}>
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={onBack}>
             <Text style={styles.backText}>← Back</Text>
@@ -141,7 +125,7 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
           <Text style={styles.headerTitle}>Activity Analytics</Text>
           <View style={{ width: 60 }} />
         </View>
-      </BlurView>
+      </View>
 
       {/* Time Filter */}
       <View style={styles.filterContainer}>
@@ -245,8 +229,8 @@ const CategoryCard = ({ name, count, icon, color }) => (
 
 const UserActivityCard = ({ userName, userEmail, activityCount, rank, onPress }) => {
   const rankColors = {
-    1: lawFirmTheme.colors.gold,
-    2: lawFirmTheme.colors.silver,
+    1: '#D4AF37', // Gold
+    2: '#C0C0C0', // Silver
     3: '#CD7F32', // Bronze
   };
 
@@ -329,21 +313,15 @@ const ActivityLogCard = ({ activity }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: lawFirmTheme.colors.deepNavy,
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    backgroundColor: '#F4E8D8',
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: '#F8F1E7',
+    borderBottomWidth: 2,
+    borderBottomColor: '#D4AF37',
   },
   headerContent: {
     flexDirection: 'row',
@@ -351,36 +329,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: lawFirmTheme.colors.accentBlue,
+    color: '#8B6F47',
     fontSize: 16,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#2C3E50',
+    letterSpacing: -0.5,
   },
   filterContainer: {
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 16,
+    backgroundColor: '#F8F1E7',
+    borderBottomWidth: 1,
+    borderBottomColor: '#C9A961',
   },
   filterChip: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    backgroundColor: '#FBF7F1',
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
   },
   filterChipActive: {
-    backgroundColor: lawFirmTheme.colors.accentBlue,
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   filterChipText: {
-    color: '#FFFFFF',
+    color: '#8B6F47',
     fontSize: 14,
     fontWeight: '600',
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: '#2C3E50',
   },
   scrollView: {
     flex: 1,
@@ -394,27 +379,31 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   totalLabel: {
-    color: lawFirmTheme.colors.lightGray,
-    fontSize: 16,
+    color: '#A0826D',
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   totalValue: {
-    color: lawFirmTheme.colors.gold,
+    color: '#8B6F47',
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -1,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 15,
+    color: '#2C3E50',
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -422,53 +411,54 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 30,
   },
-  categoryCard: {
-    width: (width - 55) / 2,
+  glassCard: {
+    backgroundColor: '#FBF7F1',
+    borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#D4AF37',
+    borderLeftWidth: 4,
+    borderLeftColor: '#D4AF37',
   },
   categoryIconBg: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   categoryIcon: {
-    fontSize: 32,
+    fontSize: 28,
   },
   categoryCount: {
-    color: '#FFFFFF',
-    fontSize: 28,
+    color: '#2C3E50',
+    fontSize: 26,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   categoryName: {
-    color: lawFirmTheme.colors.lightGray,
-    fontSize: 14,
+    color: '#A0826D',
+    fontSize: 13,
     fontWeight: '600',
     textTransform: 'capitalize',
-  },
-  userActivityCard: {
-    padding: 16,
-    marginBottom: 12,
   },
   userActivityContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   rankBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 16,
   },
   rankText: {
-    color: '#FFFFFF',
+    color: '#2C3E50',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -476,81 +466,80 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userActivityName: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: '#2C3E50',
+    fontSize: 16,
     fontWeight: '700',
     marginBottom: 4,
   },
   userActivityEmail: {
-    color: lawFirmTheme.colors.lightGray,
+    color: '#A0826D',
     fontSize: 13,
   },
   activityCountBadge: {
     alignItems: 'center',
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   activityCountText: {
-    color: lawFirmTheme.colors.accentBlue,
-    fontSize: 24,
+    color: '#2C3E50',
+    fontSize: 22,
     fontWeight: '700',
+    letterSpacing: -0.5,
   },
   activityCountLabel: {
-    color: lawFirmTheme.colors.mediumGray,
+    color: '#2C3E50',
     fontSize: 11,
     fontWeight: '600',
-  },
-  activityLogCard: {
-    padding: 14,
-    marginBottom: 10,
+    marginTop: 2,
   },
   activityLogContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   activityIcon: {
-    fontSize: 28,
-    marginRight: 15,
+    fontSize: 26,
+    marginRight: 14,
   },
   activityLogInfo: {
     flex: 1,
   },
   activityUserName: {
-    color: '#FFFFFF',
+    color: '#2C3E50',
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   activityAction: {
-    color: lawFirmTheme.colors.lightGray,
+    color: '#A0826D',
     fontSize: 14,
     textTransform: 'capitalize',
     marginBottom: 2,
   },
   activityTarget: {
-    color: lawFirmTheme.colors.accentBlue,
+    color: '#8B6F47',
     fontSize: 13,
-    fontStyle: 'italic',
   },
   activityTime: {
-    color: lawFirmTheme.colors.mediumGray,
+    color: '#A0826D',
     fontSize: 12,
     fontWeight: '600',
   },
-  emptyCard: {
-    padding: 40,
-    alignItems: 'center',
-  },
   emptyText: {
-    color: lawFirmTheme.colors.lightGray,
-    fontSize: 16,
+    color: '#A0826D',
+    fontSize: 15,
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F4E8D8',
   },
   loadingText: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    color: '#8B6F47',
+    fontSize: 16,
     textAlign: 'center',
   },
 });
