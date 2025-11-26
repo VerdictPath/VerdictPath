@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
   LAWFIRM: {
     DASHBOARD: `${API_BASE_URL}/api/lawfirm/dashboard`,
     CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
+    GET_CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
     CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}`,
     CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}/progress`,
   },
@@ -193,6 +194,23 @@ export const API_ENDPOINTS = {
     GET_USER_TIMELINE: (userId) => `${API_BASE_URL}/api/medicalprovider/activity/user/${userId}/timeline`,
     HIPAA_REPORT: `${API_BASE_URL}/api/medicalprovider/activity/hipaa-report`,
     PATIENT_AUDIT: (patientId) => `${API_BASE_URL}/api/medicalprovider/activity/patient/${patientId}/audit`,
+  },
+
+  // Disbursements (Settlement Disbursements)
+  DISBURSEMENTS: {
+    PROCESS: `${API_BASE_URL}/api/disbursements/process`,
+    GET_HISTORY: `${API_BASE_URL}/api/disbursements/history`,
+    GET_CLIENT_PROVIDERS: `${API_BASE_URL}/api/disbursements/client-providers`,
+    GET_RECEIVED: `${API_BASE_URL}/api/disbursements/received`,
+    GET_DETAILS: (disbursementId) => `${API_BASE_URL}/api/disbursements/${disbursementId}`,
+  },
+
+  // Stripe Connect (Payment Setup)
+  STRIPE_CONNECT: {
+    CREATE_ACCOUNT: `${API_BASE_URL}/api/stripe-connect/create-account`,
+    ACCOUNT_STATUS: `${API_BASE_URL}/api/stripe-connect/account-status`,
+    ONBOARDING_LINK: `${API_BASE_URL}/api/stripe-connect/onboarding-link`,
+    DASHBOARD_LINK: `${API_BASE_URL}/api/stripe-connect/dashboard-link`,
   },
 };
 
