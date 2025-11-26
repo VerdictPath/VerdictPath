@@ -74,7 +74,7 @@ const LandingScreen = ({ onNavigate }) => {
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeVideoCamera}>
             <Image 
-              source={require('../../attached_assets/video_1762018822588.jpeg')}
+              source={require('../../attached_assets/Old Camera Closeup_1764040319335.png')}
               style={styles.videoCameraThumbnail}
               resizeMode="cover"
             />
@@ -82,11 +82,12 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Educational audio/video tutorials</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeHospital}>
-            <View style={styles.iconHospital}>
-              <View style={styles.hospitalCrossVertical} />
-              <View style={styles.hospitalCrossHorizontal} />
-            </View>
+          <View style={styles.iconBadgeMedical}>
+            <Image 
+              source={require('../../attached_assets/Medical Symbol Pirate_1764039521695.png')}
+              style={styles.medicalSymbolThumbnail}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.featureItem}>Medical Hub COMING SOON</Text>
         </View>
@@ -208,37 +209,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  iconBadgeHospital: {
+  iconBadgeMedical: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.charcoal,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 2,
-    borderColor: theme.colors.deepMaroon,
+    borderColor: theme.colors.secondary,
+    overflow: 'hidden',
   },
-  iconHospital: {
-    width: 16,
-    height: 16,
-    position: 'relative',
-  },
-  hospitalCrossVertical: {
-    width: 5,
-    height: 16,
-    backgroundColor: theme.colors.deepMaroon,
-    position: 'absolute',
-    left: 5.5,
-    top: 0,
-  },
-  hospitalCrossHorizontal: {
-    width: 16,
-    height: 5,
-    backgroundColor: theme.colors.deepMaroon,
-    position: 'absolute',
-    left: 0,
-    top: 5.5,
+  medicalSymbolThumbnail: {
+    width: 40,
+    height: 40,
   },
   iconBadgeLocker: {
     width: 40,
