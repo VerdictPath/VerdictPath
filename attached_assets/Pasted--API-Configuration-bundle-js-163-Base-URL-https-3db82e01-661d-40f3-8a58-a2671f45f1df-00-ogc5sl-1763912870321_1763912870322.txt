@@ -1,0 +1,146 @@
+🔧 API Configuration:
+bundle.js:163 Base URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev
+bundle.js:166 🔥 Firebase Service Loaded - Config: {hasApiKey: true, hasDatabaseURL: true, projectId: 'verdict-path'}
+bundle.js:3820 [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+(anonymous) @ bundle.js:3820
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:3717
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:119
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:6
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:4029Understand this warning
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: landing Should show: false
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: false, userId: undefined, userType: undefined, hasToken: false, timestamp: '2025-11-23T15:44:57.168Z'}
+bundle.js:164 🔍 NotificationContext useEffect triggered: {userId: undefined, userType: undefined, hasUserToken: false, hasAuthToken: false, hasToken: false, …}
+bundle.js:164 ⏸️ Skipping notification initialization - waiting for user login {hasUserId: false, hasUserToken: false, hasAuthToken: false}
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [Login] Attempting login with userType: medicalprovider
+bundle.js:119 [Login] API userType: medical_provider Target screen: medicalprovider-dashboard Endpoint: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/auth/login/medicalprovider-user
+bundle.js:163 [API] POST https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/auth/login/medicalprovider-user
+bundle.js:163 [API] Response: 200 OK
+bundle.js:119 [Login] Login successful, response: {message: 'Login successful', token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwib…cwMn0.wCC4t5pzQ6Casx4x3XfaiX4U1EbNRfWg8nvjJFbH0-k', user: {…}}
+bundle.js:119 [Login] Setting user data: {id: 1, email: 'testmed1@example.com', type: 'medicalprovider', userType: 'medical_provider', providerName: 'Test Medical Center', …}
+bundle.js:119 [Login] Navigating to: medicalprovider-dashboard
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: medicalprovider-dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: medicalprovider-dashboard Should show: true
+bundle.js:4028 [MedicalProviderBottomNavigation] Rendering for screen: medicalprovider-dashboard
+bundle.js:3994 [MedProvider Dashboard] Fetching dashboard data...
+bundle.js:3994 [MedProvider Dashboard] Token: Present
+bundle.js:3994 [MedProvider Dashboard] API URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/medicalprovider/dashboard
+bundle.js:3994 Error checking Stripe account status: TypeError: Cannot read properties of undefined (reading 'ACCOUNT_STATUS')
+    at oe (bundle.js:3994:19358)
+    at bundle.js:3994:16625
+    at ki (bundle.js:28:95914)
+    at Bs (bundle.js:28:113786)
+    at bundle.js:28:112102
+    at k (bundle.js:52:1376)
+    at MessagePort.M (bundle.js:52:1911)
+oe @ bundle.js:3994
+(anonymous) @ bundle.js:3994
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: true, userId: 1, userType: 'medical_provider', hasToken: true, timestamp: '2025-11-23T15:45:02.599Z'}
+bundle.js:164 🔍 NotificationContext useEffect triggered: {userId: 1, userType: 'medical_provider', hasUserToken: true, hasAuthToken: false, hasToken: true, …}
+bundle.js:164 🚀 STARTING notification initialization for user: {userType: 'medical_provider', userId: 1, hasToken: true}
+bundle.js:164 ✅ Step 1/4: Registering for push notifications...
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: medicalprovider-dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: medicalprovider-dashboard Should show: true
+bundle.js:4028 [MedicalProviderBottomNavigation] Rendering for screen: medicalprovider-dashboard
+bundle.js:164 ⚠️ Step 2/4: No push token available
+bundle.js:164 ✅ Step 3/4: Setting up Firebase real-time listeners...
+bundle.js:166 🔥 Initializing Firebase with config: {apiKey: '✓ Set', authDomain: '✓ Set', databaseURL: '✓ Set', projectId: '✓ Set'}
+bundle.js:166 ✅ Firebase initialized successfully
+bundle.js:164 Setting up Firebase listeners for: medical_provider 1
+bundle.js:166 🔐 Authenticating to Firebase before subscribing...
+bundle.js:166 🔑 Requesting Firebase custom token from backend...
+bundle.js:166 🔑 Auth token present: true
+bundle.js:166 🔑 Auth token value (first 20 chars): eyJhbGciOiJIUzI1NiIs...
+bundle.js:166 🔑 Request URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/notifications/firebase-token
+bundle.js:166 🔑 Fetch completed successfully
+bundle.js:166 🔑 Response status: 200
+bundle.js:166 🔑 Response content-type: application/json; charset=utf-8
+bundle.js:166 ✓ Parsed JSON response: {hasToken: true, uid: '1', keys: Array(3)}
+bundle.js:166 ✓ Received Firebase custom token response: {hasToken: true, uid: '1'}
+bundle.js:166 🔐 Attempting to sign in to Firebase with custom token...
+bundle.js:3994 [MedProvider Dashboard] Response status: 200
+bundle.js:3994 [MedProvider Dashboard] Data received: {providerName: 'Test Medical Center', providerCode: 'TESTMED1', email: 'testmed1@example.com', patients: Array(9), medicalRecords: Array(21), …}
+bundle.js:3994 [MedProvider Dashboard] Patients count: 9
+bundle.js:3994 [MedProvider Search] Query: 
+bundle.js:3994 [MedProvider Search] Total patients: 9
+bundle.js:3994 [MedProvider Search] No query, returning all patients
+bundle.js:166 ✅ Successfully authenticated to Firebase, UID: 1
+bundle.js:166 📡 Setting up Firebase listeners for path: providers/1/notifications
+bundle.js:166 ✅ Firebase listeners setup complete for medical_provider 1
+bundle.js:164 Firebase listeners active
+bundle.js:164 ✅ Firebase listeners successfully initialized!
+bundle.js:164 ✅ Step 4/4: Refreshing unread count...
+bundle.js:164 ✅ Notification initialization complete!
+bundle.js:166 🔔 Firebase notifications update received: 0 notifications
+bundle.js:164 🔔 FIREBASE CALLBACK: Notifications update received! {count: 0, notifications: Array(0)}
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: medicalprovider-dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: medicalprovider-dashboard Should show: true
+bundle.js:3994 [MedProvider Search] Query: 
+bundle.js:3994 [MedProvider Search] Total patients: 9
+bundle.js:3994 [MedProvider Search] No query, returning all patients
+bundle.js:4028 [MedicalProviderBottomNavigation] Rendering for screen: medicalprovider-dashboard
+bundle.js:166 🔢 Firebase unread count update received: 0
+bundle.js:164 🔢 FIREBASE CALLBACK: Unread count update received! {newCount: 0, oldCount: 0}
+bundle.js:3994 [MedProvider Dashboard] Fetching dashboard data...
+bundle.js:3994 [MedProvider Dashboard] Token: Present
+bundle.js:3994 [MedProvider Dashboard] API URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/medicalprovider/dashboard
+bundle.js:3994 Error checking Stripe account status: TypeError: Cannot read properties of undefined (reading 'ACCOUNT_STATUS')
+    at oe (bundle.js:3994:19358)
+    at bundle.js:3994:16625
+    at ki (bundle.js:28:95914)
+    at Bs (bundle.js:28:113786)
+    at As (bundle.js:28:112609)
+    at Vs (bundle.js:28:111656)
+    at zs (bundle.js:28:108308)
+    at na (bundle.js:28:47266)
+    at bundle.js:28:105724
+oe @ bundle.js:3994
+(anonymous) @ bundle.js:3994
+ki @ bundle.js:28
+Bs @ bundle.js:28
+As @ bundle.js:28
+Vs @ bundle.js:28
+zs @ bundle.js:28
+na @ bundle.js:28
+(anonymous) @ bundle.js:28Understand this error
+bundle.js:3994 [MedProvider Dashboard] Response status: 200
+bundle.js:3994 [MedProvider Dashboard] Data received: {providerName: 'Test Medical Center', providerCode: 'TESTMED1', email: 'testmed1@example.com', patients: Array(9), medicalRecords: Array(21), …}
+bundle.js:3994 [MedProvider Dashboard] Patients count: 9
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: medicalprovider-send-notification Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: medicalprovider-send-notification Should show: true
+bundle.js:4028 [MedicalProviderBottomNavigation] Rendering for screen: medicalprovider-send-notification
+bundle.js:163 [API] GET https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/medicalprovider/patients
+bundle.js:163 [API] Response: 200 OK
+bundle.js:163 [API] POST https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/notifications/send-to-patients
+bundle.js:163 [API] Response: 200 OK
+bundle.js:163 [API] POST https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/notifications/send-to-patients
+bundle.js:163 [API] Response: 200 OK
+bundle.js:163 [API] POST https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/notifications/send-to-patients
+bundle.js:163 [API] Response: 200 OK

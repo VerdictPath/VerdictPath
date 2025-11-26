@@ -1,0 +1,107 @@
+🔧 API Configuration:
+bundle.js:163 Base URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev
+bundle.js:166 🔥 Firebase Service Loaded - Config: {hasApiKey: true, hasDatabaseURL: true, projectId: 'verdict-path'}
+bundle.js:3820 [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+(anonymous) @ bundle.js:3820
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:3717
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:119
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:6
+g @ bundle.js:2
+d @ bundle.js:2
+i @ bundle.js:2
+(anonymous) @ bundle.js:4029Understand this warning
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: landing Should show: false
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: false, userId: undefined, userType: undefined, hasToken: false, timestamp: '2025-11-23T15:44:36.698Z'}
+bundle.js:164 🔍 NotificationContext useEffect triggered: {userId: undefined, userType: undefined, hasUserToken: false, hasAuthToken: false, hasToken: false, …}
+bundle.js:164 ⏸️ Skipping notification initialization - waiting for user login {hasUserId: false, hasUserToken: false, hasAuthToken: false}
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: landing Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: login Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: login Should show: false
+bundle.js:119 [Login] Attempting login with userType: individual
+bundle.js:119 [Login] API userType: individual Target screen: dashboard Endpoint: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/auth/login
+bundle.js:163 [API] POST https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/auth/login
+bundle.js:163 [API] Response: 200 OK
+bundle.js:119 [Login] Login successful, response: {message: 'Login successful', token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjUsI…2ODZ9.ywBeagDvQJvBKdD3rloJUYbpJOFxG-1gWx1SdvHX21Q', user: {…}}
+bundle.js:119 [Login] Setting user data: {id: 25, email: 'testclient@example.com', type: 'individual', userType: 'individual', firstName: 'John', …}
+bundle.js:119 [Login] Navigating to: dashboard
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:3932 [VideoPreloader] Starting preload for captain
+bundle.js:3932 [VideoPreloader] Error preloading videos: TypeError: t.Video.createAsync is not a function
+    at p (bundle.js:3932:496)
+    at bundle.js:3932:340
+    at ki (bundle.js:28:95914)
+    at Bs (bundle.js:28:113786)
+    at bundle.js:28:112102
+    at k (bundle.js:52:1376)
+    at MessagePort.M (bundle.js:52:1911)
+p @ bundle.js:3932
+(anonymous) @ bundle.js:3932
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:3915 [Dashboard] Videos loaded: false
+bundle.js:119 [App] Loading user litigation progress...
+bundle.js:163 [API] GET https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/litigation/progress
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: true, userId: 25, userType: 'individual', hasToken: true, timestamp: '2025-11-23T15:44:46.760Z'}
+bundle.js:164 🔍 NotificationContext useEffect triggered: {userId: 25, userType: 'individual', hasUserToken: true, hasAuthToken: false, hasToken: true, …}
+bundle.js:164 🚀 STARTING notification initialization for user: {userType: 'individual', userId: 25, hasToken: true}
+bundle.js:164 ✅ Step 1/4: Registering for push notifications...
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:164 ⚠️ Step 2/4: No push token available
+bundle.js:164 ✅ Step 3/4: Setting up Firebase real-time listeners...
+bundle.js:166 🔥 Initializing Firebase with config: {apiKey: '✓ Set', authDomain: '✓ Set', databaseURL: '✓ Set', projectId: '✓ Set'}
+bundle.js:166 ✅ Firebase initialized successfully
+bundle.js:164 Setting up Firebase listeners for: individual 25
+bundle.js:166 🔐 Authenticating to Firebase before subscribing...
+bundle.js:166 🔑 Requesting Firebase custom token from backend...
+bundle.js:166 🔑 Auth token present: true
+bundle.js:166 🔑 Auth token value (first 20 chars): eyJhbGciOiJIUzI1NiIs...
+bundle.js:166 🔑 Request URL: https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev/api/notifications/firebase-token
+bundle.js:3915 [Dashboard] Videos loaded: true
+bundle.js:166 🔑 Fetch completed successfully
+bundle.js:166 🔑 Response status: 200
+bundle.js:166 🔑 Response content-type: application/json; charset=utf-8
+bundle.js:166 ✓ Parsed JSON response: {hasToken: true, uid: '25', keys: Array(3)}
+bundle.js:166 ✓ Received Firebase custom token response: {hasToken: true, uid: '25'}
+bundle.js:166 🔐 Attempting to sign in to Firebase with custom token...
+bundle.js:3916 [AvatarVideoBackground] Video loaded
+bundle.js:163 [API] Response: 200 OK
+bundle.js:119 [App] Progress loaded: {progress: {…}, completedSubstages: Array(27), completedStages: Array(0), videoProgress: Array(0)}
+bundle.js:119 [App] Litigation stages updated with user progress
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:166 ✅ Successfully authenticated to Firebase, UID: 25
+bundle.js:166 📡 Setting up Firebase listeners for path: users/25/notifications
+bundle.js:166 ✅ Firebase listeners setup complete for individual 25
+bundle.js:164 Firebase listeners active
+bundle.js:164 ✅ Firebase listeners successfully initialized!
+bundle.js:164 ✅ Step 4/4: Refreshing unread count...
+bundle.js:166 🔔 Firebase notifications update received: 5 notifications
+bundle.js:164 🔔 FIREBASE CALLBACK: Notifications update received! {count: 5, notifications: Array(5)}
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:166 🔢 Firebase unread count update received: 0
+bundle.js:164 🔢 FIREBASE CALLBACK: Unread count update received! {newCount: 0, oldCount: 0}
+bundle.js:164 ✅ Notification initialization complete!
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: true, userId: 25, userType: 'individual', hasToken: true, timestamp: '2025-11-23T15:44:47.216Z'}

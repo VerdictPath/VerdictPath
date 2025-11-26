@@ -1,0 +1,78 @@
+🔐 Attempting to sign in to Firebase with custom token...
+bundle.js:2124  POST https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=AIzaSyBULR0s_hP-J_7Lgl_7pCoBsFmsTr1ErcI 400 (Bad Request)
+(anonymous) @ bundle.js:2124
+await in (anonymous)
+X @ bundle.js:2124
+Y @ bundle.js:2124
+Q @ bundle.js:2124
+vn @ bundle.js:2944
+Tn @ bundle.js:2960
+y @ bundle.js:166
+await in y
+k @ bundle.js:166
+(anonymous) @ bundle.js:164
+(anonymous) @ bundle.js:164
+await in (anonymous)
+(anonymous) @ bundle.js:164
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:166 ❌ Firebase signInWithCustomToken failed: {message: 'Firebase: Error (auth/configuration-not-found).', code: 'auth/configuration-not-found', name: 'FirebaseError', type: 'object', error: FirebaseError: Firebase: Error (auth/configuration-not-found).
+    at M (https://3db82e01-661d-40f3…}
+y @ bundle.js:166
+await in y
+k @ bundle.js:166
+(anonymous) @ bundle.js:164
+(anonymous) @ bundle.js:164
+await in (anonymous)
+(anonymous) @ bundle.js:164
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:166 ❌ Firebase authentication error details: {message: 'Firebase sign-in failed: Firebase: Error (auth/configuration-not-found).', name: 'Error', stack: 'Error: Firebase sign-in failed: Firebase: Error (a…-ogc5sltdyi6u.riker.replit.dev/bundle.js:164:5835', type: 'object', isError: true, …}
+y @ bundle.js:166
+await in y
+k @ bundle.js:166
+(anonymous) @ bundle.js:164
+(anonymous) @ bundle.js:164
+await in (anonymous)
+(anonymous) @ bundle.js:164
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:166 ❌ Failed to authenticate to Firebase, cannot subscribe
+k @ bundle.js:166
+await in k
+(anonymous) @ bundle.js:164
+(anonymous) @ bundle.js:164
+await in (anonymous)
+(anonymous) @ bundle.js:164
+ki @ bundle.js:28
+Bs @ bundle.js:28
+(anonymous) @ bundle.js:28
+k @ bundle.js:52
+M @ bundle.js:52Understand this error
+bundle.js:164 Failed to setup Firebase listeners
+bundle.js:164 ❌ Firebase setup failed, starting REST polling fallback
+bundle.js:164 Setting up REST polling fallback
+bundle.js:164 ✅ Step 4/4: Refreshing unread count...
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: true, userId: 25, userType: 'individual', hasToken: true, timestamp: '2025-11-23T15:15:14.484Z'}
+bundle.js:164 Setting up REST polling fallback
+bundle.js:163 [API] Response: 200 OK
+bundle.js:119 [App] Progress loaded: {progress: {…}, completedSubstages: Array(27), completedStages: Array(0), videoProgress: Array(0)}
+bundle.js:119 [App] Litigation stages updated with user progress
+bundle.js:3916 [AvatarVideoBackground] Video loaded
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:164 ✅ Notification initialization complete!
+bundle.js:119 [App.js] Law Firm Nav Check - Current screen: dashboard Should show: false
+bundle.js:119 [App.js] Medical Provider Nav Check - Current screen: dashboard Should show: false
+bundle.js:164 👤 NotificationContext: User changed: {hasUser: true, userId: 25, userType: 'individual', hasToken: true, timestamp: '2025-11-23T15:15:14.561Z'}
