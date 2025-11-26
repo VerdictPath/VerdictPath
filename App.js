@@ -53,6 +53,7 @@ import MedicalProviderActivityDashboardScreen from './src/screens/MedicalProvide
 import MedicalProviderHIPAADashboardScreen from './src/screens/MedicalProviderHIPAADashboardScreen';
 import MedicalProviderUserActivityTimelineScreen from './src/screens/MedicalProviderUserActivityTimelineScreen';
 import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEventRequestsScreen';
+import MedicalProviderBillingScreen from './src/screens/MedicalProviderBillingScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import TreasureChestScreen from './src/screens/TreasureChestScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
@@ -1617,10 +1618,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'medicalprovider-disbursements' && (
-        <ReceivedDisbursementsScreen
+      {currentScreen === 'medicalprovider-billing' && (
+        <MedicalProviderBillingScreen
           user={user}
-          userType="medical_provider"
           onBack={handleBackToMedicalProviderDashboard}
         />
       )}
@@ -1858,7 +1858,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Medical Provider Bottom Navigation */}
         {(() => {
-          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-messages', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-disbursements', 'medicalprovider-negotiations'];
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-messages', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-billing'];
           const shouldShow = medProviderScreens.includes(currentScreen);
           console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;

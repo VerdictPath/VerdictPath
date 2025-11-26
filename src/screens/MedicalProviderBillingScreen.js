@@ -18,11 +18,7 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Billing & Negotiations</Text>
-          <View style={styles.placeholder} />
+          <Text style={styles.headerTitle}>💰 Billing</Text>
         </View>
 
         <View style={styles.tabContainer}>
@@ -70,30 +66,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: '#0d4d4d',
     borderBottomWidth: 2,
     borderBottomColor: '#d4af37',
   },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    color: '#d4af37',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#d4af37',
-  },
-  placeholder: {
-    width: 60,
   },
   tabContainer: {
     flexDirection: 'row',
