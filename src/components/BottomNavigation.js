@@ -2,15 +2,17 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
 import { useNotifications } from '../contexts/NotificationContext';
 
-const BottomNavigation = ({ currentScreen, onNavigate }) => {
+const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) => {
   const { unreadCount } = useNotifications();
   
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'dashboard', badge: unreadCount },
+    { name: 'Dashboard', icon: '🏠', screen: 'dashboard' },
     { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
     { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
-    { name: 'Videos', icon: '🎬', screen: 'videos' },
+    { name: 'Notifications', icon: '🔔', screen: 'notifications', badge: unreadCount },
+    { name: 'Messages', icon: '💬', screen: 'chat-list', badge: chatUnreadCount },
     { name: 'Actions', icon: '⚓', screen: 'actions' },
+    { name: 'Profile', icon: '👤', screen: 'profile' },
   ];
 
   return (
@@ -36,8 +38,8 @@ const BottomNavigation = ({ currentScreen, onNavigate }) => {
               ) : (
                 <Text style={[styles.icon, tab.iconColor && { color: tab.iconColor }]}>{tab.icon}</Text>
               )}
-              {showBadge && (
-                <View style={styles.badge}>
+              {tab.badge !== undefined && (
+                <View style={[styles.badge, !showBadge && styles.hiddenBadge]}>
                   <Text style={styles.badgeText}>
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </Text>
@@ -98,7 +100,7 @@ const styles = StyleSheet.create({
     height: 24,
   },
   label: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#95a5a6',
     marginTop: 2,
   },
@@ -127,6 +129,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: '#2c3e50',
+  },
+  hiddenBadge: {
+    opacity: 0,
   },
   badgeText: {
     color: '#fff',

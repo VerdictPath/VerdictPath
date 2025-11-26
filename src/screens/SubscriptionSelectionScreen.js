@@ -376,7 +376,7 @@ const MEDICAL_PROVIDER_PRICING = {
   ]
 };
 
-const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate }) => {
+const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate, viewOnly = false, onBack = null }) => {
   const videoRef = useRef(null);
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
@@ -426,6 +426,25 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
   };
 
   const handleSelectPlan = (plan, tierData = null, fromTable = false) => {
+    // In view-only mode, redirect to registration
+    if (viewOnly) {
+      if (Platform.OS === 'web') {
+        if (window.confirm('Ready to get started? Click OK to create your account.')) {
+          onSelectSubscription();
+        }
+      } else {
+        Alert.alert(
+          'Ready to Get Started?',
+          'Create an account to select this plan.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Create Account', onPress: onSelectSubscription }
+          ]
+        );
+      }
+      return;
+    }
+
     if (userType === 'lawfirm' || userType === 'medicalprovider') {
       // If tierData is passed, use it; otherwise use currentTier from calculator
       const selectedTier = tierData || currentTier;
@@ -550,7 +569,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
       <View style={styles.lawFirmContainer}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => onNavigate('register')}
+          onPress={() => viewOnly && onBack ? onBack() : onNavigate('register')}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
@@ -839,7 +858,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
       <View style={styles.lawFirmContainer}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => onNavigate('register')}
+          onPress={() => viewOnly && onBack ? onBack() : onNavigate('register')}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
@@ -1109,7 +1128,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
       <View style={styles.individualContainer}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => onNavigate('register')}
+          onPress={() => viewOnly && onBack ? onBack() : onNavigate('register')}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>

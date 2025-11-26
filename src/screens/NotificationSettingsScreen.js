@@ -23,6 +23,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   const [preferences, setPreferences] = useState({
     pushNotificationsEnabled: true,
     emailNotificationsEnabled: true,
+    smsNotificationsEnabled: false,
     quietHoursEnabled: false,
     quietHoursStart: '22:00:00',
     quietHoursEnd: '08:00:00',
@@ -50,7 +51,20 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
       const data = await response.json();
 
       if (response.ok) {
-        setPreferences(data);
+        // Map snake_case API response to camelCase state
+        setPreferences({
+          pushNotificationsEnabled: data.push_notifications_enabled ?? true,
+          emailNotificationsEnabled: data.email_notifications_enabled ?? true,
+          smsNotificationsEnabled: data.sms_notifications_enabled ?? false,
+          quietHoursEnabled: data.quiet_hours_enabled ?? false,
+          quietHoursStart: data.quiet_hours_start ?? '22:00:00',
+          quietHoursEnd: data.quiet_hours_end ?? '08:00:00',
+          timezone: data.timezone ?? 'America/New_York',
+          urgentNotifications: data.urgent_notifications ?? true,
+          taskNotifications: data.task_notifications ?? true,
+          systemNotifications: data.system_notifications ?? true,
+          marketingNotifications: data.marketing_notifications ?? false
+        });
       } else {
         Alert.alert('Error', data.error || 'Failed to load notification preferences');
       }
@@ -65,19 +79,42 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   const updatePreferences = async (updates) => {
     try {
       setSaving(true);
+      
+      // Map camelCase updates to snake_case for API
+      const snakeCaseUpdates = {};
+      Object.keys(updates).forEach(key => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        snakeCaseUpdates[snakeKey] = updates[key];
+      });
+      
       const response = await fetch(`${API_BASE_URL}/api/notifications/preferences`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(snakeCaseUpdates)
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setPreferences(data.preferences);
+        // Map snake_case response back to camelCase state
+        if (data.preferences) {
+          setPreferences({
+            pushNotificationsEnabled: data.preferences.push_notifications_enabled ?? preferences.pushNotificationsEnabled,
+            emailNotificationsEnabled: data.preferences.email_notifications_enabled ?? preferences.emailNotificationsEnabled,
+            smsNotificationsEnabled: data.preferences.sms_notifications_enabled ?? preferences.smsNotificationsEnabled,
+            quietHoursEnabled: data.preferences.quiet_hours_enabled ?? preferences.quietHoursEnabled,
+            quietHoursStart: data.preferences.quiet_hours_start ?? preferences.quietHoursStart,
+            quietHoursEnd: data.preferences.quiet_hours_end ?? preferences.quietHoursEnd,
+            timezone: data.preferences.timezone ?? preferences.timezone,
+            urgentNotifications: data.preferences.urgent_notifications ?? preferences.urgentNotifications,
+            taskNotifications: data.preferences.task_notifications ?? preferences.taskNotifications,
+            systemNotifications: data.preferences.system_notifications ?? preferences.systemNotifications,
+            marketingNotifications: data.preferences.marketing_notifications ?? preferences.marketingNotifications
+          });
+        }
         Alert.alert('Success', 'Notification preferences updated');
       } else {
         Alert.alert('Error', data.error || 'Failed to update preferences');
@@ -178,6 +215,22 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
               onValueChange={(value) => handleToggle('emailNotificationsEnabled', value)}
               trackColor={{ false: '#ccc', true: theme.colors.primary }}
               thumbColor={preferences.emailNotificationsEnabled ? '#fff' : '#f4f3f4'}
+              disabled={saving}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>SMS Notifications</Text>
+              <Text style={styles.settingDescription}>
+                Receive text messages for important updates and task reminders
+              </Text>
+            </View>
+            <Switch
+              value={preferences.smsNotificationsEnabled}
+              onValueChange={(value) => handleToggle('smsNotificationsEnabled', value)}
+              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              thumbColor={preferences.smsNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
           </View>

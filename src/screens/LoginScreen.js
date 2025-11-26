@@ -12,7 +12,9 @@ const LoginScreen = ({
   onLogin, 
   onNavigate,
   userType,
-  setUserType
+  setUserType,
+  firmCode,
+  setFirmCode
 }) => {
   const videoRef = useRef(null);
 

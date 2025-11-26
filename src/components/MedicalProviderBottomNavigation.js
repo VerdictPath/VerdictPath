@@ -8,8 +8,10 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
     { name: 'Dashboard', icon: '🏠', screen: 'medicalprovider-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-send-notification', badge: notificationCount },
     { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
+    { name: 'Messages', icon: '💬', screen: 'medicalprovider-messages' },
     { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
-    { name: 'Activity', icon: '📋', screen: 'medicalprovider-activity-dashboard' },
+    { name: 'Activity', icon: '📊', screen: 'medicalprovider-activity-dashboard' },
+    { name: 'Disbursements', icon: '💰', screen: 'medicalprovider-disbursements' },
   ];
 
   return (
@@ -27,8 +29,8 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
           >
             <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
               <Text style={styles.icon}>{tab.icon}</Text>
-              {showBadge && (
-                <View style={styles.badge}>
+              {tab.badge !== undefined && (
+                <View style={[styles.badge, !showBadge && styles.hiddenBadge]}>
                   <Text style={styles.badgeText}>
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </Text>
@@ -112,6 +114,9 @@ const styles = StyleSheet.create({
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hiddenBadge: {
+    opacity: 0,
   },
   badgeText: {
     color: '#fff',

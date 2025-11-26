@@ -8,6 +8,8 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
     { name: 'Dashboard', icon: '🏠', screen: 'lawfirm-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'lawfirm-send-notification', badge: notificationCount },
     { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
+    { name: 'Messages', icon: '💬', screen: 'lawfirm-messages' },
+    { name: 'Activity', icon: '📊', screen: 'lawfirm-activity-dashboard' },
     { name: 'Disbursements', icon: '💰', screen: 'lawfirm-disbursements' },
     { name: 'Negotiations', icon: '🤝', screen: 'lawfirm-negotiations' },
   ];
@@ -27,8 +29,8 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
           >
             <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
               <Text style={styles.icon}>{tab.icon}</Text>
-              {showBadge && (
-                <View style={styles.badge}>
+              {tab.badge !== undefined && (
+                <View style={[styles.badge, !showBadge && styles.hiddenBadge]}>
                   <Text style={styles.badgeText}>
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </Text>
@@ -112,6 +114,9 @@ const styles = StyleSheet.create({
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hiddenBadge: {
+    opacity: 0,
   },
   badgeText: {
     color: '#fff',

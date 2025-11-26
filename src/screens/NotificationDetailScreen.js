@@ -16,7 +16,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate }) 
   const loadNotificationDetail = async () => {
     try {
       setIsLoading(true);
-      const response = await apiRequest(`${API_ENDPOINTS.NOTIFICATIONS.HISTORY}/${notificationId}`, {
+      const response = await apiRequest(API_ENDPOINTS.NOTIFICATIONS.DETAIL(notificationId), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,

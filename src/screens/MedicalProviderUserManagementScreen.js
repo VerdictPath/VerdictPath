@@ -470,6 +470,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: medicalProviderTheme.colors.deepTeal,
+    paddingBottom: 100,
   },
   background: {
     position: 'absolute',

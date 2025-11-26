@@ -300,6 +300,30 @@ class NotificationService {
     }
   }
 
+  async markAllAsRead(authToken) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/mark-all-read`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to mark all notifications as read');
+      }
+
+      return { success: true, count: data.count };
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   async fetchUnreadCount(authToken) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/notifications/unread-count`, {

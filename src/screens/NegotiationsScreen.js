@@ -189,6 +189,8 @@ const NegotiationsScreen = ({ user, onBack }) => {
         requestBody.medicalProviderId = selectedMedicalProviderId;
       }
 
+      console.log('📤 Sending negotiation request:', requestBody);
+
       const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.INITIATE, {
         method: 'POST',
         headers: {
@@ -196,6 +198,8 @@ const NegotiationsScreen = ({ user, onBack }) => {
         },
         body: JSON.stringify(requestBody)
       });
+
+      console.log('📥 Negotiation response:', response);
 
       Alert.alert(
         'Success',
@@ -628,7 +632,7 @@ const NegotiationsScreen = ({ user, onBack }) => {
                   styles.clientOptionText,
                   selectedClientId === client.id && styles.clientOptionTextSelected
                 ]}>
-                  {client.firstName} {client.lastName}
+                  {client.first_name || client.firstName} {client.last_name || client.lastName}
                 </Text>
               </TouchableOpacity>
             ))}

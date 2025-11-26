@@ -1,5 +1,6 @@
-// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend
+// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend [v2.1.0]
 // Replace your existing /src/config/api.js with this file
+// CACHE BUST: Notification endpoints fixed - November 22, 2025
 
 // ============================================================================
 // API BASE URL CONFIGURATION
@@ -25,6 +26,8 @@ export const API_ENDPOINTS = {
     REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register/lawfirm`,
     REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register/medicalprovider`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
+    LOGIN_LAWFIRM_USER: `${API_BASE_URL}/api/auth/login/lawfirm-user`,
+    LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,
     LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   },
 
@@ -38,9 +41,11 @@ export const API_ENDPOINTS = {
   // Litigation Progress
   LITIGATION: {
     PROGRESS: `${API_BASE_URL}/api/litigation/progress`,
-    COMPLETE_SUBSTAGE: `${API_BASE_URL}/api/litigation/complete-substage`,
-    COMPLETE_STAGE: `${API_BASE_URL}/api/litigation/complete-stage`,
-    REVERT_STAGE: `${API_BASE_URL}/api/litigation/revert-stage`,
+    COMPLETE_SUBSTAGE: `${API_BASE_URL}/api/litigation/substage/complete`,
+    COMPLETE_STAGE: `${API_BASE_URL}/api/litigation/stage/complete`,
+    REVERT_STAGE: `${API_BASE_URL}/api/litigation/stage/revert`,
+    REVERT_SUBSTAGE: `${API_BASE_URL}/api/litigation/substage/revert`,
+    UPDATE_VIDEO_PROGRESS: `${API_BASE_URL}/api/litigation/video/progress`,
   },
 
   // Law Firm
@@ -53,6 +58,7 @@ export const API_ENDPOINTS = {
 
   // Medical Provider
   MEDICALPROVIDER: {
+    DASHBOARD: `${API_BASE_URL}/api/medicalprovider/dashboard`,
     PATIENTS: `${API_BASE_URL}/api/medicalprovider/patients`,
     PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patients/${patientId}`,
     LAW_FIRMS: `${API_BASE_URL}/api/connections/law-firms`,
@@ -96,15 +102,25 @@ export const API_ENDPOINTS = {
   // Notifications
   NOTIFICATIONS: {
     LIST: `${API_BASE_URL}/api/notifications`,
+    MY_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/my-notifications`,
     UNREAD_COUNT: `${API_BASE_URL}/api/notifications/unread-count`,
-    MARK_READ: `${API_BASE_URL}/api/notifications/mark-read`,
-    MARK_CLICKED: `${API_BASE_URL}/api/notifications/mark-clicked`,
+    DETAIL: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}`,
+    MARK_READ: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/read`,
+    MARK_CLICKED: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/clicked`,
     MARK_ALL_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,
     REGISTER_DEVICE: `${API_BASE_URL}/api/notifications/register-device`,
     UNREGISTER_DEVICE: `${API_BASE_URL}/api/notifications/unregister-device`,
     SEND: `${API_BASE_URL}/api/notifications/send`,
+    SEND_TO_ALL_CLIENTS: `${API_BASE_URL}/api/notifications/send-to-all-clients`,
     SEND_TO_CLIENTS: `${API_BASE_URL}/api/notifications/send-to-clients`,
+    SEND_TO_CLIENT: `${API_BASE_URL}/api/notifications/send-to-client`,
+    SEND_TO_ALL_PATIENTS: `${API_BASE_URL}/api/notifications/send-to-all-patients`,
+    SEND_TO_PATIENTS: `${API_BASE_URL}/api/notifications/send-to-patients`,
+    SEND_TO_PATIENT: `${API_BASE_URL}/api/notifications/send-to-patient`,
     ANALYTICS: `${API_BASE_URL}/api/notifications/analytics`,
+    STATS: `${API_BASE_URL}/api/notifications/stats`,
+    HISTORY: `${API_BASE_URL}/api/notifications/history`,
+    PREFERENCES: `${API_BASE_URL}/api/notifications/preferences`,
   },
 
   // Negotiations
@@ -115,6 +131,23 @@ export const API_ENDPOINTS = {
     ACCEPT: `${API_BASE_URL}/api/negotiations/accept`,
     REQUEST_CALL: `${API_BASE_URL}/api/negotiations/request-call`,
     LOG: (negotiationId) => `${API_BASE_URL}/api/negotiations/${negotiationId}/log`,
+  },
+
+  // Client-Medical Provider Relationships
+  CLIENT_RELATIONSHIPS: {
+    GET_CLIENT_PROVIDERS: (clientId) => `${API_BASE_URL}/api/client-relationships/clients/${clientId}/medical-providers`,
+    ADD_PROVIDER: `${API_BASE_URL}/api/client-relationships/clients/link-provider`,
+    REMOVE_PROVIDER: (clientId, providerId) => `${API_BASE_URL}/api/client-relationships/clients/${clientId}/medical-providers/${providerId}`,
+  },
+
+  // Tasks (Attorney-Assigned Tasks)
+  TASKS: {
+    MY_TASKS: `${API_BASE_URL}/api/tasks/my-tasks`,
+    CREATE: `${API_BASE_URL}/api/tasks/create`,
+    UPDATE_STATUS: (taskId) => `${API_BASE_URL}/api/tasks/${taskId}/status`,
+    GET_CLIENT_TASKS: (clientId) => `${API_BASE_URL}/api/tasks/client/${clientId}`,
+    DELETE: (taskId) => `${API_BASE_URL}/api/tasks/${taskId}`,
+    TEMPLATES: `${API_BASE_URL}/api/tasks/templates`,
   },
 
   // Avatar
@@ -168,14 +201,17 @@ export const API_ENDPOINTS = {
 // ============================================================================
 
 export async function apiRequest(url, options = {}) {
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+  // Merge headers separately to ensure Content-Type is preserved
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
   };
 
-  const config = { ...defaultOptions, ...options };
+  const config = {
+    ...options,
+    headers,
+    credentials: 'include',  // Always send httpOnly cookies with requests
+  };
 
   try {
     console.log(`[API] ${config.method || 'GET'} ${url}`);
@@ -250,6 +286,7 @@ export async function checkBackendHealth() {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',  // Send httpOnly cookies
     });
     
     if (response.ok) {
@@ -319,6 +356,7 @@ export async function uploadFileWithProgress(file, token, onProgress, fileType =
 
     // Send request
     xhr.open('POST', API_ENDPOINTS.UPLOADS.DOCUMENT);
+    xhr.withCredentials = true;  // Send httpOnly cookies with XHR
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.send(formData);
   });
@@ -374,7 +412,7 @@ console.log('🔧 API Configuration:');
 console.log('Base URL:', API_BASE_URL);
 
 // Test backend connection on app start (optional - comment out if not needed)
-if (__DEV__) {
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
   checkBackendHealth().then(isHealthy => {
     if (isHealthy) {
       console.log('✅ Backend connection successful!');

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationService from '../services/NotificationService';
+import firebaseService from '../services/firebaseService';
 
 const NotificationContext = createContext();
 
@@ -17,8 +18,31 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [authToken, setAuthToken] = useState(user?.token || null);
+  const [useFirebase, setUseFirebase] = useState(true);
+  const firebaseUnsubscribe = useRef(null);
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
+    const status = { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      userType: user?.userType,
+      hasToken: !!user?.token,
+      timestamp: new Date().toISOString()
+    };
+    console.log('👤 NotificationContext: User changed:', status);
+    
+    // Expose status for debugging (web only)
+    if (typeof window !== 'undefined') {
+      window.__vpNotifyStatus = {
+        ...status,
+        unreadCount,
+        useFirebase,
+        hasFirebaseUnsubscribe: !!firebaseUnsubscribe.current,
+        hasPollInterval: !!pollIntervalRef.current
+      };
+    }
+    
     if (user?.token) {
       setAuthToken(user.token);
     } else {
@@ -26,7 +50,7 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       setUnreadCount(0);
       setNotifications([]);
     }
-  }, [user]);
+  }, [user, unreadCount, useFirebase]);
 
   const loadAuthToken = useCallback(async () => {
     try {
@@ -43,6 +67,95 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       return null;
     }
   }, [authToken]);
+
+  const setupFirebaseListeners = useCallback(async () => {
+    if (!user?.id || !user?.userType) {
+      console.log('No user ID or type available for Firebase');
+      return false;
+    }
+
+    const token = user?.token || authToken || await loadAuthToken();
+    if (!token) {
+      console.log('No auth token available for Firebase authentication');
+      setUseFirebase(false);
+      return false;
+    }
+
+    try {
+      const initResult = firebaseService.initializeFirebase();
+      if (!initResult.success) {
+        console.log('Firebase unavailable, falling back to REST polling');
+        setUseFirebase(false);
+        return false;
+      }
+
+      console.log('Setting up Firebase listeners for:', user.userType, user.id);
+      
+      const handleNotificationsUpdate = (firebaseNotifications) => {
+        console.log('🔔 FIREBASE CALLBACK: Notifications update received!', {
+          count: firebaseNotifications.length,
+          notifications: firebaseNotifications.map(n => ({ id: n.id, title: n.title }))
+        });
+        setNotifications(firebaseNotifications);
+      };
+
+      const handleUnreadCountUpdate = (count) => {
+        console.log('🔢 FIREBASE CALLBACK: Unread count update received!', { 
+          newCount: count,
+          oldCount: unreadCount 
+        });
+        setUnreadCount(count);
+        NotificationService.setBadgeCount(count);
+      };
+
+      const unsubscribe = await firebaseService.subscribeToNotifications(
+        user.userType,
+        user.id,
+        handleNotificationsUpdate,
+        handleUnreadCountUpdate,
+        token
+      );
+
+      if (unsubscribe) {
+        firebaseUnsubscribe.current = unsubscribe;
+        setUseFirebase(true);
+        console.log('Firebase listeners active');
+        return true;
+      } else {
+        console.log('Failed to setup Firebase listeners');
+        setUseFirebase(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Firebase setup error, falling back to REST:', error);
+      setUseFirebase(false);
+      return false;
+    }
+  }, [user, authToken, loadAuthToken]);
+
+  const setupRESTPolling = useCallback(() => {
+    console.log('Setting up REST polling fallback');
+    
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+
+    const pollNotifications = async () => {
+      const token = authToken || await loadAuthToken();
+      if (!token) return;
+
+      try {
+        // Fetch notifications list only, unread count comes from Firebase
+        const fetchedNotifications = await NotificationService.fetchNotifications(token);
+        setNotifications(fetchedNotifications);
+      } catch (error) {
+        console.error('REST polling error:', error);
+      }
+    };
+
+    pollNotifications();
+    pollIntervalRef.current = setInterval(pollNotifications, 30000);
+  }, [authToken, loadAuthToken]);
 
   const initializeNotifications = useCallback(async () => {
     try {
@@ -61,24 +174,25 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
         }
       }
 
-      await refreshUnreadCount(token);
+      const firebaseSuccess = await setupFirebaseListeners();
+      
+      if (!firebaseSuccess) {
+        console.log('Firebase setup failed, starting REST polling');
+        setupRESTPolling();
+      }
+
+      // Firebase handles unread count automatically, no need for REST call
     } catch (error) {
       console.error('Error initializing notifications:', error);
+      setupRESTPolling();
     }
-  }, [authToken, user, loadAuthToken]);
+  }, [authToken, user, loadAuthToken, setupFirebaseListeners, setupRESTPolling]);
 
   const refreshUnreadCount = useCallback(async (token = null) => {
-    try {
-      const activeToken = token || authToken || await loadAuthToken();
-      if (!activeToken) return;
-
-      const count = await NotificationService.fetchUnreadCount(activeToken);
-      setUnreadCount(count);
-      await NotificationService.setBadgeCount(count);
-    } catch (error) {
-      console.error('Error refreshing unread count:', error);
-    }
-  }, [authToken, loadAuthToken]);
+    // This function is kept for backward compatibility but does nothing
+    // Firebase Realtime Database automatically syncs unread count
+    console.log('⚠️ refreshUnreadCount called - Firebase handles this automatically');
+  }, []);
 
   const fetchNotifications = useCallback(async (options = {}) => {
     try {
@@ -109,7 +223,7 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
             ? { ...n, is_read: true, read_at: new Date().toISOString() } 
             : n)
         );
-        await refreshUnreadCount(token);
+        // Firebase automatically syncs the updated unread count
       }
       return success;
     } catch (error) {
@@ -138,6 +252,26 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
     }
   }, [authToken, loadAuthToken]);
 
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const token = authToken || await loadAuthToken();
+      if (!token) return { success: false, error: 'No auth token' };
+
+      const result = await NotificationService.markAllAsRead(token);
+      if (result.success) {
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
+        );
+        setUnreadCount(0);
+        await NotificationService.setBadgeCount(0);
+      }
+      return result;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return { success: false, error: error.message };
+    }
+  }, [authToken, loadAuthToken]);
+
   const handleNotificationReceived = useCallback((notification) => {
     console.log('Notification received in app:', notification);
     refreshUnreadCount();
@@ -161,15 +295,104 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
   }, [markAsClicked, markAsRead, onNavigate]);
 
   useEffect(() => {
-    initializeNotifications();
+    // Use user.token directly to avoid timing issues with authToken state
+    const token = user?.token || authToken;
+    
+    console.log('🔍 NotificationContext useEffect triggered:', {
+      userId: user?.id,
+      userType: user?.userType,
+      hasUserToken: !!user?.token,
+      hasAuthToken: !!authToken,
+      hasToken: !!token,
+      timestamp: new Date().toISOString()
+    });
+    
+    if (!user?.id || !token) {
+      console.log('⏸️ Skipping notification initialization - waiting for user login', {
+        hasUserId: !!user?.id,
+        hasUserToken: !!user?.token,
+        hasAuthToken: !!authToken
+      });
+      return;
+    }
+
+    console.log('🚀 STARTING notification initialization for user:', {
+      userType: user.userType,
+      userId: user.id,
+      hasToken: !!token
+    });
+    
+    // Call initialization async
+    const init = async () => {
+      try {
+        if (!token || !user?.id) {
+          console.log('❌ No auth token or user ID available for notifications');
+          return;
+        }
+
+        console.log('✅ Step 1/4: Registering for push notifications...');
+        const pushToken = await NotificationService.registerForPushNotifications();
+        if (pushToken) {
+          const deviceRegistered = await AsyncStorage.getItem(`deviceRegistered_${user.id}`);
+          
+          if (!deviceRegistered || deviceRegistered !== 'true') {
+            console.log('✅ Step 2/4: Registering device with backend...');
+            await NotificationService.registerDeviceWithBackend(token, user.id);
+          } else {
+            console.log('✅ Step 2/4: Device already registered');
+          }
+        } else {
+          console.log('⚠️ Step 2/4: No push token available');
+        }
+
+        console.log('✅ Step 3/4: Setting up Firebase real-time listeners...');
+        const firebaseSuccess = await setupFirebaseListeners();
+        
+        if (!firebaseSuccess) {
+          console.log('❌ Firebase setup failed, starting REST polling fallback');
+          setupRESTPolling();
+        } else {
+          console.log('✅ Firebase listeners successfully initialized!');
+        }
+
+        console.log('✅ Step 4/4: Refreshing unread count...');
+        await refreshUnreadCount(token);
+        console.log('✅ Notification initialization complete!');
+      } catch (error) {
+        console.error('❌ Error initializing notifications:', error);
+        setupRESTPolling();
+      }
+    };
+    
+    init();
 
     const cleanup = NotificationService.setupNotificationListeners(
       handleNotificationReceived,
       handleNotificationTapped
     );
 
-    return cleanup;
-  }, [initializeNotifications, handleNotificationReceived, handleNotificationTapped]);
+    return () => {
+      console.log('🧹 Cleaning up notification listeners');
+      cleanup();
+      if (firebaseUnsubscribe.current) {
+        firebaseUnsubscribe.current();
+        firebaseUnsubscribe.current = null;
+      }
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [user?.id, user?.userType, user?.token]);
+
+  useEffect(() => {
+    if (!useFirebase && user?.id && authToken) {
+      setupRESTPolling();
+    } else if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  }, [useFirebase, user, authToken, setupRESTPolling]);
 
   const logout = useCallback(async () => {
     try {
@@ -177,10 +400,23 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       if (token && user?.id) {
         await NotificationService.unregisterDeviceFromBackend(token, user.id);
       }
+
+      if (firebaseUnsubscribe.current) {
+        firebaseUnsubscribe.current();
+        firebaseUnsubscribe.current = null;
+      }
+
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+
+      firebaseService.unsubscribeAll();
       
       setAuthToken(null);
       setUnreadCount(0);
       setNotifications([]);
+      setUseFirebase(true);
       await NotificationService.clearBadge();
     } catch (error) {
       console.error('Error during notification logout:', error);
@@ -196,6 +432,7 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
     refreshNotifications: fetchNotifications,
     markAsRead,
     markAsClicked,
+    markAllAsRead,
     logout,
     setAuthToken,
   };

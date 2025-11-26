@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { theme } from '../styles/theme';
@@ -352,105 +352,134 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const renderMedicalHubTab = () => {
     const totalBilled = medicalBilling.reduce((sum, bill) => sum + (parseFloat(bill.total_amount) || 0), 0);
+    const isPhone = width < 768;
+    const isTablet = width >= 768 && width < 1024;
+    const isDesktop = width >= 1024;
 
     return (
-      <View style={styles.tabContent}>
-        {/* Medical Records Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>📋 Medical Records</Text>
-            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
-          </View>
-          
-          {medicalRecords.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🏥</Text>
-              <Text style={styles.emptyText}>No medical records uploaded yet</Text>
-            </View>
-          ) : (
-            medicalRecords.map((record) => (
-              <View key={record.id} style={styles.documentCard}>
-                <View style={styles.documentHeader}>
-                  <Text style={styles.documentTitle}>📄 {record.record_type || 'Medical Record'}</Text>
-                  <Text style={styles.documentBadge}>{record.file_name}</Text>
-                </View>
-                {record.facility_name && (
-                  <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
-                )}
-                {record.provider_name && (
-                  <Text style={styles.documentDetail}>👨‍⚕️ {record.provider_name}</Text>
-                )}
-                {record.date_of_service && (
-                  <Text style={styles.documentDetail}>
-                    📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
-                  </Text>
-                )}
-                <Text style={styles.documentDate}>
-                  Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
-                </Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Medical Billing Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>💊 Medical Billing</Text>
-            <Text style={styles.comingSoonBadge}>🏴‍☠️ Coming Soon</Text>
-          </View>
-          
-          {medicalBilling.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>💰</Text>
-              <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.billingSummary}>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Billed:</Text>
-                  <Text style={styles.billingValue}>${totalBilled.toLocaleString()}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Bills:</Text>
-                  <Text style={styles.billingValue}>{medicalBilling.length}</Text>
-                </View>
+      <ImageBackground
+        source={require('../../attached_assets/Medical Ward_1764038075699.png')}
+        style={styles.medicalHubBackground}
+        resizeMode="cover"
+      >
+        <View style={styles.medicalHubOverlay}>
+          <View style={[
+            styles.medicalHubContent,
+            { 
+              paddingHorizontal: isDesktop ? 40 : isTablet ? 30 : 15,
+              paddingTop: isDesktop ? 30 : 20,
+            }
+          ]}>
+            <View style={[styles.section, styles.medicalHubSection]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[
+                  styles.sectionTitle,
+                  styles.medicalHubSectionTitle,
+                  { fontSize: isDesktop ? 24 : 20 }
+                ]}>📋 Medical Records</Text>
+                <Text style={[
+                  styles.comingSoonBadge,
+                  { fontSize: isDesktop ? 13 : 11 }
+                ]}>🏴‍☠️ Coming Soon</Text>
               </View>
               
-              {medicalBilling.map((bill) => (
-                <View key={bill.id} style={styles.documentCard}>
-                  <View style={styles.documentHeader}>
-                    <Text style={styles.documentTitle}>💰 {bill.billing_type || 'Medical Bill'}</Text>
-                    <Text style={styles.documentBadge}>${parseFloat(bill.total_amount || 0).toFixed(2)}</Text>
-                  </View>
-                  {bill.facility_name && (
-                    <Text style={styles.documentDetail}>🏥 {bill.facility_name}</Text>
-                  )}
-                  {bill.bill_number && (
-                    <Text style={styles.documentDetail}>📝 Bill #: {bill.bill_number}</Text>
-                  )}
-                  {bill.date_of_service && (
-                    <Text style={styles.documentDetail}>
-                      📅 Service: {new Date(bill.date_of_service).toLocaleDateString()}
-                    </Text>
-                  )}
-                  <Text style={styles.documentDate}>
-                    Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
-                  </Text>
+              {medicalRecords.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyIcon}>🏥</Text>
+                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical records uploaded yet</Text>
                 </View>
-              ))}
-            </>
-          )}
-        </View>
+              ) : (
+                medicalRecords.map((record) => (
+                  <View key={record.id} style={styles.documentCard}>
+                    <View style={styles.documentHeader}>
+                      <Text style={styles.documentTitle}>📄 {record.record_type || 'Medical Record'}</Text>
+                      <Text style={styles.documentBadge}>{record.file_name}</Text>
+                    </View>
+                    {record.facility_name && (
+                      <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
+                    )}
+                    {record.provider_name && (
+                      <Text style={styles.documentDetail}>👨‍⚕️ {record.provider_name}</Text>
+                    )}
+                    {record.date_of_service && (
+                      <Text style={styles.documentDetail}>
+                        📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
+                      </Text>
+                    )}
+                    <Text style={styles.documentDate}>
+                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
 
-        <View style={styles.infoSection}>
-          <Text style={styles.infoIcon}>ℹ️</Text>
-          <Text style={styles.infoText}>
-            All medical records and billing can be accessed by {patient?.displayName}'s law firm with proper consent.
-          </Text>
+            <View style={[styles.section, styles.medicalHubSection]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[
+                  styles.sectionTitle,
+                  styles.medicalHubSectionTitle,
+                  { fontSize: isDesktop ? 24 : 20 }
+                ]}>💊 Medical Billing</Text>
+                <Text style={[
+                  styles.comingSoonBadge,
+                  { fontSize: isDesktop ? 13 : 11 }
+                ]}>🏴‍☠️ Coming Soon</Text>
+              </View>
+              
+              {medicalBilling.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyIcon}>💰</Text>
+                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical bills uploaded yet</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.billingSummary}>
+                    <View style={styles.billingRow}>
+                      <Text style={styles.billingLabel}>Total Billed:</Text>
+                      <Text style={styles.billingValue}>${totalBilled.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.billingRow}>
+                      <Text style={styles.billingLabel}>Total Bills:</Text>
+                      <Text style={styles.billingValue}>{medicalBilling.length}</Text>
+                    </View>
+                  </View>
+                  
+                  {medicalBilling.map((bill) => (
+                    <View key={bill.id} style={styles.documentCard}>
+                      <View style={styles.documentHeader}>
+                        <Text style={styles.documentTitle}>💰 {bill.billing_type || 'Medical Bill'}</Text>
+                        <Text style={styles.documentBadge}>${parseFloat(bill.total_amount || 0).toFixed(2)}</Text>
+                      </View>
+                      {bill.facility_name && (
+                        <Text style={styles.documentDetail}>🏥 {bill.facility_name}</Text>
+                      )}
+                      {bill.bill_number && (
+                        <Text style={styles.documentDetail}>📝 Bill #: {bill.bill_number}</Text>
+                      )}
+                      {bill.date_of_service && (
+                        <Text style={styles.documentDetail}>
+                          📅 Service: {new Date(bill.date_of_service).toLocaleDateString()}
+                        </Text>
+                      )}
+                      <Text style={styles.documentDate}>
+                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
+
+            <View style={[styles.infoSection, styles.medicalHubInfoSection]}>
+              <Text style={styles.infoIcon}>ℹ️</Text>
+              <Text style={[styles.infoText, { color: '#FFFFFF' }]}>
+                All medical records and billing can be accessed by {patient?.displayName}'s law firm with proper consent.
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
+      </ImageBackground>
     );
   };
 
@@ -1051,6 +1080,37 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  medicalHubBackground: {
+    minHeight: 500,
+    width: '100%',
+  },
+  medicalHubOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  medicalHubContent: {
+    flex: 1,
+    paddingBottom: 30,
+  },
+  medicalHubSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  medicalHubSectionTitle: {
+    color: '#2c3e50',
+    fontWeight: 'bold',
+  },
+  medicalHubInfoSection: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderColor: '#FFD700',
+    borderWidth: 1,
   },
 });
 

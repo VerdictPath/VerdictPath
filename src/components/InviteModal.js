@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Share, Platform, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
@@ -197,7 +197,7 @@ const InviteModal = ({ visible, onClose, user }) => {
         >
           <View style={styles.header}>
             <Text style={styles.headerTitle}>🎁 Invite Friends</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -208,7 +208,11 @@ const InviteModal = ({ visible, onClose, user }) => {
               <Text style={styles.loadingText}>Generating your invite code...</Text>
             </View>
           ) : isMedicalProvider && !selectedInviteType ? (
-            <View style={styles.content}>
+            <ScrollView 
+              style={styles.scrollView} 
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={true}
+            >
               <View style={styles.infoSection}>
                 <Text style={styles.infoIcon}>⚕️</Text>
                 <Text style={styles.infoText}>
@@ -259,9 +263,13 @@ const InviteModal = ({ visible, onClose, user }) => {
                 </View>
                 <Text style={styles.selectionArrow}>→</Text>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           ) : inviteData ? (
-            <View style={styles.content}>
+            <ScrollView 
+              style={styles.scrollView} 
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={true}
+            >
               {isMedicalProvider && selectedInviteType && (
                 <TouchableOpacity 
                   style={styles.backButton}
@@ -353,12 +361,8 @@ const InviteModal = ({ visible, onClose, user }) => {
                   </Text>
                 </View>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           ) : null}
-
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelButtonText}>Close</Text>
-          </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -376,8 +380,9 @@ const styles = StyleSheet.create({
   modalContainer: {
     backgroundColor: theme.colors.cream,
     borderRadius: 16,
-    width: '100%',
-    maxWidth: 500,
+    width: '95%',
+    maxWidth: 600,
+    maxHeight: '90%',
     borderWidth: 3,
     borderColor: theme.colors.secondary,
     shadowColor: '#000',
@@ -387,25 +392,40 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 20,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.secondary,
+    backgroundColor: theme.colors.mahogany,
+    borderTopLeftRadius: 13,
+    borderTopRightRadius: 13,
+    alignItems: 'center',
+    position: 'relative',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#fff',
   },
   closeButton: {
-    padding: 5,
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   closeButtonText: {
-    fontSize: 24,
-    color: theme.colors.textSecondary,
+    color: '#fff',
+    fontSize: 22,
     fontWeight: 'bold',
+    lineHeight: 22,
+  },
+  scrollView: {
+    maxHeight: 500,
   },
   loadingContainer: {
     padding: 40,
@@ -418,6 +438,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingBottom: 10,
   },
   infoSection: {
     backgroundColor: theme.colors.lightCream,
@@ -451,20 +472,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   codeContainer: {
-    backgroundColor: theme.colors.sand,
-    paddingVertical: 20,
-    paddingHorizontal: 30,
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
-    borderWidth: 3,
-    borderColor: theme.colors.mahogany,
+    borderWidth: 2,
+    borderColor: theme.colors.warmGold,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   codeText: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: theme.colors.mahogany,
-    letterSpacing: 4,
+    letterSpacing: 6,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    textAlign: 'center',
   },
   copyButton: {
     backgroundColor: theme.colors.warmGold,
@@ -493,12 +520,17 @@ const styles = StyleSheet.create({
   shareOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.warmGold,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   shareIcon: {
     fontSize: 32,
@@ -517,21 +549,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.textSecondary,
   },
-  cancelButton: {
-    backgroundColor: theme.colors.sand,
-    padding: 16,
-    margin: 20,
-    marginTop: 0,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-  },
-  cancelButtonText: {
-    color: theme.colors.mahogany,
-    fontSize: 16,
-    fontWeight: '600',
-  },
   selectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -541,12 +558,17 @@ const styles = StyleSheet.create({
   selectionOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#fff',
     padding: 16,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.warmGold,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   selectionIcon: {
     fontSize: 32,

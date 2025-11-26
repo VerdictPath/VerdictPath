@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 
@@ -197,7 +197,12 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
               <Text style={styles.loadingText}>Loading your connections...</Text>
             </View>
           ) : (
-            <View style={styles.content}>
+            <ScrollView 
+              style={styles.scrollView}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={true}
+              bounces={false}
+            >
               <Text style={styles.description}>
                 {isLawFirm 
                   ? 'Manage your medical provider connections to access client medical records and billing information.'
@@ -224,7 +229,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
                   value={lawFirmCode}
                   onChangeText={(text) => setLawFirmCode(text.toUpperCase())}
                   autoCapitalize="characters"
-                  maxLength={8}
+                  maxLength={20}
                 />
                 
                 <TouchableOpacity 
@@ -275,7 +280,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
                   value={medicalProviderCode}
                   onChangeText={(text) => setMedicalProviderCode(text.toUpperCase())}
                   autoCapitalize="characters"
-                  maxLength={8}
+                  maxLength={20}
                 />
                 
                 <TouchableOpacity 
@@ -300,7 +305,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
                   }
                 </Text>
               </View>
-            </View>
+            </ScrollView>
           )}
         </TouchableOpacity>
       </TouchableOpacity>
@@ -361,8 +366,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.textSecondary,
   },
+  scrollView: {
+    flex: 1,
+  },
   content: {
     padding: 20,
+    paddingBottom: 30,
   },
   description: {
     fontSize: 14,

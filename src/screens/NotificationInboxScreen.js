@@ -4,14 +4,34 @@ import { theme } from '../styles/theme';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
-  const { notifications, isLoading, refreshNotifications } = useNotifications();
+  const { notifications, isLoading, refreshNotifications, markAllAsRead } = useNotifications();
   const [filter, setFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
+
+  useEffect(() => {
+    refreshNotifications();
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     await refreshNotifications();
     setRefreshing(false);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    if (unreadCount === 0) {
+      return;
+    }
+
+    setMarkingAllRead(true);
+    const result = await markAllAsRead();
+    setMarkingAllRead(false);
+
+    if (result.success) {
+      await refreshNotifications();
+    }
   };
 
   const filteredNotifications = notifications.filter(notification => {
@@ -104,6 +124,21 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Mark All as Read Button */}
+      {notifications.filter(n => !n.is_read).length > 0 && (
+        <View style={styles.actionButtonContainer}>
+          <TouchableOpacity
+            style={styles.markAllReadButton}
+            onPress={handleMarkAllAsRead}
+            disabled={markingAllRead}
+          >
+            <Text style={styles.markAllReadText}>
+              {markingAllRead ? '✓ Marking all as read...' : '✓ Mark all as read'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Notification List */}
       {isLoading && notifications.length === 0 ? (
@@ -198,6 +233,30 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: theme.colors.primary,
     fontWeight: '700',
+  },
+  actionButtonContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  markAllReadButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  markAllReadText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   listContent: {
     padding: 16,

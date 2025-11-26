@@ -474,6 +474,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: lawFirmTheme.colors.deepNavy,
+    paddingBottom: 100,
   },
   background: {
     position: 'absolute',

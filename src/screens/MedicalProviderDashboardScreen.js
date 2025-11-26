@@ -7,6 +7,8 @@ import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
 import MedicalProviderSubscriptionScreen from './MedicalProviderSubscriptionScreen';
+import SettingsScreen from './SettingsScreen';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'patients');
@@ -21,6 +23,9 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
   const [lawFirms, setLawFirms] = useState([]);
   const [firmCode, setFirmCode] = useState('');
   const [addingFirm, setAddingFirm] = useState(false);
+  
+  // Get unread count from NotificationContext (Firebase real-time)
+  const { unreadCount: unreadNotificationCount } = useNotifications();
 
   // Sync activeTab with initialTab when it changes
   useEffect(() => {
@@ -31,6 +36,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
 
   useEffect(() => {
     fetchDashboardData();
+    // No need to fetch unread count - Firebase handles it automatically
     checkStripeAccountStatus();
     if (activeTab === 'connections') {
       fetchLawFirms();
@@ -41,9 +47,9 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     try {
       console.log('[MedProvider Dashboard] Fetching dashboard data...');
       console.log('[MedProvider Dashboard] Token:', user.token ? 'Present' : 'Missing');
-      console.log('[MedProvider Dashboard] API URL:', `${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD}`);
+      console.log('[MedProvider Dashboard] API URL:', API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD);
       
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD}`, {
+      const response = await fetch(API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD, {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
@@ -187,7 +193,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         console.error('No user token available');
         return;
       }
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS}`, {
+      const response = await fetch(API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
@@ -216,12 +222,23 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     }
   };
 
+  // Removed fetchUnreadNotificationCount - Firebase handles this automatically via NotificationContext
+
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
       onPress={() => setActiveTab(tabName)}
     >
-      <Text style={styles.tabIcon}>{icon}</Text>
+      <View style={styles.tabIconContainer}>
+        <Text style={styles.tabIcon}>{icon}</Text>
+        {tabName === 'notifications' && unreadNotificationCount > 0 && (
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>
+              {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+            </Text>
+          </View>
+        )}
+      </View>
       <Text style={[styles.tabText, activeTab === tabName && styles.activeTabText]}>
         {label}
       </Text>
@@ -868,6 +885,7 @@ const renderAnalyticsTab = () => {
         {renderTabButton('analytics', 'Analytics', '📊')}
         {renderTabButton('notifications', 'Notifications', '🔔')}
         {renderTabButton('subscription', 'Subscription', '💳')}
+        {renderTabButton('settings', 'Settings', '⚙️')}
       </View>
 
       <ScrollView style={styles.content}>
@@ -875,6 +893,7 @@ const renderAnalyticsTab = () => {
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'notifications' && renderNotificationsTab()}
         {activeTab === 'subscription' && <MedicalProviderSubscriptionScreen token={user.token} />}
+        {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('patients')} />}
         {activeTab === 'connections' && renderConnectionsTab()}
 
         {activeTab !== 'connections' && (
@@ -966,9 +985,29 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.warmGold,
     backgroundColor: theme.colors.lightCream,
   },
+  tabIconContainer: {
+    position: 'relative',
+    marginBottom: 4,
+  },
   tabIcon: {
     fontSize: 20,
-    marginBottom: 4,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   tabText: {
     fontSize: 12,
@@ -980,6 +1019,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 100,
   },
   tabContent: {
     padding: 16,

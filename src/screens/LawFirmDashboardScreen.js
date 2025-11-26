@@ -9,6 +9,8 @@ import LawFirmSubscriptionScreen from './LawFirmSubscriptionScreen';
 import LawFirmUserManagementScreen from './LawFirmUserManagementScreen';
 import LawFirmActivityDashboardScreen from './LawFirmActivityDashboardScreen';
 import LawFirmUserActivityTimelineScreen from './LawFirmUserActivityTimelineScreen';
+import SettingsScreen from './SettingsScreen';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('clients');
@@ -19,9 +21,13 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Get unread count from NotificationContext (Firebase real-time)
+  const { unreadCount: unreadNotificationCount } = useNotifications();
 
   useEffect(() => {
     fetchDashboardData();
+    // No need to fetch unread count - Firebase handles it automatically
   }, []);
 
   const fetchDashboardData = async () => {
@@ -64,12 +70,23 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     }
   };
 
+  // Removed fetchUnreadNotificationCount - Firebase handles this automatically via NotificationContext
+
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
       onPress={() => setActiveTab(tabName)}
     >
-      <Text style={styles.tabIcon}>{icon}</Text>
+      <View style={styles.tabIconContainer}>
+        <Text style={styles.tabIcon}>{icon}</Text>
+        {tabName === 'notifications' && unreadNotificationCount > 0 && (
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>
+              {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+            </Text>
+          </View>
+        )}
+      </View>
       <Text style={[styles.tabText, activeTab === tabName && styles.activeTabText]}>
         {label}
       </Text>
@@ -526,6 +543,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {renderTabButton('analytics', 'Analytics', '📊')}
         {renderTabButton('notifications', 'Notifications', '🔔')}
         {renderTabButton('subscription', 'Subscription', '💳')}
+        {renderTabButton('settings', 'Settings', '⚙️')}
       </View>
 
       <ScrollView style={styles.content}>
@@ -533,6 +551,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'notifications' && renderNotificationsTab()}
         {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
+        {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
 
         <TouchableOpacity 
           style={styles.connectionsButton} 
@@ -633,9 +652,29 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.warmGold,
     backgroundColor: theme.colors.lightCream,
   },
+  tabIconContainer: {
+    position: 'relative',
+    marginBottom: 4,
+  },
   tabIcon: {
     fontSize: 20,
-    marginBottom: 4,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   tabText: {
     fontSize: 12,
@@ -647,6 +686,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 100,
   },
   tabContent: {
     padding: 16,
