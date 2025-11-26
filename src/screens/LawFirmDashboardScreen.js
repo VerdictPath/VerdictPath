@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, ImageBackground, useWindowDimensions } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
@@ -13,6 +13,7 @@ import SettingsScreen from './SettingsScreen';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
+  const { width, height } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState('clients');
   const [clients, setClients] = useState([]);
   const [firmData, setFirmData] = useState(null);
@@ -511,59 +512,67 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.firmInfo}>
-          <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
-          <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.inviteButton} 
-          onPress={() => setInviteModalVisible(true)}
-        >
-          <Text style={styles.inviteButtonText}>👍 Invite</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.disbursementCTA} 
-        onPress={handleNavigateToDisbursements}
+      <ImageBackground
+        source={require('../../attached_assets/Ship_1764133439198.png')}
+        style={[styles.backgroundImage, { width, height }]}
+        resizeMode="cover"
       >
-        <View style={styles.disbursementCTAContent}>
-          <Text style={styles.disbursementCTAIcon}>💰</Text>
-          <View style={styles.disbursementCTATextContainer}>
-            <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
-            <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
+        <View style={styles.overlay}>
+          <View style={styles.header}>
+            <View style={styles.firmInfo}>
+              <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
+              <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.inviteButton} 
+              onPress={() => setInviteModalVisible(true)}
+            >
+              <Text style={styles.inviteButtonText}>👍 Invite</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.disbursementCTAArrow}>→</Text>
+
+          <TouchableOpacity 
+            style={styles.disbursementCTA} 
+            onPress={handleNavigateToDisbursements}
+          >
+            <View style={styles.disbursementCTAContent}>
+              <Text style={styles.disbursementCTAIcon}>💰</Text>
+              <View style={styles.disbursementCTATextContainer}>
+                <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
+                <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
+              </View>
+              <Text style={styles.disbursementCTAArrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.tabBar}>
+            {renderTabButton('clients', 'Clients', '👥')}
+            {renderTabButton('analytics', 'Analytics', '📊')}
+            {renderTabButton('notifications', 'Notifications', '🔔')}
+            {renderTabButton('subscription', 'Subscription', '💳')}
+            {renderTabButton('settings', 'Settings', '⚙️')}
+          </View>
+
+          <ScrollView style={styles.content}>
+            {activeTab === 'clients' && renderClientsTab()}
+            {activeTab === 'analytics' && renderAnalyticsTab()}
+            {activeTab === 'notifications' && renderNotificationsTab()}
+            {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
+            {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
+
+            <TouchableOpacity 
+              style={styles.connectionsButton} 
+              onPress={() => setConnectionsModalVisible(true)}
+            >
+              <Text style={styles.connectionsButtonText}>🔗 My Connections</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+              <Text style={styles.logoutText}>🚪 Sign Out</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-      </TouchableOpacity>
-
-      <View style={styles.tabBar}>
-        {renderTabButton('clients', 'Clients', '👥')}
-        {renderTabButton('analytics', 'Analytics', '📊')}
-        {renderTabButton('notifications', 'Notifications', '🔔')}
-        {renderTabButton('subscription', 'Subscription', '💳')}
-        {renderTabButton('settings', 'Settings', '⚙️')}
-      </View>
-
-      <ScrollView style={styles.content}>
-        {activeTab === 'clients' && renderClientsTab()}
-        {activeTab === 'analytics' && renderAnalyticsTab()}
-        {activeTab === 'notifications' && renderNotificationsTab()}
-        {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
-        {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
-
-        <TouchableOpacity 
-          style={styles.connectionsButton} 
-          onPress={() => setConnectionsModalVisible(true)}
-        >
-          <Text style={styles.connectionsButtonText}>🔗 My Connections</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-          <Text style={styles.logoutText}>🚪 Sign Out</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      </ImageBackground>
 
       <ConnectionsModal
         visible={connectionsModalVisible}
@@ -584,24 +593,34 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   loadingText: {
     marginTop: 10,
-    color: theme.colors.textSecondary,
+    color: '#FFFFFF',
     fontSize: 16,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   header: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     padding: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.secondary,
+    paddingTop: 50,
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(255, 215, 0, 0.5)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -613,33 +632,42 @@ const styles = StyleSheet.create({
   firmName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     marginBottom: 5,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   firmCode: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     fontFamily: 'monospace',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   inviteButton: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     flexShrink: 0,
   },
   inviteButtonText: {
-    color: theme.colors.navy,
+    color: '#FFD700',
     fontSize: 14,
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: 'rgba(255, 215, 0, 0.5)',
   },
   tab: {
     flex: 1,
@@ -649,8 +677,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: theme.colors.warmGold,
-    backgroundColor: theme.colors.lightCream,
+    borderBottomColor: '#FFD700',
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
   },
   tabIconContainer: {
     position: 'relative',
@@ -678,11 +706,14 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#B8A080',
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   activeTabText: {
-    color: theme.colors.mahogany,
+    color: '#FFD700',
   },
   content: {
     flex: 1,
@@ -692,43 +723,51 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     padding: 20,
     marginBottom: 16,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: 'rgba(255, 215, 0, 0.3)',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   sectionDescription: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     marginBottom: 16,
     lineHeight: 20,
   },
   notificationActionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   notificationActionIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -742,16 +781,19 @@ const styles = StyleSheet.create({
   notificationActionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFD700',
     marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   notificationActionDescription: {
     fontSize: 13,
-    color: '#666',
+    color: '#E8D5B0',
   },
   notificationActionArrow: {
     fontSize: 24,
-    color: theme.colors.primary,
+    color: '#FFD700',
     fontWeight: 'bold',
   },
   templatesList: {
@@ -760,11 +802,11 @@ const styles = StyleSheet.create({
   templateItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   templateIcon: {
     fontSize: 20,
@@ -772,16 +814,16 @@ const styles = StyleSheet.create({
   },
   templateText: {
     fontSize: 15,
-    color: '#333',
+    color: '#E8D5B0',
     fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 15,
@@ -793,7 +835,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: theme.colors.navy,
+    color: '#FFFFFF',
     padding: 0,
   },
   clearButton: {
@@ -802,12 +844,12 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 18,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
     fontWeight: 'bold',
   },
   sectionSubtitle: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#B8A080',
     marginBottom: 15,
     lineHeight: 20,
   },
@@ -821,23 +863,25 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     marginBottom: 10,
     textAlign: 'center',
     fontWeight: '600',
   },
   emptySubtext: {
     fontSize: 14,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
     textAlign: 'center',
   },
   clientCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 15,
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   clientHeader: {
     flexDirection: 'row',
@@ -848,21 +892,27 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     flex: 1,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   clientBadge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    overflow: 'hidden',
   },
   clientEmail: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     marginBottom: 8,
   },
   clientStats: {
@@ -872,18 +922,18 @@ const styles = StyleSheet.create({
   },
   clientStat: {
     fontSize: 13,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
   },
   clientDate: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
     marginTop: 4,
   },
   litigationSection: {
     marginVertical: 12,
     paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.warmGray + '40',
+    borderTopColor: 'rgba(255, 215, 0, 0.3)',
   },
   litigationHeader: {
     flexDirection: 'row',
@@ -893,31 +943,31 @@ const styles = StyleSheet.create({
   },
   litigationLabel: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#B8A080',
     fontWeight: '500',
   },
   litigationStage: {
     fontSize: 13,
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     fontWeight: '600',
   },
   progressBar: {
     height: 10,
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(40, 40, 40, 0.8)',
     borderRadius: 5,
     overflow: 'hidden',
     marginVertical: 6,
     borderWidth: 1,
-    borderColor: theme.colors.warmGray + '40',
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: '#FFD700',
     borderRadius: 5,
   },
   progressText: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
     textAlign: 'right',
   },
   statsGrid: {
@@ -926,13 +976,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     width: '48%',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   statIcon: {
     fontSize: 32,
@@ -941,12 +991,15 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   statLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     textAlign: 'center',
   },
   phaseRow: {
@@ -961,23 +1014,26 @@ const styles = StyleSheet.create({
   phaseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   phaseCount: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#B8A080',
   },
   progressBarContainer: {
     height: 12,
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(40, 40, 40, 0.8)',
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.warmGray,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: theme.colors.successGreen,
+    backgroundColor: '#27ae60',
     borderRadius: 4,
   },
   activityList: {
@@ -985,11 +1041,13 @@ const styles = StyleSheet.create({
   },
   activityItem: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 12,
-    borderRadius: 6,
+    borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   activityIcon: {
     fontSize: 24,
@@ -1000,20 +1058,22 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 14,
-    color: theme.colors.navy,
+    color: '#E8D5B0',
     marginBottom: 2,
   },
   activityTime: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
   },
   recordCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 15,
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   recordHeader: {
     flexDirection: 'row',
@@ -1024,30 +1084,36 @@ const styles = StyleSheet.create({
   recordTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   recordBadge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    overflow: 'hidden',
   },
   recordClient: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     marginBottom: 4,
   },
   recordDetail: {
     fontSize: 13,
-    color: theme.colors.textPrimary,
+    color: '#E8D5B0',
     marginBottom: 3,
   },
   recordDate: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
   },
   billingSummary: {
     gap: 12,
@@ -1057,26 +1123,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: theme.colors.lightCream,
-    borderRadius: 6,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   billingLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#B8A080',
     fontWeight: '600',
   },
   billingValue: {
     fontSize: 18,
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   evidenceCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 15,
-    borderRadius: 6,
+    borderRadius: 10,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   evidenceHeader: {
     flexDirection: 'row',
@@ -1093,34 +1166,40 @@ const styles = StyleSheet.create({
   evidenceTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     marginBottom: 2,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   evidenceClient: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
   },
   evidenceBadge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#FFD700',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    overflow: 'hidden',
   },
   evidenceDate: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#B8A080',
     marginLeft: 36,
   },
   complianceCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(30, 80, 50, 0.85)',
     padding: 20,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#27ae60',
+    borderColor: 'rgba(39, 174, 96, 0.6)',
   },
   complianceIcon: {
     fontSize: 48,
@@ -1129,12 +1208,15 @@ const styles = StyleSheet.create({
   complianceTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#27ae60',
+    color: '#90EE90',
     marginBottom: 10,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   complianceText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     textAlign: 'center',
     marginBottom: 15,
     lineHeight: 20,
@@ -1145,69 +1227,82 @@ const styles = StyleSheet.create({
   },
   complianceFeature: {
     fontSize: 13,
-    color: theme.colors.navy,
+    color: '#E8D5B0',
     paddingVertical: 6,
   },
   hipaaSection: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   hipaaDescription: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#E8D5B0',
     marginBottom: 15,
     lineHeight: 20,
   },
   hipaaButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   hipaaButtonText: {
-    color: '#FFFFFF',
+    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   connectionsButton: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     margin: 16,
     marginBottom: 8,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   connectionsButtonText: {
-    color: theme.colors.mahogany,
+    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   logoutButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: 'rgba(139, 69, 19, 0.9)',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
     margin: 16,
     marginTop: 8,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   logoutText: {
-    color: '#FFFFFF',
+    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   disbursementCTA: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: 'rgba(60, 50, 30, 0.9)',
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,
     borderRadius: 12,
-    borderWidth: 3,
-    borderColor: theme.colors.warmGold,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1229,17 +1324,20 @@ const styles = StyleSheet.create({
   disbursementCTATitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.cream,
+    color: '#FFD700',
     marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   disbursementCTASubtitle: {
     fontSize: 14,
-    color: theme.colors.lightCream,
+    color: '#E8D5B0',
     opacity: 0.9,
   },
   disbursementCTAArrow: {
     fontSize: 24,
-    color: theme.colors.warmGold,
+    color: '#FFD700',
     fontWeight: 'bold',
   },
   quickActionsContainer: {
@@ -1248,24 +1346,28 @@ const styles = StyleSheet.create({
   quickActionsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: '#FFD700',
     marginBottom: 12,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   quickActionsRow: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 12,
   },
   quickActionButton: {
     flex: 1,
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -1276,8 +1378,11 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#FFD700',
     textAlign: 'center',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 
