@@ -1459,6 +1459,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <NegotiationsScreen
           user={user}
           onBack={handleBackToLawFirmDashboard}
+          bottomPadding={100}
         />
       )}
 
@@ -1715,6 +1716,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <NegotiationsScreen
           user={user}
           onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+          bottomPadding={100}
         />
       )}
 
