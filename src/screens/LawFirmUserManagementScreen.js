@@ -290,12 +290,38 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
     barNumber: '',
     phoneNumber: '',
     notificationMethod: 'email',
+    sendCredentials: true,
   });
   const [loading, setLoading] = useState(false);
 
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      role: 'attorney',
+      title: '',
+      barNumber: '',
+      phoneNumber: '',
+      notificationMethod: 'email',
+      sendCredentials: true,
+    });
+  };
+
   const handleSubmit = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      showAlert('Error', 'Please fill in all required fields');
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      showAlert('Error', 'Please fill in First Name, Last Name, and Email');
+      return;
+    }
+
+    if (!formData.sendCredentials && !formData.password) {
+      showAlert('Error', 'Please provide a password or enable "Send Credentials"');
+      return;
+    }
+
+    if ((formData.notificationMethod === 'sms' || formData.notificationMethod === 'both') && !formData.phoneNumber) {
+      showAlert('Error', 'Phone number is required for SMS notifications');
       return;
     }
 
@@ -311,7 +337,35 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
       });
 
       if (response.success) {
-        showAlert('Success', `User created! User code: ${response.user.userCode}`);
+        let message = `User created!\nUser code: ${response.user.userCode}`;
+        
+        if (response.credentialsSent && response.notificationResults) {
+          const { email, sms } = response.notificationResults;
+          const notifications = [];
+          
+          if (formData.notificationMethod === 'email' || formData.notificationMethod === 'both') {
+            if (email?.success) {
+              notifications.push('Email sent successfully');
+            } else {
+              notifications.push(`Email: ${email?.error || 'Not configured'}`);
+            }
+          }
+          
+          if (formData.notificationMethod === 'sms' || formData.notificationMethod === 'both') {
+            if (sms?.success) {
+              notifications.push('SMS sent successfully');
+            } else {
+              notifications.push(`SMS: ${sms?.error || 'Not configured'}`);
+            }
+          }
+          
+          if (notifications.length > 0) {
+            message += '\n\nCredential Notifications:\n' + notifications.join('\n');
+          }
+        }
+        
+        showAlert('Success', message);
+        resetForm();
         onUserAdded();
       }
     } catch (error) {
@@ -359,14 +413,6 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
             />
             <TextInput
               style={styles.input}
-              placeholder="Password *"
-              placeholderTextColor="#999"
-              secureTextEntry
-              value={formData.password}
-              onChangeText={(text) => setFormData({ ...formData, password: text })}
-            />
-            <TextInput
-              style={styles.input}
               placeholder="Title (e.g., Senior Partner)"
               placeholderTextColor="#999"
               value={formData.title}
@@ -381,15 +427,45 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
             />
             <TextInput
               style={styles.input}
-              placeholder="Phone Number (required for SMS notifications)"
+              placeholder="Phone Number (required for SMS)"
               placeholderTextColor="#999"
               keyboardType="phone-pad"
               value={formData.phoneNumber}
               onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
             />
 
-            {/* Notification Method Selector */}
-            <Text style={styles.label}>Send credentials via:</Text>
+            {/* Send Credentials Toggle */}
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleTextContainer}>
+                <Text style={styles.toggleLabel}>Send Credentials Automatically</Text>
+                <Text style={styles.toggleDesc}>
+                  Generate a temporary password and send via email/SMS
+                </Text>
+              </View>
+              <Switch
+                value={formData.sendCredentials}
+                onValueChange={(value) => setFormData({ ...formData, sendCredentials: value })}
+                trackColor={{ false: 'rgba(255,255,255,0.3)', true: 'rgba(212, 175, 55, 0.6)' }}
+                thumbColor={formData.sendCredentials ? '#d4af37' : '#f4f3f4'}
+              />
+            </View>
+
+            {/* Password field - only shown if NOT sending credentials */}
+            {!formData.sendCredentials && (
+              <TextInput
+                style={styles.input}
+                placeholder="Password *"
+                placeholderTextColor="#999"
+                secureTextEntry
+                value={formData.password}
+                onChangeText={(text) => setFormData({ ...formData, password: text })}
+              />
+            )}
+
+            {/* Notification Method Selector - only shown if sending credentials */}
+            {formData.sendCredentials && (
+              <>
+                <Text style={styles.label}>Send credentials via:</Text>
             <View style={styles.notificationSelector}>
               {[
                 { value: 'email', label: '📧 Email', desc: 'Email only' },
@@ -423,6 +499,8 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
                 </TouchableOpacity>
               ))}
             </View>
+              </>
+            )}
 
             {/* Role Selector */}
             <Text style={styles.label}>Role:</Text>
@@ -714,6 +792,37 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: 'rgba(212, 175, 55, 0.6)',
+  },
+  toggleTextContainer: {
+    flex: 1,
+    marginRight: 15,
+  },
+  toggleLabel: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  toggleDesc: {
+    color: 'rgba(212, 175, 55, 0.8)',
+    fontSize: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   notificationSelector: {
     flexDirection: 'row',
