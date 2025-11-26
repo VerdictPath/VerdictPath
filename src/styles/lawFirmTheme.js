@@ -8,18 +8,32 @@ export const lawFirmTheme = {
     text: '#2c3e50',         // Dark gray text
     textSecondary: '#6c757d',
     border: '#e0e0e0',
-    success: '#28a745',
-    warning: '#ffc107',
-    danger: '#dc3545',
-    info: '#17a2b8',
+    success: '#10b981',      // Modern green
+    warning: '#f59e0b',      // Warm amber
+    danger: '#ef4444',       // Modern red
+    info: '#3b82f6',         // Modern blue
     
     // Brand colors
     gold: '#d4af37',
-    accentBlue: '#4a90e2',
-    lightBlue: '#e3f2fd',
-    darkBlue: '#0d2b4e',
-    mediumGray: '#6c757d',
-    lightGray: '#f8f9fa',
+    accentBlue: '#3b82f6',
+    lightBlue: '#dbeafe',
+    darkBlue: '#1e3a8a',
+    mediumGray: '#6b7280',
+    lightGray: '#f3f4f6',
+    
+    // Dark theme colors for activity dashboard
+    deepNavy: '#0f172a',
+    midnightBlue: '#1e293b',
+    professionalBlue: '#334155',
+    slate: '#475569',
+    silver: '#94a3b8',
+    
+    // Accent colors
+    purple: '#8b5cf6',
+    emerald: '#10b981',
+    amber: '#f59e0b',
+    rose: '#f43f5e',
+    cyan: '#06b6d4',
   },
   
   spacing: {

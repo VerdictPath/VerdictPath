@@ -1,4 +1,7 @@
 export const theme = {
+  // Layout constants
+  bottomNavHeight: 80, // Height of bottom navigation bar for content padding
+  
   colors: {
     sand: '#F4E8D8',
     cream: '#F8F1E7',

@@ -11,7 +11,7 @@ import {
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
-const ReceivedDisbursementsScreen = ({ user, onBack, userType }) => {
+const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = false }) => {
   const [disbursements, setDisbursements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,13 +143,15 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType }) => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Disbursements</Text>
-          <View style={styles.placeholder} />
-        </View>
+        {!hideHeader && (
+          <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={onBack}>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Disbursements</Text>
+            <View style={styles.placeholder} />
+          </View>
+        )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.mahogany} />
           <Text style={styles.loadingText}>Loading disbursements...</Text>
@@ -160,15 +162,17 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {userType === 'medical_provider' ? 'Received Payments' : 'My Disbursements'}
-        </Text>
-        <View style={styles.placeholder} />
-      </View>
+      {!hideHeader && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {userType === 'medical_provider' ? 'Received Payments' : 'My Disbursements'}
+          </Text>
+          <View style={styles.placeholder} />
+        </View>
+      )}
 
       <ScrollView
         style={styles.content}

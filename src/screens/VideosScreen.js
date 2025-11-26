@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Image } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import { VIDEOS } from '../constants/mockData';
 
@@ -21,7 +21,11 @@ const VideosScreen = ({ onNavigate }) => {
         {VIDEOS.map(video => (
           <View key={video.id} style={styles.videoCard}>
             <View style={styles.videoThumbnail}>
-              <Text style={styles.videoIcon}>🎥</Text>
+              <Image 
+                source={require('../../attached_assets/Old Video Camera_1764039828519.png')}
+                style={styles.videoThumbnailImage}
+                resizeMode="cover"
+              />
             </View>
             
             <View style={styles.videoInfo}>
@@ -57,12 +61,14 @@ const styles = StyleSheet.create({
   },
   videoThumbnail: {
     width: 120,
-    backgroundColor: '#ecf0f1',
+    backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  videoIcon: {
-    fontSize: 48,
+  videoThumbnailImage: {
+    width: 120,
+    height: '100%',
   },
   videoInfo: {
     flex: 1,
