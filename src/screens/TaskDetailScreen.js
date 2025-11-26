@@ -278,22 +278,30 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
                         </View>
                       </TouchableOpacity>
 
-                      {task.status !== 'in_progress' && (
-                        <TouchableOpacity
-                          style={[styles.actionButton, styles.workingButton]}
-                          onPress={() => handleUpdateStatus('in_progress')}
-                        >
-                          <Text style={styles.actionButtonIcon}>🔄</Text>
-                          <View style={styles.actionButtonContent}>
-                            <Text style={[styles.actionButtonText, { fontSize: isDesktop ? 20 : 18 }]}>
-                              Working on it
-                            </Text>
-                            <Text style={[styles.actionButtonSubtext, { fontSize: isDesktop ? 14 : 12 }]}>
-                              Notify your attorney you're in progress
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      )}
+                      <TouchableOpacity
+                        style={[
+                          styles.actionButton, 
+                          styles.workingButton,
+                          task.status === 'in_progress' && styles.activeStatusButton
+                        ]}
+                        onPress={() => handleUpdateStatus('in_progress')}
+                        disabled={task.status === 'in_progress'}
+                      >
+                        <Text style={styles.actionButtonIcon}>🔄</Text>
+                        <View style={styles.actionButtonContent}>
+                          <Text style={[styles.actionButtonText, { fontSize: isDesktop ? 20 : 18 }]}>
+                            Working on it
+                          </Text>
+                          <Text style={[styles.actionButtonSubtext, { fontSize: isDesktop ? 14 : 12 }]}>
+                            {task.status === 'in_progress' 
+                              ? 'Your attorney knows you\'re working on this'
+                              : 'Notify your attorney you\'re in progress'}
+                          </Text>
+                        </View>
+                        {task.status === 'in_progress' && (
+                          <Text style={styles.currentStatusBadge}>Current</Text>
+                        )}
+                      </TouchableOpacity>
                     </>
                   )}
 
@@ -486,6 +494,21 @@ const styles = StyleSheet.create({
   workingButton: {
     backgroundColor: 'rgba(52, 152, 219, 0.2)',
     borderColor: '#3498db',
+  },
+  activeStatusButton: {
+    backgroundColor: 'rgba(52, 152, 219, 0.4)',
+    borderColor: '#2980b9',
+    opacity: 0.8,
+  },
+  currentStatusBadge: {
+    backgroundColor: '#3498db',
+    color: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: '600',
+    overflow: 'hidden',
   },
   actionButtonIcon: {
     fontSize: 32,
