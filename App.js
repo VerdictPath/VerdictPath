@@ -1,6 +1,6 @@
 // APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, Alert, Platform } from 'react-native';
+import { SafeAreaView, StatusBar, Alert, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
@@ -1456,11 +1456,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'lawfirm-negotiations' && (
-        <NegotiationsScreen
-          user={user}
-          onBack={handleBackToLawFirmDashboard}
-          bottomPadding={100}
-        />
+        <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
+          <NegotiationsScreen
+            user={user}
+            onBack={handleBackToLawFirmDashboard}
+          />
+        </View>
       )}
 
       {currentScreen === 'lawfirm-disbursements' && (
@@ -1713,11 +1714,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'medicalprovider-negotiations' && (
-        <NegotiationsScreen
-          user={user}
-          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
-          bottomPadding={100}
-        />
+        <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
+          <NegotiationsScreen
+            user={user}
+            onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+          />
+        </View>
       )}
 
       {currentScreen === 'medicalprovider-payment-setup' && (
