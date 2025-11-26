@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   ImageBackground,
   useWindowDimensions
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+import { alert } from '../utils/alert';
 
 const ActionDashboardScreen = ({ user, onNavigate }) => {
   const { width, height } = useWindowDimensions();
@@ -55,7 +55,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
       setSummary(data.summary);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      Alert.alert('Error', 'Failed to load tasks');
+      alert('Error', 'Failed to load tasks');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -69,7 +69,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 
   const handleTaskAction = async (task) => {
     if (task.status === 'completed') {
-      Alert.alert(
+      alert(
         '✅ Task Completed',
         `${task.title}\n\nCompleted on: ${new Date(task.completedAt).toLocaleDateString()}\n${task.completionNotes ? `\nNotes: ${task.completionNotes}` : ''}\n\n💰 Note: If you revert this task, previously earned coins (${task.coinsReward} coins) are preserved and cannot be earned again when you re-complete.`,
         [
@@ -102,7 +102,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 
     actions.push({ text: 'Cancel', style: 'cancel' });
 
-    Alert.alert('Update Task Status', `${task.title}`, actions);
+    alert('Update Task Status', `${task.title}`, actions);
   };
 
   const updateTaskStatus = async (taskId, newStatus) => {
@@ -116,16 +116,16 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      Alert.alert('Success', data.message);
+      alert('Success', data.message);
       fetchTasks();
     } catch (error) {
       console.error('Error updating task:', error);
-      Alert.alert('Error', 'Failed to update task status');
+      alert('Error', 'Failed to update task status');
     }
   };
 
   const markTaskComplete = (task) => {
-    Alert.alert(
+    alert(
       '✅ Complete Task',
       `Mark "${task.title}" as complete?${task.coinsReward > 0 ? `\n\n🪙 You'll earn ${task.coinsReward} coins!` : ''}`,
       [
@@ -140,7 +140,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
   };
 
   const revertTask = (task) => {
-    Alert.alert(
+    alert(
       '🔄 Revert Task',
       `Mark "${task.title}" as incomplete?\n\n💰 Note: Previously earned coins (${task.coinsReward} coins) will be preserved and cannot be earned again when you re-complete this task.\n\nThis prevents coin farming while allowing you to update your progress.`,
       [
