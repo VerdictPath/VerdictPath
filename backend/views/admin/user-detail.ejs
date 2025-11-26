@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= user.firstName || user.firmName || user.providerName %> - VerdictPath Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('partials/sidebar', { currentPage: userType }) %>
+    
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">
+            <% if (userType === 'individual') { %>👤
+            <% } else if (userType === 'lawfirm') { %>⚖️
+            <% } else { %>🏥<% } %>
+            <%= user.firstName || user.firmName || user.providerName %> <%= user.lastName || '' %>
+          </h1>
+          <p class="admin-title-sub">
+            <span class="badge badge-<%= userType %>"><%= userType %></span>
+            <span class="badge badge-<%= user.isActive !== false ? 'active' : 'inactive' %>" style="margin-left: 8px;">
+              <%= user.isActive !== false ? 'Active' : 'Inactive' %>
+            </span>
+          </p>
+        </div>
+        <div class="header-actions">
+          <a href="/portal/admin/users?type=<%= userType %>" class="btn btn-secondary">Back to List</a>
+          <% if (user.isActive !== false) { %>
+            <form action="/portal/admin/user/<%= userType %>/<%= user.id %>/toggle" method="POST" style="display: inline;">
+              <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate this user?')">Deactivate</button>
+            </form>
+          <% } else { %>
+            <form action="/portal/admin/user/<%= userType %>/<%= user.id %>/toggle" method="POST" style="display: inline;">
+              <button type="submit" class="btn btn-primary">Activate</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+      
+      <div class="user-detail-card">
+        <div class="detail-section">
+          <h3 class="detail-section-title">Account Information</h3>
+          <div class="detail-item">
+            <span class="detail-label">Email</span>
+            <span class="detail-value"><%= user.email %></span>
+          </div>
+          <% if (user.phone) { %>
+            <div class="detail-item">
+              <span class="detail-label">Phone</span>
+              <span class="detail-value"><%= user.phone %></span>
+            </div>
+          <% } %>
+          <div class="detail-item">
+            <span class="detail-label">Registered</span>
+            <span class="detail-value"><%= new Date(user.createdAt).toLocaleString() %></span>
+          </div>
+          <% if (user.lastLogin) { %>
+            <div class="detail-item">
+              <span class="detail-label">Last Login</span>
+              <span class="detail-value"><%= new Date(user.lastLogin).toLocaleString() %></span>
+            </div>
+          <% } %>
+          <% if (user.firmCode) { %>
+            <div class="detail-item">
+              <span class="detail-label">Firm Code</span>
+              <span class="detail-value"><%= user.firmCode %></span>
+            </div>
+          <% } %>
+          <% if (user.providerCode) { %>
+            <div class="detail-item">
+              <span class="detail-label">Provider Code</span>
+              <span class="detail-value"><%= user.providerCode %></span>
+            </div>
+          <% } %>
+        </div>
+        
+        <div class="detail-section">
+          <h3 class="detail-section-title">Subscription & Stats</h3>
+          <div class="detail-item">
+            <span class="detail-label">Subscription Tier</span>
+            <span class="detail-value"><%= user.subscriptionTier || 'Free' %></span>
+          </div>
+          <% if (user.coins !== undefined) { %>
+            <div class="detail-item">
+              <span class="detail-label">Coins</span>
+              <span class="detail-value">🪙 <%= user.coins.toLocaleString() %></span>
+            </div>
+          <% } %>
+          <% if (user.streak !== undefined) { %>
+            <div class="detail-item">
+              <span class="detail-label">Current Streak</span>
+              <span class="detail-value">🔥 <%= user.streak %> days</span>
+            </div>
+          <% } %>
+          <% if (stats) { %>
+            <% if (stats.clientCount !== undefined) { %>
+              <div class="detail-item">
+                <span class="detail-label">Clients</span>
+                <span class="detail-value"><%= stats.clientCount %></span>
+              </div>
+            <% } %>
+            <% if (stats.patientCount !== undefined) { %>
+              <div class="detail-item">
+                <span class="detail-label">Patients</span>
+                <span class="detail-value"><%= stats.patientCount %></span>
+              </div>
+            <% } %>
+            <% if (stats.userCount !== undefined) { %>
+              <div class="detail-item">
+                <span class="detail-label">Staff Users</span>
+                <span class="detail-value"><%= stats.userCount %></span>
+              </div>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+      
+      <% if (subUsers && subUsers.length > 0) { %>
+        <div class="card" style="margin-top: 25px;">
+          <div class="card-header">
+            <h2 class="card-title">Staff Members (<%= subUsers.length %>)</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Added</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% subUsers.forEach(subUser => { %>
+                  <tr>
+                    <td>
+                      <div class="user-info-cell">
+                        <div class="user-avatar"><%= subUser.firstName ? subUser.firstName.charAt(0).toUpperCase() : '?' %></div>
+                        <span class="user-name"><%= subUser.firstName %> <%= subUser.lastName %></span>
+                      </div>
+                    </td>
+                    <td><%= subUser.email %></td>
+                    <td><span class="badge badge-pending"><%= subUser.role %></span></td>
+                    <td>
+                      <span class="badge badge-<%= subUser.isActive !== false ? 'active' : 'inactive' %>">
+                        <%= subUser.isActive !== false ? 'Active' : 'Inactive' %>
+                      </span>
+                    </td>
+                    <td><%= new Date(subUser.createdAt).toLocaleDateString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+      
+      <% if (clients && clients.length > 0) { %>
+        <div class="card" style="margin-top: 25px;">
+          <div class="card-header">
+            <h2 class="card-title">Connected Clients (<%= clients.length %>)</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Connected</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% clients.forEach(client => { %>
+                  <tr>
+                    <td>
+                      <div class="user-info-cell">
+                        <div class="user-avatar"><%= client.firstName ? client.firstName.charAt(0).toUpperCase() : '?' %></div>
+                        <span class="user-name"><%= client.firstName %> <%= client.lastName %></span>
+                      </div>
+                    </td>
+                    <td><%= client.email %></td>
+                    <td>
+                      <span class="badge badge-<%= client.isActive !== false ? 'active' : 'inactive' %>">
+                        <%= client.isActive !== false ? 'Active' : 'Inactive' %>
+                      </span>
+                    </td>
+                    <td><%= new Date(client.connectedAt || client.createdAt).toLocaleDateString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+      
+      <div class="card" style="margin-top: 25px;">
+        <div class="card-header">
+          <h2 class="card-title">Recent Activity</h2>
+        </div>
+        
+        <% if (activities && activities.length > 0) { %>
+          <% activities.forEach(activity => { %>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <% if (activity.action_type === 'login') { %>🔐
+                <% } else if (activity.action_type === 'create') { %>➕
+                <% } else if (activity.action_type === 'update') { %>✏️
+                <% } else if (activity.action_type === 'view') { %>👁️
+                <% } else if (activity.action_type === 'delete') { %>🗑️
+                <% } else { %>📋<% } %>
+              </div>
+              <div class="activity-content">
+                <div class="activity-action">
+                  <%= activity.action_type %> - <%= activity.resource_type || activity.action_category || 'system' %>
+                </div>
+                <div class="activity-meta">
+                  <%= new Date(activity.created_at).toLocaleString() %>
+                  <% if (activity.ip_address) { %> | IP: <%= activity.ip_address %><% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p class="empty-state-text">No activity recorded</p>
+          </div>
+        <% } %>
+      </div>
+    </main>
+  </div>
+  
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Trail - VerdictPath Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('partials/sidebar', { currentPage: 'audit' }) %>
+    
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">🔍 Audit Trail</h1>
+          <p class="admin-title-sub">HIPAA-compliant audit logging for all sensitive operations</p>
+        </div>
+        <div class="header-actions">
+          <form action="/portal/admin/audit" method="GET" style="display: flex; gap: 10px;">
+            <input type="text" name="search" value="<%= searchQuery %>" class="search-input" placeholder="Search user or action..." style="width: 200px;">
+            <select name="action" class="filter-select">
+              <option value="all" <%= actionFilter === 'all' ? 'selected' : '' %>>All Actions</option>
+              <option value="view" <%= actionFilter === 'view' ? 'selected' : '' %>>View</option>
+              <option value="create" <%= actionFilter === 'create' ? 'selected' : '' %>>Create</option>
+              <option value="update" <%= actionFilter === 'update' ? 'selected' : '' %>>Update</option>
+              <option value="delete" <%= actionFilter === 'delete' ? 'selected' : '' %>>Delete</option>
+              <option value="export" <%= actionFilter === 'export' ? 'selected' : '' %>>Export</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Audit Records</h2>
+          <span style="color: var(--text-muted); font-size: 14px;">
+            Total: <%= pagination.total %> records | Retention: 7 years
+          </span>
+        </div>
+        
+        <% if (auditLogs.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <p class="empty-state-text">No audit logs found</p>
+            <p class="empty-state-sub">Audit logs are created for HIPAA-sensitive operations</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Resource</th>
+                  <th>Resource ID</th>
+                  <th>IP Address</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% auditLogs.forEach(log => { %>
+                  <tr>
+                    <td style="white-space: nowrap;"><%= new Date(log.created_at).toLocaleString() %></td>
+                    <td>
+                      <div class="user-info-cell">
+                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
+                          <%= log.user_email ? log.user_email.charAt(0).toUpperCase() : 'S' %>
+                        </div>
+                        <div class="user-info-text">
+                          <span class="user-name" style="font-size: 13px;"><%= log.user_email || 'System' %></span>
+                          <span class="user-email"><%= log.user_type || '' %></span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge badge-<%= log.action === 'delete' ? 'inactive' : log.action === 'create' ? 'active' : 'pending' %>">
+                        <%= log.action %>
+                      </span>
+                    </td>
+                    <td><%= log.resource_type %></td>
+                    <td><%= log.resource_id || '-' %></td>
+                    <td><%= log.ip_address || '-' %></td>
+                    <td>
+                      <% if (log.details) { %>
+                        <button class="btn btn-secondary btn-sm" onclick="alert(JSON.stringify(<%= JSON.stringify(log.details) %>, null, 2))">View</button>
+                      <% } else { %>
+                        -
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          
+          <% if (pagination.totalPages > 1) { %>
+            <div class="pagination">
+              <% if (pagination.page > 1) { %>
+                <a href="?page=<%= pagination.page - 1 %>&search=<%= searchQuery %>&action=<%= actionFilter %>" class="page-btn">Previous</a>
+              <% } %>
+              
+              <% for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+                <a href="?page=<%= i %>&search=<%= searchQuery %>&action=<%= actionFilter %>" class="page-btn <%= pagination.page === i ? 'active' : '' %>"><%= i %></a>
+              <% } %>
+              
+              <% if (pagination.page < pagination.totalPages) { %>
+                <a href="?page=<%= pagination.page + 1 %>&search=<%= searchQuery %>&action=<%= actionFilter %>" class="page-btn">Next</a>
+              <% } %>
+            </div>
+          <% } %>
+        <% } %>
+      </div>
+    </main>
+  </div>
+  
+  <script src="/js/admin.js"></script>
+</body>
+</html>

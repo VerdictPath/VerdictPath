@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - VerdictPath Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('partials/sidebar', { currentPage: 'dashboard' }) %>
+    
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">Captain's Dashboard</h1>
+          <p class="admin-title-sub">Overview of all crews and voyages</p>
+        </div>
+        <div class="header-actions">
+          <span style="color: var(--text-muted); font-size: 14px;">
+            Last updated: <%= new Date().toLocaleString() %>
+          </span>
+        </div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">👥</div>
+          <div class="stat-card-value"><%= stats.totalUsers %></div>
+          <div class="stat-card-label">Total Users</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">👤</div>
+          <div class="stat-card-value"><%= stats.individuals %></div>
+          <div class="stat-card-label">Individual Users</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">⚖️</div>
+          <div class="stat-card-value"><%= stats.lawFirms %></div>
+          <div class="stat-card-label">Law Firms</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">🏥</div>
+          <div class="stat-card-value"><%= stats.medicalProviders %></div>
+          <div class="stat-card-label">Medical Providers</div>
+        </div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">👨‍💼</div>
+          <div class="stat-card-value"><%= stats.lawFirmUsers %></div>
+          <div class="stat-card-label">Law Firm Staff</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">👨‍⚕️</div>
+          <div class="stat-card-value"><%= stats.medicalProviderUsers %></div>
+          <div class="stat-card-label">Medical Staff</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">📝</div>
+          <div class="stat-card-value"><%= stats.activeSubscriptions %></div>
+          <div class="stat-card-label">Active Subscriptions</div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-card-icon">🪙</div>
+          <div class="stat-card-value"><%= stats.totalCoins.toLocaleString() %></div>
+          <div class="stat-card-label">Total Coins Earned</div>
+        </div>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Registrations</h2>
+            <a href="/portal/admin/users" class="btn btn-secondary btn-sm">View All</a>
+          </div>
+          
+          <% if (recentUsers.length === 0) { %>
+            <div class="empty-state">
+              <p class="empty-state-text">No recent registrations</p>
+            </div>
+          <% } else { %>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Registered</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentUsers.forEach(user => { %>
+                    <tr>
+                      <td>
+                        <div class="user-info-cell">
+                          <div class="user-avatar"><%= user.firstName ? user.firstName.charAt(0).toUpperCase() : '?' %></div>
+                          <div class="user-info-text">
+                            <span class="user-name"><%= user.firstName %> <%= user.lastName %></span>
+                            <span class="user-email"><%= user.email %></span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge badge-<%= user.userType %>"><%= user.userType %></span>
+                      </td>
+                      <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Activity</h2>
+            <a href="/portal/admin/activity" class="btn btn-secondary btn-sm">View All</a>
+          </div>
+          
+          <% if (recentActivity.length === 0) { %>
+            <div class="empty-state">
+              <p class="empty-state-text">No recent activity</p>
+            </div>
+          <% } else { %>
+            <% recentActivity.forEach(activity => { %>
+              <div class="activity-item">
+                <div class="activity-icon">
+                  <% if (activity.action_type === 'login') { %>🔐
+                  <% } else if (activity.action_type === 'create') { %>➕
+                  <% } else if (activity.action_type === 'update') { %>✏️
+                  <% } else if (activity.action_type === 'delete') { %>🗑️
+                  <% } else { %>📋<% } %>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-action">
+                    <strong><%= activity.user_email || 'System' %></strong> 
+                    <%= activity.action_type %> - <%= activity.resource_type %>
+                  </div>
+                  <div class="activity-meta">
+                    <%= new Date(activity.created_at).toLocaleString() %>
+                    <% if (activity.ip_address) { %> | IP: <%= activity.ip_address %><% } %>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script src="/js/admin.js"></script>
+</body>
+</html>

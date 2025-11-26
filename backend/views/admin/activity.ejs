@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Logs - VerdictPath Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <%- include('partials/sidebar', { currentPage: 'activity' }) %>
+    
+    <main class="admin-main">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">📜 Activity Logs</h1>
+          <p class="admin-title-sub">Track all user activities across the platform</p>
+        </div>
+        <div class="header-actions">
+          <form action="/portal/admin/activity" method="GET" style="display: flex; gap: 10px;">
+            <select name="source" class="filter-select">
+              <option value="all" <%= source === 'all' ? 'selected' : '' %>>All Sources</option>
+              <option value="lawfirm" <%= source === 'lawfirm' ? 'selected' : '' %>>Law Firms</option>
+              <option value="medicalprovider" <%= source === 'medicalprovider' ? 'selected' : '' %>>Medical Providers</option>
+              <option value="audit" <%= source === 'audit' ? 'selected' : '' %>>Audit Logs</option>
+            </select>
+            <select name="action" class="filter-select">
+              <option value="all" <%= actionFilter === 'all' ? 'selected' : '' %>>All Actions</option>
+              <option value="login" <%= actionFilter === 'login' ? 'selected' : '' %>>Login</option>
+              <option value="create" <%= actionFilter === 'create' ? 'selected' : '' %>>Create</option>
+              <option value="update" <%= actionFilter === 'update' ? 'selected' : '' %>>Update</option>
+              <option value="delete" <%= actionFilter === 'delete' ? 'selected' : '' %>>Delete</option>
+              <option value="view" <%= actionFilter === 'view' ? 'selected' : '' %>>View</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card">
+        <% if (activities.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p class="empty-state-text">No activity logs found</p>
+            <p class="empty-state-sub">Activity will appear here as users interact with the platform</p>
+          </div>
+        <% } else { %>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User</th>
+                  <th>Source</th>
+                  <th>Action</th>
+                  <th>Resource</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% activities.forEach(activity => { %>
+                  <tr>
+                    <td><%= new Date(activity.created_at).toLocaleString() %></td>
+                    <td>
+                      <div class="user-info-cell">
+                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 12px;">
+                          <%= activity.user_email ? activity.user_email.charAt(0).toUpperCase() : 'S' %>
+                        </div>
+                        <span><%= activity.user_email || 'System' %></span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge badge-<%= activity.source || 'pending' %>">
+                        <%= activity.source || 'system' %>
+                      </span>
+                    </td>
+                    <td>
+                      <% if (activity.action_type === 'login') { %>🔐
+                      <% } else if (activity.action_type === 'create') { %>➕
+                      <% } else if (activity.action_type === 'update') { %>✏️
+                      <% } else if (activity.action_type === 'view') { %>👁️
+                      <% } else if (activity.action_type === 'delete') { %>🗑️
+                      <% } else { %>📋<% } %>
+                      <%= activity.action_type %>
+                    </td>
+                    <td><%= activity.resource_type || activity.action_category || '-' %></td>
+                    <td><%= activity.ip_address || '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          
+          <% if (pagination.totalPages > 1) { %>
+            <div class="pagination">
+              <% if (pagination.page > 1) { %>
+                <a href="?page=<%= pagination.page - 1 %>&source=<%= source %>&action=<%= actionFilter %>" class="page-btn">Previous</a>
+              <% } %>
+              
+              <% for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+                <a href="?page=<%= i %>&source=<%= source %>&action=<%= actionFilter %>" class="page-btn <%= pagination.page === i ? 'active' : '' %>"><%= i %></a>
+              <% } %>
+              
+              <% if (pagination.page < pagination.totalPages) { %>
+                <a href="?page=<%= pagination.page + 1 %>&source=<%= source %>&action=<%= actionFilter %>" class="page-btn">Next</a>
+              <% } %>
+            </div>
+          <% } %>
+        <% } %>
+      </div>
+    </main>
+  </div>
+  
+  <script src="/js/admin.js"></script>
+</body>
+</html>

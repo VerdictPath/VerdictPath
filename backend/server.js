@@ -30,6 +30,7 @@ const clientRelationshipsRoutes = require('./routes/client-relationships');
 const avatarRoutes = require('./routes/avatarRoutes');
 const notificationQueueRoutes = require('./routes/notification-queue');
 const chatRoutes = require('./routes/chat');
+const adminPortalRoutes = require('./routes/adminPortal');
 const { startReminderScheduler } = require('./services/taskReminderService');
 // Coin purchase routes merged into coins.js
 
@@ -179,6 +180,9 @@ app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
+
+// Admin Portal routes
+app.use('/portal/admin', adminPortalRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

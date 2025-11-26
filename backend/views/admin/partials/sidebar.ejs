@@ -1,0 +1,56 @@
+<aside class="admin-sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">🏴‍☠️ VerdictPath</div>
+    <div class="sidebar-subtitle">Admin Portal</div>
+  </div>
+  
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">Overview</div>
+      <a href="/portal/admin/dashboard" class="nav-link <%= currentPage === 'dashboard' ? 'active' : '' %>">
+        <span class="nav-link-icon">📊</span>
+        Dashboard
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">User Management</div>
+      <a href="/portal/admin/users?type=all" class="nav-link <%= currentPage === 'users' || currentPage === 'all' ? 'active' : '' %>">
+        <span class="nav-link-icon">👥</span>
+        All Users
+      </a>
+      <a href="/portal/admin/users?type=individual" class="nav-link <%= currentPage === 'individual' ? 'active' : '' %>">
+        <span class="nav-link-icon">👤</span>
+        Individuals
+      </a>
+      <a href="/portal/admin/users?type=lawfirm" class="nav-link <%= currentPage === 'lawfirm' ? 'active' : '' %>">
+        <span class="nav-link-icon">⚖️</span>
+        Law Firms
+      </a>
+      <a href="/portal/admin/users?type=medicalprovider" class="nav-link <%= currentPage === 'medicalprovider' ? 'active' : '' %>">
+        <span class="nav-link-icon">🏥</span>
+        Medical Providers
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Activity</div>
+      <a href="/portal/admin/activity" class="nav-link <%= currentPage === 'activity' ? 'active' : '' %>">
+        <span class="nav-link-icon">📜</span>
+        Activity Logs
+      </a>
+      <a href="/portal/admin/audit" class="nav-link <%= currentPage === 'audit' ? 'active' : '' %>">
+        <span class="nav-link-icon">🔍</span>
+        Audit Trail
+      </a>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">System</div>
+      <a href="/portal/admin/logout" class="nav-link">
+        <span class="nav-link-icon">🚪</span>
+        Sign Out
+      </a>
+    </div>
+  </nav>
+</aside>
