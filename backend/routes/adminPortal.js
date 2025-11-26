@@ -172,7 +172,7 @@ router.get('/users', async (req, res) => {
       query = `
         SELECT id, first_name as "firstName", last_name as "lastName", email, 
                user_type as "userType", subscription_tier as "subscriptionTier",
-               is_active as "isActive", created_at as "createdAt"
+               true as "isActive", created_at as "createdAt"
         FROM users 
         WHERE user_type = 'individual'
       `;
@@ -230,7 +230,7 @@ router.get('/users', async (req, res) => {
       query = `
         (SELECT id, first_name as "firstName", last_name as "lastName", email, 
                 user_type as "userType", subscription_tier as "subscriptionTier",
-                is_active as "isActive", created_at as "createdAt", NULL as "firmCode", 
+                true as "isActive", created_at as "createdAt", NULL as "firmCode", 
                 NULL as "firmName", NULL as "providerCode", NULL as "providerName"
          FROM users WHERE user_type = 'individual')
         UNION ALL
@@ -289,10 +289,10 @@ router.get('/user/:type/:id', async (req, res) => {
     
     if (type === 'individual') {
       const userResult = await pool.query(`
-        SELECT id, first_name as "firstName", last_name as "lastName", email, phone,
+        SELECT id, first_name as "firstName", last_name as "lastName", email,
                user_type as "userType", subscription_tier as "subscriptionTier",
-               coins, streak, is_active as "isActive", created_at as "createdAt",
-               last_login as "lastLogin"
+               total_coins as "coins", login_streak as "streak", true as "isActive", 
+               created_at as "createdAt", last_login_date as "lastLogin"
         FROM users WHERE id = $1
       `, [id]);
       
@@ -319,7 +319,7 @@ router.get('/user/:type/:id', async (req, res) => {
       
     } else if (type === 'lawfirm') {
       const firmResult = await pool.query(`
-        SELECT id, firm_name as "firmName", email, phone, firm_code as "firmCode",
+        SELECT id, firm_name as "firmName", email, phone_number as "phone", firm_code as "firmCode",
                subscription_tier as "subscriptionTier", is_active as "isActive",
                created_at as "createdAt"
         FROM law_firms WHERE id = $1
@@ -339,13 +339,13 @@ router.get('/user/:type/:id', async (req, res) => {
         `, [id]),
         pool.query(`
           SELECT id, first_name as "firstName", last_name as "lastName", email, role,
-                 is_active as "isActive", created_at as "createdAt"
+                 (status = 'active') as "isActive", created_at as "createdAt"
           FROM law_firm_users WHERE law_firm_id = $1
           ORDER BY created_at DESC
         `, [id]),
         pool.query(`
           SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
-                 u.is_active as "isActive", lfc.created_at as "connectedAt"
+                 true as "isActive", lfc.created_at as "connectedAt"
           FROM law_firm_clients lfc
           JOIN users u ON lfc.user_id = u.id
           WHERE lfc.law_firm_id = $1
@@ -353,10 +353,10 @@ router.get('/user/:type/:id', async (req, res) => {
           LIMIT 50
         `, [id]),
         pool.query(`
-          SELECT action_type, action_category, ip_address, created_at
+          SELECT action as action_type, action_category, ip_address, timestamp as created_at
           FROM law_firm_activity_logs
           WHERE law_firm_id = $1
-          ORDER BY created_at DESC
+          ORDER BY timestamp DESC
           LIMIT 20
         `, [id])
       ]);
@@ -368,7 +368,7 @@ router.get('/user/:type/:id', async (req, res) => {
       
     } else if (type === 'medicalprovider') {
       const providerResult = await pool.query(`
-        SELECT id, provider_name as "providerName", email, phone, provider_code as "providerCode",
+        SELECT id, provider_name as "providerName", email, phone_number as "phone", provider_code as "providerCode",
                subscription_tier as "subscriptionTier", is_active as "isActive",
                created_at as "createdAt"
         FROM medical_providers WHERE id = $1
@@ -388,13 +388,13 @@ router.get('/user/:type/:id', async (req, res) => {
         `, [id]),
         pool.query(`
           SELECT id, first_name as "firstName", last_name as "lastName", email, role,
-                 is_active as "isActive", created_at as "createdAt"
+                 (status = 'active') as "isActive", created_at as "createdAt"
           FROM medical_provider_users WHERE medical_provider_id = $1
           ORDER BY created_at DESC
         `, [id]),
         pool.query(`
           SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
-                 u.is_active as "isActive", mpp.created_at as "connectedAt"
+                 true as "isActive", mpp.created_at as "connectedAt"
           FROM medical_provider_patients mpp
           JOIN users u ON mpp.user_id = u.id
           WHERE mpp.medical_provider_id = $1
@@ -402,10 +402,10 @@ router.get('/user/:type/:id', async (req, res) => {
           LIMIT 50
         `, [id]),
         pool.query(`
-          SELECT action_type, action_category, ip_address, created_at
+          SELECT action as action_type, action_category, ip_address, timestamp as created_at
           FROM medical_provider_activity_logs
           WHERE medical_provider_id = $1
-          ORDER BY created_at DESC
+          ORDER BY timestamp DESC
           LIMIT 20
         `, [id])
       ]);
@@ -474,30 +474,28 @@ router.get('/activity', async (req, res) => {
     
     if (source === 'lawfirm') {
       query = `
-        SELECT l.created_at, l.action_type, l.action_category as resource_type, l.ip_address,
-               u.email as user_email, 'lawfirm' as source
+        SELECT l.timestamp as created_at, l.action as action_type, l.action_category as resource_type, l.ip_address,
+               l.user_email, 'lawfirm' as source
         FROM law_firm_activity_logs l
-        LEFT JOIN users u ON l.user_id = u.id
       `;
       countQuery = `SELECT COUNT(*) FROM law_firm_activity_logs`;
       
       if (actionFilter !== 'all') {
-        whereConditions.push(`l.action_type = $${paramIndex}`);
+        whereConditions.push(`l.action = $${paramIndex}`);
         params.push(actionFilter);
         paramIndex++;
       }
       
     } else if (source === 'medicalprovider') {
       query = `
-        SELECT l.created_at, l.action_type, l.action_category as resource_type, l.ip_address,
-               u.email as user_email, 'medicalprovider' as source
+        SELECT l.timestamp as created_at, l.action as action_type, l.action_category as resource_type, l.ip_address,
+               l.user_email, 'medicalprovider' as source
         FROM medical_provider_activity_logs l
-        LEFT JOIN users u ON l.user_id = u.id
       `;
       countQuery = `SELECT COUNT(*) FROM medical_provider_activity_logs`;
       
       if (actionFilter !== 'all') {
-        whereConditions.push(`l.action_type = $${paramIndex}`);
+        whereConditions.push(`l.action = $${paramIndex}`);
         params.push(actionFilter);
         paramIndex++;
       }
@@ -519,15 +517,13 @@ router.get('/activity', async (req, res) => {
       
     } else {
       query = `
-        (SELECT l.created_at, l.action_type, l.action_category as resource_type, l.ip_address,
-                u.email as user_email, 'lawfirm' as source
-         FROM law_firm_activity_logs l
-         LEFT JOIN users u ON l.user_id = u.id)
+        (SELECT l.timestamp as created_at, l.action as action_type, l.action_category as resource_type, l.ip_address,
+                l.user_email, 'lawfirm' as source
+         FROM law_firm_activity_logs l)
         UNION ALL
-        (SELECT l.created_at, l.action_type, l.action_category as resource_type, l.ip_address,
-                u.email as user_email, 'medicalprovider' as source
-         FROM medical_provider_activity_logs l
-         LEFT JOIN users u ON l.user_id = u.id)
+        (SELECT l.timestamp as created_at, l.action as action_type, l.action_category as resource_type, l.ip_address,
+                l.user_email, 'medicalprovider' as source
+         FROM medical_provider_activity_logs l)
         ORDER BY created_at DESC
         LIMIT $1 OFFSET $2
       `;
@@ -562,7 +558,8 @@ router.get('/activity', async (req, res) => {
       countQuery += ` WHERE ${whereConditions.map((_, i) => whereConditions[i].replace(`$${i+1}`, `$${i+1}`)).join(' AND ')}`;
     }
     
-    query += ` ORDER BY created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    const orderByCol = source === 'audit' ? 'a.created_at' : 'l.timestamp';
+    query += ` ORDER BY ${orderByCol} DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
     
     const countParams = actionFilter !== 'all' ? [actionFilter] : [];
