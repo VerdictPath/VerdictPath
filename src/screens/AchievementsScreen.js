@@ -6,7 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert
+  Alert,
+  ImageBackground,
+  useWindowDimensions
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_BASE_URL } from '../config/api';
@@ -16,6 +18,11 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const { width, height } = useWindowDimensions();
+
+  const isPhone = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
 
   useEffect(() => {
     loadAchievementsAndStats();
@@ -76,6 +83,12 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
     return achievement.category === filter;
   });
 
+  const getContentWidth = () => {
+    if (isDesktop) return Math.min(width * 0.6, 800);
+    if (isTablet) return width * 0.85;
+    return width;
+  };
+
   const renderAchievementCard = (achievement) => {
     const progress = achievement.progress.current;
     const total = achievement.progress.required;
@@ -96,7 +109,7 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
             {achievement.icon}
           </Text>
           <View style={styles.achievementInfo}>
-            <Text style={[styles.achievementName, isCompleted && styles.completedText]}>
+            <Text style={[styles.achievementName, isCompleted && styles.completedNameText]}>
               {achievement.name}
             </Text>
             <Text style={styles.achievementDescription}>{achievement.description}</Text>
@@ -135,73 +148,139 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>🏆 Achievements</Text>
-        <TouchableOpacity onPress={onViewBadges} style={styles.badgesButton}>
-          <Text style={styles.badgesButtonText}>Badges →</Text>
-        </TouchableOpacity>
-      </View>
-
-      {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.achievementsCompleted}/{stats.totalAchievements}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.completionRate}%</Text>
-            <Text style={styles.statLabel}>Completion Rate</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.coins} 🪙</Text>
-            <Text style={styles.statLabel}>Total Coins</Text>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['all', 'completed', 'in_progress', 'progress', 'consistency', 'engagement', 'milestones'].map(filterOption => (
-            <TouchableOpacity
-              key={filterOption}
-              style={[
-                styles.filterChip,
-                filter === filterOption && styles.filterChipActive
-              ]}
-              onPress={() => setFilter(filterOption)}
-            >
-              <Text style={[
-                styles.filterChipText,
-                filter === filterOption && styles.filterChipTextActive
+      <ImageBackground
+        source={require('../../attached_assets/Treasure Chest_1764130964116.png')}
+        style={[styles.backgroundImage, { width, height }]}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay}>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { alignItems: isDesktop || isTablet ? 'center' : 'stretch' }
+            ]}
+          >
+            <View style={[
+              styles.contentWrapper,
+              { width: getContentWidth() }
+            ]}>
+              <View style={[
+                styles.header,
+                { paddingTop: isDesktop ? 30 : 50 }
               ]}>
-                {filterOption.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                  <Text style={[
+                    styles.backButtonText,
+                    { fontSize: isDesktop ? 20 : 18 }
+                  ]}>← Back</Text>
+                </TouchableOpacity>
+                <Text style={[
+                  styles.headerTitle,
+                  { fontSize: isDesktop ? 28 : isTablet ? 24 : 20 }
+                ]}>🏆 Achievements</Text>
+                <TouchableOpacity onPress={onViewBadges} style={styles.badgesButton}>
+                  <Text style={[
+                    styles.badgesButtonText,
+                    { fontSize: isDesktop ? 16 : 14 }
+                  ]}>Badges →</Text>
+                </TouchableOpacity>
+              </View>
 
-      <ScrollView style={styles.achievementsList}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Loading achievements...</Text>
-          </View>
-        ) : filteredAchievements.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>🎯</Text>
-            <Text style={styles.emptyStateText}>No achievements found</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Try a different filter or start completing tasks to unlock achievements!
-            </Text>
-          </View>
-        ) : (
-          filteredAchievements.map(achievement => renderAchievementCard(achievement))
-        )}
-      </ScrollView>
+              {stats && (
+                <View style={[
+                  styles.statsContainer,
+                  { padding: isDesktop ? 20 : 16 }
+                ]}>
+                  <View style={[
+                    styles.statCard,
+                    { padding: isDesktop ? 20 : 16 }
+                  ]}>
+                    <Text style={[
+                      styles.statValue,
+                      { fontSize: isDesktop ? 24 : 20 }
+                    ]}>{stats.achievementsCompleted}/{stats.totalAchievements}</Text>
+                    <Text style={[
+                      styles.statLabel,
+                      { fontSize: isDesktop ? 14 : 12 }
+                    ]}>Completed</Text>
+                  </View>
+                  <View style={[
+                    styles.statCard,
+                    { padding: isDesktop ? 20 : 16 }
+                  ]}>
+                    <Text style={[
+                      styles.statValue,
+                      { fontSize: isDesktop ? 24 : 20 }
+                    ]}>{stats.completionRate}%</Text>
+                    <Text style={[
+                      styles.statLabel,
+                      { fontSize: isDesktop ? 14 : 12 }
+                    ]}>Completion Rate</Text>
+                  </View>
+                  <View style={[
+                    styles.statCard,
+                    { padding: isDesktop ? 20 : 16 }
+                  ]}>
+                    <Text style={[
+                      styles.statValue,
+                      { fontSize: isDesktop ? 24 : 20 }
+                    ]}>{stats.coins} 🪙</Text>
+                    <Text style={[
+                      styles.statLabel,
+                      { fontSize: isDesktop ? 14 : 12 }
+                    ]}>Total Coins</Text>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.filterContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {['all', 'completed', 'in_progress', 'progress', 'consistency', 'engagement', 'milestones'].map(filterOption => (
+                    <TouchableOpacity
+                      key={filterOption}
+                      style={[
+                        styles.filterChip,
+                        filter === filterOption && styles.filterChipActive
+                      ]}
+                      onPress={() => setFilter(filterOption)}
+                    >
+                      <Text style={[
+                        styles.filterChipText,
+                        filter === filterOption && styles.filterChipTextActive
+                      ]}>
+                        {filterOption.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={[
+                styles.achievementsList,
+                { padding: isDesktop ? 20 : 16 }
+              ]}>
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#FFD700" />
+                    <Text style={styles.loadingText}>Loading achievements...</Text>
+                  </View>
+                ) : filteredAchievements.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateIcon}>🎯</Text>
+                    <Text style={styles.emptyStateText}>No achievements found</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Try a different filter or start completing tasks to unlock achievements!
+                    </Text>
+                  </View>
+                ) : (
+                  filteredAchievements.map(achievement => renderAchievementCard(achievement))
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </ImageBackground>
     </View>
   );
 };
@@ -209,98 +288,127 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5E6D3',
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
+  contentWrapper: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.primary,
-    borderBottomWidth: 2,
-    borderBottomColor: '#8B4513',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
   },
   backButton: {
     padding: 8,
   },
   backButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   headerTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
   badgesButton: {
-    backgroundColor: '#F39C12',
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   badgesButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FFD700',
+    fontWeight: '700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   statsContainer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 20,
     gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    padding: 16,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
     borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DDD',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
   },
   statValue: {
-    fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: '#FFD700',
     marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
+    color: '#E8D5B0',
     textAlign: 'center',
   },
   filterContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(26, 26, 26, 0.75)',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#DDD',
+    marginTop: 16,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   filterChip: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   filterChipActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
+    borderColor: 'rgba(255, 215, 0, 0.6)',
   },
   filterChipText: {
     fontSize: 14,
-    color: '#666',
+    color: '#B8A080',
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: '#FFD700',
     fontWeight: '600',
   },
   achievementsList: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -311,11 +419,19 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: '#E8D5B0',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   emptyState: {
     alignItems: 'center',
     paddingTop: 100,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
+    borderRadius: 16,
+    padding: 30,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   emptyStateIcon: {
     fontSize: 64,
@@ -324,46 +440,49 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFD700',
     marginBottom: 8,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#666',
+    color: '#E8D5B0',
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
   },
   achievementCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: 'rgba(26, 26, 26, 0.88)',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#DDD',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
   },
   completedCard: {
-    backgroundColor: '#F0FFF4',
-    borderColor: '#2ECC71',
+    backgroundColor: 'rgba(30, 80, 50, 0.85)',
+    borderColor: 'rgba(39, 174, 96, 0.6)',
   },
   rareGlow: {
-    borderColor: '#3498DB',
+    borderColor: 'rgba(52, 152, 219, 0.8)',
     shadowColor: '#3498DB',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
   },
   epicGlow: {
-    borderColor: '#9B59B6',
+    borderColor: 'rgba(155, 89, 182, 0.8)',
     shadowColor: '#9B59B6',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
   },
   legendaryGlow: {
-    borderColor: '#F39C12',
+    borderColor: 'rgba(243, 156, 18, 0.9)',
     shadowColor: '#F39C12',
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
   },
   achievementHeader: {
     flexDirection: 'row',
@@ -383,12 +502,18 @@ const styles = StyleSheet.create({
   achievementName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFD700',
     marginBottom: 4,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  completedNameText: {
+    color: '#90EE90',
   },
   achievementDescription: {
     fontSize: 13,
-    color: '#666',
+    color: '#E8D5B0',
     marginBottom: 8,
   },
   achievementMeta: {
@@ -403,10 +528,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+    overflow: 'hidden',
   },
   categoryText: {
     fontSize: 11,
-    color: '#999',
+    color: '#B8A080',
     fontStyle: 'italic',
   },
   progressContainer: {
@@ -414,39 +540,49 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#FFD700',
     borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    color: '#666',
+    color: '#E8D5B0',
     textAlign: 'right',
   },
   completedBanner: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#2ECC71',
+    backgroundColor: 'rgba(39, 174, 96, 0.8)',
     padding: 12,
     borderRadius: 8,
     marginVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(39, 174, 96, 0.6)',
   },
   completedText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   rewardText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   rewardContainer: {
     flexDirection: 'row',
@@ -454,16 +590,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#EEE',
+    borderTopColor: 'rgba(255, 215, 0, 0.3)',
   },
   rewardLabel: {
     fontSize: 13,
-    color: '#666',
+    color: '#B8A080',
   },
   rewardValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: '#FFD700',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });
 
