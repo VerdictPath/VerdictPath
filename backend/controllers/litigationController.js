@@ -515,6 +515,8 @@ const revertSubstage = async (req, res) => {
 };
 
 // Revert (uncomplete) an entire stage
+// Handles both explicit stage completions (via "Mark Entire Stage Complete" button)
+// AND implicit stage completions (when all substages were completed individually)
 const revertStage = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -524,50 +526,73 @@ const revertStage = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Mark all substage completions as reverted for this stage
-    await db.query(
-      `UPDATE litigation_substage_completions 
-       SET is_reverted = TRUE, 
-           reverted_at = CURRENT_TIMESTAMP 
+    // First, check if there are any active substage completions to revert
+    const activeSubstages = await db.query(
+      `SELECT COUNT(*) as count FROM litigation_substage_completions 
        WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE`,
       [userId, stageId]
     );
+    const substageCount = parseInt(activeSubstages.rows[0]?.count || 0);
 
-    // Mark stage completion record as reverted
-    const stageResult = await db.query(
-      `UPDATE litigation_stage_completions 
+    // Also check if there's an explicit stage completion record
+    const existingStageCompletion = await db.query(
+      `SELECT id FROM litigation_stage_completions 
+       WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE`,
+      [userId, stageId]
+    );
+    const hasExplicitStageCompletion = existingStageCompletion.rows.length > 0;
+
+    // If nothing to revert, return error
+    if (substageCount === 0 && !hasExplicitStageCompletion) {
+      return res.status(404).json({ error: 'Stage completion not found or already reverted' });
+    }
+
+    // Mark all substage completions as reverted for this stage
+    const substageResult = await db.query(
+      `UPDATE litigation_substage_completions 
        SET is_reverted = TRUE, 
            reverted_at = CURRENT_TIMESTAMP 
        WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE
-       RETURNING *`,
+       RETURNING id`,
       [userId, stageId]
     );
+    const substagesReverted = substageResult.rows.length;
 
-    if (stageResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Stage completion not found or already reverted' });
+    // Mark stage completion record as reverted (if it exists)
+    // Note: Stage may be "completed" implicitly (all substages done) without an explicit record
+    let stageRecordReverted = false;
+    if (hasExplicitStageCompletion) {
+      await db.query(
+        `UPDATE litigation_stage_completions 
+         SET is_reverted = TRUE, 
+             reverted_at = CURRENT_TIMESTAMP 
+         WHERE user_id = $1 AND stage_id = $2 AND is_reverted = FALSE`,
+        [userId, stageId]
+      );
+      stageRecordReverted = true;
     }
 
     // Note: Coins are NOT refunded - they remain as earned but user can't earn them again
     // This prevents coin farming
 
-    // Update progress totals (substage count reduced)
-    const substageCount = await db.query(
-      'SELECT COUNT(*) as count FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2',
-      [userId, stageId]
-    );
-    const countToReduce = substageCount.rows[0]?.count || 0;
+    // Update progress totals (reduce by number of substages reverted)
+    if (substagesReverted > 0) {
+      await db.query(
+        `UPDATE user_litigation_progress 
+         SET total_substages_completed = GREATEST(0, total_substages_completed - $1),
+             last_activity_at = CURRENT_TIMESTAMP
+         WHERE user_id = $2`,
+        [substagesReverted, userId]
+      );
+    }
 
-    await db.query(
-      `UPDATE user_litigation_progress 
-       SET total_substages_completed = GREATEST(0, total_substages_completed - $1),
-           last_activity_at = CURRENT_TIMESTAMP
-       WHERE user_id = $2`,
-      [countToReduce, userId]
-    );
+    console.log(`[Revert] Stage ${stageId} reverted for user ${userId}: ${substagesReverted} substages, explicit record: ${stageRecordReverted}`);
 
     res.json({
       message: 'Stage reverted successfully (coins preserved to prevent farming)',
       stageId: stageId,
+      substagesReverted: substagesReverted,
+      explicitStageRecordReverted: stageRecordReverted,
       coinsNotRefunded: true
     });
   } catch (error) {
