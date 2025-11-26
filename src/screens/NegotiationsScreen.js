@@ -770,12 +770,24 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
                     <Text style={styles.historyDate}>
                       {new Date(entry.timestamp).toLocaleString()}
                     </Text>
-                    <Text style={styles.historyAction}>{entry.action}</Text>
-                    <Text style={styles.historyAmount}>
-                      Amount: ${(entry.amount || 0).toFixed(2)}
+                    <Text style={styles.historyAction}>
+                      {entry.action === 'call_requested' ? '📞 Call Requested' : entry.action}
                     </Text>
+                    {entry.action !== 'call_requested' && (
+                      <Text style={styles.historyAmount}>
+                        Amount: ${(entry.amount || 0).toFixed(2)}
+                      </Text>
+                    )}
+                    {entry.action === 'call_requested' && entry.phoneNumber && (
+                      <Text style={styles.historyPhone}>📱 Phone: {entry.phoneNumber}</Text>
+                    )}
                     {entry.notes && (
                       <Text style={styles.historyNotes}>Notes: {entry.notes}</Text>
+                    )}
+                    {entry.actionBy && (
+                      <Text style={styles.historyActionBy}>
+                        By: {entry.actionBy === 'law_firm' ? 'Law Firm' : 'Medical Provider'}
+                      </Text>
                     )}
                   </View>
                 ))}
@@ -1390,6 +1402,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.textSecondary,
     fontStyle: 'italic',
+  },
+  historyPhone: {
+    fontSize: 13,
+    color: '#2E7D32',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  historyActionBy: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
   },
   actionSection: {
     marginTop: 20,
