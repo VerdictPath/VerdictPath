@@ -2,6 +2,7 @@ const { pool } = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 const documentAccessService = require('../services/documentAccessService');
 const encryptionService = require('../services/encryption');
+const s3Service = require('../services/s3Service');
 const path = require('path');
 const fs = require('fs');
 
@@ -178,12 +179,19 @@ const uploadMedicalRecord = async (req, res) => {
 
     const { recordType, facilityName, providerName, dateOfService, description } = req.body;
 
-    // Insert into medical_records table
+    const s3Result = await s3Service.uploadFileMultipart(
+      file.buffer,
+      userId,
+      'medical-records',
+      file.originalname,
+      file.mimetype
+    );
+
     const result = await pool.query(
       `INSERT INTO medical_records 
        (user_id, record_type, facility_name, provider_name, date_of_service, description, 
-        document_url, file_name, file_size, mime_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
        RETURNING *`,
       [
         userId,
@@ -192,14 +200,17 @@ const uploadMedicalRecord = async (req, res) => {
         providerName || null,
         dateOfService || null,
         description || null,
-        file.filename, // Store just the filename, not the full path
+        s3Result.location,
         file.originalname,
-        file.size,
-        file.mimetype
+        s3Result.fileSize,
+        s3Result.mimeType,
+        s3Result.bucket,
+        s3Result.key,
+        s3Result.region,
+        s3Result.etag
       ]
     );
 
-    // HIPAA audit log
     await auditLogger.log({
       userId,
       action: 'UPLOAD_MEDICAL_RECORD',
@@ -207,13 +218,14 @@ const uploadMedicalRecord = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: file.size,
-        recordType: recordType || 'Medical Record'
+        fileSize: s3Result.fileSize,
+        recordType: recordType || 'Medical Record',
+        s3Key: s3Result.key,
+        s3Bucket: s3Result.bucket
       },
       ipAddress: req.ip
     });
 
-    // Create notification for connected law firm
     const lawFirmQuery = await pool.query(
       `SELECT connected_law_firm_id FROM users WHERE id = $1`,
       [userId]
@@ -230,13 +242,13 @@ const uploadMedicalRecord = async (req, res) => {
       );
     }
 
-    // Auto-complete the 'Medical Records' substage (pre-9, 35 coins)
     await autoCompleteSubstage(userId, 'Medical Record');
 
     res.json({
       success: true,
-      message: 'Medical record uploaded successfully',
+      message: 'Medical record uploaded successfully to S3',
       document: result.rows[0],
+      s3Location: s3Result.location,
       substageCompleted: true
     });
   } catch (error) {
@@ -265,12 +277,19 @@ const uploadMedicalBill = async (req, res) => {
       description 
     } = req.body;
 
-    // Insert into medical_billing table
+    const s3Result = await s3Service.uploadFileMultipart(
+      file.buffer,
+      userId,
+      'medical-bills',
+      file.originalname,
+      file.mimetype
+    );
+
     const result = await pool.query(
       `INSERT INTO medical_billing 
        (user_id, billing_type, facility_name, bill_number, date_of_service, bill_date,
-        total_amount, amount_due, description, document_url, file_name, file_size, mime_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        total_amount, amount_due, description, document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
        RETURNING *`,
       [
         userId,
@@ -282,14 +301,17 @@ const uploadMedicalBill = async (req, res) => {
         totalAmount || 0,
         totalAmount || 0,
         description || null,
-        file.filename, // Store just the filename, not the full path
+        s3Result.location,
         file.originalname,
-        file.size,
-        file.mimetype
+        s3Result.fileSize,
+        s3Result.mimeType,
+        s3Result.bucket,
+        s3Result.key,
+        s3Result.region,
+        s3Result.etag
       ]
     );
 
-    // HIPAA audit log
     await auditLogger.log({
       userId,
       action: 'UPLOAD_MEDICAL_BILL',
@@ -297,13 +319,14 @@ const uploadMedicalBill = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: file.size,
-        billingType: billingType || 'Medical Bill'
+        fileSize: s3Result.fileSize,
+        billingType: billingType || 'Medical Bill',
+        s3Key: s3Result.key,
+        s3Bucket: s3Result.bucket
       },
       ipAddress: req.ip
     });
 
-    // Create notification for connected law firm
     const lawFirmQuery = await pool.query(
       `SELECT connected_law_firm_id FROM users WHERE id = $1`,
       [userId]
@@ -320,13 +343,13 @@ const uploadMedicalBill = async (req, res) => {
       );
     }
 
-    // Auto-complete the 'Medical Bills' substage (pre-8, 15 coins)
     await autoCompleteSubstage(userId, 'Medical Bill');
 
     res.json({
       success: true,
-      message: 'Medical bill uploaded successfully',
+      message: 'Medical bill uploaded successfully to S3',
       document: result.rows[0],
+      s3Location: s3Result.location,
       substageCompleted: true
     });
   } catch (error) {
@@ -353,38 +376,47 @@ const uploadEvidence = async (req, res) => {
       location 
     } = req.body;
 
-    // Encrypt PHI fields (title, description, location) for HIPAA compliance
+    const s3Result = await s3Service.uploadFileMultipart(
+      file.buffer,
+      userId,
+      'evidence',
+      file.originalname,
+      file.mimetype
+    );
+
     const titleValue = title || file.originalname;
     const titleEncrypted = encryptionService.encrypt(titleValue);
     const descriptionEncrypted = description ? encryptionService.encrypt(description) : null;
     const locationEncrypted = location ? encryptionService.encrypt(location) : null;
 
-    // Insert into evidence table with encrypted PHI fields
     const result = await pool.query(
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
-        document_url, file_name, file_size, mime_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
        RETURNING *`,
       [
         userId,
         evidenceType || 'Document',
-        titleValue,  // Keep plain text for backward compatibility
-        description || null,  // Keep plain text for backward compatibility
+        titleValue,
+        description || null,
         dateOfIncident || null,
-        location || null,  // Keep plain text for backward compatibility
-        titleEncrypted,  // Encrypted PHI
-        descriptionEncrypted,  // Encrypted PHI
-        locationEncrypted,  // Encrypted PHI
-        file.filename, // Store just the filename, not the full path
+        location || null,
+        titleEncrypted,
+        descriptionEncrypted,
+        locationEncrypted,
+        s3Result.location,
         file.originalname,
-        file.size,
-        file.mimetype
+        s3Result.fileSize,
+        s3Result.mimeType,
+        s3Result.bucket,
+        s3Result.key,
+        s3Result.region,
+        s3Result.etag
       ]
     );
 
-    // HIPAA audit log
     await auditLogger.log({
       userId,
       action: 'UPLOAD_EVIDENCE',
@@ -392,13 +424,14 @@ const uploadEvidence = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: file.size,
-        evidenceType: evidenceType || 'Document'
+        fileSize: s3Result.fileSize,
+        evidenceType: evidenceType || 'Document',
+        s3Key: s3Result.key,
+        s3Bucket: s3Result.bucket
       },
       ipAddress: req.ip
     });
 
-    // Create notification for connected law firm
     const lawFirmQuery = await pool.query(
       `SELECT connected_law_firm_id FROM users WHERE id = $1`,
       [userId]
@@ -415,13 +448,13 @@ const uploadEvidence = async (req, res) => {
       );
     }
 
-    // Auto-complete substage if evidence type matches (Police Report, Photos, etc.)
     await autoCompleteSubstage(userId, evidenceType || title || 'Document');
 
     res.json({
       success: true,
-      message: 'Evidence uploaded successfully',
+      message: 'Evidence uploaded successfully to S3',
       document: result.rows[0],
+      s3Location: s3Result.location,
       substageCompleted: true
     });
   } catch (error) {
@@ -430,16 +463,15 @@ const uploadEvidence = async (req, res) => {
   }
 };
 
-// Download file with authentication and authorization
+// Download file with authentication and authorization (returns presigned URL)
 const downloadFile = async (req, res) => {
   try {
     const userId = req.user.id;
     const userType = req.user.userType;
-    const { fileId, type } = req.params; // type: medical-record, medical-bill, or evidence
+    const { fileId, type } = req.params;
 
     let documentType;
     
-    // Map URL type to database type
     switch(type) {
       case 'medical-record':
         documentType = 'medical_records';
@@ -458,7 +490,6 @@ const downloadFile = async (req, res) => {
     let patientId;
     let accessReason;
 
-    // If user is the owner, allow direct access
     const ownerCheck = await pool.query(
       `SELECT * FROM ${documentType} WHERE id = $1 AND user_id = $2`,
       [fileId, userId]
@@ -469,11 +500,9 @@ const downloadFile = async (req, res) => {
       patientId = userId;
       accessReason = 'OWNER_ACCESS';
     } 
-    // If user is law firm, check consent and authorization
-    else if (userType === 'lawfirm') {
+    else if (userType === 'lawfirm' || userType === 'law_firm') {
       const documentAccessService = require('../services/documentAccessService');
       
-      // Get law firm ID
       const lawFirmResult = await pool.query(
         `SELECT id FROM law_firms WHERE email = $1`,
         [req.user.email]
@@ -485,7 +514,6 @@ const downloadFile = async (req, res) => {
 
       const lawFirmId = lawFirmResult.rows[0].id;
       
-      // Get patient ID from document
       const docResult = await pool.query(
         `SELECT user_id FROM ${documentType} WHERE id = $1`,
         [fileId]
@@ -497,7 +525,6 @@ const downloadFile = async (req, res) => {
 
       patientId = docResult.rows[0].user_id;
 
-      // Check authorization through consent
       const authResult = await documentAccessService.authorizeLawFirmDocumentAccess(
         lawFirmId,
         patientId,
@@ -519,15 +546,41 @@ const downloadFile = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Build correct file path
-    const filePath = path.resolve(__dirname, '..', 'uploads', document.document_url);
+    if (!document.s3_key) {
+      const filePath = path.resolve(__dirname, '..', 'uploads', document.document_url);
+      
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'File not found on server' });
+      }
 
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on server' });
+      await auditLogger.log({
+        userId,
+        action: 'DOWNLOAD_FILE',
+        resourceType: documentType,
+        resourceId: fileId,
+        details: {
+          fileName: document.file_name,
+          fileType: type,
+          accessReason: accessReason,
+          patientId: patientId,
+          accessedBy: userType,
+          storageType: 'local'
+        },
+        ipAddress: req.ip,
+        targetUserId: patientId
+      });
+
+      res.setHeader('Content-Type', document.mime_type);
+      res.setHeader('Content-Disposition', `inline; filename="${document.file_name}"`);
+      return res.sendFile(filePath);
     }
 
-    // HIPAA audit log
+    const presignedUrlData = await s3Service.generatePresignedDownloadUrl(
+      document.s3_key,
+      3600,
+      document.file_name
+    );
+
     await auditLogger.log({
       userId,
       action: 'DOWNLOAD_FILE',
@@ -538,16 +591,25 @@ const downloadFile = async (req, res) => {
         fileType: type,
         accessReason: accessReason,
         patientId: patientId,
-        accessedBy: userType
+        accessedBy: userType,
+        s3Key: document.s3_key,
+        s3Bucket: document.s3_bucket,
+        storageType: 's3',
+        presignedUrlExpiry: presignedUrlData.expiresAt
       },
       ipAddress: req.ip,
       targetUserId: patientId
     });
 
-    // Set appropriate headers and send file
-    res.setHeader('Content-Type', document.mime_type);
-    res.setHeader('Content-Disposition', `inline; filename="${document.file_name}"`);
-    res.sendFile(filePath);
+    res.json({
+      success: true,
+      presignedUrl: presignedUrlData.url,
+      fileName: document.file_name,
+      mimeType: document.mime_type,
+      fileSize: document.file_size,
+      expiresIn: presignedUrlData.expiresIn,
+      expiresAt: presignedUrlData.expiresAt
+    });
   } catch (error) {
     console.error('Error downloading file:', error);
     res.status(500).json({ error: 'Failed to download file' });

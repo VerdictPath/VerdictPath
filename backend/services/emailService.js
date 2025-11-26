@@ -100,11 +100,17 @@ async function sendCredentialEmail(toEmail, userData, temporaryPassword, userTyp
       return { success: false, error: 'Email service not configured' };
     }
     
-    const info = await transporter.sendMail(mailOptions);
+    // Add timeout wrapper to prevent indefinite hanging
+    const sendEmailPromise = transporter.sendMail(mailOptions);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Email send timeout after 10 seconds')), 10000)
+    );
+    
+    const info = await Promise.race([sendEmailPromise, timeoutPromise]);
     console.log(`✅ Credential email sent to ${toEmail}:`, info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`❌ Failed to send credential email to ${toEmail}:`, error);
+    console.error(`❌ Failed to send credential email to ${toEmail}:`, error.message);
     return { success: false, error: error.message };
   }
 }
@@ -156,6 +162,12 @@ async function sendPasswordChangeConfirmation(toEmail, userName, userType) {
   };
 
   try {
+    // Check if SMTP is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.warn('⚠️ SMTP not configured, skipping password change confirmation email');
+      return { success: false, error: 'Email service not configured' };
+    }
+    
     await transporter.sendMail(mailOptions);
     console.log(`✅ Password change confirmation sent to ${toEmail}`);
     return { success: true };

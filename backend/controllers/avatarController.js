@@ -8,7 +8,7 @@ const selectAvatar = async (req, res) => {
   const userType = req.user.userType;
 
   try {
-    if (userType !== 'individual') {
+    if (userType !== 'individual' && userType !== 'client') {
       return res.status(403).json({ 
         error: 'Avatar selection is only available for individual users' 
       });
@@ -52,7 +52,7 @@ const getCurrentAvatar = async (req, res) => {
   const userType = req.user.userType;
 
   try {
-    if (userType !== 'individual') {
+    if (userType !== 'individual' && userType !== 'client') {
       return res.status(403).json({ 
         error: 'Avatar features are only available for individual users' 
       });

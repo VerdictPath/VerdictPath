@@ -19,8 +19,8 @@
         <div class="stat-label">Total Clients</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value"><%= activeClients || 0 %></div>
-        <div class="stat-label">Active Cases</div>
+        <div class="stat-value"><%= analytics && analytics.litigationCount ? analytics.litigationCount : 0 %></div>
+        <div class="stat-label">In Litigation</div>
       </div>
     </div>
     
@@ -45,7 +45,8 @@
       <% } %>
     </div>
     
-    <div style="text-align: center; margin-top: 30px;">
+    <div style="text-align: center; margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+      <a href="/portal/settings" class="btn btn-primary">⚙️ Settings</a>
       <a href="/api/auth/logout" class="btn btn-secondary">Sign Out</a>
     </div>
   </div>

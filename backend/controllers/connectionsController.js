@@ -137,8 +137,7 @@ const updateLawFirm = async (req, res) => {
 
     await db.query(
       `UPDATE users
-      SET law_firm_code = $1,
-          updated_at = NOW()
+      SET law_firm_code = $1
       WHERE id = $2`,
       [trimmedCode, userId]
     );
@@ -151,7 +150,7 @@ const updateLawFirm = async (req, res) => {
 
     if (clientResult.rows.length === 0) {
       await db.query(
-        `INSERT INTO law_firm_clients (law_firm_id, client_id, created_at)
+        `INSERT INTO law_firm_clients (law_firm_id, client_id, registered_date)
         VALUES ($1, $2, NOW())`,
         [lawFirm.id, userId]
       );

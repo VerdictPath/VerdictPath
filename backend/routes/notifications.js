@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const notificationsController = require('../controllers/notificationsController');
+const firebaseAuthController = require('../controllers/firebaseAuthController');
 const { authenticateToken } = require('../middleware/auth');
 
 router.post('/register-device', authenticateToken, notificationsController.registerDevice);
 router.post('/unregister-device', authenticateToken, notificationsController.unregisterDevice);
 router.get('/devices', authenticateToken, notificationsController.getMyDevices);
+router.get('/firebase-token', authenticateToken, firebaseAuthController.getFirebaseCustomToken);
 
 router.post('/send', authenticateToken, notificationsController.sendNotification);
 router.post('/send-to-all-clients', authenticateToken, notificationsController.sendToAllClients);
@@ -19,13 +21,13 @@ router.get('/my-notifications', authenticateToken, notificationsController.getMy
 router.get('/unread-count', authenticateToken, notificationsController.getUnreadCount);
 router.get('/stats', authenticateToken, notificationsController.getMyNotificationStats);
 router.get('/history', authenticateToken, notificationsController.getNotificationHistory);
+router.get('/preferences', authenticateToken, notificationsController.getPreferences);
+router.get('/analytics', authenticateToken, notificationsController.getNotificationAnalytics);
+router.get('/:notificationId', authenticateToken, notificationsController.getNotificationById);
 
+router.put('/mark-all-read', authenticateToken, notificationsController.markAllAsRead);
+router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.put('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
-
-router.get('/preferences', authenticateToken, notificationsController.getPreferences);
-router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
-
-router.get('/analytics', authenticateToken, notificationsController.getNotificationAnalytics);
 
 module.exports = router;

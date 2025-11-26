@@ -88,6 +88,9 @@ exports.createLawFirmUser = async (req, res) => {
       passwordToHash = temporaryPassword;
       mustChangePassword = true;
       passwordExpiresAt = getPasswordExpiryDate(72);
+    } else if (!password) {
+      // If no password provided and not sending credentials, generate a random one
+      passwordToHash = generateSecurePassword(12);
     }
 
     const hashedPassword = await bcrypt.hash(passwordToHash, 10);
@@ -144,7 +147,7 @@ exports.createLawFirmUser = async (req, res) => {
 
     await auditLogger.log({
       actorId: isBootstrap ? null : req.user.lawFirmUserId,
-      actorType: 'lawfirm_user',
+      actorType: 'lawfirm',
       action: 'CREATE_USER',
       entityType: 'LawFirmUser',
       entityId: newUser.id,
@@ -380,7 +383,7 @@ exports.updateLawFirmUser = async (req, res) => {
 
     await auditLogger.log({
       actorId: req.user.lawFirmUserId,
-      actorType: 'lawfirm_user',
+      actorType: 'lawfirm',
       action: 'UPDATE_USER',
       entityType: 'LawFirmUser',
       entityId: userId,
@@ -460,7 +463,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
 
     await auditLogger.log({
       actorId: req.user.lawFirmUserId,
-      actorType: 'lawfirm_user',
+      actorType: 'lawfirm',
       action: 'DEACTIVATE_USER',
       entityType: 'LawFirmUser',
       entityId: userId,
@@ -533,7 +536,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
 
     await auditLogger.log({
       actorId: req.user.lawFirmUserId,
-      actorType: 'lawfirm_user',
+      actorType: 'lawfirm',
       action: 'REACTIVATE_USER',
       entityType: 'LawFirmUser',
       entityId: userId,

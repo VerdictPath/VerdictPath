@@ -10,8 +10,19 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-secret-key-change-in-production';
 
 exports.authenticateToken = (req, res, next) => {
-  const authHeader = req.header('Authorization');
-  const token = authHeader?.replace('Bearer ', '') || req.cookies.token;
+  // Priority: Signed httpOnly cookie > Bearer token header > Legacy unsigned cookie
+  // This ensures httpOnly cookie authentication is preferred (XSS protection)
+  // while maintaining backward compatibility with Bearer tokens during migration
+  let token = req.signedCookies?.authToken;  // New httpOnly cookie (signed)
+  
+  if (!token) {
+    const authHeader = req.header('Authorization');
+    token = authHeader?.replace('Bearer ', '');  // Fallback to Bearer token
+  }
+  
+  if (!token) {
+    token = req.cookies?.token;  // Legacy portal cookie (unsigned)
+  }
   
   if (!token) {
     return res.status(401).json({ message: 'Access denied. No token provided.' });

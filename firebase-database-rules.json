@@ -1,0 +1,52 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId && auth.token.userType == 'client'",
+        ".write": "auth != null && auth.uid == $userId && auth.token.userType == 'client'",
+        "notifications": {
+          "$notificationId": {
+            ".read": "auth != null && auth.uid == $userId",
+            ".write": "auth != null && auth.uid == $userId"
+          }
+        },
+        "unread_count": {
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    },
+    "lawfirms": {
+      "$firmId": {
+        ".read": "auth != null && auth.uid == $firmId && auth.token.userType == 'lawfirm'",
+        ".write": "auth != null && auth.uid == $firmId && auth.token.userType == 'lawfirm'",
+        "notifications": {
+          "$notificationId": {
+            ".read": "auth != null && auth.uid == $firmId",
+            ".write": "auth != null && auth.uid == $firmId"
+          }
+        },
+        "unread_count": {
+          ".read": "auth != null && auth.uid == $firmId",
+          ".write": "auth != null && auth.uid == $firmId"
+        }
+      }
+    },
+    "providers": {
+      "$providerId": {
+        ".read": "auth != null && auth.uid == $providerId && auth.token.userType == 'medical_provider'",
+        ".write": "auth != null && auth.uid == $providerId && auth.token.userType == 'medical_provider'",
+        "notifications": {
+          "$notificationId": {
+            ".read": "auth != null && auth.uid == $providerId",
+            ".write": "auth != null && auth.uid == $providerId"
+          }
+        },
+        "unread_count": {
+          ".read": "auth != null && auth.uid == $providerId",
+          ".write": "auth != null && auth.uid == $providerId"
+        }
+      }
+    }
+  }
+}

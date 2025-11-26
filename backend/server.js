@@ -29,6 +29,8 @@ const negotiationsRoutes = require('./routes/negotiations');
 const clientRelationshipsRoutes = require('./routes/client-relationships');
 const avatarRoutes = require('./routes/avatarRoutes');
 const notificationQueueRoutes = require('./routes/notification-queue');
+const chatRoutes = require('./routes/chat');
+const { startReminderScheduler } = require('./services/taskReminderService');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -176,6 +178,7 @@ app.use('/api/negotiations', negotiationsRoutes);
 app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin', adminTempRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -184,7 +187,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not configured',
-    database: process.env.DATABASE_URL ? 'configured' : 'not configured'
+    database: process.env.DATABASE_URL ? 'configured' : 'not configured',
+    twilio: process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN ? 'configured' : 'not configured'
   });
 });
 
@@ -288,6 +292,31 @@ app.get('/portal/client/:clientId', async (req, res) => {
   }
 });
 
+app.get('/portal/settings', async (req, res) => {
+  try {
+    const token = req.signedCookies.token || req.cookies.token;
+    if (!token) {
+      return res.redirect('/portal');
+    }
+    
+    const response = await fetch(`${BASE_URL}/api/lawfirm/dashboard`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+      return res.redirect('/portal');
+    }
+    
+    const data = await response.json();
+    res.render('settings', { 
+      firmName: data.firmName, 
+      firmCode: data.firmCode 
+    });
+  } catch (error) {
+    res.redirect('/portal/dashboard');
+  }
+});
+
 app.get('/portal/forms', async (req, res) => {
   try {
     const token = req.signedCookies.token || req.cookies.token;
@@ -330,6 +359,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`VerdictPath Backend Server running on port ${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api`);
   console.log(`Web portal available at http://localhost:${PORT}/portal`);
+  
+  // Start task reminder scheduler
+  startReminderScheduler();
 });
 
 module.exports = app;

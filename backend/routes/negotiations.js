@@ -78,8 +78,29 @@ router.post('/initiate', authenticateToken, async (req, res) => {
       notes
     } = req.body;
 
+    // Debug logging
+    console.log('📋 Negotiation initiate request:');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    console.log('Parsed fields:', {
+      clientId,
+      medicalProviderId,
+      billDescription,
+      billAmount,
+      initialOffer,
+      notes,
+      userType
+    });
+
     // Validation
     if (!clientId || !billDescription || !billAmount || initialOffer === undefined) {
+      console.log('❌ Validation failed:', {
+        hasClientId: !!clientId,
+        hasBillDescription: !!billDescription,
+        hasBillAmount: !!billAmount,
+        hasInitialOffer: initialOffer !== undefined,
+        actualValues: { clientId, billDescription, billAmount, initialOffer }
+      });
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields' 

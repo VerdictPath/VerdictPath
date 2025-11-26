@@ -132,13 +132,9 @@ exports.getDashboard = async (req, res) => {
       );
       const hasRecentUpload = parseInt(recentUploadResult.rows[0].count) > 0;
       
-      // Check for records that need review (any record without a review status or with pending status)
-      const needsReviewResult = await db.query(
-        `SELECT COUNT(*) as count FROM medical_records 
-         WHERE user_id = $1 AND (review_status IS NULL OR review_status = 'pending')`,
-        [patient.id]
-      );
-      const hasRecordsNeedingReview = parseInt(needsReviewResult.rows[0].count) > 0;
+      // For now, mark all patients with records as potentially needing review
+      // TODO: Add review_status column to medical_records table for proper tracking
+      const hasRecordsNeedingReview = recordCount > 0;
       
       return {
         id: patient.id,

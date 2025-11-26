@@ -9,6 +9,18 @@ const { handleFailedLogin, handleSuccessfulLogin } = require('../middleware/secu
 const consentController = require('./consentController');
 const { generateUniqueCode } = require('../utils/codeGenerator');
 const { checkLawFirmLimit } = require('../utils/subscriptionLimits');
+const { sendCredentialSMS, sendAccountCreationSMS } = require('../services/smsService');
+
+// Helper function to set httpOnly authentication cookie
+const setAuthCookie = (res, token) => {
+  res.cookie('authToken', token, {
+    httpOnly: true,           // Prevents JavaScript access (XSS protection)
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: 'lax',          // CSRF protection
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+    signed: true              // Cryptographically signed cookie
+  });
+};
 
 exports.registerClient = async (req, res) => {
   try {
@@ -24,6 +36,7 @@ exports.registerClient = async (req, res) => {
     // HIPAA: Encrypt PHI fields
     const encryptedFirstName = encryption.encrypt(firstName);
     const encryptedLastName = encryption.encrypt(lastName);
+    const encryptedPhone = phoneNumber ? encryption.encrypt(phoneNumber) : null;
     const emailHash = encryption.hash(email.toLowerCase());
     
     let connectedLawFirmId = null;
@@ -60,12 +73,12 @@ exports.registerClient = async (req, res) => {
     }
     
     const userResult = await db.query(
-      `INSERT INTO users (first_name, last_name, phone_number, email, email_hash, password, user_type, law_firm_code, 
+      `INSERT INTO users (first_name, last_name, phone_encrypted, email, email_hash, password, user_type, law_firm_code, 
        connected_law_firm_id, avatar_type, subscription_tier, subscription_price,
        first_name_encrypted, last_name_encrypted, privacy_accepted_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP) 
        RETURNING id, email, first_name, last_name, user_type`,
-      [firstName, lastName, phoneNumber || null, email.toLowerCase(), emailHash, hashedPassword, 'client', 
+      [firstName, lastName, encryptedPhone, email.toLowerCase(), emailHash, hashedPassword, 'client', 
        lawFirmCode ? lawFirmCode.toUpperCase() : null, connectedLawFirmId, 
        avatarType || 'captain', subscriptionTier || 'free', subscriptionPrice || 0,
        encryptedFirstName, encryptedLastName]
@@ -107,15 +120,31 @@ exports.registerClient = async (req, res) => {
       success: true
     });
     
+    // Send welcome SMS if phone number provided
+    if (encryptedPhone) {
+      try {
+        const decryptedPhone = encryption.decrypt(encryptedPhone);
+        if (decryptedPhone) {
+          await sendAccountCreationSMS(decryptedPhone, firstName);
+        }
+      } catch (smsError) {
+        console.error('Error sending account creation SMS (non-fatal):', smsError);
+        // Don't fail registration if SMS fails
+      }
+    }
+    
     const token = jwt.sign(
       { id: user.id, email: user.email, userType: user.user_type },
       JWT_SECRET,
       { expiresIn: '30d' }
     );
     
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+    
     res.status(201).json({
       message: 'User registered successfully',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       user: {
         id: user.id,
         email: user.email,
@@ -266,9 +295,33 @@ exports.registerLawFirm = async (req, res) => {
       { expiresIn: '30d' }
     );
     
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+    
+    // Send credentials via SMS if phone number provided
+    let smsResult = { sent: false };
+    if (phoneNumber) {
+      try {
+        smsResult = await sendCredentialSMS(
+          phoneNumber,
+          {
+            firstName: 'Admin',
+            lastName: 'User',
+            email: lawFirm.email
+          },
+          password,  // Send the original password (not hashed)
+          'lawfirm'
+        );
+        console.log(`📱 Law firm registration SMS result:`, smsResult);
+      } catch (smsError) {
+        console.error('❌ Error sending registration SMS:', smsError);
+        // Don't fail registration if SMS fails
+      }
+    }
+    
     res.status(201).json({
       message: 'Law firm registered successfully',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       lawFirm: {
         id: lawFirm.id,
         lawFirmUserId: adminUser.id,
@@ -280,7 +333,8 @@ exports.registerLawFirm = async (req, res) => {
         userCode: adminUserCode,
         role: 'admin',
         isLawFirmUser: true
-      }
+      },
+      smsSent: smsResult.success || false
     });
   } catch (error) {
     if (error.code === '23505') {
@@ -403,9 +457,12 @@ exports.registerMedicalProvider = async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+
     res.status(201).json({
       message: 'Medical provider registered successfully',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       medicalProvider: {
         id: medicalProvider.id,
         medicalProviderUserId: adminUser.id,
@@ -514,7 +571,6 @@ exports.login = async (req, res) => {
     }
     
     const account = result.rows[0];
-
     
     if (isSubUser && userType === 'lawfirm' && account.status !== 'active') {
       await auditLogger.logAuth({
@@ -808,9 +864,12 @@ exports.login = async (req, res) => {
       };
     }
     
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+    
     res.json({
       message: 'Login successful',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       user: responseData
     });
   } catch (error) {
@@ -922,9 +981,12 @@ exports.loginLawFirmUser = async (req, res) => {
       status: 'success'
     });
 
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+    
     res.json({
       message: 'Login successful',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       user: {
         id: lawFirmUser.law_firm_id,
         lawFirmUserId: lawFirmUser.id,
@@ -1058,9 +1120,12 @@ exports.loginMedicalProviderUser = async (req, res) => {
       status: 'success'
     });
 
+    // Set httpOnly cookie for secure authentication
+    setAuthCookie(res, token);
+    
     res.json({
       message: 'Login successful',
-      token,
+      token,  // TEMPORARY: Keep for backward compatibility during migration
       user: {
         id: medicalProviderUser.medical_provider_id,
         medicalProviderUserId: medicalProviderUser.id,
@@ -1087,5 +1152,30 @@ exports.loginMedicalProviderUser = async (req, res) => {
   } catch (error) {
     console.error('Error logging in medical provider user:', error);
     res.status(500).json({ message: 'Error logging in', error: error.message });
+  }
+};
+
+exports.logout = async (req, res) => {
+  try {
+    // Clear the new httpOnly authentication cookie
+    res.clearCookie('authToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      signed: true
+    });
+    
+    // Also clear the legacy portal cookie for full session termination
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      signed: true
+    });
+    
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Error logging out:', error);
+    res.status(500).json({ message: 'Error logging out', error: error.message });
   }
 };

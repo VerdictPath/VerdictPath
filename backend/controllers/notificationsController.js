@@ -2,6 +2,9 @@ const { Pool } = require('pg');
 const { DateTime } = require('luxon');
 const pushNotificationService = require('../services/pushNotificationService');
 const { calculateQuietHoursEnd, queueNotification } = require('../services/notificationQueueService');
+const { syncNotificationToFirebase, syncStatusUpdateToFirebase, syncUnreadCountToFirebase } = require('../services/firebaseSync');
+const { sendNotificationSMS } = require('../services/smsService');
+const encryptionService = require('../services/encryption');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -143,6 +146,30 @@ function getEntityInfo(req) {
   }
   
   return { deviceType, recipientType, entityId, userType };
+}
+
+async function syncNewNotificationToFirebase(notification) {
+  try {
+    await syncNotificationToFirebase(notification);
+  } catch (error) {
+    console.error('Error syncing notification to Firebase (non-fatal):', error);
+  }
+}
+
+async function getUnreadCountForUser(recipientType, recipientId) {
+  try {
+    const query = `
+      SELECT COUNT(*) as count
+      FROM notifications
+      WHERE recipient_type = $1 AND recipient_id = $2 
+        AND status != 'read'
+    `;
+    const result = await pool.query(query, [recipientType, recipientId]);
+    return parseInt(result.rows[0].count) || 0;
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    return 0;
+  }
 }
 
 exports.registerDevice = async (req, res) => {
@@ -325,16 +352,8 @@ exports.sendNotification = async (req, res) => {
       });
     }
 
-    const deviceQuery = `
-      SELECT expo_push_token FROM user_devices 
-      WHERE ${recipientType}_id = $1 AND is_active = true
-    `;
-    const deviceResult = await pool.query(deviceQuery, [recipientId]);
-
-    if (deviceResult.rows.length === 0) {
-      return res.status(404).json({ error: 'No active devices found for recipient' });
-    }
-
+    // DECOUPLE: Always create notification first, regardless of device availability
+    // This enables Firebase real-time sync for web/mobile clients without registered devices
     const notificationQuery = `
       INSERT INTO notifications (
         sender_type, sender_id, sender_name, recipient_type, recipient_id,
@@ -349,45 +368,143 @@ exports.sendNotification = async (req, res) => {
     ]);
 
     const notification = notificationResult.rows[0];
-    const safeActionData = actionData || {};
-    const pushPromises = deviceResult.rows.map(device => 
-      pushNotificationService.sendPushNotification({
-        expoPushToken: device.expo_push_token,
-        title,
-        body,
-        data: {
-          notificationId: notification.id,
-          type,
-          actionUrl,
-          ...safeActionData
-        },
-        priority: priority === 'urgent' ? 'high' : 'default'
-      })
-    );
+    
+    // Check for devices AFTER creating notification (Expo push is optional)
+    const deviceQuery = `
+      SELECT expo_push_token FROM user_devices 
+      WHERE ${recipientType}_id = $1 AND is_active = true
+    `;
+    const deviceResult = await pool.query(deviceQuery, [recipientId]);
 
-    const pushResults = await Promise.allSettled(pushPromises);
+    let devicesSent = 0;
+    let pushStatus = 'no_devices';
     
-    const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
-    
-    if (sentSuccessfully) {
-      await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-        ['sent', 'sent', notification.id]
+    // Only attempt Expo push notifications if devices are registered
+    if (deviceResult.rows.length > 0) {
+      const safeActionData = actionData || {};
+      const pushPromises = deviceResult.rows.map(device => 
+        pushNotificationService.sendPushNotification({
+          expoPushToken: device.expo_push_token,
+          title,
+          body,
+          data: {
+            notificationId: notification.id,
+            type,
+            actionUrl,
+            ...safeActionData
+          },
+          priority: priority === 'urgent' ? 'high' : 'default'
+        })
       );
+
+      const pushResults = await Promise.allSettled(pushPromises);
+      
+      const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
+      devicesSent = pushResults.filter(r => r.status === 'fulfilled').length;
+      
+      if (sentSuccessfully) {
+        await pool.query(
+          'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+          ['sent', notification.id]
+        );
+        notification.status = 'sent';
+        pushStatus = 'sent';
+      } else {
+        await pool.query(
+          'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+          ['failed', 'All push notifications failed to send', notification.id]
+        );
+        notification.status = 'failed';
+        pushStatus = 'failed';
+      }
     } else {
+      // No devices registered, but notification is created and will sync to Firebase
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-        ['failed', 'failed', 'All push notifications failed to send', notification.id]
+        'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['sent', notification.id]
       );
+      notification.status = 'sent';
+      console.log(`ℹ️  No Expo devices for ${recipientType} ${recipientId}, notification will sync to Firebase only`);
     }
 
+    // Send SMS notification if user has SMS enabled and phone number
+    let smsSent = false;
+    try {
+      if (recipientType === 'user') {
+        // Get user phone number and SMS preferences
+        const userQuery = await pool.query(
+          `SELECT u.phone_encrypted, np.sms_notifications_enabled 
+           FROM users u
+           LEFT JOIN notification_preferences np ON np.user_id = u.id
+           WHERE u.id = $1`,
+          [recipientId]
+        );
+        
+        if (userQuery.rows.length > 0) {
+          const user = userQuery.rows[0];
+          // Require explicit SMS opt-in (not just non-false)
+          const smsEnabled = user.sms_notifications_enabled === true;
+          
+          if (user.phone_encrypted && smsEnabled) {
+            // Decrypt phone number before sending to Twilio
+            const phoneNumber = encryptionService.decrypt(user.phone_encrypted);
+            
+            if (phoneNumber) {
+              // Send SMS for urgent/high priority or specific notification types
+              const shouldSendSMS = 
+                priority === 'urgent' || 
+                priority === 'high' ||
+                type === 'task_assigned' ||
+                type === 'task_reminder' ||
+                type === 'connection_request' ||
+                type === 'appointment_reminder' ||
+                type === 'deadline_reminder' ||
+                type === 'settlement_disbursement' ||
+                type === 'payment_received' ||
+                type === 'payment_failed' ||
+                type === 'payment_processed' ||
+                type === 'disbursement_complete';
+              
+              if (shouldSendSMS) {
+                const smsResult = await sendNotificationSMS(
+                  phoneNumber,
+                  type,
+                  title,
+                  body,
+                  priority
+                );
+                smsSent = smsResult.success;
+                
+                if (smsSent) {
+                  console.log(`📱 SMS notification sent to user ${recipientId} (phone number redacted for HIPAA)`);
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (smsError) {
+      console.error('SMS notification error (non-fatal):', smsError);
+    }
+
+    syncNewNotificationToFirebase(notification).catch(err => 
+      console.error('Firebase sync error (non-fatal):', err)
+    );
+
+    const unreadCount = await getUnreadCountForUser(recipientType, recipientId);
+    syncUnreadCountToFirebase(recipientType, recipientId, unreadCount).catch(err =>
+      console.error('Firebase unread count sync error (non-fatal):', err)
+    );
+
     res.status(200).json({
-      message: 'Notification sent successfully',
-      notification: {
-        ...notification,
-        status: sentSuccessfully ? 'sent' : 'failed'
-      },
-      devicesSent: pushResults.filter(r => r.status === 'fulfilled').length
+      message: devicesSent > 0 
+        ? 'Notification sent successfully' 
+        : 'Notification created and synced to Firebase (no Expo devices registered)',
+      notification,
+      devicesSent,
+      pushStatus,
+      smsSent,
+      firebaseSynced: true
     });
   } catch (error) {
     console.error('Send notification error:', error);
@@ -436,8 +553,27 @@ exports.getMyNotifications = async (req, res) => {
     `;
     const countResult = await pool.query(countQuery, [recipientType, recipientId]);
 
+    const notificationsWithReadFlag = result.rows.map(notification => ({
+      ...notification,
+      is_read: notification.status === 'read',
+      is_clicked: notification.clicked
+    }));
+
+    // Sync all fetched notifications to Firebase to ensure completeness
+    // This ensures old notifications get synced with full data
+    if (notificationsWithReadFlag.length > 0) {
+      const syncPromises = notificationsWithReadFlag.map(notification =>
+        syncNotificationToFirebase(notification)
+          .catch(err => console.error(`Firebase sync error for notification ${notification.id} (non-fatal):`, err))
+      );
+      // Don't await - let syncing happen in background
+      Promise.allSettled(syncPromises).catch(err => 
+        console.error('Firebase batch sync error (non-fatal):', err)
+      );
+    }
+
     res.status(200).json({
-      notifications: result.rows,
+      notifications: notificationsWithReadFlag,
       total: parseInt(countResult.rows[0].total),
       limit: parseInt(limit),
       offset: parseInt(offset)
@@ -445,6 +581,45 @@ exports.getMyNotifications = async (req, res) => {
   } catch (error) {
     console.error('Get notifications error:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+};
+
+exports.getNotificationById = async (req, res) => {
+  const { notificationId } = req.params;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { recipientType, entityId } = entityInfo;
+
+  try {
+    const query = `
+      SELECT * FROM notifications 
+      WHERE id = $1 
+      AND recipient_type = $2 AND recipient_id = $3
+    `;
+    
+    const result = await pool.query(query, [notificationId, recipientType, entityId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Notification not found' });
+    }
+
+    const notification = {
+      ...result.rows[0],
+      is_read: result.rows[0].status === 'read',
+      is_clicked: result.rows[0].clicked
+    };
+
+    res.status(200).json({
+      success: true,
+      notification
+    });
+  } catch (error) {
+    console.error('Get notification error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch notification' });
   }
 };
 
@@ -474,13 +649,65 @@ exports.markAsRead = async (req, res) => {
       return res.status(404).json({ error: 'Notification not found or already read' });
     }
 
+    const notification = result.rows[0];
+
+    // Sync full notification first (in case it was never synced), then update status
+    syncNotificationToFirebase(notification)
+      .catch(err => console.error('Firebase full sync error (non-fatal):', err));
+
+    syncUnreadCountToFirebase(recipientType, entityId, await getUnreadCountForUser(recipientType, entityId))
+      .catch(err => console.error('Firebase unread count sync error (non-fatal):', err));
+
     res.status(200).json({
       message: 'Notification marked as read',
-      notification: result.rows[0]
+      notification
     });
   } catch (error) {
     console.error('Mark as read error:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+};
+
+exports.markAllAsRead = async (req, res) => {
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { recipientType, entityId } = entityInfo;
+
+  try {
+    const query = `
+      UPDATE notifications 
+      SET status = 'read', read_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE recipient_type = $1 AND recipient_id = $2
+      AND status != 'read'
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [recipientType, entityId]);
+    const markedCount = result.rows.length;
+
+    // Sync each notification fully to Firebase (in case they were never synced)
+    if (markedCount > 0) {
+      const syncPromises = result.rows.map(notification => 
+        syncNotificationToFirebase(notification)
+          .catch(err => console.error(`Firebase sync error for notification ${notification.id} (non-fatal):`, err))
+      );
+      await Promise.allSettled(syncPromises);
+
+      // Update unread count in Firebase
+      syncUnreadCountToFirebase(recipientType, entityId, 0)
+        .catch(err => console.error('Firebase unread count sync error (non-fatal):', err));
+    }
+
+    res.status(200).json({
+      message: `Marked ${markedCount} notification(s) as read`,
+      count: markedCount
+    });
+  } catch (error) {
+    console.error('Mark all as read error:', error);
+    res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 };
 
@@ -509,9 +736,15 @@ exports.markAsClicked = async (req, res) => {
       return res.status(404).json({ error: 'Notification not found or unauthorized' });
     }
 
+    const notification = result.rows[0];
+
+    // Sync full notification first (in case it was never synced)
+    syncNotificationToFirebase(notification)
+      .catch(err => console.error('Firebase sync error (non-fatal):', err));
+
     res.status(200).json({
       message: 'Notification clicked',
-      notification: result.rows[0]
+      notification
     });
   } catch (error) {
     console.error('Mark as clicked error:', error);
@@ -553,7 +786,7 @@ exports.sendToAllClients = async (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  if (entityInfo.userType !== 'law_firm') {
+  if (entityInfo.userType !== 'lawfirm') {
     return res.status(403).json({ error: 'Only law firms can use this endpoint' });
   }
 
@@ -623,24 +856,34 @@ exports.sendToAllClients = async (req, res) => {
           })
         );
 
+        const notification = notificationResult.rows[0];
         const pushResults = await Promise.allSettled(pushPromises);
         const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
         if (pushResults.length === 0) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'No registered devices found', notification.id]
           );
         } else if (sentSuccessfully) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-            ['sent', 'sent', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+            ['sent', notification.id]
           );
         } else {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'All push notifications failed to send', notification.id]
           );
+        }
+
+        // Sync to Firebase for real-time updates
+        try {
+          await syncNewNotificationToFirebase(notification);
+          const unreadCount = await getUnreadCountForUser('user', client.id);
+          await syncUnreadCountToFirebase('user', client.id, unreadCount);
+        } catch (err) {
+          console.error(`Firebase sync error for client ${client.id} (non-fatal):`, err);
         }
 
         return { success: true, clientId: client.id };
@@ -672,7 +915,7 @@ exports.sendToClients = async (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  if (entityInfo.userType !== 'law_firm') {
+  if (entityInfo.userType !== 'lawfirm') {
     return res.status(403).json({ error: 'Only law firms can use this endpoint' });
   }
 
@@ -752,24 +995,34 @@ exports.sendToClients = async (req, res) => {
           })
         );
 
+        const notification = notificationResult.rows[0];
         const pushResults = await Promise.allSettled(pushPromises);
         const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
         if (pushResults.length === 0) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'No registered devices found', notification.id]
           );
         } else if (sentSuccessfully) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-            ['sent', 'sent', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+            ['sent', notification.id]
           );
         } else {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'All push notifications failed to send', notification.id]
           );
+        }
+
+        // Sync to Firebase for real-time updates
+        try {
+          await syncNewNotificationToFirebase(notification);
+          const unreadCount = await getUnreadCountForUser('user', client.id);
+          await syncUnreadCountToFirebase('user', client.id, unreadCount);
+        } catch (err) {
+          console.error(`Firebase sync error for client ${client.id} (non-fatal):`, err);
         }
 
         return { success: true, clientId: client.id };
@@ -802,7 +1055,7 @@ exports.sendToClient = async (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  if (entityInfo.userType !== 'law_firm') {
+  if (entityInfo.userType !== 'lawfirm') {
     return res.status(403).json({ error: 'Only law firms can use this endpoint' });
   }
 
@@ -900,19 +1153,37 @@ exports.sendToClient = async (req, res) => {
 
     if (pushResults.length === 0) {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-        ['failed', 'failed', 'No registered devices found', notification.id]
+        'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+        ['failed', 'No registered devices found', notification.id]
       );
     } else if (sentSuccessfully) {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-        ['sent', 'sent', notification.id]
+        'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['sent', notification.id]
       );
     } else {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-        ['failed', 'failed', 'All push notifications failed to send', notification.id]
+        'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+        ['failed', 'All push notifications failed to send', notification.id]
       );
+    }
+
+    // Sync to Firebase for real-time updates
+    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
+    try {
+      await syncNewNotificationToFirebase(notification);
+      console.log('✅ Notification synced to Firebase successfully');
+    } catch (err) {
+      console.error('❌ Firebase sync error (non-fatal):', err);
+    }
+    
+    const unreadCount = await getUnreadCountForUser('user', clientId);
+    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
+    try {
+      await syncUnreadCountToFirebase('user', clientId, unreadCount);
+      console.log('✅ Unread count synced to Firebase successfully');
+    } catch (err) {
+      console.error('❌ Firebase unread count sync error (non-fatal):', err);
     }
 
     res.status(200).json({
@@ -948,7 +1219,7 @@ exports.sendToAllPatients = async (req, res) => {
     const patientsQuery = `
       SELECT u.id, u.email 
       FROM users u
-      JOIN medical_provider_patients mpp ON u.id = mpp.user_id
+      JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
       WHERE mpp.medical_provider_id = $1
     `;
     const patientsResult = await pool.query(patientsQuery, [medicalProviderId]);
@@ -1004,24 +1275,34 @@ exports.sendToAllPatients = async (req, res) => {
           })
         );
 
+        const notification = notificationResult.rows[0];
         const pushResults = await Promise.allSettled(pushPromises);
         const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
         if (pushResults.length === 0) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'No registered devices found', notification.id]
           );
         } else if (sentSuccessfully) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-            ['sent', 'sent', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+            ['sent', notification.id]
           );
         } else {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'All push notifications failed to send', notification.id]
           );
+        }
+
+        // Sync to Firebase for real-time updates
+        try {
+          await syncNewNotificationToFirebase(notification);
+          const unreadCount = await getUnreadCountForUser('user', patient.id);
+          await syncUnreadCountToFirebase('user', patient.id, unreadCount);
+        } catch (err) {
+          console.error(`Firebase sync error for patient ${patient.id} (non-fatal):`, err);
         }
 
         return { success: true, patientId: patient.id };
@@ -1071,7 +1352,7 @@ exports.sendToPatients = async (req, res) => {
     const verifyQuery = `
       SELECT u.id, u.email 
       FROM users u
-      JOIN medical_provider_patients mpp ON u.id = mpp.user_id
+      JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
       WHERE mpp.medical_provider_id = $1 AND u.id = ANY($2::int[])
     `;
     const verifyResult = await pool.query(verifyQuery, [medicalProviderId, patientIds]);
@@ -1133,24 +1414,34 @@ exports.sendToPatients = async (req, res) => {
           })
         );
 
+        const notification = notificationResult.rows[0];
         const pushResults = await Promise.allSettled(pushPromises);
         const sentSuccessfully = pushResults.filter(r => r.status === 'fulfilled').length > 0;
 
         if (pushResults.length === 0) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'No registered devices found', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'No registered devices found', notification.id]
           );
         } else if (sentSuccessfully) {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-            ['sent', 'sent', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+            ['sent', notification.id]
           );
         } else {
           await pool.query(
-            'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-            ['failed', 'failed', 'All push notifications failed to send', notificationResult.rows[0].id]
+            'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+            ['failed', 'All push notifications failed to send', notification.id]
           );
+        }
+
+        // Sync to Firebase for real-time updates
+        try {
+          await syncNewNotificationToFirebase(notification);
+          const unreadCount = await getUnreadCountForUser('user', patient.id);
+          await syncUnreadCountToFirebase('user', patient.id, unreadCount);
+        } catch (err) {
+          console.error(`Firebase sync error for patient ${patient.id} (non-fatal):`, err);
         }
 
         return { success: true, patientId: patient.id };
@@ -1281,19 +1572,37 @@ exports.sendToPatient = async (req, res) => {
 
     if (pushResults.length === 0) {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-        ['failed', 'failed', 'No registered devices found', notification.id]
+        'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+        ['failed', 'No registered devices found', notification.id]
       );
     } else if (sentSuccessfully) {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, sent_at = CURRENT_TIMESTAMP WHERE id = $3',
-        ['sent', 'sent', notification.id]
+        'UPDATE notifications SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2',
+        ['sent', notification.id]
       );
     } else {
       await pool.query(
-        'UPDATE notifications SET status = $1, delivery_status = $2, failed_reason = $3 WHERE id = $4',
-        ['failed', 'failed', 'All push notifications failed to send', notification.id]
+        'UPDATE notifications SET status = $1, failed_reason = $2 WHERE id = $3',
+        ['failed', 'All push notifications failed to send', notification.id]
       );
+    }
+
+    // Sync to Firebase for real-time updates
+    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
+    try {
+      await syncNewNotificationToFirebase(notification);
+      console.log('✅ Notification synced to Firebase successfully');
+    } catch (err) {
+      console.error('❌ Firebase sync error (non-fatal):', err);
+    }
+    
+    const unreadCount = await getUnreadCountForUser('user', patientId);
+    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
+    try {
+      await syncUnreadCountToFirebase('user', patientId, unreadCount);
+      console.log('✅ Unread count synced to Firebase successfully');
+    } catch (err) {
+      console.error('❌ Firebase unread count sync error (non-fatal):', err);
     }
 
     res.status(200).json({
@@ -1338,8 +1647,8 @@ exports.getMyNotificationStats = async (req, res) => {
     const statsQuery = `
       SELECT 
         COUNT(*) as total_sent,
-        COUNT(CASE WHEN delivery_status = 'sent' THEN 1 END) as delivered,
-        COUNT(CASE WHEN delivery_status = 'failed' THEN 1 END) as failed,
+        COUNT(CASE WHEN status = 'sent' THEN 1 END) as delivered,
+        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
         COUNT(CASE WHEN status = 'read' THEN 1 END) as read_count,
         COUNT(CASE WHEN clicked = true THEN 1 END) as click_count,
         COUNT(CASE WHEN priority = 'urgent' THEN 1 END) as urgent_count,
@@ -1449,7 +1758,7 @@ exports.getNotificationHistory = async (req, res) => {
     
     if (deliveryStatus) {
       queryParams.push(deliveryStatus);
-      filters.push(`delivery_status = $${queryParams.length}`);
+      // delivery_status column removed - using status instead
     }
 
     queryParams.push(limit);
@@ -1469,7 +1778,7 @@ exports.getNotificationHistory = async (req, res) => {
     const historyQuery = `
       SELECT 
         id, recipient_id, recipient_type, type, priority, title, body,
-        delivery_status, status, clicked, created_at, read_at, clicked_at
+        status, clicked, created_at, read_at, clicked_at
       FROM notifications
       WHERE ${filters.join(' AND ')}
       ORDER BY created_at DESC
@@ -1524,16 +1833,17 @@ exports.getPreferences = async (req, res) => {
     const prefs = result.rows[0];
 
     res.json({
-      pushNotificationsEnabled: prefs.push_notifications_enabled,
-      emailNotificationsEnabled: prefs.email_notifications_enabled,
-      quietHoursEnabled: prefs.quiet_hours_enabled,
-      quietHoursStart: prefs.quiet_hours_start,
-      quietHoursEnd: prefs.quiet_hours_end,
+      push_notifications_enabled: prefs.push_notifications_enabled,
+      email_notifications_enabled: prefs.email_notifications_enabled,
+      sms_notifications_enabled: prefs.sms_notifications_enabled,
+      quiet_hours_enabled: prefs.quiet_hours_enabled,
+      quiet_hours_start: prefs.quiet_hours_start,
+      quiet_hours_end: prefs.quiet_hours_end,
       timezone: prefs.timezone,
-      urgentNotifications: prefs.urgent_notifications,
-      taskNotifications: prefs.task_notifications,
-      systemNotifications: prefs.system_notifications,
-      marketingNotifications: prefs.marketing_notifications
+      urgent_notifications: prefs.urgent_notifications,
+      task_notifications: prefs.task_notifications,
+      system_notifications: prefs.system_notifications,
+      marketing_notifications: prefs.marketing_notifications
     });
   } catch (error) {
     console.error('Error fetching preferences:', error);
@@ -1549,16 +1859,17 @@ exports.updatePreferences = async (req, res) => {
   
   const { deviceType, entityId } = entityInfo;
   const {
-    pushNotificationsEnabled,
-    emailNotificationsEnabled,
-    quietHoursEnabled,
-    quietHoursStart,
-    quietHoursEnd,
+    push_notifications_enabled,
+    email_notifications_enabled,
+    sms_notifications_enabled,
+    quiet_hours_enabled,
+    quiet_hours_start,
+    quiet_hours_end,
     timezone,
-    urgentNotifications,
-    taskNotifications,
-    systemNotifications,
-    marketingNotifications
+    urgent_notifications,
+    task_notifications,
+    system_notifications,
+    marketing_notifications
   } = req.body;
 
   try {
@@ -1583,6 +1894,7 @@ exports.updatePreferences = async (req, res) => {
           ${idField},
           push_notifications_enabled,
           email_notifications_enabled,
+          sms_notifications_enabled,
           quiet_hours_enabled,
           quiet_hours_start,
           quiet_hours_end,
@@ -1591,66 +1903,71 @@ exports.updatePreferences = async (req, res) => {
           task_notifications,
           system_notifications,
           marketing_notifications
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       result = await pool.query(insertQuery, [
         entityId,
-        pushNotificationsEnabled !== undefined ? pushNotificationsEnabled : true,
-        emailNotificationsEnabled !== undefined ? emailNotificationsEnabled : true,
-        quietHoursEnabled !== undefined ? quietHoursEnabled : false,
-        quietHoursStart || '22:00:00',
-        quietHoursEnd || '08:00:00',
+        push_notifications_enabled !== undefined ? push_notifications_enabled : true,
+        email_notifications_enabled !== undefined ? email_notifications_enabled : true,
+        sms_notifications_enabled !== undefined ? sms_notifications_enabled : false,
+        quiet_hours_enabled !== undefined ? quiet_hours_enabled : false,
+        quiet_hours_start || '22:00:00',
+        quiet_hours_end || '08:00:00',
         timezone || 'America/New_York',
-        urgentNotifications !== undefined ? urgentNotifications : true,
-        taskNotifications !== undefined ? taskNotifications : true,
-        systemNotifications !== undefined ? systemNotifications : true,
-        marketingNotifications !== undefined ? marketingNotifications : false
+        urgent_notifications !== undefined ? urgent_notifications : true,
+        task_notifications !== undefined ? task_notifications : true,
+        system_notifications !== undefined ? system_notifications : true,
+        marketing_notifications !== undefined ? marketing_notifications : false
       ]);
     } else {
       const updates = [];
       const values = [];
       let paramIndex = 1;
 
-      if (pushNotificationsEnabled !== undefined) {
+      if (push_notifications_enabled !== undefined) {
         updates.push(`push_notifications_enabled = $${paramIndex++}`);
-        values.push(pushNotificationsEnabled);
+        values.push(push_notifications_enabled);
       }
-      if (emailNotificationsEnabled !== undefined) {
+      if (email_notifications_enabled !== undefined) {
         updates.push(`email_notifications_enabled = $${paramIndex++}`);
-        values.push(emailNotificationsEnabled);
+        values.push(email_notifications_enabled);
       }
-      if (quietHoursEnabled !== undefined) {
+      if (sms_notifications_enabled !== undefined) {
+        updates.push(`sms_notifications_enabled = $${paramIndex++}`);
+        values.push(sms_notifications_enabled);
+      }
+      if (quiet_hours_enabled !== undefined) {
         updates.push(`quiet_hours_enabled = $${paramIndex++}`);
-        values.push(quietHoursEnabled);
+        values.push(quiet_hours_enabled);
       }
-      if (quietHoursStart !== undefined) {
+      if (quiet_hours_start !== undefined) {
         updates.push(`quiet_hours_start = $${paramIndex++}`);
-        values.push(quietHoursStart);
+        values.push(quiet_hours_start);
       }
-      if (quietHoursEnd !== undefined) {
+      if (quiet_hours_end !== undefined) {
         updates.push(`quiet_hours_end = $${paramIndex++}`);
-        values.push(quietHoursEnd);
+        values.push(quiet_hours_end);
       }
       if (timezone !== undefined) {
         updates.push(`timezone = $${paramIndex++}`);
         values.push(timezone);
       }
-      if (urgentNotifications !== undefined) {
+      if (urgent_notifications !== undefined) {
         updates.push(`urgent_notifications = $${paramIndex++}`);
-        values.push(urgentNotifications);
+        values.push(urgent_notifications);
       }
-      if (taskNotifications !== undefined) {
+      if (task_notifications !== undefined) {
         updates.push(`task_notifications = $${paramIndex++}`);
-        values.push(taskNotifications);
+        values.push(task_notifications);
       }
-      if (systemNotifications !== undefined) {
+      if (system_notifications !== undefined) {
         updates.push(`system_notifications = $${paramIndex++}`);
-        values.push(systemNotifications);
+        values.push(system_notifications);
       }
-      if (marketingNotifications !== undefined) {
+      if (marketing_notifications !== undefined) {
         updates.push(`marketing_notifications = $${paramIndex++}`);
-        values.push(marketingNotifications);
+        values.push(marketing_notifications);
       }
 
       updates.push(`updated_at = CURRENT_TIMESTAMP`);
@@ -1671,16 +1988,17 @@ exports.updatePreferences = async (req, res) => {
     res.json({
       message: 'Notification preferences updated successfully',
       preferences: {
-        pushNotificationsEnabled: prefs.push_notifications_enabled,
-        emailNotificationsEnabled: prefs.email_notifications_enabled,
-        quietHoursEnabled: prefs.quiet_hours_enabled,
-        quietHoursStart: prefs.quiet_hours_start,
-        quietHoursEnd: prefs.quiet_hours_end,
+        push_notifications_enabled: prefs.push_notifications_enabled,
+        email_notifications_enabled: prefs.email_notifications_enabled,
+        sms_notifications_enabled: prefs.sms_notifications_enabled,
+        quiet_hours_enabled: prefs.quiet_hours_enabled,
+        quiet_hours_start: prefs.quiet_hours_start,
+        quiet_hours_end: prefs.quiet_hours_end,
         timezone: prefs.timezone,
-        urgentNotifications: prefs.urgent_notifications,
-        taskNotifications: prefs.task_notifications,
-        systemNotifications: prefs.system_notifications,
-        marketingNotifications: prefs.marketing_notifications
+        urgent_notifications: prefs.urgent_notifications,
+        task_notifications: prefs.task_notifications,
+        system_notifications: prefs.system_notifications,
+        marketing_notifications: prefs.marketing_notifications
       }
     });
   } catch (error) {

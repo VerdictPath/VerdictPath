@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - <%= firmName %></title>
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body>
+  <div class="container">
+    <div class="portal-header">
+      <h1>Settings</h1>
+      <p class="subtitle"><%= firmName %> | Firm Code: <%= firmCode %></p>
+    </div>
+    
+    <div class="section">
+      <h2 class="section-title">Account Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Firm Name:</label>
+          <span><%= firmName %></span>
+        </div>
+        <div class="info-item">
+          <label>Firm Code:</label>
+          <span><%= firmCode %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2 class="section-title">Change Password</h2>
+      <form id="passwordForm" class="form-container">
+        <div class="form-group">
+          <label for="currentPassword">Current Password</label>
+          <input type="password" id="currentPassword" name="currentPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <input type="password" id="newPassword" name="newPassword" required>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm New Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+        <div id="passwordMessage" style="margin-top: 10px;"></div>
+      </form>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+      <a href="/portal/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+      <a href="/api/auth/logout" class="btn btn-secondary">Sign Out</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const messageDiv = document.getElementById('passwordMessage');
+      
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (newPassword !== confirmPassword) {
+        messageDiv.innerHTML = '<p style="color: red;">New passwords do not match</p>';
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          messageDiv.innerHTML = '<p style="color: green;">Password updated successfully!</p>';
+          document.getElementById('passwordForm').reset();
+        } else {
+          messageDiv.innerHTML = `<p style="color: red;">${data.message || 'Error updating password'}</p>`;
+        }
+      } catch (error) {
+        messageDiv.innerHTML = '<p style="color: red;">Network error. Please try again.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -94,7 +94,7 @@ const tasksController = {
     try {
       const userType = req.user.userType;
 
-      if (userType !== 'law_firm') {
+      if (userType !== 'law_firm' && userType !== 'lawfirm') {
         return res.status(403).json({ error: 'Only law firms can create tasks' });
       }
 

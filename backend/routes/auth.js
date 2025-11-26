@@ -4,6 +4,7 @@ const authController = require('../controllers/authController');
 const changePasswordController = require('../controllers/changePasswordController');
 const { checkAccountLockout } = require('../middleware/security');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { authenticateToken } = require('../middleware/auth');
 
 // SECURITY: Rate limiting on registration endpoints (prevent spam accounts)
 router.post('/register/client', authLimiter, authController.registerClient);
@@ -17,5 +18,8 @@ router.post('/login/medicalprovider-user', authLimiter, checkAccountLockout, aut
 
 // Password change endpoint for first-time login
 router.post('/change-password/first-login', authLimiter, changePasswordController.changePasswordFirstLogin);
+
+// Password change endpoint for authenticated users
+router.post('/change-password', authenticateToken, changePasswordController.changePassword);
 
 module.exports = router;
