@@ -117,6 +117,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedMedicalUserId, setSelectedMedicalUserId] = useState(null);
   const [changePasswordData, setChangePasswordData] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [taskRefreshKey, setTaskRefreshKey] = useState(0);
 
   const authToken = user?.token || null;
   const notificationCleanupRef = useRef(null);
@@ -1352,6 +1353,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'actions' && (
         <ActionDashboardScreen 
+          key={taskRefreshKey}
           user={user}
           onNavigate={handleNavigateInternal}
           onSelectTask={(task) => {
@@ -1368,6 +1370,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onNavigate={handleNavigateInternal}
           onTaskUpdated={() => {
             setSelectedTask(null);
+            setTaskRefreshKey(prev => prev + 1);
           }}
         />
       )}
