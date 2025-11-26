@@ -11,7 +11,7 @@ const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) =>
     { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
     { name: 'Notifications', icon: '🔔', screen: 'notifications', badge: unreadCount },
     { name: 'Messages', icon: '💬', screen: 'chat-list', badge: chatUnreadCount },
-    { name: 'Actions', icon: '⚓', screen: 'actions' },
+    { name: 'Tasks', icon: '⚓', screen: 'actions' },
     { name: 'Profile', icon: '👤', screen: 'profile' },
   ];
 
