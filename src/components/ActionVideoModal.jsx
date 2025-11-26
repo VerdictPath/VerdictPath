@@ -5,14 +5,12 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity,
-  Dimensions,
+  useWindowDimensions,
   Animated
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { AVATARS } from '../constants/avatars';
-
-const { width, height } = Dimensions.get('window');
 
 const ActionVideoModal = ({ 
   visible, 
@@ -21,12 +19,17 @@ const ActionVideoModal = ({
   message = '',
   coinsEarned = 0,
 }) => {
+  const { width, height } = useWindowDimensions();
   const videoRef = useRef(null);
   const [showContent, setShowContent] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   const avatar = AVATARS[avatarType.toUpperCase()];
+  
+  const isPhone = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
 
   useEffect(() => {
     if (visible) {
@@ -101,6 +104,17 @@ const ActionVideoModal = ({
 
   if (!avatar) return null;
 
+  const getModalDimensions = () => {
+    if (isDesktop) {
+      return { width: Math.min(width * 0.5, 600), height: Math.min(height * 0.8, 700) };
+    } else if (isTablet) {
+      return { width: width * 0.7, height: height * 0.75 };
+    }
+    return { width: width * 0.92, height: height * 0.72 };
+  };
+
+  const modalDimensions = getModalDimensions();
+
   return (
     <Modal
       visible={visible}
@@ -113,6 +127,8 @@ const ActionVideoModal = ({
           style={[
             styles.modalContent,
             {
+              width: modalDimensions.width,
+              height: modalDimensions.height,
               opacity: fadeAnim,
               transform: [{ scale: scaleAnim }],
             }
@@ -140,25 +156,49 @@ const ActionVideoModal = ({
             <Animated.View 
               style={[
                 styles.messageContainer,
-                { opacity: fadeAnim }
+                { 
+                  opacity: fadeAnim,
+                  bottom: isDesktop ? 100 : isTablet ? 90 : 80,
+                  padding: isDesktop ? 30 : isTablet ? 28 : 25,
+                }
               ]}
             >
-              <Text style={styles.messageTitle}>{message}</Text>
+              <Text style={[
+                styles.messageTitle,
+                { fontSize: isDesktop ? 32 : isTablet ? 30 : 28 }
+              ]}>{message}</Text>
               
               {coinsEarned > 0 && (
                 <View style={styles.coinsContainer}>
-                  <Text style={styles.coinsText}>+{coinsEarned}</Text>
-                  <Text style={styles.coinsLabel}>⚓ COINS</Text>
+                  <Text style={[
+                    styles.coinsText,
+                    { fontSize: isDesktop ? 48 : isTablet ? 44 : 40 }
+                  ]}>+{coinsEarned}</Text>
+                  <Text style={[
+                    styles.coinsLabel,
+                    { fontSize: isDesktop ? 26 : isTablet ? 24 : 22 }
+                  ]}>⚓ COINS</Text>
                 </View>
               )}
             </Animated.View>
           )}
 
           <TouchableOpacity 
-            style={styles.skipButton}
+            style={[
+              styles.skipButton,
+              { 
+                top: isDesktop ? 25 : 20,
+                right: isDesktop ? 25 : 20,
+                paddingHorizontal: isDesktop ? 24 : 20,
+                paddingVertical: isDesktop ? 14 : 12,
+              }
+            ]}
             onPress={handleClose}
           >
-            <Text style={styles.skipText}>Close ✕</Text>
+            <Text style={[
+              styles.skipText,
+              { fontSize: isDesktop ? 18 : 16 }
+            ]}>Close ✕</Text>
           </TouchableOpacity>
         </Animated.View>
       </BlurView>
@@ -174,8 +214,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: width * 0.9,
-    height: height * 0.7,
     borderRadius: 25,
     overflow: 'hidden',
     backgroundColor: '#000',
@@ -195,18 +233,15 @@ const styles = StyleSheet.create({
   },
   messageContainer: {
     position: 'absolute',
-    bottom: 80,
     left: 20,
     right: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    padding: 25,
     borderRadius: 20,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#FFD700',
   },
   messageTitle: {
-    fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textAlign: 'center',
@@ -221,7 +256,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   coinsText: {
-    fontSize: 40,
     fontWeight: 'bold',
     color: '#FFD700',
     marginRight: 10,
@@ -230,24 +264,18 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   coinsLabel: {
-    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFD700',
   },
   skipButton: {
     position: 'absolute',
-    top: 20,
-    right: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     borderRadius: 25,
     borderWidth: 1,
     borderColor: '#FFFFFF',
   },
   skipText: {
     color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '700',
   },
 });

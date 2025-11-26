@@ -1,11 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window');
-
 const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
+  const { width, height } = useWindowDimensions();
   const videoRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -29,6 +28,11 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
     }
   };
 
+  const isLargeScreen = width >= 768;
+  const isDesktop = width >= 1024;
+  
+  const videoResizeMode = isDesktop ? ResizeMode.COVER : ResizeMode.COVER;
+
   return (
     <View style={styles.container}>
       <Video
@@ -39,8 +43,16 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         isMuted={true}
         isLooping={true}
         shouldPlay={true}
-        resizeMode={ResizeMode.CONTAIN}
-        style={styles.video}
+        resizeMode={videoResizeMode}
+        style={[
+          styles.video,
+          {
+            width: width,
+            height: height,
+            minWidth: '100%',
+            minHeight: '100%',
+          }
+        ]}
         onLoad={() => {
           console.log('[AvatarVideoBackground] Video loaded');
           setIsReady(true);
@@ -71,11 +83,12 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 0,
+    overflow: 'hidden',
   },
   video: {
-    width: width,
-    height: height,
     position: 'absolute',
+    top: 0,
+    left: 0,
   },
   gradient: {
     position: 'absolute',

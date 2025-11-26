@@ -93,12 +93,12 @@ const LandingScreen = ({ onNavigate }) => {
         <View style={styles.featureRow}>
           <View style={styles.iconBadgeLocker}>
             <Image 
-              source={require('../../attached_assets/vault_1762018272142.jpeg')}
+              source={require('../../attached_assets/Evidence Vault_1764037430801.png')}
               style={styles.vaultThumbnail}
               resizeMode="cover"
             />
           </View>
-          <Text style={styles.featureItem}>Evidence Locker</Text>
+          <Text style={styles.featureItem}>Evidence Vault</Text>
         </View>
       </View>
       </View>

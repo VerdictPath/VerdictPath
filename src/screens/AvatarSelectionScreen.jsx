@@ -5,7 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
   Image,
   Alert,
 } from 'react-native';
@@ -13,12 +13,15 @@ import { Video, ResizeMode } from 'expo-av';
 import { AVATARS } from '../constants/avatars';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
-const { width } = Dimensions.get('window');
-
 const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
+  const { width, height } = useWindowDimensions();
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarType || 'captain');
   const [previewingAvatar, setPreviewingAvatar] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const isPhone = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
 
   const handleSelect = async (avatarId) => {
     if (avatarId === user?.avatarType) {
@@ -60,86 +63,140 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
   };
 
   const avatarArray = Object.values(AVATARS);
+  
+  const getCardWidth = () => {
+    if (isDesktop) return (width - 80) / 2;
+    if (isTablet) return (width - 60) / 2;
+    return width - 40;
+  };
+  
+  const getVideoHeight = () => {
+    if (isDesktop) return 380;
+    if (isTablet) return 350;
+    return 320;
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        { paddingTop: isDesktop ? 40 : 60 }
+      ]}>
         <TouchableOpacity onPress={onBack}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[
+            styles.backButton,
+            { fontSize: isDesktop ? 20 : 18 }
+          ]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Choose Your Avatar</Text>
+        <Text style={[
+          styles.title,
+          { fontSize: isDesktop ? 28 : isTablet ? 26 : 22 }
+        ]}>Choose Your Avatar</Text>
         <View style={{ width: 60 }} />
       </View>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          (isTablet || isDesktop) && styles.scrollContentGrid
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {avatarArray.map((avatar) => {
-          const isSelected = selectedAvatar === avatar.id;
-          const isPreviewing = previewingAvatar === avatar.id;
+        <View style={(isTablet || isDesktop) ? styles.gridContainer : null}>
+          {avatarArray.map((avatar) => {
+            const isSelected = selectedAvatar === avatar.id;
+            const isPreviewing = previewingAvatar === avatar.id;
 
-          return (
-            <TouchableOpacity
-              key={avatar.id}
-              style={[
-                styles.avatarCard,
-                isSelected && styles.selectedCard,
-              ]}
-              onPress={() => handleSelect(avatar.id)}
-              onLongPress={() => setPreviewingAvatar(avatar.id)}
-              onPressOut={() => setPreviewingAvatar(null)}
-              disabled={isSaving}
-            >
-              <View style={styles.videoPreview}>
-                {isPreviewing && avatar.calmVideo ? (
-                  <Video
-                    source={avatar.calmVideo}
-                    rate={1.0}
-                    volume={0}
-                    isMuted={true}
-                    isLooping={true}
-                    shouldPlay={true}
-                    resizeMode={ResizeMode.COVER}
-                    style={styles.previewVideo}
-                  />
-                ) : avatar.thumbnail ? (
-                  <Image
-                    source={avatar.thumbnail}
-                    style={styles.thumbnailImage}
-                    resizeMode={(avatar.id === 'captain' || avatar.id === 'navigator') ? 'contain' : 'cover'}
-                  />
-                ) : (
-                  <View style={[styles.placeholderImage, { backgroundColor: avatar.primaryColor }]}>
-                    <Text style={styles.placeholderText}>{avatar.name[0]}</Text>
-                  </View>
-                )}
-              </View>
+            return (
+              <TouchableOpacity
+                key={avatar.id}
+                style={[
+                  styles.avatarCard,
+                  isSelected && styles.selectedCard,
+                  (isTablet || isDesktop) && { 
+                    width: getCardWidth(),
+                    marginHorizontal: 10,
+                  }
+                ]}
+                onPress={() => handleSelect(avatar.id)}
+                onLongPress={() => setPreviewingAvatar(avatar.id)}
+                onPressOut={() => setPreviewingAvatar(null)}
+                disabled={isSaving}
+              >
+                <View style={[
+                  styles.videoPreview,
+                  { height: getVideoHeight() }
+                ]}>
+                  {isPreviewing && avatar.calmVideo ? (
+                    <Video
+                      source={avatar.calmVideo}
+                      rate={1.0}
+                      volume={0}
+                      isMuted={true}
+                      isLooping={true}
+                      shouldPlay={true}
+                      resizeMode={ResizeMode.COVER}
+                      style={styles.previewVideo}
+                    />
+                  ) : avatar.thumbnail ? (
+                    <Image
+                      source={avatar.thumbnail}
+                      style={styles.thumbnailImage}
+                      resizeMode={(avatar.id === 'captain' || avatar.id === 'navigator') ? 'contain' : 'cover'}
+                    />
+                  ) : (
+                    <View style={[styles.placeholderImage, { backgroundColor: avatar.primaryColor }]}>
+                      <Text style={[
+                        styles.placeholderText,
+                        { fontSize: isDesktop ? 120 : 100 }
+                      ]}>{avatar.name[0]}</Text>
+                    </View>
+                  )}
+                </View>
 
-              <View style={[
-                styles.avatarInfo,
-                { backgroundColor: avatar.primaryColor + '20' }
-              ]}>
-                <Text style={styles.avatarName}>{avatar.name}</Text>
-                <Text style={styles.avatarDescription}>
-                  {avatar.description}
-                </Text>
-                
-                {isSelected && (
-                  <View style={[
-                    styles.selectedBadge,
-                    { backgroundColor: avatar.primaryColor }
+                <View style={[
+                  styles.avatarInfo,
+                  { 
+                    backgroundColor: avatar.primaryColor + '20',
+                    padding: isDesktop ? 25 : 20,
+                  }
+                ]}>
+                  <Text style={[
+                    styles.avatarName,
+                    { fontSize: isDesktop ? 30 : isTablet ? 28 : 26 }
+                  ]}>{avatar.name}</Text>
+                  <Text style={[
+                    styles.avatarDescription,
+                    { fontSize: isDesktop ? 18 : 16 }
                   ]}>
-                    <Text style={styles.selectedBadgeText}>✓ CURRENT</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                    {avatar.description}
+                  </Text>
+                  
+                  {isSelected && (
+                    <View style={[
+                      styles.selectedBadge,
+                      { backgroundColor: avatar.primaryColor }
+                    ]}>
+                      <Text style={[
+                        styles.selectedBadgeText,
+                        { fontSize: isDesktop ? 16 : 14 }
+                      ]}>✓ CURRENT</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        <View style={styles.hint}>
-          <Text style={styles.hintText}>
+        <View style={[
+          styles.hint,
+          (isTablet || isDesktop) && { marginHorizontal: 10 }
+        ]}>
+          <Text style={[
+            styles.hintText,
+            { fontSize: isDesktop ? 16 : 14 }
+          ]}>
             💡 Long press any avatar to preview their calm video
           </Text>
         </View>
@@ -158,22 +215,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 60,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   backButton: {
     color: '#FFFFFF',
-    fontSize: 18,
     fontWeight: '600',
   },
   title: {
-    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 100,
+  },
+  scrollContentGrid: {
+    paddingHorizontal: 10,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   avatarCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
@@ -195,7 +257,6 @@ const styles = StyleSheet.create({
   },
   videoPreview: {
     width: '100%',
-    height: 320,
     backgroundColor: '#000',
   },
   previewVideo: {
@@ -214,21 +275,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   placeholderText: {
-    fontSize: 100,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  avatarInfo: {
-    padding: 20,
-  },
+  avatarInfo: {},
   avatarName: {
-    fontSize: 26,
     fontWeight: 'bold',
     color: '#FFFFFF',
     marginBottom: 8,
   },
   avatarDescription: {
-    fontSize: 16,
     color: '#D0D0D0',
     lineHeight: 22,
   },
@@ -241,7 +297,6 @@ const styles = StyleSheet.create({
   },
   selectedBadgeText: {
     color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: 'bold',
   },
   hint: {
@@ -254,7 +309,6 @@ const styles = StyleSheet.create({
   },
   hintText: {
     color: '#FFD700',
-    fontSize: 14,
     textAlign: 'center',
     fontWeight: '600',
   },

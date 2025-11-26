@@ -7,18 +7,25 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert
+  Alert,
+  ImageBackground,
+  useWindowDimensions
 } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const ActionDashboardScreen = ({ user, onNavigate }) => {
+  const { width, height } = useWindowDimensions();
   const [tasks, setTasks] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+
+  const isPhone = width < 768;
+  const isTablet = width >= 768 && width < 1024;
+  const isDesktop = width >= 1024;
 
   useEffect(() => {
     fetchTasks();
@@ -147,6 +154,12 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
     );
   };
 
+  const getContentWidth = () => {
+    if (isDesktop) return Math.min(width * 0.7, 900);
+    if (isTablet) return width * 0.9;
+    return width;
+  };
+
   const renderFilterTabs = () => {
     const filters = [
       { key: 'all', label: 'All', emoji: '📋' },
@@ -164,8 +177,12 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
               style={[styles.filterButton, filter === f.key && styles.activeFilterButton]}
               onPress={() => setFilter(f.key)}
             >
-              <Text style={styles.filterEmoji}>{f.emoji}</Text>
-              <Text style={[styles.filterText, filter === f.key && styles.activeFilterText]}>
+              <Text style={[styles.filterEmoji, { fontSize: isDesktop ? 18 : 16 }]}>{f.emoji}</Text>
+              <Text style={[
+                styles.filterText, 
+                filter === f.key && styles.activeFilterText,
+                { fontSize: isDesktop ? 16 : 14 }
+              ]}>
                 {f.label}
               </Text>
             </TouchableOpacity>
@@ -186,7 +203,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 
     return (
       <View style={styles.priorityFilterContainer}>
-        <Text style={styles.priorityFilterLabel}>Priority:</Text>
+        <Text style={[styles.priorityFilterLabel, { fontSize: isDesktop ? 15 : 13 }]}>Priority:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {priorities.map(p => (
             <TouchableOpacity
@@ -200,7 +217,8 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
             >
               <Text style={[
                 styles.priorityChipText,
-                { color: priorityFilter === p.key ? '#fff' : p.color }
+                { color: priorityFilter === p.key ? '#fff' : p.color },
+                { fontSize: isDesktop ? 14 : 12 }
               ]}>
                 {p.label}
               </Text>
@@ -215,23 +233,26 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
     if (!summary) return null;
 
     return (
-      <View style={styles.summaryContainer}>
+      <View style={[
+        styles.summaryContainer,
+        { padding: isDesktop ? 20 : 16 }
+      ]}>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{summary.pending}</Text>
-          <Text style={styles.summaryLabel}>To Do</Text>
+          <Text style={[styles.summaryNumber, { fontSize: isDesktop ? 28 : 24 }]}>{summary.pending}</Text>
+          <Text style={[styles.summaryLabel, { fontSize: isDesktop ? 13 : 11 }]}>To Do</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{summary.inProgress}</Text>
-          <Text style={styles.summaryLabel}>In Progress</Text>
+          <Text style={[styles.summaryNumber, { fontSize: isDesktop ? 28 : 24 }]}>{summary.inProgress}</Text>
+          <Text style={[styles.summaryLabel, { fontSize: isDesktop ? 13 : 11 }]}>In Progress</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{summary.completed}</Text>
-          <Text style={styles.summaryLabel}>Completed</Text>
+          <Text style={[styles.summaryNumber, { fontSize: isDesktop ? 28 : 24 }]}>{summary.completed}</Text>
+          <Text style={[styles.summaryLabel, { fontSize: isDesktop ? 13 : 11 }]}>Completed</Text>
         </View>
         {summary.overdue > 0 && (
           <View style={[styles.summaryCard, styles.overdueCard]}>
-            <Text style={[styles.summaryNumber, styles.overdueText]}>{summary.overdue}</Text>
-            <Text style={[styles.summaryLabel, styles.overdueText]}>Overdue</Text>
+            <Text style={[styles.summaryNumber, styles.overdueText, { fontSize: isDesktop ? 28 : 24 }]}>{summary.overdue}</Text>
+            <Text style={[styles.summaryLabel, styles.overdueText, { fontSize: isDesktop ? 13 : 11 }]}>Overdue</Text>
           </View>
         )}
       </View>
@@ -278,35 +299,43 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
     return (
       <TouchableOpacity
         key={task.id}
-        style={[styles.taskCard, overdue && styles.overdueTaskCard]}
+        style={[
+          styles.taskCard, 
+          overdue && styles.overdueTaskCard,
+          { padding: isDesktop ? 20 : 16 }
+        ]}
         onPress={() => handleTaskAction(task)}
         activeOpacity={0.7}
       >
         <View style={styles.taskHeader}>
           <View style={styles.taskStatusContainer}>
-            <Text style={styles.taskStatusIcon}>{getStatusIcon(task.status)}</Text>
+            <Text style={[styles.taskStatusIcon, { fontSize: isDesktop ? 24 : 20 }]}>{getStatusIcon(task.status)}</Text>
             <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(task.priority) }]}>
-              <Text style={styles.priorityBadgeText}>{getPriorityLabel(task.priority)}</Text>
+              <Text style={[styles.priorityBadgeText, { fontSize: isDesktop ? 13 : 11 }]}>{getPriorityLabel(task.priority)}</Text>
             </View>
           </View>
           {task.coinsReward > 0 && (
             <View style={styles.coinsBadge}>
-              <Text style={styles.coinsBadgeText}>🪙 {task.coinsReward}</Text>
+              <Text style={[styles.coinsBadgeText, { fontSize: isDesktop ? 14 : 12 }]}>🪙 {task.coinsReward}</Text>
             </View>
           )}
         </View>
 
-        <Text style={styles.taskTitle}>{task.title}</Text>
+        <Text style={[styles.taskTitle, { fontSize: isDesktop ? 20 : 18 }]}>{task.title}</Text>
         {task.description && (
-          <Text style={styles.taskDescription} numberOfLines={2}>
+          <Text style={[styles.taskDescription, { fontSize: isDesktop ? 16 : 14 }]} numberOfLines={2}>
             {task.description}
           </Text>
         )}
 
         <View style={styles.taskFooter}>
-          <Text style={styles.taskLawFirm}>⚖️ {task.lawFirmName}</Text>
+          <Text style={[styles.taskLawFirm, { fontSize: isDesktop ? 15 : 13 }]}>⚖️ {task.lawFirmName}</Text>
           {task.dueDate && (
-            <Text style={[styles.taskDueDate, overdue && styles.overdueDueDate]}>
+            <Text style={[
+              styles.taskDueDate, 
+              overdue && styles.overdueDueDate,
+              { fontSize: isDesktop ? 15 : 13 }
+            ]}>
               {overdue ? '⚠️ ' : '📅 '}
               {overdue ? 'Overdue: ' : 'Due: '}
               {new Date(task.dueDate).toLocaleDateString()}
@@ -316,7 +345,7 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 
         {task.status !== 'completed' && (
           <View style={styles.taskActions}>
-            <Text style={styles.taskActionHint}>Tap to update status</Text>
+            <Text style={[styles.taskActionHint, { fontSize: isDesktop ? 14 : 12 }]}>Tap to update status</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -325,54 +354,90 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading your tasks...</Text>
-      </View>
+      <ImageBackground
+        source={require('../../attached_assets/Fighting Ships_1764038386285.png')}
+        style={[styles.backgroundImage, { width, height }]}
+        resizeMode="cover"
+      >
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#FFD700" />
+          <Text style={styles.loadingText}>Loading your tasks...</Text>
+        </View>
+      </ImageBackground>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => onNavigate('dashboard')}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>⚓ Action Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Tasks assigned by your attorney</Text>
-        </View>
-      </View>
-
-      {renderSummaryCards()}
-      {renderFilterTabs()}
-      {renderPriorityFilters()}
-
-      <ScrollView
-        style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      <ImageBackground
+        source={require('../../attached_assets/Fighting Ships_1764038386285.png')}
+        style={[styles.backgroundImage, { width, height }]}
+        resizeMode="cover"
       >
-        {tasks.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>🏴‍☠️</Text>
-            <Text style={styles.emptyStateTitle}>No Tasks Found</Text>
-            <Text style={styles.emptyStateText}>
-              {filter === 'all'
-                ? "You don't have any tasks assigned yet. Your attorney will send you tasks as your case progresses."
-                : `No ${filter} tasks found. Try adjusting your filters.`}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.tasksList}>
-            {tasks.map(task => renderTaskCard(task))}
-          </View>
-        )}
+        <View style={styles.overlay}>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { alignItems: isDesktop || isTablet ? 'center' : 'stretch' }
+            ]}
+          >
+            <View style={[
+              styles.contentWrapper,
+              { width: getContentWidth() }
+            ]}>
+              <View style={[
+                styles.header,
+                { 
+                  paddingTop: isDesktop ? 30 : 50,
+                  paddingHorizontal: isDesktop ? 30 : 20,
+                }
+              ]}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => onNavigate('dashboard')}
+                >
+                  <Text style={[styles.backButtonText, { fontSize: isDesktop ? 16 : 14 }]}>← Back</Text>
+                </TouchableOpacity>
+                <View style={styles.headerContent}>
+                  <Text style={[
+                    styles.headerTitle,
+                    { fontSize: isDesktop ? 34 : isTablet ? 30 : 28 }
+                  ]}>⚓ Action Dashboard</Text>
+                  <Text style={[
+                    styles.headerSubtitle,
+                    { fontSize: isDesktop ? 16 : 14 }
+                  ]}>Tasks assigned by your attorney</Text>
+                </View>
+              </View>
 
-        <View style={styles.bottomPadding} />
-      </ScrollView>
+              {renderSummaryCards()}
+              {renderFilterTabs()}
+              {renderPriorityFilters()}
+
+              <View style={[styles.content, { paddingHorizontal: isDesktop ? 30 : 16 }]}>
+                {tasks.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Text style={[styles.emptyStateIcon, { fontSize: isDesktop ? 80 : 64 }]}>🏴‍☠️</Text>
+                    <Text style={[styles.emptyStateTitle, { fontSize: isDesktop ? 24 : 20 }]}>No Tasks Found</Text>
+                    <Text style={[styles.emptyStateText, { fontSize: isDesktop ? 16 : 14 }]}>
+                      {filter === 'all'
+                        ? "You don't have any tasks assigned yet. Your attorney will send you tasks as your case progresses."
+                        : `No ${filter} tasks found. Try adjusting your filters.`}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.tasksList}>
+                    {tasks.map(task => renderTaskCard(task))}
+                  </View>
+                )}
+
+                <View style={styles.bottomPadding} />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </ImageBackground>
     </View>
   );
 };
@@ -380,161 +445,197 @@ const ActionDashboardScreen = ({ user, onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
   },
-  loadingContainer: {
+  backgroundImage: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
+  contentWrapper: {
+    flex: 1,
+  },
+  loadingOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   loadingText: {
-    marginTop: 10,
-    color: theme.colors.textSecondary,
-    fontSize: 16,
+    marginTop: 15,
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   header: {
-    backgroundColor: theme.colors.cream,
-    padding: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.secondary,
+    paddingBottom: 15,
   },
   backButton: {
-    backgroundColor: theme.colors.mahogany,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: 'rgba(139, 69, 19, 0.9)',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: '#FFD700',
     marginBottom: 12,
     alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   headerContent: {
     marginTop: 4,
   },
   headerTitle: {
-    fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
-    marginBottom: 5,
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 6,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#FFD700',
+    fontWeight: '600',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   summaryContainer: {
     flexDirection: 'row',
-    padding: 16,
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     gap: 10,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#FFD700',
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: '#8B4513',
   },
   summaryNumber: {
-    fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: '#8B4513',
   },
   summaryLabel: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
+    color: '#5D3A1A',
     marginTop: 4,
+    fontWeight: '600',
   },
   overdueCard: {
-    backgroundColor: '#ffe6e6',
+    backgroundColor: 'rgba(255, 230, 230, 0.95)',
   },
   overdueText: {
     color: '#e74c3c',
   },
   filterContainer: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 10,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: 10,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: '#8B4513',
   },
   activeFilterButton: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: '#8B4513',
+    borderColor: '#FFD700',
   },
   filterEmoji: {
-    fontSize: 16,
     marginRight: 6,
   },
   filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#2c3e50',
   },
   activeFilterText: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
   priorityFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    marginHorizontal: 16,
+    borderRadius: 10,
+    marginBottom: 15,
   },
   priorityFilterLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
+    fontWeight: '700',
+    color: '#FFFFFF',
     marginRight: 12,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   priorityChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 15,
+    borderWidth: 2,
     marginRight: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   priorityChipText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   content: {
     flex: 1,
   },
   tasksList: {
-    padding: 16,
     gap: 12,
   },
   taskCard: {
-    backgroundColor: theme.colors.cream,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 14,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderWidth: 3,
+    borderColor: '#8B4513',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   overdueTaskCard: {
     borderColor: '#e74c3c',
     borderWidth: 3,
-    backgroundColor: '#fff5f5',
+    backgroundColor: 'rgba(255, 245, 245, 0.98)',
   },
   taskHeader: {
     flexDirection: 'row',
@@ -547,43 +648,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  taskStatusIcon: {
-    fontSize: 20,
-  },
+  taskStatusIcon: {},
   priorityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   priorityBadgeText: {
     color: '#fff',
-    fontSize: 11,
     fontWeight: '700',
   },
   coinsBadge: {
-    backgroundColor: theme.colors.warmGold,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.secondary,
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#8B4513',
   },
   coinsBadgeText: {
-    fontSize: 12,
     fontWeight: '700',
-    color: theme.colors.navy,
+    color: '#2c3e50',
   },
   taskTitle: {
-    fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#2c3e50',
     marginBottom: 8,
   },
   taskDescription: {
-    fontSize: 14,
-    color: '#666',
+    color: '#555',
     marginBottom: 12,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   taskFooter: {
     flexDirection: 'row',
@@ -593,13 +688,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   taskLawFirm: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    fontWeight: '600',
+    color: '#5D3A1A',
+    fontWeight: '700',
   },
   taskDueDate: {
-    fontSize: 13,
-    color: '#666',
+    color: '#555',
     fontWeight: '600',
   },
   overdueDueDate: {
@@ -610,34 +703,42 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#D4A574',
     alignItems: 'center',
   },
   taskActionHint: {
-    fontSize: 12,
-    color: theme.colors.primary,
+    color: '#8B4513',
     fontStyle: 'italic',
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    marginTop: 20,
   },
   emptyStateIcon: {
-    fontSize: 64,
     marginBottom: 16,
   },
   emptyStateTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
-    marginBottom: 8,
+    color: '#FFD700',
+    marginBottom: 12,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   emptyStateText: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
+    textShadowColor: '#000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   bottomPadding: {
     height: 100,

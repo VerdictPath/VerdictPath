@@ -15,6 +15,7 @@ import InviteModal from '../components/InviteModal';
 import ConnectionsModal from '../components/ConnectionsModal';
 import { AVATARS } from '../constants/avatars';
 import { useVideoPreloader } from '../hooks/useVideoPreloader';
+import { useNotifications } from '../contexts/NotificationContext';
 import { API_BASE_URL } from '../config/api';
 
 const { width } = Dimensions.get('window');
@@ -42,6 +43,7 @@ const DashboardScreen = ({
   const selectedAvatar = AVATARS[avatarType.toUpperCase()] || AVATARS.CAPTAIN;
 
   const { videosLoaded } = useVideoPreloader(avatarType);
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     console.log('[Dashboard] Videos loaded:', videosLoaded);
@@ -186,12 +188,6 @@ const DashboardScreen = ({
             onPress={() => onNavigate('medical')}
           />
           <QuickActionButton
-            icon="📹"
-            title="Videos"
-            color={selectedAvatar.accentColor}
-            onPress={() => onNavigate('videos')}
-          />
-          <QuickActionButton
             icon="✅"
             title="Actions"
             color={selectedAvatar.accentColor}
@@ -202,6 +198,7 @@ const DashboardScreen = ({
             title="Notifications"
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('notifications')}
+            badge={unreadCount}
           />
           <QuickActionButton
             icon="📅"
@@ -269,20 +266,27 @@ const DashboardScreen = ({
   );
 };
 
-const QuickActionButton = ({ icon, imageSource, title, color, onPress }) => (
+const QuickActionButton = ({ icon, imageSource, title, color, onPress, badge }) => (
   <TouchableOpacity 
     style={[styles.quickActionCard, { borderColor: color }]}
     onPress={onPress}
   >
-    {imageSource ? (
-      <Image 
-        source={imageSource} 
-        style={styles.quickActionImage}
-        resizeMode="contain"
-      />
-    ) : (
-      <Text style={styles.quickActionIcon}>{icon}</Text>
-    )}
+    <View style={styles.iconContainer}>
+      {imageSource ? (
+        <Image 
+          source={imageSource} 
+          style={styles.quickActionImage}
+          resizeMode="contain"
+        />
+      ) : (
+        <Text style={styles.quickActionIcon}>{icon}</Text>
+      )}
+      {badge !== undefined && badge > 0 && (
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+        </View>
+      )}
+    </View>
     <Text style={styles.quickActionTitle}>{title}</Text>
   </TouchableOpacity>
 );
@@ -448,6 +452,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 6,
   },
+  iconContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   quickActionIcon: {
     fontSize: 44,
     marginBottom: 12,
@@ -457,6 +466,25 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 12,
     borderRadius: 8,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#e74c3c',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 2,
+    borderColor: '#1a1a1a',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   quickActionTitle: {
     color: '#FFFFFF',
