@@ -8,7 +8,6 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
     { name: 'Dashboard', icon: '🏠', screen: 'lawfirm-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'lawfirm-send-notification', badge: notificationCount },
     { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
-    { name: 'Messages', icon: '💬', screen: 'lawfirm-messages' },
     { name: 'Activity', icon: '📊', screen: 'lawfirm-activity-dashboard' },
     { name: 'Disbursements', icon: '💰', screen: 'lawfirm-disbursements' },
     { name: 'Negotiations', icon: '🤝', screen: 'lawfirm-negotiations' },
