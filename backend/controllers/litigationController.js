@@ -144,7 +144,10 @@ const completeSubstage = async (req, res) => {
 
     // Check if coins were previously earned for this substage
     // This prevents coin farming - coins can only be earned once ever
-    const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
+    // NOTE: We check if ANY completion record exists (even if coins_earned is 0)
+    // because some old records may have coins_earned=0 due to a previous bug,
+    // but coins were still awarded to the user at completion time
+    const coinsAlreadyEarned = existing.rows.length > 0;
     
     // Check treasure chest capacity before awarding coins
     let coinsToAward = 0;
@@ -276,7 +279,10 @@ const completeStage = async (req, res) => {
     }
 
     // Check if coins were previously earned for this stage
-    const coinsAlreadyEarned = existing.rows.length > 0 && existing.rows[0].coins_earned > 0;
+    // NOTE: We check if ANY completion record exists (even if coins_earned is 0)
+    // because some old records may have coins_earned=0 due to a previous bug,
+    // but coins were still awarded to the user at completion time
+    const coinsAlreadyEarned = existing.rows.length > 0;
     
     // Check treasure chest capacity before awarding coins
     let coinsToAward = 0;
