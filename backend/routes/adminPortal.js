@@ -124,15 +124,15 @@ router.get('/dashboard', async (req, res) => {
     `);
     
     const recentActivityResult = await pool.query(`
-      (SELECT created_at, user_id, action_type, action_category as resource_type, ip_address, 
-        (SELECT email FROM users WHERE id = law_firm_activity_logs.user_id LIMIT 1) as user_email,
+      (SELECT timestamp as created_at, user_id, action as action_type, action_category as resource_type, ip_address, 
+        user_email,
         'lawfirm' as source
-       FROM law_firm_activity_logs ORDER BY created_at DESC LIMIT 5)
+       FROM law_firm_activity_logs ORDER BY timestamp DESC LIMIT 5)
       UNION ALL
-      (SELECT created_at, user_id, action_type, action_category as resource_type, ip_address,
-        (SELECT email FROM users WHERE id = medical_provider_activity_logs.user_id LIMIT 1) as user_email,
+      (SELECT timestamp as created_at, user_id, action as action_type, action_category as resource_type, ip_address,
+        user_email,
         'medicalprovider' as source
-       FROM medical_provider_activity_logs ORDER BY created_at DESC LIMIT 5)
+       FROM medical_provider_activity_logs ORDER BY timestamp DESC LIMIT 5)
       ORDER BY created_at DESC
       LIMIT 10
     `);
