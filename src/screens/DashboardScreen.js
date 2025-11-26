@@ -31,6 +31,7 @@ const DashboardScreen = ({
   const [showActionVideo, setShowActionVideo] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
   const [actionCoins, setActionCoins] = useState(0);
+  const [useCelebrationVideo, setUseCelebrationVideo] = useState(false);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [connections, setConnections] = useState({
@@ -87,16 +88,17 @@ const DashboardScreen = ({
     try {
       await onClaimBonus();
       
-      triggerActionVideo('Daily Bonus Claimed! 🎉', 50);
+      triggerActionVideo('Daily Bonus Claimed! 🎉', 50, true);
     } catch (error) {
       console.error('[Dashboard] Claim bonus error:', error);
     }
   };
 
-  const triggerActionVideo = (message, coinsEarned = 0) => {
-    console.log('[Dashboard] Triggering action video:', message);
+  const triggerActionVideo = (message, coinsEarned = 0, celebrationMode = false) => {
+    console.log('[Dashboard] Triggering action video:', message, 'celebration:', celebrationMode);
     setActionMessage(message);
     setActionCoins(coinsEarned);
+    setUseCelebrationVideo(celebrationMode);
     setShowActionVideo(true);
   };
 
@@ -182,13 +184,13 @@ const DashboardScreen = ({
             onPress={() => onNavigate('roadmap')}
           />
           <QuickActionButton
-            icon="🏥"
+            imageSource={require('../../attached_assets/Medical Symbol Latin_1764039151974.png')}
             title="Medical Hub"
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('medical')}
           />
           <QuickActionButton
-            icon="✅"
+            imageSource={require('../../attached_assets/Fighting Ships_1764038386285.png')}
             title="Actions"
             color={selectedAvatar.accentColor}
             onPress={() => onNavigate('actions')}
@@ -249,6 +251,7 @@ const DashboardScreen = ({
         avatarType={avatarType}
         message={actionMessage}
         coinsEarned={actionCoins}
+        useCelebrationVideo={useCelebrationVideo}
       />
 
       <InviteModal
