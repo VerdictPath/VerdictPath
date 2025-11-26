@@ -85,10 +85,18 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
 
   // Setup Firebase real-time listeners for negotiations
   const setupFirebaseListeners = useCallback(async () => {
-    if (!user?.token) return;
+    if (!user?.token) {
+      console.log('⚠️ No user token, skipping Firebase setup for negotiations');
+      return;
+    }
     
     try {
-      console.log('🔥 Setting up Firebase real-time listeners for negotiations...');
+      console.log('🔥 Setting up Firebase real-time listeners for negotiations...', {
+        userId: user.id,
+        userType: user.type || user.userType,
+        isLawFirm,
+        isMedicalProvider
+      });
       
       // Initialize Firebase
       initializeFirebase();
@@ -104,9 +112,19 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       const userType = isLawFirm ? 'law_firm' : 'medical_provider';
       const userId = user.id;
       
+      console.log('📡 Firebase subscription details:', { userType, userId, path: `negotiations/${userType}s/${userId}` });
+      
       // Subscribe to negotiations updates
       const unsubscribe = await subscribeToNegotiations(userType, userId, (updatedNegotiations) => {
-        console.log('🔔 Firebase negotiations update received:', updatedNegotiations?.length || 0);
+        console.log(`🔔 Firebase negotiations update received for ${userType}:`, updatedNegotiations?.length || 0);
+        if (updatedNegotiations?.length > 0) {
+          console.log('📋 Latest negotiation update:', {
+            id: updatedNegotiations[0]?.id,
+            status: updatedNegotiations[0]?.status,
+            lastRespondedBy: updatedNegotiations[0]?.last_responded_by,
+            currentOffer: updatedNegotiations[0]?.current_offer
+          });
+        }
         if (updatedNegotiations && Array.isArray(updatedNegotiations)) {
           // Merge Firebase updates with current state
           setNegotiations(prevNegotiations => {
