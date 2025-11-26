@@ -521,12 +521,14 @@ router.post('/request-call', authenticateToken, async (req, res) => {
       });
     }
 
-    // Update negotiation status to stalled
+    // Update negotiation status to stalled and last_responded_by
+    // This allows the other party to accept the current offer after the call
     await db.query(
       `UPDATE negotiations 
-       SET status = 'stalled'
+       SET status = 'stalled',
+           last_responded_by = $2
        WHERE id = $1`,
-      [negotiationId]
+      [negotiationId, userType]
     );
 
     // Add to history
