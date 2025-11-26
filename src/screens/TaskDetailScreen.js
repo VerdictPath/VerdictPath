@@ -16,6 +16,8 @@ import { alert } from '../utils/alert';
 const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
   const { width, height } = useWindowDimensions();
   const [loading, setLoading] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [completionData, setCompletionData] = useState(null);
 
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
@@ -75,25 +77,19 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      let successMessage = '';
       if (newStatus === 'completed') {
-        if (data.coinsAlreadyEarnedBefore) {
-          successMessage = 'Task marked complete! (Coins were already earned previously)';
-        } else if (data.coinsAwarded > 0) {
-          successMessage = `Task completed! You earned ${data.coinsAwarded} coins! 🪙`;
-        } else {
-          successMessage = 'Task marked complete!';
+        setCompletionData(data);
+        setJustCompleted(true);
+        if (onTaskUpdated) {
+          onTaskUpdated();
         }
       } else if (newStatus === 'in_progress') {
-        successMessage = 'Your attorney has been notified that you\'re working on this task.';
+        alert('Success', 'Your attorney has been notified that you\'re working on this task.');
+        if (onTaskUpdated) {
+          onTaskUpdated();
+        }
+        onNavigate('actions');
       }
-
-      alert('Success', successMessage);
-      
-      if (onTaskUpdated) {
-        onTaskUpdated();
-      }
-      onNavigate('actions');
     } catch (error) {
       console.error('Error updating task:', error);
       alert('Error', 'Failed to update task status. Please try again.');
@@ -140,6 +136,63 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
   };
 
   const contentWidth = isDesktop ? Math.min(700, width * 0.6) : isTablet ? Math.min(600, width * 0.8) : '100%';
+
+  if (justCompleted) {
+    return (
+      <View style={styles.container}>
+        <ImageBackground
+          source={require('../../attached_assets/Fighting Ships_1764038386285.png')}
+          style={[styles.backgroundImage, { width, height }]}
+          resizeMode="cover"
+        >
+          <View style={styles.overlay}>
+            <View style={styles.celebrationContainer}>
+              <View style={[styles.celebrationCard, { width: contentWidth, padding: isDesktop ? 40 : 28 }]}>
+                <Text style={styles.celebrationEmoji}>🎉</Text>
+                <Text style={[styles.celebrationTitle, { fontSize: isDesktop ? 32 : 26 }]}>
+                  Congratulations!
+                </Text>
+                <Text style={[styles.celebrationSubtitle, { fontSize: isDesktop ? 20 : 17 }]}>
+                  You completed the task
+                </Text>
+                <Text style={[styles.celebrationTaskName, { fontSize: isDesktop ? 22 : 18 }]}>
+                  "{task.title}"
+                </Text>
+                
+                {completionData?.coinsAwarded > 0 && !completionData?.coinsAlreadyEarnedBefore && (
+                  <View style={styles.coinsEarnedContainer}>
+                    <Text style={styles.coinsEarnedEmoji}>🪙</Text>
+                    <Text style={[styles.coinsEarnedText, { fontSize: isDesktop ? 24 : 20 }]}>
+                      +{completionData.coinsAwarded} coins earned!
+                    </Text>
+                  </View>
+                )}
+                
+                {completionData?.coinsAlreadyEarnedBefore && (
+                  <Text style={[styles.coinsAlreadyEarnedText, { fontSize: isDesktop ? 14 : 12 }]}>
+                    (Coins were already earned previously)
+                  </Text>
+                )}
+
+                <Text style={[styles.notificationSentText, { fontSize: isDesktop ? 16 : 14 }]}>
+                  Your attorney has been notified of your progress.
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.backToTasksButton}
+                  onPress={() => onNavigate('actions')}
+                >
+                  <Text style={[styles.backToTasksButtonText, { fontSize: isDesktop ? 18 : 16 }]}>
+                    Back to Tasks
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -555,6 +608,78 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  celebrationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  celebrationCard: {
+    backgroundColor: 'rgba(26, 26, 26, 0.95)',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    alignItems: 'center',
+    maxWidth: 500,
+  },
+  celebrationEmoji: {
+    fontSize: 72,
+    marginBottom: 16,
+  },
+  celebrationTitle: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  celebrationSubtitle: {
+    color: '#CCCCCC',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  celebrationTaskName: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  coinsEarnedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  coinsEarnedEmoji: {
+    fontSize: 32,
+  },
+  coinsEarnedText: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  coinsAlreadyEarnedText: {
+    color: '#999999',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  notificationSentText: {
+    color: '#AAAAAA',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  backToTasksButton: {
+    backgroundColor: '#27ae60',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  backToTasksButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
 
