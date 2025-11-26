@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 
@@ -9,12 +9,31 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'VerdictPath2025!';
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required');
+}
+if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+  console.error('WARNING: ADMIN_USERNAME and ADMIN_PASSWORD should be set for admin portal access');
+}
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'Too many login attempts. Please try again after 15 minutes.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.render('admin/login', { error: 'Too many login attempts. Please try again after 15 minutes.' });
+  }
+});
 
 function adminAuth(req, res, next) {
-  const token = req.signedCookies.adminToken || req.cookies.adminToken;
+  const token = req.signedCookies.adminToken;
   if (!token) {
     return res.redirect('/portal/admin');
   }
@@ -27,17 +46,24 @@ function adminAuth(req, res, next) {
     req.admin = decoded;
     next();
   } catch (error) {
-    res.clearCookie('adminToken');
+    res.clearCookie('adminToken', { path: '/portal/admin' });
     return res.redirect('/portal/admin');
   }
 }
 
 router.get('/', (req, res) => {
+  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    return res.render('admin/login', { error: 'Admin portal not configured. Please set ADMIN_USERNAME and ADMIN_PASSWORD.' });
+  }
   res.render('admin/login', { error: null });
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', adminLoginLimiter, async (req, res) => {
   try {
+    if (!ADMIN_USERNAME || !ADMIN_PASSWORD || !JWT_SECRET) {
+      return res.render('admin/login', { error: 'Admin portal not properly configured.' });
+    }
+    
     const { username, password } = req.body;
     
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
@@ -50,7 +76,9 @@ router.post('/login', async (req, res) => {
       res.cookie('adminToken', token, { 
         httpOnly: true, 
         signed: true, 
-        sameSite: 'lax',
+        sameSite: 'strict',
+        secure: IS_PRODUCTION,
+        path: '/portal/admin',
         maxAge: 8 * 60 * 60 * 1000
       });
       
@@ -65,11 +93,13 @@ router.post('/login', async (req, res) => {
 });
 
 router.get('/logout', (req, res) => {
-  res.clearCookie('adminToken');
+  res.clearCookie('adminToken', { path: '/portal/admin' });
   res.redirect('/portal/admin');
 });
 
-router.get('/dashboard', adminAuth, async (req, res) => {
+router.use(adminAuth);
+
+router.get('/dashboard', async (req, res) => {
   try {
     const statsResult = await pool.query(`
       SELECT 
@@ -126,7 +156,7 @@ router.get('/dashboard', adminAuth, async (req, res) => {
   }
 });
 
-router.get('/users', adminAuth, async (req, res) => {
+router.get('/users', async (req, res) => {
   try {
     const userType = req.query.type || 'all';
     const page = parseInt(req.query.page) || 1;
@@ -251,7 +281,7 @@ router.get('/users', adminAuth, async (req, res) => {
   }
 });
 
-router.get('/user/:type/:id', adminAuth, async (req, res) => {
+router.get('/user/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
     let user, stats, subUsers, clients, activities;
@@ -399,7 +429,7 @@ router.get('/user/:type/:id', adminAuth, async (req, res) => {
   }
 });
 
-router.post('/user/:type/:id/toggle', adminAuth, async (req, res) => {
+router.post('/user/:type/:id/toggle', async (req, res) => {
   try {
     const { type, id } = req.params;
     let table;
@@ -428,7 +458,7 @@ router.post('/user/:type/:id/toggle', adminAuth, async (req, res) => {
   }
 });
 
-router.get('/activity', adminAuth, async (req, res) => {
+router.get('/activity', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
@@ -559,7 +589,7 @@ router.get('/activity', adminAuth, async (req, res) => {
   }
 });
 
-router.get('/audit', adminAuth, async (req, res) => {
+router.get('/audit', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
