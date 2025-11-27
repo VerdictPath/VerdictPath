@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Test - VerdictPath Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <button class="mobile-menu-toggle" onclick="toggleSidebar()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    
+    <%- include('partials/sidebar', { currentPage: 'sms-test' }) %>
+    
+    <main class="admin-main">
+      <div class="page-header">
+        <h1 class="page-title">SMS Service Test</h1>
+        <p class="page-subtitle">Test all Twilio SMS functionality</p>
+      </div>
+      
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">Service Status</h2>
+          </div>
+          <div class="card-content">
+            <div class="status-grid">
+              <div class="status-item">
+                <span class="status-label">Account SID:</span>
+                <span class="status-value <%= smsStatus.credentials.accountSid.includes('✅') ? 'status-ok' : 'status-error' %>">
+                  <%= smsStatus.credentials.accountSid %>
+                </span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Auth Token:</span>
+                <span class="status-value <%= smsStatus.credentials.authToken.includes('✅') ? 'status-ok' : 'status-error' %>">
+                  <%= smsStatus.credentials.authToken %>
+                </span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Phone Number:</span>
+                <span class="status-value <%= smsStatus.credentials.phoneNumber.includes('✅') ? 'status-ok' : 'status-error' %>">
+                  <%= smsStatus.credentials.phoneNumber %>
+                </span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Overall Status:</span>
+                <span class="status-value <%= smsStatus.ready ? 'status-ok' : 'status-error' %>">
+                  <%= smsStatus.ready ? '✅ Ready' : '❌ Not Ready' %>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">Send Test SMS</h2>
+          </div>
+          <div class="card-content">
+            <form action="/portal/admin/sms-test/send" method="POST" class="test-form">
+              <div class="form-group">
+                <label class="form-label" for="phoneNumber">Phone Number</label>
+                <input 
+                  type="tel" 
+                  id="phoneNumber" 
+                  name="phoneNumber" 
+                  class="form-input" 
+                  placeholder="+1234567890" 
+                  value="<%= typeof testedPhone !== 'undefined' ? testedPhone : '' %>"
+                  required
+                >
+                <small style="color: var(--text-muted); margin-top: 5px; display: block;">
+                  Include country code (e.g., +1 for US)
+                </small>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" for="testType">Test Type</label>
+                <select id="testType" name="testType" class="form-input">
+                  <option value="basic" <%= typeof testType !== 'undefined' && testType === 'basic' ? 'selected' : '' %>>Basic Test SMS</option>
+                  <option value="credentials" <%= typeof testType !== 'undefined' && testType === 'credentials' ? 'selected' : '' %>>Credential SMS (Law Firm User)</option>
+                  <option value="password_change" <%= typeof testType !== 'undefined' && testType === 'password_change' ? 'selected' : '' %>>Password Change Alert</option>
+                  <option value="notification" <%= typeof testType !== 'undefined' && testType === 'notification' ? 'selected' : '' %>>General Notification</option>
+                  <option value="task_reminder" <%= typeof testType !== 'undefined' && testType === 'task_reminder' ? 'selected' : '' %>>Task Reminder</option>
+                  <option value="connection_request" <%= typeof testType !== 'undefined' && testType === 'connection_request' ? 'selected' : '' %>>Connection Request</option>
+                  <option value="account_creation" <%= typeof testType !== 'undefined' && testType === 'account_creation' ? 'selected' : '' %>>Account Creation Welcome</option>
+                </select>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                Send Test SMS
+              </button>
+            </form>
+            
+            <% if (testResult) { %>
+              <div class="test-result" style="margin-top: 20px;">
+                <div class="alert <%= testResult.success ? 'alert-success' : 'alert-error' %>">
+                  <strong><%= testResult.success ? '✅ SUCCESS' : '❌ FAILED' %></strong>
+                  <% if (testResult.messageSid) { %>
+                    <p style="margin-top: 10px;">Message SID: <code><%= testResult.messageSid %></code></p>
+                  <% } %>
+                  <% if (testResult.error) { %>
+                    <p style="margin-top: 10px;">Error: <%= testResult.error %></p>
+                  <% } %>
+                  <% if (testResult.errorCode) { %>
+                    <p>Twilio Error Code: <%= testResult.errorCode %></p>
+                  <% } %>
+                  <p style="margin-top: 10px; color: var(--text-muted); font-size: 12px;">
+                    Check console logs for detailed output
+                  </p>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="dashboard-card" style="margin-top: 20px;">
+        <div class="card-header">
+          <h2 class="card-title">SMS Types Reference</h2>
+        </div>
+        <div class="card-content">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>When Used</th>
+                  <th>Controller/Service</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Credential SMS</strong></td>
+                  <td>When a law firm or medical provider creates a new user with temporary credentials</td>
+                  <td>lawfirmUserController, medicalProviderUserController</td>
+                </tr>
+                <tr>
+                  <td><strong>Password Change</strong></td>
+                  <td>After user successfully changes their password (first login or regular change)</td>
+                  <td>changePasswordController</td>
+                </tr>
+                <tr>
+                  <td><strong>Notification</strong></td>
+                  <td>Urgent notifications and chat messages requiring immediate attention</td>
+                  <td>notificationsController, chatController</td>
+                </tr>
+                <tr>
+                  <td><strong>Task Reminder</strong></td>
+                  <td>Automated hourly job sends reminders for tasks due within 24 hours</td>
+                  <td>taskReminderService (runs every hour)</td>
+                </tr>
+                <tr>
+                  <td><strong>Connection Request</strong></td>
+                  <td>When a law firm or medical provider requests to connect with a user</td>
+                  <td>connectionsController</td>
+                </tr>
+                <tr>
+                  <td><strong>Account Creation</strong></td>
+                  <td>Welcome message when individual user registers with a phone number</td>
+                  <td>authController</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div class="dashboard-card" style="margin-top: 20px;">
+        <div class="card-header">
+          <h2 class="card-title">HIPAA Compliance Notes</h2>
+        </div>
+        <div class="card-content">
+          <ul style="color: var(--text-secondary); line-height: 1.8;">
+            <li><strong>Phone Number Redaction:</strong> All phone numbers are logged as <code>****1234</code> (last 4 digits only)</li>
+            <li><strong>Error Sanitization:</strong> Twilio error messages are cleaned to remove any embedded phone numbers</li>
+            <li><strong>Opt-in Required:</strong> SMS notifications require explicit user consent (<code>sms_notifications_enabled</code> must be true)</li>
+            <li><strong>Encrypted Storage:</strong> Phone numbers are stored encrypted using AES-256-GCM in the database</li>
+            <li><strong>Unsubscribe:</strong> All SMS messages include "Reply STOP to unsubscribe" per TCPA requirements</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script src="/js/admin.js"></script>
+  
+  <style>
+    .status-grid {
+      display: grid;
+      gap: 15px;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .status-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    
+    .status-value {
+      font-family: monospace;
+      font-size: 14px;
+    }
+    
+    .status-ok {
+      color: #22c55e;
+    }
+    
+    .status-error {
+      color: #ef4444;
+    }
+    
+    .test-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .alert-success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+    
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+    
+    code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .status-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+    }
+  </style>
+</body>
+</html>

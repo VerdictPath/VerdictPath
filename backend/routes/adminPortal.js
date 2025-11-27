@@ -652,4 +652,116 @@ router.get('/audit', async (req, res) => {
   }
 });
 
+// SMS Test Routes
+const smsService = require('../services/smsService');
+const emailService = require('../services/emailService');
+
+router.get('/sms-test', async (req, res) => {
+  const smsStatus = smsService.getSmsServiceStatus();
+  
+  res.render('admin/sms-test', {
+    currentPage: 'sms-test',
+    smsStatus,
+    testResult: null
+  });
+});
+
+router.post('/sms-test/send', async (req, res) => {
+  const { phoneNumber, testType } = req.body;
+  const smsStatus = smsService.getSmsServiceStatus();
+  
+  if (!phoneNumber) {
+    return res.render('admin/sms-test', {
+      currentPage: 'sms-test',
+      smsStatus,
+      testResult: { success: false, error: 'Phone number is required' }
+    });
+  }
+  
+  let result;
+  const testData = {
+    firstName: 'Test',
+    lastName: 'User',
+    email: 'test@example.com'
+  };
+  
+  try {
+    switch (testType) {
+      case 'basic':
+        result = await smsService.sendTestSMS(phoneNumber);
+        break;
+      case 'credentials':
+        result = await smsService.sendCredentialSMS(phoneNumber, testData, 'TempPass123!', 'lawfirm');
+        break;
+      case 'password_change':
+        result = await smsService.sendPasswordChangeSMS(phoneNumber, 'Test User');
+        break;
+      case 'notification':
+        result = await smsService.sendNotificationSMS(
+          phoneNumber, 
+          'test_notification', 
+          'Test Notification', 
+          'This is a test notification from Verdict Path admin panel.',
+          'high'
+        );
+        break;
+      case 'task_reminder':
+        result = await smsService.sendTaskReminderSMS(
+          phoneNumber, 
+          'Complete Document Review', 
+          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          'Test Law Firm'
+        );
+        break;
+      case 'connection_request':
+        result = await smsService.sendConnectionRequestSMS(phoneNumber, 'Test Law Firm', 'law_firm');
+        break;
+      case 'account_creation':
+        result = await smsService.sendAccountCreationSMS(phoneNumber, 'Test');
+        break;
+      default:
+        result = await smsService.sendTestSMS(phoneNumber);
+    }
+  } catch (error) {
+    result = { success: false, error: error.message };
+  }
+  
+  res.render('admin/sms-test', {
+    currentPage: 'sms-test',
+    smsStatus,
+    testResult: result,
+    testedPhone: phoneNumber,
+    testType
+  });
+});
+
+router.get('/services-status', async (req, res) => {
+  const smsStatus = smsService.getSmsServiceStatus();
+  
+  let emailStatus = {
+    configured: false,
+    host: null,
+    user: null
+  };
+  
+  try {
+    const hasSmtpHost = !!process.env.SMTP_HOST;
+    const hasSmtpUser = !!process.env.SMTP_USER;
+    const hasSmtpPass = !!process.env.SMTP_PASSWORD;
+    
+    emailStatus = {
+      configured: hasSmtpHost && hasSmtpUser && hasSmtpPass,
+      host: hasSmtpHost ? process.env.SMTP_HOST : 'Not configured',
+      user: hasSmtpUser ? process.env.SMTP_USER : 'Not configured'
+    };
+  } catch (error) {
+    console.error('Error checking email status:', error);
+  }
+  
+  res.json({
+    sms: smsStatus,
+    email: emailStatus
+  });
+});
+
 module.exports = router;

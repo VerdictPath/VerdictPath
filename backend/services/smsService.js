@@ -1,6 +1,7 @@
 const twilio = require('twilio');
 
 let twilioClient = null;
+let twilioInitialized = false;
 
 /**
  * Redact phone number for HIPAA-compliant logging
@@ -51,18 +52,76 @@ function sanitizeTwilioError(error) {
   return sanitizedMessage;
 }
 
+/**
+ * Log SMS operation with detailed console output
+ */
+function logSmsOperation(operation, status, details) {
+  const timestamp = new Date().toISOString();
+  const statusEmoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : '⚠️';
+  const statusText = status === 'success' ? 'SUCCESS' : status === 'failed' ? 'FAILED' : 'WARNING';
+  
+  console.log('');
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(`${statusEmoji} SMS SERVICE - ${operation.toUpperCase()}`);
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(`📅 Timestamp: ${timestamp}`);
+  console.log(`📊 Status: ${statusText}`);
+  
+  if (details.recipient) {
+    console.log(`📱 Recipient: ${details.recipient} (HIPAA redacted)`);
+  }
+  if (details.messageSid) {
+    console.log(`🆔 Message SID: ${details.messageSid}`);
+  }
+  if (details.error) {
+    console.log(`❗ Error: ${details.error}`);
+  }
+  if (details.twilioErrorCode) {
+    console.log(`🔢 Twilio Error Code: ${details.twilioErrorCode}`);
+  }
+  if (details.additionalInfo) {
+    console.log(`📝 Info: ${details.additionalInfo}`);
+  }
+  
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log('');
+}
+
 function initializeTwilio() {
+  if (twilioInitialized) {
+    return twilioClient;
+  }
+  
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-    console.warn('⚠️ Twilio credentials not configured. SMS notifications will be disabled.');
+    logSmsOperation('initialization', 'warning', {
+      error: 'Twilio credentials not configured. SMS notifications will be disabled.',
+      additionalInfo: 'Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables'
+    });
+    twilioInitialized = true;
+    return null;
+  }
+  
+  if (!process.env.TWILIO_PHONE_NUMBER) {
+    logSmsOperation('initialization', 'warning', {
+      error: 'Twilio phone number not configured.',
+      additionalInfo: 'Set TWILIO_PHONE_NUMBER environment variable'
+    });
+    twilioInitialized = true;
     return null;
   }
   
   try {
     twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    console.log('✅ Twilio SMS service initialized');
+    twilioInitialized = true;
+    logSmsOperation('initialization', 'success', {
+      additionalInfo: `From number: ${redactPhoneNumber(process.env.TWILIO_PHONE_NUMBER)}`
+    });
     return twilioClient;
   } catch (error) {
-    console.error('❌ Failed to initialize Twilio:', error);
+    logSmsOperation('initialization', 'failed', {
+      error: error.message
+    });
+    twilioInitialized = true;
     return null;
   }
 }
@@ -73,6 +132,10 @@ async function sendCredentialSMS(toPhoneNumber, userData, temporaryPassword, use
   }
   
   if (!twilioClient) {
+    logSmsOperation('send_credentials', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured. Please configure Twilio credentials.'
+    });
     return { 
       success: false, 
       error: 'SMS service not configured. Please configure Twilio credentials.' 
@@ -80,6 +143,9 @@ async function sendCredentialSMS(toPhoneNumber, userData, temporaryPassword, use
   }
   
   if (!toPhoneNumber) {
+    logSmsOperation('send_credentials', 'failed', {
+      error: 'No phone number provided'
+    });
     return { 
       success: false, 
       error: 'No phone number provided' 
@@ -116,11 +182,19 @@ Never share this password.`;
     
     const result = await Promise.race([sendSMSPromise, timeoutPromise]);
     
-    console.log(`✅ Credential SMS sent to ${redactPhoneNumber(toPhoneNumber)}:`, result.sid);
+    logSmsOperation('send_credentials', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `User: ${userData.firstName} ${userData.lastName}, Type: ${userType}`
+    });
     return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send credential SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('send_credentials', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code
+    });
     return { success: false, error: sanitizedError };
   }
 }
@@ -130,8 +204,19 @@ async function sendPasswordChangeSMS(toPhoneNumber, userName) {
     twilioClient = initializeTwilio();
   }
   
-  if (!twilioClient || !toPhoneNumber) {
-    return { success: false };
+  if (!twilioClient) {
+    logSmsOperation('password_change', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured'
+    });
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('password_change', 'failed', {
+      error: 'No phone number provided'
+    });
+    return { success: false, error: 'No phone number provided' };
   }
   
   const message = `Verdict Path Security Alert
@@ -143,17 +228,25 @@ Your password has been successfully changed.
 If you did not make this change, contact your administrator immediately.`;
 
   try {
-    await twilioClient.messages.create({
+    const result = await twilioClient.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,
       to: toPhoneNumber
     });
     
-    console.log(`✅ Password change SMS sent to ${redactPhoneNumber(toPhoneNumber)}`);
-    return { success: true };
+    logSmsOperation('password_change', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `User: ${userName}`
+    });
+    return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send password change SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('password_change', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code
+    });
     return { success: false, error: sanitizedError };
   }
 }
@@ -163,7 +256,20 @@ async function sendNotificationSMS(toPhoneNumber, notificationType, title, body,
     twilioClient = initializeTwilio();
   }
   
-  if (!twilioClient || !toPhoneNumber) {
+  if (!twilioClient) {
+    logSmsOperation('notification', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured',
+      additionalInfo: `Type: ${notificationType}, Priority: ${priority}`
+    });
+    return { success: false, error: 'SMS service not configured or no phone number' };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('notification', 'failed', {
+      error: 'No phone number provided',
+      additionalInfo: `Type: ${notificationType}, Priority: ${priority}`
+    });
     return { success: false, error: 'SMS service not configured or no phone number' };
   }
   
@@ -184,11 +290,20 @@ Reply STOP to unsubscribe from SMS notifications.`;
       to: toPhoneNumber
     });
     
-    console.log(`✅ Notification SMS sent to ${redactPhoneNumber(toPhoneNumber)} (Type: ${notificationType}):`, result.sid);
+    logSmsOperation('notification', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `Type: ${notificationType}, Priority: ${priority}, Title: ${title.substring(0, 50)}...`
+    });
     return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send notification SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('notification', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code,
+      additionalInfo: `Type: ${notificationType}, Priority: ${priority}`
+    });
     return { success: false, error: sanitizedError };
   }
 }
@@ -198,8 +313,20 @@ async function sendTaskReminderSMS(toPhoneNumber, taskTitle, dueDate, lawFirmNam
     twilioClient = initializeTwilio();
   }
   
-  if (!twilioClient || !toPhoneNumber) {
-    return { success: false };
+  if (!twilioClient) {
+    logSmsOperation('task_reminder', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured'
+    });
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('task_reminder', 'failed', {
+      error: 'No phone number provided',
+      additionalInfo: `Task: ${taskTitle}`
+    });
+    return { success: false, error: 'No phone number provided' };
   }
   
   const dueDateFormatted = new Date(dueDate).toLocaleDateString('en-US', {
@@ -225,11 +352,20 @@ Reply STOP to unsubscribe.`;
       to: toPhoneNumber
     });
     
-    console.log(`✅ Task reminder SMS sent to ${redactPhoneNumber(toPhoneNumber)}:`, result.sid);
+    logSmsOperation('task_reminder', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `Task: ${taskTitle}, Due: ${dueDateFormatted}, Firm: ${lawFirmName}`
+    });
     return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send task reminder SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('task_reminder', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code,
+      additionalInfo: `Task: ${taskTitle}`
+    });
     return { success: false, error: sanitizedError };
   }
 }
@@ -239,8 +375,20 @@ async function sendConnectionRequestSMS(toPhoneNumber, senderName, senderType) {
     twilioClient = initializeTwilio();
   }
   
-  if (!twilioClient || !toPhoneNumber) {
-    return { success: false };
+  if (!twilioClient) {
+    logSmsOperation('connection_request', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured'
+    });
+    return { success: false, error: 'SMS service not configured' };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('connection_request', 'failed', {
+      error: 'No phone number provided',
+      additionalInfo: `Sender: ${senderName}, Type: ${senderType}`
+    });
+    return { success: false, error: 'No phone number provided' };
   }
   
   const entityType = senderType === 'law_firm' ? 'Law Firm' : 'Medical Provider';
@@ -260,11 +408,20 @@ Reply STOP to unsubscribe.`;
       to: toPhoneNumber
     });
     
-    console.log(`✅ Connection request SMS sent to ${redactPhoneNumber(toPhoneNumber)}:`, result.sid);
+    logSmsOperation('connection_request', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `Sender: ${senderName}, Type: ${entityType}`
+    });
     return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send connection request SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('connection_request', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code,
+      additionalInfo: `Sender: ${senderName}, Type: ${senderType}`
+    });
     return { success: false, error: sanitizedError };
   }
 }
@@ -274,7 +431,19 @@ async function sendAccountCreationSMS(toPhoneNumber, firstName) {
     twilioClient = initializeTwilio();
   }
   
-  if (!twilioClient || !toPhoneNumber) {
+  if (!twilioClient) {
+    logSmsOperation('account_creation', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured'
+    });
+    return { success: false, error: 'SMS service not configured or no phone number' };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('account_creation', 'failed', {
+      error: 'No phone number provided',
+      additionalInfo: `User: ${firstName}`
+    });
     return { success: false, error: 'SMS service not configured or no phone number' };
   }
   
@@ -295,13 +464,109 @@ Reply STOP to unsubscribe.`;
       to: toPhoneNumber
     });
     
-    console.log(`✅ Account creation SMS sent to ${redactPhoneNumber(toPhoneNumber)}:`, result.sid);
+    logSmsOperation('account_creation', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: `User: ${firstName}`
+    });
     return { success: true, messageSid: result.sid };
   } catch (error) {
     const sanitizedError = sanitizeTwilioError(error);
-    console.error(`❌ Failed to send account creation SMS to ${redactPhoneNumber(toPhoneNumber)}:`, sanitizedError);
+    logSmsOperation('account_creation', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code,
+      additionalInfo: `User: ${firstName}`
+    });
     return { success: false, error: sanitizedError };
   }
+}
+
+/**
+ * Test SMS service - send a test message to verify configuration
+ * @param {string} toPhoneNumber - Phone number to send test to
+ * @returns {Object} - Result with success status and details
+ */
+async function sendTestSMS(toPhoneNumber) {
+  if (!twilioClient) {
+    twilioClient = initializeTwilio();
+  }
+  
+  if (!twilioClient) {
+    logSmsOperation('test_sms', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: 'SMS service not configured. Check Twilio credentials.'
+    });
+    return { 
+      success: false, 
+      error: 'SMS service not configured. Check TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER environment variables.' 
+    };
+  }
+  
+  if (!toPhoneNumber) {
+    logSmsOperation('test_sms', 'failed', {
+      error: 'No phone number provided for test'
+    });
+    return { success: false, error: 'No phone number provided for test' };
+  }
+  
+  const message = `🧪 Verdict Path SMS Test
+
+This is a test message from Verdict Path to verify SMS functionality.
+
+Timestamp: ${new Date().toISOString()}
+
+If you received this message, SMS is working correctly!`;
+
+  try {
+    const result = await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: toPhoneNumber
+    });
+    
+    logSmsOperation('test_sms', 'success', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      messageSid: result.sid,
+      additionalInfo: 'Test SMS sent successfully - Twilio is configured correctly!'
+    });
+    return { 
+      success: true, 
+      messageSid: result.sid,
+      message: 'Test SMS sent successfully!'
+    };
+  } catch (error) {
+    const sanitizedError = sanitizeTwilioError(error);
+    logSmsOperation('test_sms', 'failed', {
+      recipient: redactPhoneNumber(toPhoneNumber),
+      error: sanitizedError,
+      twilioErrorCode: error.code
+    });
+    return { success: false, error: sanitizedError, errorCode: error.code };
+  }
+}
+
+/**
+ * Get SMS service status
+ * @returns {Object} - Status of SMS service configuration
+ */
+function getSmsServiceStatus() {
+  const hasAccountSid = !!process.env.TWILIO_ACCOUNT_SID;
+  const hasAuthToken = !!process.env.TWILIO_AUTH_TOKEN;
+  const hasPhoneNumber = !!process.env.TWILIO_PHONE_NUMBER;
+  const isConfigured = hasAccountSid && hasAuthToken && hasPhoneNumber;
+  const isInitialized = twilioInitialized && !!twilioClient;
+  
+  return {
+    configured: isConfigured,
+    initialized: isInitialized,
+    credentials: {
+      accountSid: hasAccountSid ? '✅ Set' : '❌ Missing',
+      authToken: hasAuthToken ? '✅ Set' : '❌ Missing',
+      phoneNumber: hasPhoneNumber ? `✅ ${redactPhoneNumber(process.env.TWILIO_PHONE_NUMBER)}` : '❌ Missing'
+    },
+    ready: isConfigured && isInitialized
+  };
 }
 
 module.exports = {
@@ -310,5 +575,8 @@ module.exports = {
   sendNotificationSMS,
   sendTaskReminderSMS,
   sendConnectionRequestSMS,
-  sendAccountCreationSMS
+  sendAccountCreationSMS,
+  sendTestSMS,
+  getSmsServiceStatus,
+  initializeTwilio
 };
