@@ -1,8 +1,10 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { theme } from '../styles/theme';
+
+const { height: screenHeight } = Dimensions.get('window');
 
 const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
@@ -25,13 +27,19 @@ const LandingScreen = ({ onNavigate }) => {
         shouldPlay
       />
       
-      <View style={styles.overlay}>
-        {/* Verdict Path Logo - Top Left Corner */}
-        <Image 
-          source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+      <ScrollView 
+        style={styles.overlay}
+        contentContainerStyle={styles.overlayContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Verdict Path Logo */}
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('../../attached_assets/Nautical Pirate Logo with Foggy Sea Background_1762830868803.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
@@ -102,7 +110,7 @@ const LandingScreen = ({ onNavigate }) => {
           <Text style={styles.featureItem}>Evidence Vault</Text>
         </View>
       </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -122,22 +130,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     zIndex: 1,
   },
+  overlayContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
   logo: {
-    position: 'absolute',
-    top: 20,
-    left: '50%',
-    marginLeft: -100,
-    width: 200,
-    height: 200,
-    zIndex: 10,
+    width: 180,
+    height: 180,
   },
   buttonContainer: {
     paddingHorizontal: 20,
-    marginTop: 240,
+    marginTop: 10,
   },
   featuresContainer: {
     padding: 30,
-    marginTop: 30,
+    marginTop: 20,
   },
   featureTitle: {
     fontSize: 18,
