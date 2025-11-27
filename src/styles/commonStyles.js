@@ -5,6 +5,7 @@ export const commonStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    overflow: 'visible',
   },
   container: {
     flex: 1,
@@ -17,27 +18,27 @@ export const commonStyles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: theme.colors.primary,
-    padding: 18,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   buttonText: {
     color: theme.colors.white,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   secondaryButton: {
     backgroundColor: theme.colors.surface,
-    padding: 18,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: theme.colors.primary,
   },
   secondaryButtonText: {
     color: theme.colors.primary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   input: {
