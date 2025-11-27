@@ -2,7 +2,7 @@ const { pool } = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 const documentAccessService = require('../services/documentAccessService');
 const encryptionService = require('../services/encryption');
-const s3Service = require('../services/s3Service');
+const storageService = require('../services/storageService');
 const { validateFileContent } = require('../middleware/fileUpload');
 const path = require('path');
 const fs = require('fs');
@@ -201,7 +201,7 @@ const uploadMedicalRecord = async (req, res) => {
 
     const { recordType, facilityName, providerName, dateOfService, description } = req.body;
 
-    const s3Result = await s3Service.uploadFileMultipart(
+    const uploadResult = await storageService.uploadFile(
       file.buffer,
       userId,
       'medical-records',
@@ -212,8 +212,8 @@ const uploadMedicalRecord = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO medical_records 
        (user_id, record_type, facility_name, provider_name, date_of_service, description, 
-        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
        RETURNING *`,
       [
         userId,
@@ -222,14 +222,15 @@ const uploadMedicalRecord = async (req, res) => {
         providerName || null,
         dateOfService || null,
         description || null,
-        s3Result.location,
+        uploadResult.location,
         file.originalname,
-        s3Result.fileSize,
-        s3Result.mimeType,
-        s3Result.bucket,
-        s3Result.key,
-        s3Result.region,
-        s3Result.etag
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType
       ]
     );
 
@@ -240,10 +241,10 @@ const uploadMedicalRecord = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: s3Result.fileSize,
+        fileSize: uploadResult.fileSize,
         recordType: recordType || 'Medical Record',
-        s3Key: s3Result.key,
-        s3Bucket: s3Result.bucket
+        storageKey: uploadResult.key,
+        storageType: uploadResult.storageType
       },
       ipAddress: req.ip
     });
@@ -268,9 +269,10 @@ const uploadMedicalRecord = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Medical record uploaded successfully to S3',
+      message: `Medical record uploaded successfully (${uploadResult.storageType})`,
       document: result.rows[0],
-      s3Location: s3Result.location,
+      location: uploadResult.location,
+      storageType: uploadResult.storageType,
       substageCompleted: true
     });
   } catch (error) {
@@ -320,7 +322,7 @@ const uploadMedicalBill = async (req, res) => {
       description 
     } = req.body;
 
-    const s3Result = await s3Service.uploadFileMultipart(
+    const uploadResult = await storageService.uploadFile(
       file.buffer,
       userId,
       'medical-bills',
@@ -331,8 +333,8 @@ const uploadMedicalBill = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO medical_billing 
        (user_id, billing_type, facility_name, bill_number, date_of_service, bill_date,
-        total_amount, amount_due, description, document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
+        total_amount, amount_due, description, document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
        RETURNING *`,
       [
         userId,
@@ -344,14 +346,15 @@ const uploadMedicalBill = async (req, res) => {
         totalAmount || 0,
         totalAmount || 0,
         description || null,
-        s3Result.location,
+        uploadResult.location,
         file.originalname,
-        s3Result.fileSize,
-        s3Result.mimeType,
-        s3Result.bucket,
-        s3Result.key,
-        s3Result.region,
-        s3Result.etag
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType
       ]
     );
 
@@ -362,10 +365,10 @@ const uploadMedicalBill = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: s3Result.fileSize,
+        fileSize: uploadResult.fileSize,
         billingType: billingType || 'Medical Bill',
-        s3Key: s3Result.key,
-        s3Bucket: s3Result.bucket
+        storageKey: uploadResult.key,
+        storageType: uploadResult.storageType
       },
       ipAddress: req.ip
     });
@@ -390,9 +393,10 @@ const uploadMedicalBill = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Medical bill uploaded successfully to S3',
+      message: `Medical bill uploaded successfully (${uploadResult.storageType})`,
       document: result.rows[0],
-      s3Location: s3Result.location,
+      location: uploadResult.location,
+      storageType: uploadResult.storageType,
       substageCompleted: true
     });
   } catch (error) {
@@ -440,7 +444,7 @@ const uploadEvidence = async (req, res) => {
       location 
     } = req.body;
 
-    const s3Result = await s3Service.uploadFileMultipart(
+    const uploadResult = await storageService.uploadFile(
       file.buffer,
       userId,
       'evidence',
@@ -457,8 +461,8 @@ const uploadEvidence = async (req, res) => {
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
-        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
        RETURNING *`,
       [
         userId,
@@ -470,14 +474,15 @@ const uploadEvidence = async (req, res) => {
         titleEncrypted,
         descriptionEncrypted,
         locationEncrypted,
-        s3Result.location,
+        uploadResult.location,
         file.originalname,
-        s3Result.fileSize,
-        s3Result.mimeType,
-        s3Result.bucket,
-        s3Result.key,
-        s3Result.region,
-        s3Result.etag
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType
       ]
     );
 
@@ -488,10 +493,10 @@ const uploadEvidence = async (req, res) => {
       resourceId: result.rows[0].id,
       details: {
         fileName: file.originalname,
-        fileSize: s3Result.fileSize,
+        fileSize: uploadResult.fileSize,
         evidenceType: evidenceType || 'Document',
-        s3Key: s3Result.key,
-        s3Bucket: s3Result.bucket
+        storageKey: uploadResult.key,
+        storageType: uploadResult.storageType
       },
       ipAddress: req.ip
     });
@@ -516,9 +521,10 @@ const uploadEvidence = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Evidence uploaded successfully to S3',
+      message: `Evidence uploaded successfully (${uploadResult.storageType})`,
       document: result.rows[0],
-      s3Location: s3Result.location,
+      location: uploadResult.location,
+      storageType: uploadResult.storageType,
       substageCompleted: true
     });
   } catch (error) {
@@ -719,10 +725,11 @@ const downloadFile = async (req, res) => {
       return res.sendFile(filePath);
     }
 
-    const presignedUrlData = await s3Service.generatePresignedDownloadUrl(
+    const presignedUrlData = await storageService.generateDownloadUrl(
       document.s3_key,
       300,
-      document.file_name
+      document.file_name,
+      document.storage_type || 's3'
     );
 
     await Promise.all([
