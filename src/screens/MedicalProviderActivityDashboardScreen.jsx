@@ -6,12 +6,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
-
-const { width } = Dimensions.get('window');
 
 const MedicalProviderActivityDashboardScreen = ({ 
   user, 
@@ -19,9 +17,13 @@ const MedicalProviderActivityDashboardScreen = ({
   onNavigateToUser,
   onNavigateToHIPAAReport 
 }) => {
+  const { width } = useWindowDimensions();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('today');
+
+  const isCompact = width < 500;
+  const cardWidth = isCompact ? '100%' : (width - 56) / 2;
 
   useEffect(() => {
     loadActivitySummary();
@@ -30,20 +32,21 @@ const MedicalProviderActivityDashboardScreen = ({
   const loadActivitySummary = async () => {
     try {
       setLoading(true);
+      console.log('[MedicalActivityDashboard] Loading summary with token:', user?.token ? 'Present' : 'Missing');
       
       const dateFilters = getDateFilters(timeFilter);
       const queryString = new URLSearchParams(dateFilters).toString();
+      const url = `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`;
+      console.log('[MedicalActivityDashboard] API URL:', url);
       
-      const response = await apiRequest(
-        `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${user.token}`,
-          },
-        }
-      );
+      const response = await apiRequest(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
 
+      console.log('[MedicalActivityDashboard] Summary loaded successfully:', response);
       setSummary(response.summary);
     } catch (error) {
       console.error('[MedicalActivityDashboard] Load error:', error);
@@ -87,11 +90,11 @@ const MedicalProviderActivityDashboardScreen = ({
   };
 
   const sensitivityColors = {
-    low: '#4CAF50',
-    medium: '#FF9800',
-    high: '#f44336',
-    critical: '#D32F2F',
-    unknown: '#9E9E9E',
+    low: medicalProviderTheme.colors.healthy,
+    medium: medicalProviderTheme.colors.warning,
+    high: medicalProviderTheme.colors.critical,
+    critical: medicalProviderTheme.colors.emergencyRed,
+    unknown: medicalProviderTheme.colors.mediumGray,
   };
 
   const actionIcons = {
@@ -140,7 +143,7 @@ const MedicalProviderActivityDashboardScreen = ({
           <View style={styles.headerPlaceholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={medicalProviderTheme.colors.clinicalTeal} />
           <Text style={styles.loadingText}>Loading activity data...</Text>
         </View>
       </View>
@@ -176,20 +179,18 @@ const MedicalProviderActivityDashboardScreen = ({
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Total Activities Card */}
         <View style={styles.totalCard}>
           <Text style={styles.totalLabel}>Total Activities</Text>
           <Text style={styles.totalValue}>{summary?.totalActivities || 0}</Text>
         </View>
 
-        {/* HIPAA Risk Assessment */}
         {summary?.activitiesBySensitivity && summary.activitiesBySensitivity.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🔒 HIPAA Risk Assessment</Text>
-            <View style={styles.sensitivityGrid}>
+            <View style={[styles.cardGrid, isCompact && styles.cardGridCompact]}>
               {summary.activitiesBySensitivity.map((item, index) => (
-                <View key={item.sensitivity_level || index} style={styles.sensitivityCard}>
-                  <View style={[styles.sensitivityDot, { backgroundColor: sensitivityColors[item.sensitivity_level] || '#9E9E9E' }]} />
+                <View key={item.sensitivity_level || index} style={[styles.sensitivityCard, { width: cardWidth }]}>
+                  <View style={[styles.sensitivityDot, { backgroundColor: sensitivityColors[item.sensitivity_level] || sensitivityColors.unknown }]} />
                   <Text style={styles.sensitivityCount}>{item.count || 0}</Text>
                   <Text style={styles.sensitivityLabel}>
                     {item.sensitivity_level === 'low' ? 'Low Risk' :
@@ -203,7 +204,6 @@ const MedicalProviderActivityDashboardScreen = ({
           </View>
         )}
 
-        {/* Critical Actions Alert */}
         {summary?.criticalActions && summary.criticalActions.length > 0 && (
           <View style={styles.alertCard}>
             <Text style={styles.alertIcon}>⚠️</Text>
@@ -217,42 +217,49 @@ const MedicalProviderActivityDashboardScreen = ({
           </View>
         )}
 
-        {/* Activity by Category */}
         {summary?.activitiesByCategory && summary.activitiesByCategory.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>📁 Activity by Category</Text>
-            <View style={styles.categoryGrid}>
+            <View style={[styles.cardGrid, isCompact && styles.cardGridCompact]}>
               {summary.activitiesByCategory.map((category, index) => (
-                <View key={category.action_category || index} style={styles.categoryCard}>
-                  <Text style={styles.categoryIcon}>{categoryIcons[category.action_category] || '📊'}</Text>
+                <View key={category.action_category || index} style={[styles.categoryCard, { width: cardWidth }]}>
+                  <Text style={styles.categoryIcon}>
+                    {categoryIcons[category.action_category] || '📊'}
+                  </Text>
                   <Text style={styles.categoryCount}>{category.count || 0}</Text>
-                  <Text style={styles.categoryName}>{(category.action_category || 'unknown').replace(/_/g, ' ')}</Text>
+                  <Text style={styles.categoryName}>
+                    {(category.action_category || 'Other').replace(/_/g, ' ')}
+                  </Text>
+                  {category.unique_users && (
+                    <Text style={styles.categoryUsers}>
+                      {category.unique_users} user{category.unique_users > 1 ? 's' : ''}
+                    </Text>
+                  )}
                 </View>
               ))}
             </View>
           </View>
         )}
 
-        {/* Most Active Staff */}
         {summary?.topUsers && summary.topUsers.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>👥 Most Active Staff</Text>
-            {summary.topUsers.map((userActivity, index) => (
+            <Text style={styles.sectionTitle}>👥 Top Staff Activity</Text>
+            {summary.topUsers.slice(0, 5).map((staffMember, index) => (
               <TouchableOpacity
-                key={userActivity.user_id || index}
+                key={staffMember.user_id || index}
                 style={styles.staffCard}
-                onPress={() => onNavigateToUser && onNavigateToUser(userActivity.user_id)}
+                onPress={() => onNavigateToUser && onNavigateToUser(staffMember.user_id)}
               >
                 <View style={[styles.rankBadge, index === 0 && styles.rankBadgeFirst]}>
                   <Text style={styles.rankText}>#{index + 1}</Text>
                 </View>
                 <View style={styles.staffInfo}>
-                  <Text style={styles.staffName}>{userActivity.user_name || 'Unknown'}</Text>
-                  <Text style={styles.staffEmail}>{userActivity.user_email}</Text>
-                  <Text style={styles.staffRole}>{(userActivity.user_role || 'staff').replace(/_/g, ' ')}</Text>
+                  <Text style={styles.staffName}>{staffMember.user_name || 'Unknown User'}</Text>
+                  <Text style={styles.staffEmail}>{staffMember.user_email || ''}</Text>
+                  <Text style={styles.staffRole}>{staffMember.user_role || 'Staff'}</Text>
                 </View>
                 <View style={styles.activityBadge}>
-                  <Text style={styles.activityCount}>{userActivity.count}</Text>
+                  <Text style={styles.activityCount}>{staffMember.count || 0}</Text>
                   <Text style={styles.activityLabel}>actions</Text>
                 </View>
               </TouchableOpacity>
@@ -260,28 +267,30 @@ const MedicalProviderActivityDashboardScreen = ({
           </View>
         )}
 
-        {/* Recent Activity */}
         {summary?.recentActivities && summary.recentActivities.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🕐 Recent Activity</Text>
             {summary.recentActivities.slice(0, 10).map((activity, index) => (
               <View key={activity.id || index} style={styles.activityCard}>
                 <View style={styles.activityIconContainer}>
-                  <Text style={styles.activityIcon}>{actionIcons[activity.action] || '📊'}</Text>
-                  {activity.sensitivity_level && (
-                    <View style={[styles.sensitivityIndicator, { backgroundColor: sensitivityColors[activity.sensitivity_level] }]} />
-                  )}
+                  <Text style={styles.activityIcon}>
+                    {actionIcons[activity.action] || '📋'}
+                  </Text>
+                  <View style={[
+                    styles.sensitivityIndicator,
+                    { backgroundColor: sensitivityColors[activity.sensitivity_level] || sensitivityColors.unknown }
+                  ]} />
                 </View>
                 <View style={styles.activityInfo}>
                   <View style={styles.activityHeader}>
-                    <Text style={styles.activityUserName}>{activity.user_name}</Text>
-                    {activity.user_role && (
-                      <Text style={styles.activityUserRole}>({activity.user_role})</Text>
-                    )}
+                    <Text style={styles.activityUserName}>{activity.user_name || 'Unknown'}</Text>
+                    <Text style={styles.activityUserRole}>({activity.user_role || 'staff'})</Text>
                   </View>
-                  <Text style={styles.activityAction}>{(activity.action || 'activity').replace(/_/g, ' ')}</Text>
+                  <Text style={styles.activityAction}>
+                    {(activity.action || '').replace(/_/g, ' ')}
+                  </Text>
                   {activity.target_name && (
-                    <Text style={styles.activityTarget}>→ {activity.target_name}</Text>
+                    <Text style={styles.activityTarget}>{activity.target_name}</Text>
                   )}
                   {activity.patient_name && (
                     <Text style={styles.activityPatient}>Patient: {activity.patient_name}</Text>
@@ -290,7 +299,7 @@ const MedicalProviderActivityDashboardScreen = ({
                 <View style={styles.activityMeta}>
                   <Text style={styles.activityTime}>{getTimeAgo(activity.created_at)}</Text>
                   {activity.audit_required && (
-                    <Text style={styles.auditBadge}>⚠️ Audit</Text>
+                    <Text style={styles.auditBadge}>AUDIT</Text>
                   )}
                 </View>
               </View>
@@ -298,7 +307,7 @@ const MedicalProviderActivityDashboardScreen = ({
           </View>
         )}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
@@ -307,45 +316,44 @@ const MedicalProviderActivityDashboardScreen = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5dc',
+    backgroundColor: medicalProviderTheme.colors.offWhite,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary,
-    paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#d4a574',
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.lg,
+    backgroundColor: medicalProviderTheme.colors.deepTeal,
+    ...medicalProviderTheme.shadows.header,
   },
   backButton: {
-    padding: 8,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    paddingHorizontal: medicalProviderTheme.spacing.md,
   },
   backText: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontSize: 16,
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: '700',
+    color: medicalProviderTheme.colors.clinicalWhite,
   },
   headerPlaceholder: {
     width: 60,
   },
   hipaaButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    borderRadius: medicalProviderTheme.borderRadius.small,
   },
   hipaaButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
+    color: medicalProviderTheme.colors.clinicalWhite,
+    fontSize: 14,
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,
@@ -353,120 +361,116 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    color: '#666',
+    marginTop: medicalProviderTheme.spacing.lg,
     fontSize: 16,
+    color: medicalProviderTheme.colors.darkGray,
   },
   filterContainer: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#fff',
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.md,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    gap: 8,
+    borderBottomColor: medicalProviderTheme.colors.lightGray,
+    gap: medicalProviderTheme.spacing.sm,
   },
   filterChip: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    borderRadius: medicalProviderTheme.borderRadius.round,
+    backgroundColor: medicalProviderTheme.colors.lightGray,
   },
   filterChipActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
   },
   filterChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
   },
   filterChipTextActive: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: medicalProviderTheme.spacing.lg,
   },
   totalCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.large,
+    padding: medicalProviderTheme.spacing.xxl,
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#d4a574',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: medicalProviderTheme.spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: medicalProviderTheme.colors.clinicalTeal,
+    ...medicalProviderTheme.shadows.card,
   },
   totalLabel: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    color: medicalProviderTheme.colors.darkGray,
+    marginBottom: medicalProviderTheme.spacing.sm,
   },
   totalValue: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.deepTeal,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: medicalProviderTheme.spacing.xxl,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    fontWeight: '700',
+    color: medicalProviderTheme.colors.charcoal,
+    marginBottom: medicalProviderTheme.spacing.md,
   },
-  sensitivityGrid: {
+  cardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: medicalProviderTheme.spacing.md,
+  },
+  cardGridCompact: {
+    flexDirection: 'column',
   },
   sensitivityCard: {
-    width: (width - 56) / 2,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    ...medicalProviderTheme.shadows.card,
   },
   sensitivityDot: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: medicalProviderTheme.spacing.sm,
   },
   sensitivityCount: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    color: medicalProviderTheme.colors.charcoal,
+    marginBottom: medicalProviderTheme.spacing.xs,
   },
   sensitivityLabel: {
     fontSize: 12,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
     fontWeight: '600',
   },
   alertCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff3e0',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#ff9800',
+    backgroundColor: '#FFF8E1',
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
+    marginBottom: medicalProviderTheme.spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: medicalProviderTheme.colors.warning,
   },
   alertIcon: {
     fontSize: 28,
-    marginRight: 12,
+    marginRight: medicalProviderTheme.spacing.md,
   },
   alertContent: {
     flex: 1,
@@ -474,78 +478,75 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#e65100',
+    color: '#E65100',
     marginBottom: 2,
   },
   alertDescription: {
     fontSize: 13,
-    color: '#bf360c',
+    color: '#BF360C',
   },
   alertButton: {
-    backgroundColor: '#ff9800',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: medicalProviderTheme.colors.warning,
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    borderRadius: medicalProviderTheme.borderRadius.small,
   },
   alertButtonText: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontWeight: '700',
     fontSize: 14,
   },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
   categoryCard: {
-    width: (width - 56) / 2,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    ...medicalProviderTheme.shadows.card,
   },
   categoryIcon: {
     fontSize: 32,
-    marginBottom: 8,
+    marginBottom: medicalProviderTheme.spacing.sm,
   },
   categoryCount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: 4,
+    color: medicalProviderTheme.colors.clinicalTeal,
+    marginBottom: medicalProviderTheme.spacing.xs,
   },
   categoryName: {
     fontSize: 12,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
     textTransform: 'capitalize',
     textAlign: 'center',
+  },
+  categoryUsers: {
+    fontSize: 11,
+    color: medicalProviderTheme.colors.mediumGray,
+    marginTop: medicalProviderTheme.spacing.xs,
   },
   staffCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
+    marginBottom: medicalProviderTheme.spacing.md,
+    ...medicalProviderTheme.shadows.card,
   },
   rankBadge: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: medicalProviderTheme.spacing.md,
   },
   rankBadgeFirst: {
-    backgroundColor: '#d4a574',
+    backgroundColor: medicalProviderTheme.colors.deepTeal,
   },
   rankText: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -555,17 +556,17 @@ const styles = StyleSheet.create({
   staffName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: medicalProviderTheme.colors.charcoal,
     marginBottom: 2,
   },
   staffEmail: {
     fontSize: 13,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
     marginBottom: 2,
   },
   staffRole: {
     fontSize: 12,
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.clinicalTeal,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
@@ -575,25 +576,24 @@ const styles = StyleSheet.create({
   activityCount: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.clinicalTeal,
   },
   activityLabel: {
     fontSize: 11,
-    color: '#999',
+    color: medicalProviderTheme.colors.mediumGray,
   },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.md,
+    marginBottom: medicalProviderTheme.spacing.md,
+    ...medicalProviderTheme.shadows.card,
   },
   activityIconContainer: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: medicalProviderTheme.spacing.md,
   },
   activityIcon: {
     fontSize: 24,
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: medicalProviderTheme.colors.clinicalWhite,
   },
   activityInfo: {
     flex: 1,
@@ -614,33 +614,33 @@ const styles = StyleSheet.create({
   activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: medicalProviderTheme.spacing.xs,
   },
   activityUserName: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#333',
-    marginRight: 6,
+    color: medicalProviderTheme.colors.charcoal,
+    marginRight: medicalProviderTheme.spacing.sm,
   },
   activityUserRole: {
     fontSize: 12,
-    color: '#999',
+    color: medicalProviderTheme.colors.mediumGray,
     fontStyle: 'italic',
   },
   activityAction: {
     fontSize: 14,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
     textTransform: 'capitalize',
     marginBottom: 2,
   },
   activityTarget: {
     fontSize: 13,
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.clinicalTeal,
     fontWeight: '600',
   },
   activityPatient: {
     fontSize: 12,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
     fontStyle: 'italic',
     marginTop: 2,
   },
@@ -649,17 +649,18 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
+    color: medicalProviderTheme.colors.mediumGray,
+    marginBottom: medicalProviderTheme.spacing.xs,
   },
   auditBadge: {
     fontSize: 10,
-    backgroundColor: '#fff3e0',
-    color: '#ff9800',
-    paddingHorizontal: 6,
+    backgroundColor: '#FFF3E0',
+    color: medicalProviderTheme.colors.warning,
+    paddingHorizontal: medicalProviderTheme.spacing.sm,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: medicalProviderTheme.borderRadius.small,
     fontWeight: '700',
+    overflow: 'hidden',
   },
 });
 
