@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { checkLawFirmLimit, checkMedicalProviderLimit } = require('../utils/subscriptionLimits');
+const { sendConnectionRequestEmail, sendConnectionAcceptedEmail } = require('../services/emailService');
 
 const getMyConnections = async (req, res) => {
   try {
@@ -154,6 +155,29 @@ const updateLawFirm = async (req, res) => {
         VALUES ($1, $2, NOW())`,
         [lawFirm.id, userId]
       );
+
+      // Send email notification to law firm about new client connection (non-blocking)
+      if (lawFirm.email) {
+        try {
+          const clientResult = await db.query(
+            'SELECT first_name, last_name FROM users WHERE id = $1',
+            [userId]
+          );
+          const clientName = clientResult.rows[0] 
+            ? `${clientResult.rows[0].first_name} ${clientResult.rows[0].last_name}` 
+            : 'New Client';
+          
+          sendConnectionRequestEmail(
+            lawFirm.email,
+            lawFirm.firm_name || 'Law Firm',
+            clientName,
+            'client',
+            'accepted'
+          ).catch(err => console.error('Error sending connection notification email:', err));
+        } catch (emailError) {
+          console.error('Error preparing connection email:', emailError);
+        }
+      }
     }
 
     res.json({
@@ -240,6 +264,29 @@ const addMedicalProvider = async (req, res) => {
       VALUES ($1, $2, NOW())`,
       [provider.id, userId]
     );
+
+    // Send email notification to medical provider about new patient connection (non-blocking)
+    if (provider.email) {
+      try {
+        const patientResult = await db.query(
+          'SELECT first_name, last_name FROM users WHERE id = $1',
+          [userId]
+        );
+        const patientName = patientResult.rows[0] 
+          ? `${patientResult.rows[0].first_name} ${patientResult.rows[0].last_name}` 
+          : 'New Patient';
+        
+        sendConnectionRequestEmail(
+          provider.email,
+          provider.provider_name || 'Medical Provider',
+          patientName,
+          'patient',
+          'accepted'
+        ).catch(err => console.error('Error sending provider connection email:', err));
+      } catch (emailError) {
+        console.error('Error preparing provider connection email:', emailError);
+      }
+    }
 
     res.json({
       success: true,
