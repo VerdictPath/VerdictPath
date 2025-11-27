@@ -286,9 +286,10 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
               {patients.filter(patient => {
                 if (!searchQuery.trim()) return true;
                 const query = searchQuery.toLowerCase();
-                const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
-                const email = patient.email.toLowerCase();
-                return fullName.includes(query) || email.includes(query);
+                const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
+                const displayName = (patient.displayName || '').toLowerCase();
+                const email = (patient.email || '').toLowerCase();
+                return fullName.includes(query) || displayName.includes(query) || email.includes(query);
               }).map(patient => (
                 <TouchableOpacity
                   key={patient.id}
@@ -300,7 +301,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
                 >
                   <View style={styles.patientInfo}>
                     <Text style={styles.patientName}>
-                      {patient.first_name} {patient.last_name}
+                      {patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`}
                     </Text>
                     <Text style={styles.patientEmail}>{patient.email}</Text>
                   </View>
