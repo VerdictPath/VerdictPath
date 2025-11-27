@@ -1,5 +1,3 @@
-// Medical Provider Activity Dashboard - PostgreSQL adapted
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,13 +5,10 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import MedicalGlassCard from '../components/MedicalGlassCard';
-import MedicalStatCard from '../components/MedicalStatCard';
-import { medicalProviderTheme } from '../styles/medicalProviderTheme';
+import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const { width } = Dimensions.get('window');
@@ -39,9 +34,6 @@ const MedicalProviderActivityDashboardScreen = ({
       const dateFilters = getDateFilters(timeFilter);
       const queryString = new URLSearchParams(dateFilters).toString();
       
-      console.log('[MedicalActivityDashboard] Loading summary with token:', user.token ? 'Present' : 'Missing');
-      console.log('[MedicalActivityDashboard] API URL:', `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`);
-      
       const response = await apiRequest(
         `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`,
         {
@@ -52,7 +44,6 @@ const MedicalProviderActivityDashboardScreen = ({
         }
       );
 
-      console.log('[MedicalActivityDashboard] Summary loaded successfully:', response);
       setSummary(response.summary);
     } catch (error) {
       console.error('[MedicalActivityDashboard] Load error:', error);
@@ -95,294 +86,14 @@ const MedicalProviderActivityDashboardScreen = ({
     security: '🔒',
   };
 
-  const categoryColors = {
-    user: medicalProviderTheme.colors.accentTeal,
-    patient: medicalProviderTheme.colors.medicalTeal,
-    medical_record: medicalProviderTheme.colors.medicalBlue,
-    document: medicalProviderTheme.colors.prescriptionGreen,
-    financial: medicalProviderTheme.colors.healthy,
-    communication: medicalProviderTheme.colors.accentTeal,
-    treatment: medicalProviderTheme.colors.prescriptionGreen,
-    compliance: medicalProviderTheme.colors.stable,
-    settings: medicalProviderTheme.colors.darkGray,
-    security: medicalProviderTheme.colors.emergencyRed,
-  };
-
   const sensitivityColors = {
-    low: medicalProviderTheme.colors.healthy,
-    medium: medicalProviderTheme.colors.stable,
-    high: medicalProviderTheme.colors.warning,
-    critical: medicalProviderTheme.colors.critical,
-    unknown: medicalProviderTheme.colors.darkGray,
+    low: '#4CAF50',
+    medium: '#FF9800',
+    high: '#f44336',
+    critical: '#D32F2F',
+    unknown: '#9E9E9E',
   };
 
-  if (loading || !summary) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[
-            medicalProviderTheme.colors.clinicalWhite,
-            medicalProviderTheme.colors.lightGray,
-          ]}
-          style={styles.background}
-        />
-        <Text style={styles.loadingText}>Loading activity data...</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[
-          medicalProviderTheme.colors.clinicalWhite,
-          medicalProviderTheme.colors.lightGray,
-          medicalProviderTheme.colors.clinicalWhite,
-        ]}
-        style={styles.background}
-      />
-
-      <LinearGradient
-        colors={[
-          medicalProviderTheme.colors.deepTeal,
-          medicalProviderTheme.colors.clinicalTeal,
-        ]}
-        style={styles.headerGradient}
-      >
-        <BlurView intensity={10} style={styles.header}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={onBack}>
-              <Text style={styles.backText}>← Back</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Activity Analytics</Text>
-            <TouchableOpacity onPress={onNavigateToHIPAAReport}>
-              <Text style={styles.hipaaButton}>🔒 HIPAA</Text>
-            </TouchableOpacity>
-          </View>
-        </BlurView>
-      </LinearGradient>
-
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {['today', 'week', 'month', 'all'].map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                styles.filterChip,
-                timeFilter === filter && styles.filterChipActive,
-              ]}
-              onPress={() => setTimeFilter(filter)}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  timeFilter === filter && styles.filterChipTextActive,
-                ]}
-              >
-                {filter === 'today' ? 'Today' : 
-                 filter === 'week' ? 'Last 7 Days' :
-                 filter === 'month' ? 'Last 30 Days' : 'All Time'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <MedicalGlassCard variant="white" style={styles.totalCard}>
-          <Text style={styles.totalLabel}>Total Activities</Text>
-          <Text style={styles.totalValue}>
-            {summary.totalActivities.toLocaleString()}
-          </Text>
-        </MedicalGlassCard>
-
-        {summary.activitiesBySensitivity && summary.activitiesBySensitivity.length > 0 && (
-          <View style={styles.sensitivitySection}>
-            <Text style={styles.sectionTitle}>HIPAA Risk Assessment</Text>
-            <View style={styles.sensitivityGrid}>
-              {summary.activitiesBySensitivity.map((item) => (
-                <SensitivityCard
-                  key={item.sensitivity_level || 'unknown'}
-                  level={item.sensitivity_level || 'unknown'}
-                  count={item.count || 0}
-                  color={sensitivityColors[item.sensitivity_level] || medicalProviderTheme.colors.darkGray}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {summary.criticalActions && summary.criticalActions.length > 0 && (
-          <MedicalGlassCard variant="mint" style={styles.alertCard}>
-            <View style={styles.alertHeader}>
-              <Text style={styles.alertIcon}>⚠️</Text>
-              <Text style={styles.alertTitle}>
-                {summary.criticalActions.length} Critical Actions Requiring Audit
-              </Text>
-            </View>
-            <Text style={styles.alertDescription}>
-              High-sensitivity activities that require administrative review for HIPAA compliance.
-            </Text>
-            <TouchableOpacity 
-              style={styles.alertButton}
-              onPress={onNavigateToHIPAAReport}
-            >
-              <Text style={styles.alertButtonText}>View HIPAA Report →</Text>
-            </TouchableOpacity>
-          </MedicalGlassCard>
-        )}
-
-        {summary.activitiesByCategory && summary.activitiesByCategory.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Activity Breakdown</Text>
-            <View style={styles.categoryGrid}>
-              {summary.activitiesByCategory.map((category) => (
-                <CategoryCard
-                  key={category.action_category || 'unknown'}
-                  name={category.action_category || 'unknown'}
-                  count={category.count || 0}
-                  icon={categoryIcons[category.action_category] || '📊'}
-                  color={categoryColors[category.action_category] || medicalProviderTheme.colors.accentTeal}
-                />
-              ))}
-            </View>
-          </>
-        )}
-
-        {summary.topUsers && summary.topUsers.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Most Active Staff</Text>
-            </View>
-            {summary.topUsers.map((userActivity, index) => (
-              <StaffActivityCard
-                key={userActivity.user_id || index}
-                userId={userActivity.user_id}
-                userName={userActivity.user_name}
-                userEmail={userActivity.user_email}
-                userRole={userActivity.user_role}
-                activityCount={userActivity.count}
-                rank={index + 1}
-                onPress={() => onNavigateToUser && onNavigateToUser(userActivity.user_id)}
-              />
-            ))}
-          </>
-        )}
-
-        {summary.recentActivities && summary.recentActivities.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Recent Activity</Text>
-            {summary.recentActivities.slice(0, 10).map((activity, index) => (
-              <ActivityLogCard key={activity.id || index} activity={activity} />
-            ))}
-          </>
-        )}
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
-    </View>
-  );
-};
-
-const SensitivityCard = ({ level, count, color }) => {
-  const labels = {
-    low: 'Low Risk',
-    medium: 'Medium Risk',
-    high: 'High Risk',
-    critical: 'Critical',
-    unknown: 'Data Missing',
-  };
-
-  const icons = {
-    low: '✓',
-    medium: '◐',
-    high: '⚠',
-    critical: '⚠️',
-    unknown: '❓',
-  };
-
-  return (
-    <MedicalGlassCard variant="white" style={styles.sensitivityCard}>
-      <View style={[styles.sensitivityIconBg, { backgroundColor: color + '30' }]}>
-        <Text style={styles.sensitivityIcon}>{icons[level]}</Text>
-      </View>
-      <Text style={[styles.sensitivityCount, { color }]}>{count}</Text>
-      <Text style={styles.sensitivityLabel}>{labels[level]}</Text>
-    </MedicalGlassCard>
-  );
-};
-
-const CategoryCard = ({ name, count, icon, color }) => (
-  <MedicalGlassCard variant="white" style={styles.categoryCard}>
-    <LinearGradient
-      colors={[color + '30', color + '10']}
-      style={styles.categoryIconBg}
-    >
-      <Text style={styles.categoryIcon}>{icon}</Text>
-    </LinearGradient>
-    <Text style={styles.categoryCount}>{count}</Text>
-    <Text style={styles.categoryName}>{name.replace(/_/g, ' ')}</Text>
-  </MedicalGlassCard>
-);
-
-const StaffActivityCard = ({ 
-  userId,
-  userName, 
-  userEmail, 
-  userRole, 
-  activityCount, 
-  rank, 
-  onPress 
-}) => {
-  const rankColors = {
-    1: medicalProviderTheme.colors.accentTeal,
-    2: medicalProviderTheme.colors.prescriptionGreen,
-    3: medicalProviderTheme.colors.medicalBlue,
-  };
-
-  const roleIcons = {
-    admin: '👑',
-    physician: '🩺',
-    nurse: '💉',
-    staff: '👤',
-    billing: '💳',
-  };
-
-  return (
-    <MedicalGlassCard variant="white" onPress={onPress} style={styles.staffActivityCard}>
-      <View style={styles.staffActivityContent}>
-        <View
-          style={[
-            styles.rankBadge,
-            { backgroundColor: rankColors[rank] || medicalProviderTheme.colors.accentTeal },
-          ]}
-        >
-          <Text style={styles.rankText}>#{rank}</Text>
-        </View>
-
-        <View style={styles.staffActivityInfo}>
-          <View style={styles.staffNameRow}>
-            <Text style={styles.staffActivityName}>{userName}</Text>
-            <Text style={styles.staffRoleIcon}>{roleIcons[userRole] || '👤'}</Text>
-          </View>
-          <Text style={styles.staffActivityEmail}>{userEmail}</Text>
-          <Text style={styles.staffRole}>{(userRole || 'staff').replace(/_/g, ' ')}</Text>
-        </View>
-
-        <View style={styles.activityCountBadge}>
-          <Text style={styles.activityCountText}>{activityCount}</Text>
-          <Text style={styles.activityCountLabel}>actions</Text>
-        </View>
-      </View>
-    </MedicalGlassCard>
-  );
-};
-
-const ActivityLogCard = ({ activity }) => {
   const actionIcons = {
     user_created: '➕',
     user_login: '🔓',
@@ -404,14 +115,6 @@ const ActivityLogCard = ({ activity }) => {
     hipaa_training_completed: '✅',
   };
 
-  const sensitivityColors = {
-    low: medicalProviderTheme.colors.healthy,
-    medium: medicalProviderTheme.colors.stable,
-    high: medicalProviderTheme.colors.warning,
-    critical: medicalProviderTheme.colors.critical,
-    unknown: medicalProviderTheme.colors.darkGray,
-  };
-
   const getTimeAgo = (timestamp) => {
     const now = new Date();
     const then = new Date(timestamp);
@@ -426,389 +129,518 @@ const ActivityLogCard = ({ activity }) => {
     return `${diffDays}d ago`;
   };
 
-  return (
-    <MedicalGlassCard variant="white" style={styles.activityLogCard}>
-      <View style={styles.activityLogContent}>
-        <View style={styles.activityIconContainer}>
-          <Text style={styles.activityIcon}>
-            {actionIcons[activity.action] || '📊'}
-          </Text>
-          {activity.sensitivity_level && (
-            <View
-              style={[
-                styles.sensitivityDot,
-                { backgroundColor: sensitivityColors[activity.sensitivity_level] },
-              ]}
-            />
-          )}
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>📊 Activity Dashboard</Text>
+          <View style={styles.headerPlaceholder} />
         </View>
-        
-        <View style={styles.activityLogInfo}>
-          <View style={styles.activityLogHeader}>
-            <Text style={styles.activityUserName}>{activity.user_name}</Text>
-            {activity.user_role && (
-              <Text style={styles.activityUserRole}>
-                ({(activity.user_role || 'staff').replace(/_/g, ' ')})
-              </Text>
-            )}
-          </View>
-          <Text style={styles.activityAction}>
-            {(activity.action || 'activity').replace(/_/g, ' ')}
-          </Text>
-          {activity.target_name && (
-            <Text style={styles.activityTarget}>→ {activity.target_name}</Text>
-          )}
-          {activity.patient_name && (
-            <Text style={styles.activityPatient}>
-              Patient: {activity.patient_name}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.activityMeta}>
-          <Text style={styles.activityTime}>{getTimeAgo(activity.created_at)}</Text>
-          {activity.audit_required && (
-            <Text style={styles.auditRequiredBadge}>⚠️ Audit</Text>
-          )}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading activity data...</Text>
         </View>
       </View>
-    </MedicalGlassCard>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>📊 Activity Dashboard</Text>
+        <TouchableOpacity onPress={onNavigateToHIPAAReport} style={styles.hipaaButton}>
+          <Text style={styles.hipaaButtonText}>🔒 HIPAA</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterContainer}>
+        {['today', 'week', 'month', 'all'].map((filter) => (
+          <TouchableOpacity
+            key={filter}
+            style={[styles.filterChip, timeFilter === filter && styles.filterChipActive]}
+            onPress={() => setTimeFilter(filter)}
+          >
+            <Text style={[styles.filterChipText, timeFilter === filter && styles.filterChipTextActive]}>
+              {filter === 'today' ? 'Today' : 
+               filter === 'week' ? '7 Days' :
+               filter === 'month' ? '30 Days' : 'All'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+        {/* Total Activities Card */}
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>Total Activities</Text>
+          <Text style={styles.totalValue}>{summary?.totalActivities || 0}</Text>
+        </View>
+
+        {/* HIPAA Risk Assessment */}
+        {summary?.activitiesBySensitivity && summary.activitiesBySensitivity.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔒 HIPAA Risk Assessment</Text>
+            <View style={styles.sensitivityGrid}>
+              {summary.activitiesBySensitivity.map((item, index) => (
+                <View key={item.sensitivity_level || index} style={styles.sensitivityCard}>
+                  <View style={[styles.sensitivityDot, { backgroundColor: sensitivityColors[item.sensitivity_level] || '#9E9E9E' }]} />
+                  <Text style={styles.sensitivityCount}>{item.count || 0}</Text>
+                  <Text style={styles.sensitivityLabel}>
+                    {item.sensitivity_level === 'low' ? 'Low Risk' :
+                     item.sensitivity_level === 'medium' ? 'Medium' :
+                     item.sensitivity_level === 'high' ? 'High Risk' :
+                     item.sensitivity_level === 'critical' ? 'Critical' : 'Unknown'}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Critical Actions Alert */}
+        {summary?.criticalActions && summary.criticalActions.length > 0 && (
+          <View style={styles.alertCard}>
+            <Text style={styles.alertIcon}>⚠️</Text>
+            <View style={styles.alertContent}>
+              <Text style={styles.alertTitle}>{summary.criticalActions.length} Critical Actions</Text>
+              <Text style={styles.alertDescription}>Require audit review for HIPAA compliance</Text>
+            </View>
+            <TouchableOpacity style={styles.alertButton} onPress={onNavigateToHIPAAReport}>
+              <Text style={styles.alertButtonText}>View →</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Activity by Category */}
+        {summary?.activitiesByCategory && summary.activitiesByCategory.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📁 Activity by Category</Text>
+            <View style={styles.categoryGrid}>
+              {summary.activitiesByCategory.map((category, index) => (
+                <View key={category.action_category || index} style={styles.categoryCard}>
+                  <Text style={styles.categoryIcon}>{categoryIcons[category.action_category] || '📊'}</Text>
+                  <Text style={styles.categoryCount}>{category.count || 0}</Text>
+                  <Text style={styles.categoryName}>{(category.action_category || 'unknown').replace(/_/g, ' ')}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Most Active Staff */}
+        {summary?.topUsers && summary.topUsers.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>👥 Most Active Staff</Text>
+            {summary.topUsers.map((userActivity, index) => (
+              <TouchableOpacity
+                key={userActivity.user_id || index}
+                style={styles.staffCard}
+                onPress={() => onNavigateToUser && onNavigateToUser(userActivity.user_id)}
+              >
+                <View style={[styles.rankBadge, index === 0 && styles.rankBadgeFirst]}>
+                  <Text style={styles.rankText}>#{index + 1}</Text>
+                </View>
+                <View style={styles.staffInfo}>
+                  <Text style={styles.staffName}>{userActivity.user_name || 'Unknown'}</Text>
+                  <Text style={styles.staffEmail}>{userActivity.user_email}</Text>
+                  <Text style={styles.staffRole}>{(userActivity.user_role || 'staff').replace(/_/g, ' ')}</Text>
+                </View>
+                <View style={styles.activityBadge}>
+                  <Text style={styles.activityCount}>{userActivity.count}</Text>
+                  <Text style={styles.activityLabel}>actions</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Recent Activity */}
+        {summary?.recentActivities && summary.recentActivities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🕐 Recent Activity</Text>
+            {summary.recentActivities.slice(0, 10).map((activity, index) => (
+              <View key={activity.id || index} style={styles.activityCard}>
+                <View style={styles.activityIconContainer}>
+                  <Text style={styles.activityIcon}>{actionIcons[activity.action] || '📊'}</Text>
+                  {activity.sensitivity_level && (
+                    <View style={[styles.sensitivityIndicator, { backgroundColor: sensitivityColors[activity.sensitivity_level] }]} />
+                  )}
+                </View>
+                <View style={styles.activityInfo}>
+                  <View style={styles.activityHeader}>
+                    <Text style={styles.activityUserName}>{activity.user_name}</Text>
+                    {activity.user_role && (
+                      <Text style={styles.activityUserRole}>({activity.user_role})</Text>
+                    )}
+                  </View>
+                  <Text style={styles.activityAction}>{(activity.action || 'activity').replace(/_/g, ' ')}</Text>
+                  {activity.target_name && (
+                    <Text style={styles.activityTarget}>→ {activity.target_name}</Text>
+                  )}
+                  {activity.patient_name && (
+                    <Text style={styles.activityPatient}>Patient: {activity.patient_name}</Text>
+                  )}
+                </View>
+                <View style={styles.activityMeta}>
+                  <Text style={styles.activityTime}>{getTimeAgo(activity.created_at)}</Text>
+                  {activity.audit_required && (
+                    <Text style={styles.auditBadge}>⚠️ Audit</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={{ height: 120 }} />
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
-    paddingBottom: 100,
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  loadingText: {
-    color: medicalProviderTheme.colors.mediumGray,
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 100,
-  },
-  headerGradient: {
-    paddingTop: 60,
+    backgroundColor: '#f5f5dc',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.primary,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: '#d4a574',
+  },
+  backButton: {
+    padding: 8,
   },
   backText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  headerPlaceholder: {
+    width: 60,
   },
   hipaaButton: {
-    color: medicalProviderTheme.colors.mintGreen,
-    fontSize: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  hipaaButtonText: {
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '700',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    color: '#666',
+    fontSize: 16,
+  },
   filterContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    flexDirection: 'row',
+    padding: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    gap: 8,
   },
   filterChip: {
-    paddingHorizontal: 20,
+    flex: 1,
     paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: medicalProviderTheme.colors.lightGray,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: medicalProviderTheme.colors.accentTeal + '30',
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
   },
   filterChipActive: {
-    backgroundColor: medicalProviderTheme.colors.accentTeal,
-    borderColor: medicalProviderTheme.colors.accentTeal,
+    backgroundColor: theme.colors.primary,
   },
   filterChipText: {
-    color: medicalProviderTheme.colors.deepTeal,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+    color: '#666',
   },
   filterChipTextActive: {
-    color: '#FFFFFF',
+    color: '#fff',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 20,
+    padding: 16,
   },
   totalCard: {
-    padding: 30,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: 25,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#d4a574',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   totalLabel: {
-    color: medicalProviderTheme.colors.mediumGray,
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 10,
+    color: '#666',
+    marginBottom: 8,
   },
   totalValue: {
-    color: medicalProviderTheme.colors.accentTeal,
     fontSize: 48,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: theme.colors.primary,
   },
-  sensitivitySection: {
-    marginBottom: 25,
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
   },
   sensitivityGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   sensitivityCard: {
-    width: (width - 55) / 2,
-    padding: 18,
+    width: (width - 56) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  sensitivityIconBg: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sensitivityIcon: {
-    fontSize: 24,
+  sensitivityDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   sensitivityCount: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 4,
   },
   sensitivityLabel: {
-    color: medicalProviderTheme.colors.darkGray,
     fontSize: 12,
+    color: '#666',
     fontWeight: '600',
-    textAlign: 'center',
   },
   alertCard: {
-    padding: 20,
-    marginBottom: 25,
-  },
-  alertHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#fff3e0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ff9800',
   },
   alertIcon: {
     fontSize: 28,
     marginRight: 12,
   },
-  alertTitle: {
+  alertContent: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    color: medicalProviderTheme.colors.deepTeal,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#e65100',
+    marginBottom: 2,
   },
   alertDescription: {
-    color: medicalProviderTheme.colors.darkGray,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 15,
+    fontSize: 13,
+    color: '#bf360c',
   },
   alertButton: {
-    backgroundColor: medicalProviderTheme.colors.accentTeal,
-    padding: 12,
-    borderRadius: 10,
-    alignItems: 'center',
+    backgroundColor: '#ff9800',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   alertButtonText: {
-    color: '#FFFFFF',
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 14,
-    fontWeight: '700',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: medicalProviderTheme.colors.deepTeal,
-    marginBottom: 15,
   },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 30,
+    gap: 12,
   },
   categoryCard: {
-    width: (width - 55) / 2,
-    padding: 18,
+    width: (width - 56) / 2,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  categoryIconBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   categoryIcon: {
-    fontSize: 28,
+    fontSize: 32,
+    marginBottom: 8,
   },
   categoryCount: {
-    color: medicalProviderTheme.colors.deepTeal,
-    fontSize: 26,
-    fontWeight: '700',
-    marginBottom: 6,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    marginBottom: 4,
   },
   categoryName: {
-    color: medicalProviderTheme.colors.mediumGray,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    color: '#666',
     textTransform: 'capitalize',
     textAlign: 'center',
   },
-  staffActivityCard: {
-    padding: 16,
-    marginBottom: 12,
-  },
-  staffActivityContent: {
+  staffCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   rankBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: 14,
+  },
+  rankBadgeFirst: {
+    backgroundColor: '#d4a574',
   },
   rankText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  staffActivityInfo: {
+  staffInfo: {
     flex: 1,
   },
-  staffNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+  staffName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 2,
   },
-  staffActivityName: {
-    color: medicalProviderTheme.colors.deepTeal,
-    fontSize: 17,
-    fontWeight: '700',
-    marginRight: 8,
-  },
-  staffRoleIcon: {
-    fontSize: 18,
-  },
-  staffActivityEmail: {
-    color: medicalProviderTheme.colors.mediumGray,
+  staffEmail: {
     fontSize: 13,
-    marginBottom: 4,
+    color: '#666',
+    marginBottom: 2,
   },
   staffRole: {
-    color: medicalProviderTheme.colors.accentTeal,
     fontSize: 12,
+    color: theme.colors.primary,
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  activityCountBadge: {
+  activityBadge: {
     alignItems: 'center',
   },
-  activityCountText: {
-    color: medicalProviderTheme.colors.accentTeal,
-    fontSize: 24,
-    fontWeight: '700',
+  activityCount: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
   },
-  activityCountLabel: {
-    color: medicalProviderTheme.colors.mediumGray,
+  activityLabel: {
     fontSize: 11,
-    fontWeight: '600',
+    color: '#999',
   },
-  activityLogCard: {
-    padding: 14,
-    marginBottom: 10,
-  },
-  activityLogContent: {
+  activityCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   activityIconContainer: {
     position: 'relative',
-    marginRight: 15,
+    marginRight: 12,
   },
   activityIcon: {
-    fontSize: 28,
+    fontSize: 24,
   },
-  sensitivityDot: {
+  sensitivityIndicator: {
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#fff',
   },
-  activityLogInfo: {
+  activityInfo: {
     flex: 1,
   },
-  activityLogHeader: {
+  activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
   activityUserName: {
-    color: medicalProviderTheme.colors.deepTeal,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#333',
     marginRight: 6,
   },
   activityUserRole: {
-    color: medicalProviderTheme.colors.mediumGray,
     fontSize: 12,
+    color: '#999',
     fontStyle: 'italic',
   },
   activityAction: {
-    color: medicalProviderTheme.colors.darkGray,
     fontSize: 14,
+    color: '#666',
     textTransform: 'capitalize',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   activityTarget: {
-    color: medicalProviderTheme.colors.accentTeal,
     fontSize: 13,
+    color: theme.colors.primary,
     fontWeight: '600',
   },
   activityPatient: {
-    color: medicalProviderTheme.colors.medicalBlue,
     fontSize: 12,
+    color: '#666',
     fontStyle: 'italic',
     marginTop: 2,
   },
@@ -816,18 +648,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   activityTime: {
-    color: medicalProviderTheme.colors.mediumGray,
     fontSize: 12,
+    color: '#999',
     marginBottom: 4,
   },
-  auditRequiredBadge: {
-    backgroundColor: medicalProviderTheme.colors.warning + '20',
-    color: medicalProviderTheme.colors.warning,
+  auditBadge: {
     fontSize: 10,
-    fontWeight: '700',
+    backgroundColor: '#fff3e0',
+    color: '#ff9800',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
+    fontWeight: '700',
   },
 });
 
