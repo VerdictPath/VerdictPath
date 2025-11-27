@@ -225,13 +225,132 @@ async function getUnreadNotificationCount(lawFirmId) {
   return parseInt(result.rows[0].count);
 }
 
+async function verifyMedicalProviderPatientRelationship(providerId, patientId) {
+  const result = await pool.query(
+    `SELECT 1 FROM medical_provider_patients 
+     WHERE medical_provider_id = $1 AND patient_id = $2 AND status = 'active'`,
+    [providerId, patientId]
+  );
+  return result.rows.length > 0;
+}
+
+async function verifyMedicalProviderConsent(providerId, patientId, documentType) {
+  const result = await pool.query(
+    `SELECT cr.id, cr.consent_type
+     FROM consent_records cr
+     LEFT JOIN consent_scope cs ON cr.id = cs.consent_id
+     WHERE cr.patient_id = $1
+       AND cr.granted_to_type = 'medical_provider'
+       AND cr.granted_to_id = $2
+       AND cr.status = 'active'
+       AND (cr.expires_at IS NULL OR cr.expires_at > NOW())
+       AND (
+         cr.consent_type = 'FULL_ACCESS' OR
+         (cr.consent_type = 'MEDICAL_RECORDS_ONLY' AND $3 = 'medical_records') OR
+         (cr.consent_type = 'BILLING_ONLY' AND $3 = 'medical_billing') OR
+         (cr.consent_type = 'CUSTOM' AND cs.data_type = $3 AND cs.can_view = TRUE)
+       )
+     LIMIT 1`,
+    [patientId, providerId, documentType]
+  );
+  
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+async function authorizeMedicalProviderDocumentAccess(providerId, patientId, documentType, documentId) {
+  const isPatient = await verifyMedicalProviderPatientRelationship(providerId, patientId);
+  
+  if (!isPatient) {
+    return {
+      authorized: false,
+      reason: 'Patient is not associated with this medical provider'
+    };
+  }
+
+  const consent = await verifyMedicalProviderConsent(providerId, patientId, documentType);
+  
+  if (!consent) {
+    return {
+      authorized: false,
+      reason: 'No active consent on file for this document type'
+    };
+  }
+
+  let tableName;
+  switch(documentType) {
+    case 'medical_records':
+      tableName = 'medical_records';
+      break;
+    case 'medical_billing':
+      tableName = 'medical_billing';
+      break;
+    case 'evidence':
+      tableName = 'evidence';
+      break;
+    default:
+      return {
+        authorized: false,
+        reason: 'Invalid document type'
+      };
+  }
+
+  const docResult = await pool.query(
+    `SELECT * FROM ${tableName} 
+     WHERE id = $1 AND user_id = $2`,
+    [documentId, patientId]
+  );
+
+  if (docResult.rows.length === 0) {
+    return {
+      authorized: false,
+      reason: 'Document not found'
+    };
+  }
+
+  return {
+    authorized: true,
+    document: docResult.rows[0],
+    consentType: consent.consent_type
+  };
+}
+
+async function logDocumentAccess(accessDetails) {
+  try {
+    await pool.query(
+      `INSERT INTO document_access_log 
+       (user_id, user_type, document_type, document_id, patient_id, 
+        action, access_reason, ip_address, user_agent, success, failure_reason)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [
+        accessDetails.userId,
+        accessDetails.userType,
+        accessDetails.documentType,
+        accessDetails.documentId,
+        accessDetails.patientId,
+        accessDetails.action || 'VIEW',
+        accessDetails.accessReason,
+        accessDetails.ipAddress,
+        accessDetails.userAgent,
+        accessDetails.success !== false,
+        accessDetails.failureReason || null
+      ]
+    );
+  } catch (error) {
+    console.error('Failed to log document access:', error);
+  }
+}
+
 module.exports = {
   authorizeLawFirmDocumentAccess,
+  authorizeMedicalProviderDocumentAccess,
   listClientDocuments,
   createDocumentNotification,
   getLawFirmNotifications,
   markNotificationAsRead,
   getUnreadNotificationCount,
   verifyLawFirmClientRelationship,
-  verifyLawFirmConsent
+  verifyLawFirmConsent,
+  verifyMedicalProviderPatientRelationship,
+  verifyMedicalProviderConsent,
+  logDocumentAccess
 };

@@ -3,20 +3,43 @@ const router = express.Router();
 const upload = require('../middleware/fileUpload');
 const uploadController = require('../controllers/uploadController');
 const { authenticateToken } = require('../middleware/auth');
+const { 
+  uploadRateLimiter, 
+  downloadRateLimiter, 
+  strictUploadRateLimiter,
+  burstProtectionLimiter 
+} = require('../middleware/uploadRateLimiter');
 
-// All upload routes require authentication
 router.use(authenticateToken);
 
-// Upload medical record
-router.post('/medical-record', upload.single('file'), uploadController.uploadMedicalRecord);
+router.post('/medical-record', 
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  upload.single('file'), 
+  uploadController.uploadMedicalRecord
+);
 
-// Upload medical bill
-router.post('/medical-bill', upload.single('file'), uploadController.uploadMedicalBill);
+router.post('/medical-bill', 
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  upload.single('file'), 
+  uploadController.uploadMedicalBill
+);
 
-// Upload evidence
-router.post('/evidence', upload.single('file'), uploadController.uploadEvidence);
+router.post('/evidence', 
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  upload.single('file'), 
+  uploadController.uploadEvidence
+);
 
-// Download file with authentication (HIPAA compliant)
-router.get('/download/:type/:fileId', uploadController.downloadFile);
+router.get('/download/:type/:fileId', 
+  burstProtectionLimiter,
+  downloadRateLimiter,
+  uploadController.downloadFile
+);
 
 module.exports = router;

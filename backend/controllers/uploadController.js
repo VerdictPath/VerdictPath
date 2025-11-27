@@ -3,6 +3,7 @@ const auditLogger = require('../services/auditLogger');
 const documentAccessService = require('../services/documentAccessService');
 const encryptionService = require('../services/encryption');
 const s3Service = require('../services/s3Service');
+const { validateFileContent } = require('../middleware/fileUpload');
 const path = require('path');
 const fs = require('fs');
 
@@ -177,6 +178,27 @@ const uploadMedicalRecord = async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      await auditLogger.log({
+        userId,
+        action: 'UPLOAD_REJECTED',
+        resourceType: 'medical_record',
+        details: {
+          fileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          rejectionReasons: validation.errors,
+          fileHash: validation.fileHash
+        },
+        ipAddress: req.ip
+      });
+      return res.status(400).json({ 
+        error: 'File validation failed',
+        details: validation.errors
+      });
+    }
+
     const { recordType, facilityName, providerName, dateOfService, description } = req.body;
 
     const s3Result = await s3Service.uploadFileMultipart(
@@ -265,6 +287,27 @@ const uploadMedicalBill = async (req, res) => {
 
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      await auditLogger.log({
+        userId,
+        action: 'UPLOAD_REJECTED',
+        resourceType: 'medical_billing',
+        details: {
+          fileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          rejectionReasons: validation.errors,
+          fileHash: validation.fileHash
+        },
+        ipAddress: req.ip
+      });
+      return res.status(400).json({ 
+        error: 'File validation failed',
+        details: validation.errors
+      });
     }
 
     const { 
@@ -366,6 +409,27 @@ const uploadEvidence = async (req, res) => {
 
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      await auditLogger.log({
+        userId,
+        action: 'UPLOAD_REJECTED',
+        resourceType: 'evidence',
+        details: {
+          fileName: file.originalname,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          rejectionReasons: validation.errors,
+          fileHash: validation.fileHash
+        },
+        ipAddress: req.ip
+      });
+      return res.status(400).json({ 
+        error: 'File validation failed',
+        details: validation.errors
+      });
     }
 
     const { 
@@ -501,14 +565,17 @@ const downloadFile = async (req, res) => {
       accessReason = 'OWNER_ACCESS';
     } 
     else if (userType === 'lawfirm' || userType === 'law_firm') {
-      const documentAccessService = require('../services/documentAccessService');
-      
       const lawFirmResult = await pool.query(
         `SELECT id FROM law_firms WHERE email = $1`,
         [req.user.email]
       );
 
       if (lawFirmResult.rows.length === 0) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId,
+          action: 'VIEW', success: false, failureReason: 'Law firm not found',
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
         return res.status(403).json({ error: 'Law firm not found' });
       }
 
@@ -520,6 +587,11 @@ const downloadFile = async (req, res) => {
       );
 
       if (docResult.rows.length === 0) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId,
+          action: 'VIEW', success: false, failureReason: 'Document not found',
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
         return res.status(404).json({ error: 'Document not found' });
       }
 
@@ -533,6 +605,11 @@ const downloadFile = async (req, res) => {
       );
 
       if (!authResult.authorized) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId, patientId,
+          action: 'VIEW', success: false, failureReason: authResult.reason,
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
         return res.status(403).json({ 
           error: 'Access denied',
           reason: authResult.reason
@@ -542,7 +619,67 @@ const downloadFile = async (req, res) => {
       document = authResult.document;
       accessReason = `LAW_FIRM_ACCESS_${authResult.consentType}`;
     }
+    else if (userType === 'medical_provider') {
+      const providerResult = await pool.query(
+        `SELECT id FROM medical_providers WHERE email = $1`,
+        [req.user.email]
+      );
+
+      if (providerResult.rows.length === 0) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId,
+          action: 'VIEW', success: false, failureReason: 'Medical provider not found',
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
+        return res.status(403).json({ error: 'Medical provider not found' });
+      }
+
+      const providerId = providerResult.rows[0].id;
+      
+      const docResult = await pool.query(
+        `SELECT user_id FROM ${documentType} WHERE id = $1`,
+        [fileId]
+      );
+
+      if (docResult.rows.length === 0) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId,
+          action: 'VIEW', success: false, failureReason: 'Document not found',
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
+        return res.status(404).json({ error: 'Document not found' });
+      }
+
+      patientId = docResult.rows[0].user_id;
+
+      const authResult = await documentAccessService.authorizeMedicalProviderDocumentAccess(
+        providerId,
+        patientId,
+        documentType,
+        fileId
+      );
+
+      if (!authResult.authorized) {
+        await documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId, patientId,
+          action: 'VIEW', success: false, failureReason: authResult.reason,
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        });
+        return res.status(403).json({ 
+          error: 'Access denied',
+          reason: authResult.reason
+        });
+      }
+
+      document = authResult.document;
+      accessReason = `MEDICAL_PROVIDER_ACCESS_${authResult.consentType}`;
+    }
     else {
+      await documentAccessService.logDocumentAccess({
+        userId, userType, documentType, documentId: fileId,
+        action: 'VIEW', success: false, failureReason: 'Invalid user type',
+        ipAddress: req.ip, userAgent: req.get('User-Agent')
+      });
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -553,7 +690,43 @@ const downloadFile = async (req, res) => {
         return res.status(404).json({ error: 'File not found on server' });
       }
 
-      await auditLogger.log({
+      await Promise.all([
+        auditLogger.log({
+          userId,
+          action: 'DOWNLOAD_FILE',
+          resourceType: documentType,
+          resourceId: fileId,
+          details: {
+            fileName: document.file_name,
+            fileType: type,
+            accessReason: accessReason,
+            patientId: patientId,
+            accessedBy: userType,
+            storageType: 'local'
+          },
+          ipAddress: req.ip,
+          targetUserId: patientId
+        }),
+        documentAccessService.logDocumentAccess({
+          userId, userType, documentType, documentId: fileId, patientId,
+          action: 'DOWNLOAD', accessReason, success: true,
+          ipAddress: req.ip, userAgent: req.get('User-Agent')
+        })
+      ]);
+
+      res.setHeader('Content-Type', document.mime_type);
+      res.setHeader('Content-Disposition', `inline; filename="${document.file_name}"`);
+      return res.sendFile(filePath);
+    }
+
+    const presignedUrlData = await s3Service.generatePresignedDownloadUrl(
+      document.s3_key,
+      300,
+      document.file_name
+    );
+
+    await Promise.all([
+      auditLogger.log({
         userId,
         action: 'DOWNLOAD_FILE',
         resourceType: documentType,
@@ -564,42 +737,20 @@ const downloadFile = async (req, res) => {
           accessReason: accessReason,
           patientId: patientId,
           accessedBy: userType,
-          storageType: 'local'
+          s3Key: document.s3_key,
+          s3Bucket: document.s3_bucket,
+          storageType: 's3',
+          presignedUrlExpiry: presignedUrlData.expiresAt
         },
         ipAddress: req.ip,
         targetUserId: patientId
-      });
-
-      res.setHeader('Content-Type', document.mime_type);
-      res.setHeader('Content-Disposition', `inline; filename="${document.file_name}"`);
-      return res.sendFile(filePath);
-    }
-
-    const presignedUrlData = await s3Service.generatePresignedDownloadUrl(
-      document.s3_key,
-      3600,
-      document.file_name
-    );
-
-    await auditLogger.log({
-      userId,
-      action: 'DOWNLOAD_FILE',
-      resourceType: documentType,
-      resourceId: fileId,
-      details: {
-        fileName: document.file_name,
-        fileType: type,
-        accessReason: accessReason,
-        patientId: patientId,
-        accessedBy: userType,
-        s3Key: document.s3_key,
-        s3Bucket: document.s3_bucket,
-        storageType: 's3',
-        presignedUrlExpiry: presignedUrlData.expiresAt
-      },
-      ipAddress: req.ip,
-      targetUserId: patientId
-    });
+      }),
+      documentAccessService.logDocumentAccess({
+        userId, userType, documentType, documentId: fileId, patientId,
+        action: 'GENERATE_PRESIGNED_URL', accessReason, success: true,
+        ipAddress: req.ip, userAgent: req.get('User-Agent')
+      })
+    ]);
 
     res.json({
       success: true,
