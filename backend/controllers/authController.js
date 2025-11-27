@@ -134,13 +134,9 @@ exports.registerClient = async (req, res) => {
       }
     }
 
-    // Send welcome email (non-blocking)
-    try {
-      sendWelcomeEmail(user.email, firstName, 'client')
-        .catch(err => console.error('Error sending welcome email:', err));
-    } catch (emailError) {
-      console.error('Error sending welcome email (non-fatal):', emailError);
-    }
+    // Send welcome email (fire-and-forget, non-blocking)
+    sendWelcomeEmail(user.email, firstName, 'client')
+      .catch(err => console.error('Error sending welcome email:', err));
     
     const token = jwt.sign(
       { id: user.id, email: user.email, userType: user.user_type },
@@ -328,13 +324,9 @@ exports.registerLawFirm = async (req, res) => {
       }
     }
 
-    // Send welcome email (non-blocking)
-    try {
-      sendWelcomeEmail(lawFirm.email, firmName, 'law_firm')
-        .catch(err => console.error('Error sending law firm welcome email:', err));
-    } catch (emailError) {
-      console.error('Error sending law firm welcome email (non-fatal):', emailError);
-    }
+    // Send welcome email (fire-and-forget, non-blocking)
+    sendWelcomeEmail(lawFirm.email, firmName, 'law_firm')
+      .catch(err => console.error('Error sending law firm welcome email:', err));
     
     res.status(201).json({
       message: 'Law firm registered successfully',
@@ -477,13 +469,9 @@ exports.registerMedicalProvider = async (req, res) => {
     // Set httpOnly cookie for secure authentication
     setAuthCookie(res, token);
 
-    // Send welcome email (non-blocking)
-    try {
-      sendWelcomeEmail(medicalProvider.email, providerName, 'medical_provider')
-        .catch(err => console.error('Error sending medical provider welcome email:', err));
-    } catch (emailError) {
-      console.error('Error sending medical provider welcome email (non-fatal):', emailError);
-    }
+    // Send welcome email (fire-and-forget, non-blocking)
+    sendWelcomeEmail(medicalProvider.email, providerName, 'medical_provider')
+      .catch(err => console.error('Error sending medical provider welcome email:', err));
 
     res.status(201).json({
       message: 'Medical provider registered successfully',

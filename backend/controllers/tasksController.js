@@ -203,30 +203,32 @@ const tasksController = {
           ]
         );
 
-        // Send email notification to client
-        try {
-          const clientResult = await pool.query(
-            'SELECT first_name, last_name, email, email_notifications_enabled FROM users WHERE id = $1',
-            [clientId]
-          );
-          const client = clientResult.rows[0];
-          
-          if (client && client.email && client.email_notifications_enabled !== false) {
-            const clientName = client.first_name && client.last_name 
-              ? `${client.first_name} ${client.last_name}` 
-              : 'Client';
+        // Send email notification to client (fire-and-forget, non-blocking)
+        (async () => {
+          try {
+            const clientResult = await pool.query(
+              'SELECT first_name, last_name, email, email_notifications_enabled FROM users WHERE id = $1',
+              [clientId]
+            );
+            const client = clientResult.rows[0];
             
-            await sendTaskAssignedEmail(client.email, clientName, {
-              title: taskTitle,
-              description: taskDescription,
-              priority: priority,
-              dueDate: dueDate,
-              coinReward: coinsReward
-            });
+            if (client && client.email && client.email_notifications_enabled !== false) {
+              const clientName = client.first_name && client.last_name 
+                ? `${client.first_name} ${client.last_name}` 
+                : 'Client';
+              
+              sendTaskAssignedEmail(client.email, clientName, {
+                title: taskTitle,
+                description: taskDescription,
+                priority: priority,
+                dueDate: dueDate,
+                coinReward: coinsReward
+              }).catch(err => console.error('Error sending task assignment email:', err));
+            }
+          } catch (emailError) {
+            console.error('Error preparing task assignment email:', emailError);
           }
-        } catch (emailError) {
-          console.error('Error sending task assignment email:', emailError);
-        }
+        })();
       }
 
       res.status(201).json({
@@ -433,26 +435,28 @@ const tasksController = {
               ]
             );
 
-            // Send email to law firm when task is completed
+            // Send email to law firm when task is completed (fire-and-forget, non-blocking)
             if (status === 'completed') {
-              try {
-                const lawFirmResult = await pool.query(
-                  'SELECT firm_name, email FROM law_firms WHERE id = $1',
-                  [task.law_firm_id]
-                );
-                const lawFirm = lawFirmResult.rows[0];
-                
-                if (lawFirm && lawFirm.email) {
-                  await sendTaskCompletedEmail(
-                    lawFirm.email, 
-                    lawFirm.firm_name || 'Law Firm',
-                    { title: task.task_title },
-                    clientName
+              (async () => {
+                try {
+                  const lawFirmResult = await pool.query(
+                    'SELECT firm_name, email FROM law_firms WHERE id = $1',
+                    [task.law_firm_id]
                   );
+                  const lawFirm = lawFirmResult.rows[0];
+                  
+                  if (lawFirm && lawFirm.email) {
+                    sendTaskCompletedEmail(
+                      lawFirm.email, 
+                      lawFirm.firm_name || 'Law Firm',
+                      { title: task.task_title },
+                      clientName
+                    ).catch(err => console.error('Error sending task completion email:', err));
+                  }
+                } catch (emailError) {
+                  console.error('Error preparing task completion email:', emailError);
                 }
-              } catch (emailError) {
-                console.error('Error sending task completion email:', emailError);
-              }
+              })();
             }
           }
         } catch (notifError) {
