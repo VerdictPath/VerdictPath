@@ -4,6 +4,7 @@ const db = require('../config/db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
+const { sendDisbursementProcessedEmail, sendLienPaymentEmail } = require('../services/emailService');
 
 // Platform fee per disbursement transaction
 const PLATFORM_FEE = 200; // $200
@@ -622,6 +623,51 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
         disbursementMethod === 'wire_transfer' ? 'process the wire transfer' :
         'arrange for client pickup'
       } to complete this disbursement.`;
+    }
+
+    // Send email notifications (non-blocking)
+    try {
+      const clientName = `${settlement.client_first_name} ${settlement.client_last_name}`;
+      
+      // Email to client about their disbursement
+      if (settlement.client_email) {
+        sendDisbursementProcessedEmail(
+          settlement.client_email,
+          clientName,
+          {
+            amount: clientAmount,
+            method: disbursementMethod,
+            referenceId: disbursementId,
+            caseName: settlement.case_name
+          },
+          'client'
+        ).catch(err => console.error('Error sending client disbursement email:', err));
+      }
+
+      // Email to medical providers about their lien payments
+      for (const transferResult of medicalTransferResults) {
+        if (transferResult.success) {
+          // Get provider email
+          const providerResult = await db.query(
+            'SELECT email, provider_name FROM medical_providers WHERE id = $1',
+            [transferResult.providerId]
+          );
+          
+          if (providerResult.rows[0]?.email) {
+            sendLienPaymentEmail(
+              providerResult.rows[0].email,
+              providerResult.rows[0].provider_name,
+              {
+                amount: transferResult.amount,
+                patientName: clientName,
+                lawFirmName: lawFirmName
+              }
+            ).catch(err => console.error('Error sending provider lien payment email:', err));
+          }
+        }
+      }
+    } catch (emailError) {
+      console.error('Error sending disbursement emails:', emailError);
     }
 
     res.json(response);

@@ -4,6 +4,7 @@ const db = require('../config/db');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
+const { sendSettlementCreatedEmail, sendLienPaymentEmail, sendIOLTADepositConfirmationEmail } = require('../services/emailService');
 
 const PLATFORM_FEE = 200;
 
@@ -137,6 +138,29 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
     ]);
 
     const settlement = result.rows[0];
+
+    // Send email notification to client (non-blocking)
+    try {
+      const clientResult = await db.query(
+        'SELECT first_name, last_name, email FROM users WHERE id = $1',
+        [clientId]
+      );
+      const client = clientResult.rows[0];
+      
+      if (client && client.email) {
+        const clientName = client.first_name && client.last_name 
+          ? `${client.first_name} ${client.last_name}` 
+          : 'Client';
+        
+        sendSettlementCreatedEmail(client.email, clientName, {
+          caseName: caseName,
+          insuranceCompanyName: insuranceCompanyName,
+          grossSettlementAmount: grossSettlementAmount
+        }).catch(err => console.error('Error sending settlement created email:', err));
+      }
+    } catch (emailError) {
+      console.error('Error sending settlement email:', emailError);
+    }
 
     res.status(201).json({
       success: true,
