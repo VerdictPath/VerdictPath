@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { checkTreasureChestCapacity, MAX_TOTAL_COINS } = require('./coinsController');
+const { sendTaskAssignedEmail, sendTaskCompletedEmail } = require('../services/emailService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -201,6 +202,31 @@ const tasksController = {
             'pending'
           ]
         );
+
+        // Send email notification to client
+        try {
+          const clientResult = await pool.query(
+            'SELECT first_name, last_name, email, email_notifications_enabled FROM users WHERE id = $1',
+            [clientId]
+          );
+          const client = clientResult.rows[0];
+          
+          if (client && client.email && client.email_notifications_enabled !== false) {
+            const clientName = client.first_name && client.last_name 
+              ? `${client.first_name} ${client.last_name}` 
+              : 'Client';
+            
+            await sendTaskAssignedEmail(client.email, clientName, {
+              title: taskTitle,
+              description: taskDescription,
+              priority: priority,
+              dueDate: dueDate,
+              coinReward: coinsReward
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending task assignment email:', emailError);
+        }
       }
 
       res.status(201).json({
@@ -406,6 +432,28 @@ const tasksController = {
                 'pending'
               ]
             );
+
+            // Send email to law firm when task is completed
+            if (status === 'completed') {
+              try {
+                const lawFirmResult = await pool.query(
+                  'SELECT firm_name, email FROM law_firms WHERE id = $1',
+                  [task.law_firm_id]
+                );
+                const lawFirm = lawFirmResult.rows[0];
+                
+                if (lawFirm && lawFirm.email) {
+                  await sendTaskCompletedEmail(
+                    lawFirm.email, 
+                    lawFirm.firm_name || 'Law Firm',
+                    { title: task.task_title },
+                    clientName
+                  );
+                }
+              } catch (emailError) {
+                console.error('Error sending task completion email:', emailError);
+              }
+            }
           }
         } catch (notifError) {
           console.error('Error sending task update notification:', notifError);
