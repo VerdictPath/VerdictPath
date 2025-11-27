@@ -12,6 +12,9 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [showClientPicker, setShowClientPicker] = useState(false);
 
+  // Determine if this is a medical provider user
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -22,18 +25,23 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
 
   const fetchClients = async () => {
     try {
-      const response = await apiRequest(API_ENDPOINTS.LAWFIRM.CLIENTS, {
+      // Use appropriate endpoint based on user type
+      const endpoint = isMedicalProvider 
+        ? API_ENDPOINTS.MEDICALPROVIDER.PATIENTS 
+        : API_ENDPOINTS.LAWFIRM.CLIENTS;
+      
+      const response = await apiRequest(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
         },
       });
 
-      if (response.clients) {
-        setClients(response.clients);
-      }
+      // Handle both response formats (clients for law firms, patients for medical providers)
+      const clientList = response.clients || response.patients || [];
+      setClients(clientList);
     } catch (error) {
-      console.error('Error fetching clients:', error);
+      console.error('Error fetching clients/patients:', error);
     }
   };
 
@@ -104,15 +112,19 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
 
       {/* Client Filter */}
       <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>Filter by Client:</Text>
+        <Text style={styles.filterLabel}>Filter by {isMedicalProvider ? 'Patient' : 'Client'}:</Text>
         <TouchableOpacity
           style={styles.clientPickerButton}
           onPress={() => setShowClientPicker(!showClientPicker)}
         >
           <Text style={styles.clientPickerText}>
             {selectedClientId 
-              ? clients.find(c => c.id === selectedClientId)?.first_name + ' ' + clients.find(c => c.id === selectedClientId)?.last_name
-              : 'All Clients'}
+              ? (() => {
+                  const selected = clients.find(c => c.id === selectedClientId);
+                  if (!selected) return isMedicalProvider ? 'All Patients' : 'All Clients';
+                  return selected.displayName || `${selected.firstName || selected.first_name || ''} ${selected.lastName || selected.last_name || ''}`.trim();
+                })()
+              : isMedicalProvider ? 'All Patients' : 'All Clients'}
           </Text>
           <Text style={styles.dropdownIcon}>{showClientPicker ? '▲' : '▼'}</Text>
         </TouchableOpacity>
@@ -133,24 +145,28 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                 }}
               >
                 <Text style={[styles.clientOptionText, !selectedClientId && styles.clientOptionTextSelected]}>
-                  All Clients
+                  {isMedicalProvider ? 'All Patients' : 'All Clients'}
                 </Text>
               </TouchableOpacity>
-              {clients.map(client => (
-                <TouchableOpacity
-                  key={client.id}
-                  style={[styles.clientOption, selectedClientId === client.id && styles.clientOptionSelected]}
-                  onPress={() => {
-                    setSelectedClientId(client.id);
-                    setShowClientPicker(false);
-                  }}
-                >
-                  <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
-                    {client.first_name} {client.last_name}
-                  </Text>
-                  {client.email && <Text style={styles.clientEmailText}>{client.email}</Text>}
-                </TouchableOpacity>
-              ))}
+              {clients.map(client => {
+                const displayName = client.displayName || 
+                  `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim();
+                return (
+                  <TouchableOpacity
+                    key={client.id}
+                    style={[styles.clientOption, selectedClientId === client.id && styles.clientOptionSelected]}
+                    onPress={() => {
+                      setSelectedClientId(client.id);
+                      setShowClientPicker(false);
+                    }}
+                  >
+                    <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
+                      {displayName || 'Unknown'}
+                    </Text>
+                    {client.email && <Text style={styles.clientEmailText}>{client.email}</Text>}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </>
         )}
