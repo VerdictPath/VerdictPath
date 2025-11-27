@@ -110,156 +110,521 @@ router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawF
  * Process settlement disbursement to client and medical providers
  * 
  * PRODUCTION IMPLEMENTATION:
- * This route will process actual Stripe payments when all Stripe Connect accounts are configured:
+ * This route processes actual Stripe payments when all Stripe Connect accounts are configured:
  * 1. Law firm must have a Stripe Customer ID with valid payment method
- * 2. Client must have a Stripe Connect account (for receiving transfers)
- * 3. Medical providers must have Stripe Connect accounts (for receiving transfers)
+ * 2. Client must have a Stripe Connect account (for receiving transfers via app)
+ * 3. Medical providers must have Stripe Connect accounts (for receiving transfers via app)
  * 
- * CURRENT STATE (Prototype):
- * Records disbursement data in database without processing actual payments.
- * Status remains 'pending' until Stripe integration is fully set up.
+ * DISBURSEMENT METHODS:
+ * - app_transfer: Uses Stripe Connect (charge law firm, then transfer), platform fee applies ($200)
+ * - check_mailed: Law firm mails a check, no platform fee
+ * - wire_transfer: Law firm wires funds, no platform fee
+ * - client_pickup: Client picks up check in person, no platform fee
+ * 
+ * WORKFLOW:
+ * 1. Settlement ID is REQUIRED - verify settlement exists and belongs to this law firm
+ * 2. Verify client matches settlement's client_id
+ * 3. Verify IOLTA deposit has been recorded
+ * 4. Verify all medical liens are paid or waived
+ * 5. For app_transfer: Create PaymentIntent to charge law firm, then process transfers
+ * 6. Process medical provider payments first
+ * 7. Process client disbursement
+ * 8. Record all transactions and update settlement status
  */
 router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
   const client = await db.pool.connect();
   
   try {
-    const { clientId, clientAmount, medicalPayments = [], platformFee = PLATFORM_FEE } = req.body;
+    const { 
+      clientId, 
+      clientAmount, 
+      medicalPayments = [], 
+      settlementId,
+      disbursementMethod = 'app_transfer',
+      checkNumber,
+      wireReference,
+      notes
+    } = req.body;
     const lawFirmId = req.user.id;
 
-    // Validation
-    if (!clientId || !clientAmount || clientAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid disbursement data' });
-    }
-
-    if (platformFee !== PLATFORM_FEE) {
-      return res.status(400).json({ error: 'Invalid platform fee' });
-    }
-
-    await client.query('BEGIN');
-
-    // Verify client belongs to this law firm and get client data
-    const clientResult = await client.query(`
-      SELECT u.id, u.email, u.first_name, u.last_name, u.stripe_account_id, u.disbursement_completed
-      FROM users u
-      JOIN law_firm_clients lfc ON u.id = lfc.client_id
-      WHERE lfc.law_firm_id = $1 AND lfc.client_id = $2
-    `, [lawFirmId, clientId]);
-
-    if (clientResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(403).json({ error: 'Access denied to this client' });
-    }
-
-    const clientData = clientResult.rows[0];
-
-    // Check if client already received final disbursement
-    if (clientData.disbursement_completed) {
-      await client.query('ROLLBACK');
+    // Validate required fields - settlementId is NOW MANDATORY
+    if (!settlementId) {
       return res.status(400).json({ 
-        error: 'Client has already received final settlement disbursement' 
+        error: 'Settlement ID is required. All disbursements must be linked to a settlement.',
+        hint: 'Use /api/settlements to create a settlement first, then use that settlementId here.'
       });
     }
 
-    // Get law firm's Stripe customer ID (for charging)
+    if (!clientId || !clientAmount || clientAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid disbursement data. Client ID and valid amount required.' });
+    }
+
+    // Validate disbursement method
+    const validMethods = ['app_transfer', 'check_mailed', 'wire_transfer', 'client_pickup'];
+    if (!validMethods.includes(disbursementMethod)) {
+      return res.status(400).json({ 
+        error: `Invalid disbursement method. Must be one of: ${validMethods.join(', ')}` 
+      });
+    }
+
+    // Determine if fee applies (only for app_transfer)
+    const feeExempt = disbursementMethod !== 'app_transfer';
+    const platformFee = feeExempt ? 0 : PLATFORM_FEE;
+
+    await client.query('BEGIN');
+
+    // MANDATORY: Verify settlement exists, belongs to law firm, and get settlement data
+    const settlementResult = await client.query(`
+      SELECT s.*, 
+        u.stripe_account_id as client_stripe_account,
+        u.first_name as client_first_name,
+        u.last_name as client_last_name,
+        u.email as client_email,
+        u.disbursement_completed as client_disbursement_completed,
+        (SELECT COUNT(*) FROM medical_liens ml WHERE ml.settlement_id = s.id AND ml.status != 'paid' AND ml.status != 'waived') as unpaid_liens
+      FROM settlements s
+      JOIN users u ON s.client_id = u.id
+      WHERE s.id = $1 AND s.law_firm_id = $2
+    `, [settlementId, lawFirmId]);
+
+    if (settlementResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Settlement not found or access denied' });
+    }
+
+    const settlement = settlementResult.rows[0];
+
+    // SECURITY: Verify clientId matches settlement's client_id (prevent cross-case payouts)
+    if (settlement.client_id !== clientId) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Client ID does not match the settlement. Cannot disburse funds to a different client.',
+        expectedClientId: settlement.client_id,
+        providedClientId: clientId
+      });
+    }
+
+    // Check if client already received final disbursement
+    if (settlement.client_disbursement_completed) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Client has already received final settlement disbursement for this case'
+      });
+    }
+
+    // Verify settlement status progression
+    const validStatuses = ['settled', 'iolta_deposited', 'liens_paid'];
+    if (!validStatuses.includes(settlement.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: `Settlement is not ready for disbursement. Current status: ${settlement.status}`,
+        requiredStatuses: validStatuses,
+        hint: settlement.status === 'pending' 
+          ? 'Mark the case as settled first using /api/settlements/:id/mark-settled'
+          : 'Complete all required steps before disbursement'
+      });
+    }
+
+    // Verify IOLTA deposit has been recorded
+    if (!settlement.iolta_deposit_amount) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'IOLTA deposit must be recorded before disbursement',
+        currentStatus: settlement.status,
+        hint: 'Record the IOLTA deposit using /api/settlements/:id/record-iolta-deposit'
+      });
+    }
+
+    // Check for unpaid liens
+    if (parseInt(settlement.unpaid_liens) > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'All medical liens must be paid or waived before disbursing to client',
+        unpaidLiens: parseInt(settlement.unpaid_liens),
+        hint: 'Pay all liens using /api/settlements/:settlementId/liens/:lienId/pay or waive them'
+      });
+    }
+
+    // Verify disbursement amount doesn't exceed available funds
+    const availableForClient = parseFloat(settlement.gross_settlement_amount) 
+      - parseFloat(settlement.attorney_fees || 0) 
+      - parseFloat(settlement.attorney_costs || 0)
+      - parseFloat(settlement.total_medical_liens || 0);
+    
+    if (parseFloat(clientAmount) > availableForClient) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Disbursement amount exceeds available funds',
+        requestedAmount: parseFloat(clientAmount),
+        availableAmount: availableForClient,
+        breakdown: {
+          grossSettlement: parseFloat(settlement.gross_settlement_amount),
+          attorneyFees: parseFloat(settlement.attorney_fees || 0),
+          attorneyCosts: parseFloat(settlement.attorney_costs || 0),
+          medicalLiens: parseFloat(settlement.total_medical_liens || 0)
+        }
+      });
+    }
+
+    // Get law firm's Stripe customer ID
     const lawFirmResult = await client.query(
-      'SELECT stripe_account_id FROM law_firms WHERE id = $1',
+      'SELECT stripe_customer_id, firm_name FROM law_firms WHERE id = $1',
       [lawFirmId]
     );
 
-    const lawFirmStripeCustomer = lawFirmResult.rows[0]?.stripe_account_id;
+    const lawFirmStripeCustomer = lawFirmResult.rows[0]?.stripe_customer_id;
+    const lawFirmName = lawFirmResult.rows[0]?.firm_name;
 
     // Calculate totals
     const medicalTotal = medicalPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
-    const totalAmount = parseFloat(clientAmount) + medicalTotal + parseFloat(platformFee);
+    const totalAmount = parseFloat(clientAmount) + medicalTotal + platformFee;
 
-    // PROTOTYPE MODE: Record disbursement without processing actual payments
-    // In production, Stripe Connect integration would handle actual fund transfers here
-    const disbursementStatus = 'pending'; // Will be 'completed' when Stripe processing is implemented
-    const paymentIntentId = null; // Will contain Stripe PaymentIntent ID in production
-    const clientTransferId = null; // Will contain Stripe Transfer ID in production
+    // Track Stripe IDs
+    let paymentIntentId = null;
+    let clientTransferId = null;
+    const medicalTransferResults = [];
+    let allTransfersSuccessful = true;
 
-    // Record disbursement in database
+    // Process Stripe payments if using app_transfer method
+    if (disbursementMethod === 'app_transfer') {
+      // Verify law firm has payment method for app transfers
+      if (!lawFirmStripeCustomer) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: 'Law firm must set up a payment method to use in-app disbursements',
+          requiresStripeSetup: true,
+          hint: 'Use /api/stripe-connect/create-setup-intent to add a payment method'
+        });
+      }
+
+      // Verify client has Stripe account
+      if (!settlement.client_stripe_account) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: 'Client does not have a Stripe account set up for receiving payments',
+          requiresStripeSetup: true,
+          clientId: clientId,
+          hint: 'Client must set up their Stripe account via /api/stripe-connect/create-account'
+        });
+      }
+
+      // Step 1: Get law firm's default payment method
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: lawFirmStripeCustomer,
+        type: 'card'
+      });
+
+      if (paymentMethods.data.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: 'Law firm has no payment method on file',
+          requiresStripeSetup: true,
+          hint: 'Add a payment method using /api/stripe-connect/create-setup-intent'
+        });
+      }
+
+      const defaultPaymentMethod = paymentMethods.data[0].id;
+
+      // Step 2: Create PaymentIntent to charge the law firm for the total disbursement
+      // This funds the platform account so transfers can be made
+      let chargeId = null; // The charge ID is needed for transfer source_transaction
+      
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(totalAmount * 100), // Total including platform fee
+          currency: 'usd',
+          customer: lawFirmStripeCustomer,
+          payment_method: defaultPaymentMethod,
+          confirm: true, // Immediately confirm and charge
+          off_session: true, // Law firm authorized this in advance
+          description: `Settlement disbursement - ${settlement.case_name || 'Case'} - ${lawFirmName}`,
+          metadata: {
+            settlement_id: settlementId.toString(),
+            law_firm_id: lawFirmId.toString(),
+            client_id: clientId.toString(),
+            client_amount: clientAmount.toString(),
+            medical_total: medicalTotal.toString(),
+            platform_fee: platformFee.toString(),
+            type: 'settlement_disbursement'
+          }
+        });
+
+        paymentIntentId = paymentIntent.id;
+        
+        // Get the charge ID from the PaymentIntent - this is required for transfers
+        // The latest_charge contains the charge ID after confirmation
+        chargeId = paymentIntent.latest_charge;
+        
+        if (!chargeId) {
+          // If latest_charge is not directly available, retrieve the PaymentIntent to get it
+          const retrievedIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+            expand: ['latest_charge']
+          });
+          chargeId = typeof retrievedIntent.latest_charge === 'string' 
+            ? retrievedIntent.latest_charge 
+            : retrievedIntent.latest_charge?.id;
+        }
+
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`💳 PAYMENT INTENT CREATED & CONFIRMED`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+        console.log(`🆔 PaymentIntent ID: ${paymentIntentId}`);
+        console.log(`🔗 Charge ID: ${chargeId}`);
+        console.log(`💵 Amount: $${totalAmount}`);
+        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
+        console.log(`📝 Settlement: ${settlement.case_name || settlementId}`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+
+      } catch (stripeError) {
+        console.error('PaymentIntent creation failed:', stripeError);
+        await client.query('ROLLBACK');
+        return res.status(500).json({ 
+          error: 'Failed to charge law firm for disbursement',
+          details: stripeError.message,
+          hint: 'Ensure law firm has a valid payment method on file'
+        });
+      }
+
+      // Step 3: Process medical provider transfers (using charge ID as source_transaction)
+      for (const payment of medicalPayments) {
+        const providerResult = await client.query(
+          'SELECT id, stripe_account_id, provider_name FROM medical_providers WHERE id = $1',
+          [payment.providerId]
+        );
+
+        if (providerResult.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: `Medical provider ${payment.providerId} not found` });
+        }
+
+        const provider = providerResult.rows[0];
+
+        if (!provider.stripe_account_id) {
+          // Skip Stripe transfer for providers without accounts
+          medicalTransferResults.push({
+            providerId: payment.providerId,
+            providerName: provider.provider_name,
+            amount: payment.amount,
+            success: false,
+            reason: 'No Stripe account',
+            requiresManualPayment: true
+          });
+          continue;
+        }
+
+        try {
+          const transfer = await stripe.transfers.create({
+            amount: Math.round(parseFloat(payment.amount) * 100),
+            currency: 'usd',
+            destination: provider.stripe_account_id,
+            description: `Medical lien payment - ${provider.provider_name}`,
+            source_transaction: chargeId, // Link to the charge (not PaymentIntent)
+            metadata: {
+              settlement_id: settlementId.toString(),
+              law_firm_id: lawFirmId.toString(),
+              client_id: clientId.toString(),
+              medical_provider_id: payment.providerId.toString(),
+              type: 'medical_lien_payment'
+            }
+          });
+
+          medicalTransferResults.push({
+            providerId: payment.providerId,
+            providerName: provider.provider_name,
+            amount: payment.amount,
+            success: true,
+            stripeTransferId: transfer.id
+          });
+        } catch (stripeError) {
+          console.error(`Stripe transfer failed for provider ${provider.provider_name}:`, stripeError);
+          medicalTransferResults.push({
+            providerId: payment.providerId,
+            providerName: provider.provider_name,
+            amount: payment.amount,
+            success: false,
+            reason: stripeError.message,
+            requiresManualPayment: true
+          });
+          allTransfersSuccessful = false;
+        }
+      }
+
+      // Step 4: Process client transfer
+      try {
+        const transfer = await stripe.transfers.create({
+          amount: Math.round(parseFloat(clientAmount) * 100),
+          currency: 'usd',
+          destination: settlement.client_stripe_account,
+          description: `Settlement disbursement - ${settlement.case_name || 'Case'}`,
+          source_transaction: chargeId, // Link to the charge (not PaymentIntent)
+          metadata: {
+            settlement_id: settlementId.toString(),
+            law_firm_id: lawFirmId.toString(),
+            client_id: clientId.toString(),
+            type: 'client_disbursement'
+          }
+        });
+        clientTransferId = transfer.id;
+      } catch (stripeError) {
+        console.error('Stripe transfer to client failed:', stripeError);
+        await client.query('ROLLBACK');
+        return res.status(500).json({ 
+          error: 'Failed to transfer funds to client',
+          details: stripeError.message
+        });
+      }
+
+      // Log platform fee collection
+      if (platformFee > 0) {
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`💰 PLATFORM FEE COLLECTED`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+        console.log(`💵 Amount: $${platformFee}`);
+        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
+        console.log(`👤 Client: ${settlement.client_first_name} ${settlement.client_last_name}`);
+        console.log(`📝 Settlement ID: ${settlementId}`);
+        console.log(`🆔 PaymentIntent: ${paymentIntentId}`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+      }
+    }
+
+    // Determine final status
+    const disbursementStatus = disbursementMethod === 'app_transfer' && clientTransferId 
+      ? 'completed' 
+      : 'pending';
+
+    // Record disbursement in database with all new fields
+    const createdBy = req.user.lawFirmUserId || null;
+    
     const disbursementResult = await client.query(`
       INSERT INTO disbursements (
         law_firm_id,
         client_id,
+        settlement_id,
         client_amount,
         medical_total,
         platform_fee,
         total_amount,
         stripe_payment_intent_id,
         stripe_transfer_id,
+        disbursement_method,
+        fee_exempt,
+        fee_exemption_reason,
+        check_number,
+        wire_reference,
+        notes,
         status,
+        created_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
       RETURNING id
     `, [
       lawFirmId,
       clientId,
+      settlementId,
       clientAmount,
       medicalTotal,
       platformFee,
       totalAmount,
       paymentIntentId,
       clientTransferId,
-      disbursementStatus
+      disbursementMethod,
+      feeExempt,
+      feeExempt ? `Non-app disbursement method: ${disbursementMethod}` : null,
+      checkNumber || null,
+      wireReference || null,
+      notes || null,
+      disbursementStatus,
+      createdBy
     ]);
 
     const disbursementId = disbursementResult.rows[0].id;
 
-    // Record medical provider payments (without Stripe transfer IDs in prototype mode)
-    for (const payment of medicalPayments) {
+    // Record medical provider payments
+    for (let i = 0; i < medicalPayments.length; i++) {
+      const payment = medicalPayments[i];
+      const transferResult = medicalTransferResults[i];
+      
       await client.query(`
         INSERT INTO disbursement_medical_payments (
           disbursement_id,
           medical_provider_id,
           amount,
           stripe_transfer_id,
+          status,
           created_at
-        ) VALUES ($1, $2, $3, $4, NOW())
-      `, [disbursementId, payment.providerId, payment.amount, null]);
+        ) VALUES ($1, $2, $3, $4, $5, NOW())
+      `, [
+        disbursementId, 
+        payment.providerId, 
+        payment.amount, 
+        transferResult?.stripeTransferId || null,
+        transferResult?.success ? 'completed' : 'pending'
+      ]);
     }
 
-    // DO NOT mark client as disbursement_completed in prototype mode
-    // This will only be set when actual funds are transferred
+    // Update user and settlement status
+    // For app_transfer: Mark as completed immediately
+    // For manual methods: Settlement status is 'disbursed' but disbursement is 'pending' until confirmed
+    if (disbursementStatus === 'completed') {
+      // In-app transfer completed - mark user as fully disbursed
+      await client.query(
+        'UPDATE users SET disbursement_completed = true WHERE id = $1',
+        [clientId]
+      );
+    }
+
+    // Update settlement status for ALL disbursement methods
+    // The settlement is "disbursed" once the disbursement is recorded, regardless of method
+    // For manual methods, the disbursement record has status 'pending' until confirmed
+    await client.query(`
+      UPDATE settlements 
+      SET status = 'disbursed', 
+          net_to_client = $2,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `, [settlementId, clientAmount]);
 
     await client.query('COMMIT');
 
-    // Build response message
-    const missingAccounts = [];
-    if (!lawFirmStripeCustomer) missingAccounts.push('law firm Stripe customer');
-    if (!clientData.stripe_account_id) missingAccounts.push('client Stripe Connect account');
-    
-    // Check medical providers
-    for (const payment of medicalPayments) {
-      const providerResult = await db.query(
-        'SELECT stripe_account_id, provider_name FROM medical_providers WHERE id = $1',
-        [payment.providerId]
-      );
-      if (!providerResult.rows[0]?.stripe_account_id) {
-        missingAccounts.push(`${providerResult.rows[0]?.provider_name || 'medical provider'} Stripe account`);
-      }
-    }
-
-    let message = 'Disbursement recorded successfully (prototype mode).';
-    if (missingAccounts.length > 0) {
-      message += ` To process actual payments, set up: ${missingAccounts.join(', ')}.`;
-    } else {
-      message += ' All Stripe accounts configured. Ready for production payment processing.';
-    }
-
-    res.json({
+    // Build response
+    const response = {
       success: true,
       disbursementId,
+      settlementId,
+      caseName: settlement.case_name,
+      clientName: `${settlement.client_first_name} ${settlement.client_last_name}`,
       clientAmount: parseFloat(clientAmount),
       medicalTotal,
-      platformFee: parseFloat(platformFee),
+      platformFee,
       totalAmount,
+      disbursementMethod,
+      feeExempt,
       status: disbursementStatus,
-      prototypeMode: true,
-      message,
-      nextSteps: missingAccounts.length > 0 ? missingAccounts : ['Implement Stripe payment processing in production']
-    });
+      stripePaymentIntentId: paymentIntentId,
+      clientTransferId,
+      medicalPaymentResults: medicalTransferResults,
+      allTransfersSuccessful
+    };
+
+    if (feeExempt) {
+      response.feeNote = `No platform fee charged for ${disbursementMethod} disbursement method`;
+    } else {
+      response.feeNote = `Platform fee of $${platformFee} collected for in-app disbursement`;
+    }
+
+    if (disbursementMethod !== 'app_transfer') {
+      response.manualProcessingRequired = true;
+      response.manualProcessingNote = `Please ${
+        disbursementMethod === 'check_mailed' ? 'mail the check' :
+        disbursementMethod === 'wire_transfer' ? 'process the wire transfer' :
+        'arrange for client pickup'
+      } to complete this disbursement.`;
+    }
+
+    res.json(response);
 
   } catch (error) {
     await client.query('ROLLBACK');
@@ -401,6 +766,84 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
   } catch (error) {
     console.error('Error fetching disbursement details:', error);
     res.status(500).json({ error: 'Failed to fetch disbursement details' });
+  }
+});
+
+/**
+ * PUT /api/disbursements/:id/confirm-manual
+ * Confirm a manual disbursement (check mailed, wire sent, or client picked up)
+ * This marks the disbursement as completed and the client as fully disbursed
+ */
+router.put('/:id/confirm-manual', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  const client = await db.pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const lawFirmId = req.user.id;
+    const { confirmationType, confirmationNotes } = req.body;
+
+    await client.query('BEGIN');
+
+    // Get the disbursement
+    const disbResult = await client.query(`
+      SELECT d.*, s.status as settlement_status
+      FROM disbursements d
+      LEFT JOIN settlements s ON d.settlement_id = s.id
+      WHERE d.id = $1 AND d.law_firm_id = $2
+    `, [id, lawFirmId]);
+
+    if (disbResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Disbursement not found' });
+    }
+
+    const disbursement = disbResult.rows[0];
+
+    if (disbursement.status === 'completed') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Disbursement is already completed' });
+    }
+
+    if (disbursement.disbursement_method === 'app_transfer') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: 'Cannot manually confirm an app transfer disbursement',
+        hint: 'App transfers are confirmed automatically via Stripe'
+      });
+    }
+
+    // Update disbursement to completed
+    await client.query(`
+      UPDATE disbursements 
+      SET status = 'completed',
+          completed_at = CURRENT_TIMESTAMP,
+          notes = COALESCE(notes || E'\n', '') || $3
+      WHERE id = $1 AND law_firm_id = $2
+    `, [id, lawFirmId, `Manual confirmation (${confirmationType || disbursement.disbursement_method}): ${confirmationNotes || 'Confirmed'}`]);
+
+    // Mark client as disbursement_completed
+    await client.query(
+      'UPDATE users SET disbursement_completed = true WHERE id = $1',
+      [disbursement.client_id]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Disbursement confirmed successfully',
+      disbursementId: id,
+      method: disbursement.disbursement_method,
+      status: 'completed',
+      confirmedAt: new Date().toISOString()
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error confirming manual disbursement:', error);
+    res.status(500).json({ error: 'Failed to confirm disbursement' });
+  } finally {
+    client.release();
   }
 });
 
