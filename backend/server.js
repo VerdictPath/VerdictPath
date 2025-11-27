@@ -31,6 +31,7 @@ const avatarRoutes = require('./routes/avatarRoutes');
 const notificationQueueRoutes = require('./routes/notification-queue');
 const chatRoutes = require('./routes/chat');
 const adminPortalRoutes = require('./routes/adminPortal');
+const smsTestRoutes = require('./routes/smsTestRoutes');
 const { startReminderScheduler } = require('./services/taskReminderService');
 // Coin purchase routes merged into coins.js
 
@@ -183,6 +184,9 @@ app.use('/api/chat', chatRoutes);
 
 // Admin Portal routes
 app.use('/portal/admin', adminPortalRoutes);
+
+// SMS Test routes (for testing all SMS services)
+app.use('/api/sms-test', smsTestRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
