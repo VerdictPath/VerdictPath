@@ -60,50 +60,50 @@ const LandingScreen = ({ onNavigate }) => {
       <View style={styles.featuresContainer}>
         <Text style={styles.featureTitle}>What You'll Get:</Text>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeMap}>
+          <View style={styles.iconBadge}>
             <Image 
               source={require('../../attached_assets/MAP_1763356928680.png')}
-              style={styles.treasureMapThumbnail}
+              style={styles.iconThumbnail}
               resizeMode="cover"
             />
           </View>
           <Text style={styles.featureItem}>Interactive case roadmap</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeTreasure}>
+          <View style={styles.iconBadge}>
             <Image 
               source={require('../../attached_assets/_a_pirates_treasure_chest_of_gold_1763356815342.png')}
-              style={styles.treasureChestThumbnail}
+              style={styles.iconThumbnail}
               resizeMode="cover"
             />
           </View>
           <Text style={styles.featureItem}>Earn treasure as you progress</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeVideoCamera}>
+          <View style={styles.iconBadge}>
             <Image 
               source={require('../../attached_assets/Old Camera Closeup_1764040319335.png')}
-              style={styles.videoCameraThumbnail}
+              style={styles.iconThumbnail}
               resizeMode="cover"
             />
           </View>
           <Text style={styles.featureItem}>Educational audio/video tutorials</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeMedical}>
+          <View style={styles.iconBadge}>
             <Image 
               source={require('../../attached_assets/Medical Symbol Pirate_1764039521695.png')}
-              style={styles.medicalSymbolThumbnail}
+              style={styles.iconThumbnail}
               resizeMode="cover"
             />
           </View>
           <Text style={styles.featureItem}>Medical Hub COMING SOON</Text>
         </View>
         <View style={styles.featureRow}>
-          <View style={styles.iconBadgeLocker}>
+          <View style={styles.iconBadge}>
             <Image 
               source={require('../../attached_assets/Evidence Vault_1764037430801.png')}
-              style={styles.vaultThumbnail}
+              style={styles.iconThumbnail}
               resizeMode="cover"
             />
           </View>
@@ -132,30 +132,31 @@ const styles = StyleSheet.create({
   },
   overlayContent: {
     flexGrow: 1,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 5,
   },
   logo: {
-    width: 180,
-    height: 180,
+    width: 140,
+    height: 140,
   },
   buttonContainer: {
     paddingHorizontal: 20,
-    marginTop: 10,
+    marginTop: 5,
   },
   featuresContainer: {
-    padding: 30,
-    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    marginTop: 10,
   },
   featureTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 20,
+    marginBottom: 12,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -163,95 +164,31 @@ const styles = StyleSheet.create({
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   featureItem: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFFFFF',
     flex: 1,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-  iconBadgeMap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: theme.colors.charcoal,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 12,
     borderWidth: 2,
     borderColor: theme.colors.secondary,
     overflow: 'hidden',
   },
-  treasureMapThumbnail: {
-    width: 40,
-    height: 40,
-  },
-  iconBadgeTreasure: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.charcoal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    overflow: 'hidden',
-  },
-  treasureChestThumbnail: {
-    width: 40,
-    height: 40,
-  },
-  iconBadgeVideoCamera: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.charcoal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    overflow: 'hidden',
-  },
-  videoCameraThumbnail: {
-    width: 40,
-    height: 40,
-  },
-  iconBadgeMedical: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.charcoal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    overflow: 'hidden',
-  },
-  medicalSymbolThumbnail: {
-    width: 40,
-    height: 40,
-  },
-  iconBadgeLocker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.charcoal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-    overflow: 'hidden',
-  },
-  vaultThumbnail: {
-    width: 40,
-    height: 40,
+  iconThumbnail: {
+    width: 32,
+    height: 32,
   },
 });
 
