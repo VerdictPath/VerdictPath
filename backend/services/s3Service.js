@@ -99,7 +99,7 @@ class S3Service {
     }
   }
 
-  async generatePresignedDownloadUrl(s3Key, expiresInSeconds = 3600, originalFilename = null) {
+  async generatePresignedDownloadUrl(s3Key, expiresInSeconds = 300, originalFilename = null) {
     this._ensureInitialized();
     
     try {

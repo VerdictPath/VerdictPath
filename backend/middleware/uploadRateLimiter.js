@@ -1,5 +1,10 @@
 const rateLimit = require('express-rate-limit');
 
+const isExemptRole = (req) => {
+  const userType = req.user?.userType;
+  return userType === 'lawfirm' || userType === 'law_firm' || userType === 'medical_provider';
+};
+
 const uploadRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -16,9 +21,7 @@ const uploadRateLimiter = rateLimit({
     }
     return req.ip;
   },
-  skip: (req) => {
-    return req.user?.userType === 'lawfirm' || req.user?.userType === 'medical_provider';
-  },
+  skip: isExemptRole,
   validate: { xForwardedForHeader: false, trustProxy: false, default: false }
 });
 
@@ -57,6 +60,7 @@ const strictUploadRateLimiter = rateLimit({
     }
     return req.ip;
   },
+  skip: isExemptRole,
   validate: { xForwardedForHeader: false, trustProxy: false, default: false }
 });
 
@@ -76,6 +80,7 @@ const burstProtectionLimiter = rateLimit({
     }
     return req.ip;
   },
+  skip: isExemptRole,
   validate: { xForwardedForHeader: false, trustProxy: false, default: false }
 });
 
