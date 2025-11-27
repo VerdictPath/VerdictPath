@@ -4,6 +4,7 @@ const documentAccessService = require('../services/documentAccessService');
 const encryptionService = require('../services/encryption');
 const storageService = require('../services/storageService');
 const { validateFileContent } = require('../middleware/fileUpload');
+const { sendDocumentUploadedEmail } = require('../services/emailService');
 const path = require('path');
 const fs = require('fs');
 
@@ -250,19 +251,41 @@ const uploadMedicalRecord = async (req, res) => {
     });
 
     const lawFirmQuery = await pool.query(
-      `SELECT connected_law_firm_id FROM users WHERE id = $1`,
+      `SELECT lf.id, lf.email, lf.firm_name 
+       FROM law_firms lf 
+       JOIN law_firm_clients lfc ON lfc.law_firm_id = lf.id 
+       WHERE lfc.client_id = $1`,
       [userId]
     );
     
-    if (lawFirmQuery.rows[0]?.connected_law_firm_id) {
+    if (lawFirmQuery.rows[0]) {
       await documentAccessService.createDocumentNotification(
         userId,
-        lawFirmQuery.rows[0].connected_law_firm_id,
+        lawFirmQuery.rows[0].id,
         'medical_records',
         result.rows[0].id,
         userId,
         'client'
       );
+
+      // Send email notification to law firm (non-blocking)
+      if (lawFirmQuery.rows[0].email) {
+        const uploaderResult = await pool.query(
+          'SELECT first_name, last_name FROM users WHERE id = $1',
+          [userId]
+        );
+        const uploaderName = uploaderResult.rows[0] 
+          ? `${uploaderResult.rows[0].first_name} ${uploaderResult.rows[0].last_name}` 
+          : 'Client';
+        
+        sendDocumentUploadedEmail(
+          lawFirmQuery.rows[0].email,
+          lawFirmQuery.rows[0].firm_name || 'Law Firm',
+          uploaderName,
+          recordType || 'Medical Record',
+          file.originalname
+        ).catch(err => console.error('Error sending document upload email:', err));
+      }
     }
 
     await autoCompleteSubstage(userId, 'Medical Record');
