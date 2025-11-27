@@ -2,6 +2,7 @@ const chatService = require('../services/chatService');
 const pool = require('../config/db');
 const { sendNotificationSMS } = require('../services/smsService');
 const { syncChatUnreadCounts } = require('../services/firebaseSync');
+const { sendMessageReceivedEmail } = require('../services/emailService');
 
 /**
  * Chat Controller - RESTful API for HIPAA-compliant messaging
@@ -321,33 +322,66 @@ exports.sendMessage = async (req, res) => {
       metadata
     );
 
-    // Send SMS notification if message is marked as urgent in metadata
-    if (metadata.urgent) {
-      try {
-        // Get recipient info
-        const participants = await pool.query(`
-          SELECT cp.participant_type, cp.participant_id, u.phone_encrypted, np.sms_notifications_enabled
-          FROM conversation_participants cp
-          LEFT JOIN users u ON u.id = cp.participant_id AND cp.participant_type = 'user'
-          LEFT JOIN notification_preferences np ON np.user_id = u.id
-          WHERE cp.conversation_id = $1 AND NOT (cp.participant_type = $2 AND cp.participant_id = $3)
-        `, [conversationId, participantType, participantId]);
+    // Send notifications to recipients
+    try {
+      // Get recipient info for all other participants
+      const participants = await pool.query(`
+        SELECT cp.participant_type, cp.participant_id, u.phone_encrypted, np.sms_notifications_enabled
+        FROM conversation_participants cp
+        LEFT JOIN users u ON u.id = cp.participant_id AND cp.participant_type = 'user'
+        LEFT JOIN notification_preferences np ON np.user_id = u.id
+        WHERE cp.conversation_id = $1 AND NOT (cp.participant_type = $2 AND cp.participant_id = $3)
+      `, [conversationId, participantType, participantId]);
 
-        for (const participant of participants.rows) {
-          if (participant.participant_type === 'user' && participant.phone_encrypted && participant.sms_notifications_enabled) {
-            const phoneNumber = require('./encryption').decrypt(participant.phone_encrypted);
-            await sendNotificationSMS(
-              phoneNumber,
-              'urgent_message',
-              `Urgent Message from ${senderName}`,
-              body.substring(0, 100) + (body.length > 100 ? '...' : ''),
-              'urgent'
-            );
-          }
+      for (const participant of participants.rows) {
+        // Send SMS for urgent messages
+        if (metadata.urgent && participant.participant_type === 'user' && participant.phone_encrypted && participant.sms_notifications_enabled) {
+          const phoneNumber = require('./encryption').decrypt(participant.phone_encrypted);
+          await sendNotificationSMS(
+            phoneNumber,
+            'urgent_message',
+            `Urgent Message from ${senderName}`,
+            body.substring(0, 100) + (body.length > 100 ? '...' : ''),
+            'urgent'
+          );
         }
-      } catch (smsError) {
-        console.error('Error sending SMS for urgent message:', smsError);
+
+        // Send email notification for new messages (non-blocking)
+        try {
+          let recipientEmail = null;
+          let recipientName = null;
+
+          if (participant.participant_type === 'user' || participant.participant_type === 'client' || participant.participant_type === 'individual') {
+            const userResult = await pool.query('SELECT email, first_name, last_name FROM users WHERE id = $1', [participant.participant_id]);
+            if (userResult.rows[0]) {
+              recipientEmail = userResult.rows[0].email;
+              recipientName = `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`;
+            }
+          } else if (participant.participant_type === 'law_firm') {
+            const lawFirmResult = await pool.query('SELECT email, firm_name FROM law_firms WHERE id = $1', [participant.participant_id]);
+            if (lawFirmResult.rows[0]) {
+              recipientEmail = lawFirmResult.rows[0].email;
+              recipientName = lawFirmResult.rows[0].firm_name;
+            }
+          } else if (participant.participant_type === 'medical_provider') {
+            const providerResult = await pool.query('SELECT email, provider_name FROM medical_providers WHERE id = $1', [participant.participant_id]);
+            if (providerResult.rows[0]) {
+              recipientEmail = providerResult.rows[0].email;
+              recipientName = providerResult.rows[0].provider_name;
+            }
+          }
+
+          if (recipientEmail) {
+            const previewText = body.substring(0, 100) + (body.length > 100 ? '...' : '');
+            sendMessageReceivedEmail(recipientEmail, recipientName || 'User', senderName, previewText)
+              .catch(err => console.error('Error sending message notification email:', err));
+          }
+        } catch (emailError) {
+          console.error('Error getting recipient info for email:', emailError);
+        }
       }
+    } catch (notifError) {
+      console.error('Error sending message notifications:', notifError);
     }
 
     res.status(201).json({ message });
