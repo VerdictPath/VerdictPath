@@ -345,11 +345,11 @@ router.get('/user/:type/:id', async (req, res) => {
         `, [id]),
         pool.query(`
           SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
-                 true as "isActive", lfc.created_at as "connectedAt"
+                 true as "isActive", lfc.registered_date as "connectedAt"
           FROM law_firm_clients lfc
-          JOIN users u ON lfc.user_id = u.id
+          JOIN users u ON lfc.client_id = u.id
           WHERE lfc.law_firm_id = $1
-          ORDER BY lfc.created_at DESC
+          ORDER BY lfc.registered_date DESC
           LIMIT 50
         `, [id]),
         pool.query(`
@@ -394,11 +394,11 @@ router.get('/user/:type/:id', async (req, res) => {
         `, [id]),
         pool.query(`
           SELECT u.id, u.first_name as "firstName", u.last_name as "lastName", u.email,
-                 true as "isActive", mpp.created_at as "connectedAt"
+                 true as "isActive", mpp.registered_date as "connectedAt"
           FROM medical_provider_patients mpp
-          JOIN users u ON mpp.user_id = u.id
+          JOIN users u ON mpp.patient_id = u.id
           WHERE mpp.medical_provider_id = $1
-          ORDER BY mpp.created_at DESC
+          ORDER BY mpp.registered_date DESC
           LIMIT 50
         `, [id]),
         pool.query(`
