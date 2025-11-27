@@ -34,6 +34,14 @@ Key technical features include:
 - **Individual User Profile Settings**: Individual users have access to a Profile tab (6th tab) in bottom navigation leading to NotificationSettingsScreen where they can manage push, email, and SMS notification preferences, set quiet hours, and configure notification types (urgent, task, system, marketing). Features proper camelCase/snake_case API mapping for seamless backend integration.
 - **HIPAA-Compliant Real-time Chat System**: End-to-end encrypted messaging between connections (law firm-client, provider-patient, firm-provider). Features include AES-256-GCM message encryption with per-message IVs, connection validation using existing relationship tables, Firebase real-time sync with encrypted content only, comprehensive audit logging for all message operations (create, read, mark_read), typing indicators, read receipts, unread counts, and SMS notifications for urgent messages. Database schema includes 5 tables: conversations, conversation_participants, messages, message_deliveries, and message_audit_log. All messages stored encrypted in PostgreSQL with Firebase used only for real-time delivery of encrypted payloads.
   - **Firebase Real-time Architecture**: Backend syncs messages to `/chat/conversations/{conversationId}/messages/{messageId}` and unread counts to `/chat/{participantType}s/{participantId}/unread_counts`. Frontend uses custom token authentication via `authenticateWithBackend(token)` before subscribing to Firebase listeners. ChatConversationScreen subscribes to message updates and triggers API refetch for decrypted messages. ChatListScreen monitors unread count changes to auto-refresh conversation lists without manual refresh. All Firebase paths are tenant-scoped with security rules requiring authentication. Graceful degradation to manual refresh when Firebase unavailable.
+- **Secure Document Upload/Download System**: Comprehensive HIPAA-compliant document handling with AWS S3 storage featuring:
+  - Magic bytes validation to verify true file types (JPEG, PNG, PDF, DOC, DOCX, HEIC) match claimed MIME types
+  - Dangerous content detection blocks PHP, JavaScript, and HTML injection patterns
+  - Short-lived presigned URLs (5 minutes) for downloads to minimize exposure
+  - Role-based rate limiting: 30 uploads/15min general, 10 uploads/hour for individuals, exempt for law firms/medical providers
+  - Separate authorization flows for law firms and medical providers with consent verification
+  - Comprehensive audit logging in document_access_log table for all access attempts (success/failure)
+  - AES-256-GCM encryption for sensitive document metadata
 - **Admin Dashboard (Web Portal)**: Comprehensive admin portal at `/portal/admin` with pirate-themed dark UI. Features include:
   - Separate admin authentication with ADMIN_USERNAME and ADMIN_PASSWORD environment variables
   - Dashboard overview with statistics for all user types (individuals, law firms, medical providers)
