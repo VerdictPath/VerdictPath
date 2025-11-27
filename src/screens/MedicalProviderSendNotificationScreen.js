@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const NOTIFICATION_TEMPLATES = [
@@ -86,6 +86,8 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
   const fetchPatients = async () => {
     try {
       setIsLoading(true);
+      console.log('[SendNotification] Fetching patients with token:', user?.token ? 'Present' : 'Missing');
+      
       const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.PATIENTS, {
         method: 'GET',
         headers: {
@@ -93,11 +95,19 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
         },
       });
 
-      if (response.patients) {
+      console.log('[SendNotification] Full API response:', JSON.stringify(response, null, 2));
+      console.log('[SendNotification] Patients array:', response.patients);
+      
+      if (response.patients && response.patients.length > 0) {
+        console.log('[SendNotification] First patient data:', JSON.stringify(response.patients[0], null, 2));
+        console.log('[SendNotification] Patient fields available:', Object.keys(response.patients[0]));
         setPatients(response.patients);
+      } else {
+        console.log('[SendNotification] No patients in response');
+        setPatients([]);
       }
     } catch (error) {
-      console.error('Error fetching patients:', error);
+      console.error('[SendNotification] Error fetching patients:', error);
       Alert.alert('Error', 'Failed to load patients');
     } finally {
       setIsLoading(false);
@@ -380,32 +390,31 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
     paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: theme.colors.primary,
-    borderBottomWidth: 2,
-    borderBottomColor: '#d4a574',
+    paddingHorizontal: medicalProviderTheme.spacing.xl,
+    paddingVertical: medicalProviderTheme.spacing.lg,
+    backgroundColor: medicalProviderTheme.colors.deepTeal,
+    ...medicalProviderTheme.shadows.header,
   },
   backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    paddingHorizontal: medicalProviderTheme.spacing.md,
   },
   backButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
   },
   placeholder: {
     width: 60,
@@ -414,131 +423,132 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: medicalProviderTheme.spacing.xl,
     paddingBottom: 40,
   },
   section: {
-    marginBottom: 30,
+    marginBottom: medicalProviderTheme.spacing.xxxl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: medicalProviderTheme.spacing.md,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
+    fontWeight: '700',
+    color: medicalProviderTheme.colors.charcoal,
+    marginBottom: medicalProviderTheme.spacing.md,
   },
   selectAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: theme.colors.primary,
-    borderRadius: 6,
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
+    borderRadius: medicalProviderTheme.borderRadius.small,
   },
   selectAllText: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontSize: 14,
     fontWeight: '600',
   },
   templatesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: medicalProviderTheme.spacing.md,
   },
   templateCard: {
     width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: medicalProviderTheme.colors.lightGray,
+    ...medicalProviderTheme.shadows.card,
   },
   templateCardSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: '#f0f8ff',
+    borderColor: medicalProviderTheme.colors.clinicalTeal,
+    backgroundColor: medicalProviderTheme.colors.lightTeal,
   },
   templateIcon: {
     fontSize: 32,
-    marginBottom: 8,
+    marginBottom: medicalProviderTheme.spacing.sm,
   },
   templateTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#333',
+    color: medicalProviderTheme.colors.charcoal,
     textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.md,
+    marginBottom: medicalProviderTheme.spacing.lg,
+    ...medicalProviderTheme.shadows.card,
   },
   searchIcon: {
     fontSize: 18,
-    marginRight: 12,
+    marginRight: medicalProviderTheme.spacing.md,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: medicalProviderTheme.colors.charcoal,
   },
   clearSearchButton: {
-    padding: 4,
+    padding: medicalProviderTheme.spacing.xs,
   },
   clearSearchText: {
     fontSize: 20,
-    color: '#999',
+    color: medicalProviderTheme.colors.mediumGray,
     fontWeight: 'bold',
   },
   patientsList: {
-    gap: 10,
+    gap: medicalProviderTheme.spacing.md,
   },
   patientCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: medicalProviderTheme.colors.lightGray,
+    ...medicalProviderTheme.shadows.card,
   },
   patientCardSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: '#f0f8ff',
+    borderColor: medicalProviderTheme.colors.clinicalTeal,
+    backgroundColor: medicalProviderTheme.colors.lightTeal,
   },
   patientInfo: {
     flex: 1,
   },
   patientName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: medicalProviderTheme.colors.charcoal,
+    marginBottom: medicalProviderTheme.spacing.xs,
   },
   patientEmail: {
     fontSize: 14,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
   },
   checkmark: {
     fontSize: 24,
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.clinicalTeal,
     fontWeight: 'bold',
   },
   selectedCount: {
-    marginTop: 12,
+    marginTop: medicalProviderTheme.spacing.md,
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: medicalProviderTheme.colors.clinicalTeal,
     textAlign: 'center',
   },
   emptyPatients: {
@@ -547,40 +557,41 @@ const styles = StyleSheet.create({
   },
   emptyPatientsText: {
     fontSize: 16,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 12,
+    color: medicalProviderTheme.colors.charcoal,
+    marginBottom: medicalProviderTheme.spacing.sm,
+    marginTop: medicalProviderTheme.spacing.md,
   },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
     fontSize: 16,
-    color: '#333',
+    color: medicalProviderTheme.colors.charcoal,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: medicalProviderTheme.colors.lightGray,
   },
   textArea: {
     height: 120,
-    paddingTop: 16,
+    paddingTop: medicalProviderTheme.spacing.lg,
   },
   sendButton: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: 12,
+    backgroundColor: medicalProviderTheme.colors.deepTeal,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
     paddingVertical: 18,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: medicalProviderTheme.spacing.xl,
+    ...medicalProviderTheme.shadows.card,
   },
   sendButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: medicalProviderTheme.colors.mediumGray,
   },
   sendButtonText: {
-    color: '#fff',
+    color: medicalProviderTheme.colors.clinicalWhite,
     fontSize: 18,
     fontWeight: '700',
   },
@@ -590,9 +601,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
+    marginTop: medicalProviderTheme.spacing.lg,
     fontSize: 16,
-    color: '#666',
+    color: medicalProviderTheme.colors.darkGray,
   },
 });
 
