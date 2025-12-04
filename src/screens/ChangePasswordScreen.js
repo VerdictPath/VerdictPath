@@ -1,16 +1,147 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const Toast = ({ visible, message, type, onHide }) => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-100)).current;
+  const timerRef = useRef(null);
+
+  const animateOut = (callback) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      if (callback) callback();
+    });
+  };
+
+  useEffect(() => {
+    if (visible && message) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      
+      fadeAnim.setValue(0);
+      slideAnim.setValue(-100);
+
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      timerRef.current = setTimeout(() => {
+        animateOut(onHide);
+      }, 4000);
+
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+      };
+    }
+  }, [visible, message]);
+
+  const handleDismiss = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    animateOut(onHide);
+  };
+
+  if (!visible) return null;
+
+  const backgroundColor = type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#3498db';
+  const icon = type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ️';
+
+  return (
+    <Animated.View
+      style={[
+        toastStyles.container,
+        { backgroundColor, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+      ]}
+    >
+      <Text style={toastStyles.icon}>{icon}</Text>
+      <Text style={toastStyles.message}>{message}</Text>
+      <TouchableOpacity onPress={handleDismiss} style={toastStyles.closeButton}>
+        <Text style={toastStyles.closeText}>×</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+const toastStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  icon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  message: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  closeButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  closeText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+});
 
 const ChangePasswordScreen = ({ route, navigation }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'error' });
   const videoRef = useRef(null);
 
   const { changePasswordToken, email, firstName, lastName } = route.params || {};
+
+  const showToast = (message, type = 'error') => {
+    setToast({ visible: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ visible: false, message: '', type: 'error' });
+  };
 
   useEffect(() => {
     if (videoRef.current) {
@@ -39,18 +170,18 @@ const ChangePasswordScreen = ({ route, navigation }) => {
 
   const handleChangePassword = async () => {
     if (!newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showToast('Please fill in all fields', 'error');
       return;
     }
 
     const validationError = validatePassword(newPassword);
     if (validationError) {
-      Alert.alert('Invalid Password', validationError);
+      showToast(validationError, 'error');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showToast('Passwords do not match', 'error');
       return;
     }
 
@@ -74,27 +205,20 @@ const ChangePasswordScreen = ({ route, navigation }) => {
         await AsyncStorage.setItem('token', data.token);
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
         
-        Alert.alert(
-          'Success',
-          'Your password has been changed successfully. You can now access your account.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Login' }],
-                });
-              }
-            }
-          ]
-        );
+        showToast('Password changed successfully! Redirecting to login...', 'success');
+        
+        setTimeout(() => {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        }, 2000);
       } else {
-        Alert.alert('Error', data.message || 'Failed to change password');
+        showToast(data.message || 'Failed to change password', 'error');
       }
     } catch (error) {
       console.error('Error changing password:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -102,6 +226,12 @@ const ChangePasswordScreen = ({ route, navigation }) => {
 
   return (
     <View style={commonStyles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
       <View style={styles.videoWrapper} pointerEvents="none">
         <Video
           ref={videoRef}
