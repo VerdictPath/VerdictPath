@@ -26,15 +26,17 @@ const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer}>
-        <Video
-          ref={videoRef}
-          source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.CONTAIN}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+        <View style={styles.videoWrapper}>
+          <Video
+            ref={videoRef}
+            source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
+            style={styles.backgroundVideo}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        </View>
       </View>
 
       <ScrollView
@@ -138,6 +140,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  videoWrapper: {
+    width: Dimensions.get("window").width,
+    height: Dimensions.get("window").height,
     justifyContent: "center",
     alignItems: "center",
   },
