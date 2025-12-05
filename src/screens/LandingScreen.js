@@ -16,17 +16,14 @@ const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
   const { width, height } = useWindowDimensions();
 
-  // Detect if it's a large screen (tablet/TV) or small screen (phone/Replit)
-  const isLargeScreen = width >= 768; // Tablets and larger
-  const isSmallScreen = width < 768; // Phones and small screens like Replit
+  // Always use CONTAIN mode to prevent cropping and show full video
+  // Video will scale down smoothly when screen size changes
+  const resizeMode = ResizeMode.CONTAIN;
 
-  // For large screens, use full screen with COVER mode
-  // For small screens, use CONTAIN mode with max dimensions (let video size naturally)
-  const resizeMode = isLargeScreen ? ResizeMode.COVER : ResizeMode.CONTAIN;
-  const videoWidth = isLargeScreen ? width : undefined;
-  const videoHeight = isLargeScreen ? height : undefined;
-  const maxVideoWidth = isSmallScreen ? width * 0.8 : width;
-  const maxVideoHeight = isSmallScreen ? height * 0.8 : height;
+  // Use full screen dimensions - CONTAIN mode will ensure full video is visible
+  // without cropping, maintaining aspect ratio
+  const videoWidth = width;
+  const videoHeight = height;
 
   useEffect(() => {
     if (videoRef.current) {
@@ -42,12 +39,7 @@ const LandingScreen = ({ onNavigate }) => {
           source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
           style={[
             styles.backgroundVideo,
-            {
-              ...(videoWidth && { width: videoWidth }),
-              ...(videoHeight && { height: videoHeight }),
-              maxWidth: maxVideoWidth,
-              maxHeight: maxVideoHeight,
-            },
+            { width: videoWidth, height: videoHeight },
           ]}
           resizeMode={resizeMode}
           isLooping
