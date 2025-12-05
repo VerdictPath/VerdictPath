@@ -6,12 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 
@@ -28,6 +25,7 @@ const LoginScreen = ({
   setFirmCode,
 }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (videoRef.current) {
@@ -38,17 +36,15 @@ const LoginScreen = ({
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer} pointerEvents="none">
-        <View style={styles.videoWrapper}>
-          <Video
-            ref={videoRef}
-            source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-            style={styles.backgroundVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted
-            shouldPlay
-          />
-        </View>
+        <Video
+          ref={videoRef}
+          source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
+          style={[styles.backgroundVideo, { width, height }]}
+          resizeMode={ResizeMode.CONTAIN}
+          isLooping
+          isMuted
+          shouldPlay
+        />
         <View style={styles.videoOverlay} />
       </View>
 
@@ -164,16 +160,10 @@ const styles = StyleSheet.create({
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  videoWrapper: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    alignSelf: "center",
   },
   videoOverlay: {
     position: "absolute",

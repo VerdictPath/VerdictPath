@@ -8,12 +8,9 @@ import {
   TextInput,
   Alert,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { theme } from "../styles/theme";
 import FeatureComparisonMatrix from "../components/FeatureComparisonMatrix";
 
@@ -402,6 +399,7 @@ const SubscriptionSelectionScreen = ({
   onBack = null,
 }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
   const [clientCount, setClientCount] = useState("");
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [planType, setPlanType] = useState(
@@ -1364,17 +1362,15 @@ const SubscriptionSelectionScreen = ({
   return (
     <View style={styles.container}>
       <View style={styles.videoContainer} pointerEvents="none">
-        <View style={styles.videoWrapper}>
-          <Video
-            ref={videoRef}
-            source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-            style={styles.backgroundVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted
-            shouldPlay
-          />
-        </View>
+        <Video
+          ref={videoRef}
+          source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
+          style={[styles.backgroundVideo, { width, height }]}
+          resizeMode={ResizeMode.CONTAIN}
+          isLooping
+          isMuted
+          shouldPlay
+        />
         <View style={styles.videoOverlay} />
       </View>
 
@@ -1406,16 +1402,10 @@ const styles = StyleSheet.create({
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  videoWrapper: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    alignSelf: "center",
   },
   videoOverlay: {
     position: "absolute",

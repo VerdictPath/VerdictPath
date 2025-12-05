@@ -6,17 +6,15 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
 const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (videoRef.current) {
@@ -27,17 +25,15 @@ const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer}>
-        <View style={styles.videoWrapper}>
-          <Video
-            ref={videoRef}
-            source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
-            style={styles.backgroundVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted
-            shouldPlay
-          />
-        </View>
+        <Video
+          ref={videoRef}
+          source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
+          style={[styles.backgroundVideo, { width, height }]}
+          resizeMode={ResizeMode.CONTAIN}
+          isLooping
+          isMuted
+          shouldPlay
+        />
       </View>
 
       <ScrollView
@@ -145,16 +141,10 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-  },
-  videoWrapper: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    alignSelf: "center",
   },
   overlay: {
     flex: 1,
