@@ -37,16 +37,18 @@ const LoginScreen = ({
 
   return (
     <View style={commonStyles.container}>
-      <View style={styles.videoWrapper} pointerEvents="none">
-        <Video
-          ref={videoRef}
-          source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+      <View style={styles.videoContainer} pointerEvents="none">
+        <View style={styles.videoWrapper}>
+          <Video
+            ref={videoRef}
+            source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
+            style={styles.backgroundVideo}
+            resizeMode={ResizeMode.COVER}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        </View>
         <View style={styles.videoOverlay} />
       </View>
 
@@ -151,15 +153,22 @@ const LoginScreen = ({
 };
 
 const styles = StyleSheet.create({
-  videoWrapper: {
+  videoContainer: {
     position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
     right: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: -1,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  videoWrapper: {
     width: wp("100%"),
     height: hp("100%"),
-    zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",

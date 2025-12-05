@@ -1363,16 +1363,18 @@ const SubscriptionSelectionScreen = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.videoWrapper} pointerEvents="none">
-        <Video
-          ref={videoRef}
-          source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.COVER}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+      <View style={styles.videoContainer} pointerEvents="none">
+        <View style={styles.videoWrapper}>
+          <Video
+            ref={videoRef}
+            source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
+            style={styles.backgroundVideo}
+            resizeMode={ResizeMode.COVER}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        </View>
         <View style={styles.videoOverlay} />
       </View>
 
@@ -1393,15 +1395,22 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     position: "relative",
   },
-  videoWrapper: {
+  videoContainer: {
     position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
     right: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: -1,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  videoWrapper: {
     width: wp("100%"),
     height: hp("100%"),
-    zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
