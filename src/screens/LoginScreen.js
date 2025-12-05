@@ -31,11 +31,13 @@ const LoginScreen = ({
   const isLargeScreen = width >= 768; // Tablets and larger
   const isSmallScreen = width < 768; // Phones and small screens like Replit
 
-  // For small screens, scale down the video (e.g., 80% of screen size)
-  // For large screens, use full screen size
-  const videoWidth = isSmallScreen ? width * 0.8 : width;
-  const videoHeight = isSmallScreen ? height * 0.8 : height;
+  // For large screens, use full screen with COVER mode
+  // For small screens, use CONTAIN mode with max dimensions (let video size naturally)
   const resizeMode = isLargeScreen ? ResizeMode.COVER : ResizeMode.CONTAIN;
+  const videoWidth = isLargeScreen ? width : undefined;
+  const videoHeight = isLargeScreen ? height : undefined;
+  const maxVideoWidth = isSmallScreen ? width * 0.8 : width;
+  const maxVideoHeight = isSmallScreen ? height * 0.8 : height;
 
   useEffect(() => {
     if (videoRef.current) {
@@ -49,7 +51,15 @@ const LoginScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-          style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
+          style={[
+            styles.backgroundVideo,
+            {
+              ...(videoWidth && { width: videoWidth }),
+              ...(videoHeight && { height: videoHeight }),
+              maxWidth: maxVideoWidth,
+              maxHeight: maxVideoHeight,
+            },
+          ]}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -171,6 +181,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
+    overflow: "hidden",
   },
   backgroundVideo: {
     alignSelf: "center",
