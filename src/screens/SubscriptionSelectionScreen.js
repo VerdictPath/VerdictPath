@@ -8,9 +8,12 @@ import {
   TextInput,
   Alert,
   Platform,
-  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { theme } from "../styles/theme";
 import FeatureComparisonMatrix from "../components/FeatureComparisonMatrix";
 
@@ -399,7 +402,6 @@ const SubscriptionSelectionScreen = ({
   onBack = null,
 }) => {
   const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
   
   // Always use CONTAIN mode to prevent cropping and show full video
   // Video will scale down smoothly when screen size changes
@@ -416,9 +418,27 @@ const SubscriptionSelectionScreen = ({
   );
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playAsync();
-    }
+    const initializeVideo = async () => {
+      if (videoRef.current) {
+        try {
+          await videoRef.current.loadAsync(
+            require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4"),
+            {
+              shouldPlay: true,
+              isLooping: true,
+              isMuted: true,
+            }
+          );
+        } catch (error) {
+          console.error("Video load error:", error);
+          // Fallback
+          if (videoRef.current) {
+            videoRef.current.playAsync();
+          }
+        }
+      }
+    };
+    initializeVideo();
   }, []);
 
   const calculateTier = (count) => {
@@ -1402,16 +1422,16 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     alignSelf: "center",
   },
   videoOverlay: {

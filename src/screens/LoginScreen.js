@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 
@@ -25,16 +28,33 @@ const LoginScreen = ({
   setFirmCode,
 }) => {
   const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
 
   // Always use CONTAIN mode to prevent cropping and show full video
   // Video will scale down smoothly when screen size changes
   const resizeMode = ResizeMode.CONTAIN;
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playAsync();
-    }
+    const initializeVideo = async () => {
+      if (videoRef.current) {
+        try {
+          await videoRef.current.loadAsync(
+            require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4"),
+            {
+              shouldPlay: true,
+              isLooping: true,
+              isMuted: true,
+            }
+          );
+        } catch (error) {
+          console.error("Video load error:", error);
+          // Fallback
+          if (videoRef.current) {
+            videoRef.current.playAsync();
+          }
+        }
+      }
+    };
+    initializeVideo();
   }, []);
 
   return (
@@ -159,16 +179,16 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     alignSelf: "center",
   },
   videoOverlay: {

@@ -6,24 +6,44 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
 const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
 
   // Always use CONTAIN mode to prevent cropping and show full video
   // Video will scale down smoothly when screen size changes
   const resizeMode = ResizeMode.CONTAIN;
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playAsync();
-    }
+    const initializeVideo = async () => {
+      if (videoRef.current) {
+        try {
+          await videoRef.current.loadAsync(
+            require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4"),
+            {
+              shouldPlay: true,
+              isLooping: true,
+              isMuted: true,
+            }
+          );
+        } catch (error) {
+          console.error("Video load error:", error);
+          // Fallback
+          if (videoRef.current) {
+            videoRef.current.playAsync();
+          }
+        }
+      }
+    };
+    initializeVideo();
   }, []);
 
   return (
@@ -141,15 +161,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: "100%",
-    height: "100%",
+    width: wp("100%"),
+    height: hp("100%"),
     alignSelf: "center",
   },
   overlay: {
