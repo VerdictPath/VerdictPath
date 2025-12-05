@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Platform
+  Platform,
+  useWindowDimensions
 } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { theme } from '../styles/theme';
@@ -378,6 +379,7 @@ const MEDICAL_PROVIDER_PRICING = {
 
 const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigate, viewOnly = false, onBack = null }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [planType, setPlanType] = useState(userType === 'medicalprovider' ? 'basic' : 'standard');
@@ -1230,7 +1232,7 @@ const SubscriptionSelectionScreen = ({ userType, onSelectSubscription, onNavigat
         <Video
           ref={videoRef}
           source={require('../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4')}
-          style={styles.backgroundVideo}
+          style={[styles.backgroundVideo, { width, height }]}
           resizeMode={ResizeMode.COVER}
           isLooping
           isMuted
@@ -1263,10 +1265,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     zIndex: -1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   backgroundVideo: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   videoOverlay: {
     position: 'absolute',

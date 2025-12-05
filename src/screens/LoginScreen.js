@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
 import { USER_TYPES } from '../constants/mockData';
@@ -17,6 +17,7 @@ const LoginScreen = ({
   setFirmCode
 }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (videoRef.current) {
@@ -30,8 +31,8 @@ const LoginScreen = ({
         <Video
           ref={videoRef}
           source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.CONTAIN}
+          style={[styles.backgroundVideo, { width, height }]}
+          resizeMode={ResizeMode.COVER}
           isLooping
           isMuted
           shouldPlay
@@ -128,10 +129,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     zIndex: -1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   backgroundVideo: {
-    width: '100%',
-    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   videoOverlay: {
     position: 'absolute',
