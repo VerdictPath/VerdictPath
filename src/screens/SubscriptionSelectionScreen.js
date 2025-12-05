@@ -8,14 +8,13 @@ import {
   TextInput,
   Alert,
   Platform,
+  Dimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { theme } from "../styles/theme";
 import FeatureComparisonMatrix from "../components/FeatureComparisonMatrix";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const LAW_FIRM_PRICING = {
   tiers: [
@@ -1390,7 +1389,7 @@ const SubscriptionSelectionScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-          style={styles.backgroundVideo}
+          style={[styles.backgroundVideo, { width: screenWidth, height: screenHeight }]}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -1422,16 +1421,14 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    width: wp("100%"),
-    height: hp("100%"),
+    width: screenWidth,
+    height: screenHeight,
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: wp("100%"),
-    height: hp("100%"),
     alignSelf: "center",
   },
   videoOverlay: {

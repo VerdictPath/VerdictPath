@@ -6,14 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const LoginScreen = ({
   email,
@@ -63,7 +62,7 @@ const LoginScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-          style={styles.backgroundVideo}
+          style={[styles.backgroundVideo, { width: screenWidth, height: screenHeight }]}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -179,16 +178,14 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    width: wp("100%"),
-    height: hp("100%"),
+    width: screenWidth,
+    height: screenHeight,
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
   },
   backgroundVideo: {
-    width: wp("100%"),
-    height: hp("100%"),
     alignSelf: "center",
   },
   videoOverlay: {
