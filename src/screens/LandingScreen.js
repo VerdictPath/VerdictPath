@@ -6,16 +6,17 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  Dimensions,
-  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
 const LandingScreen = ({ onNavigate }) => {
   const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (videoRef.current) {
@@ -29,7 +30,7 @@ const LandingScreen = ({ onNavigate }) => {
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
-          style={[styles.backgroundVideo, { width, height }]}
+          style={styles.backgroundVideo}
           resizeMode={ResizeMode.COVER}
           isLooping
           isMuted
@@ -138,14 +139,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    width: wp("100%"),
+    height: hp("100%"),
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
   backgroundVideo: {
-    position: "absolute",
-    top: 0,
-    left: 0,
+    width: wp("100%"),
+    height: hp("100%"),
+    alignSelf: "center",
   },
   overlay: {
     flex: 1,

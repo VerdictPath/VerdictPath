@@ -1,23 +1,33 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
-import { commonStyles } from '../styles/commonStyles';
-import { USER_TYPES } from '../constants/mockData';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
+import { Video, ResizeMode } from "expo-av";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import { commonStyles } from "../styles/commonStyles";
+import { USER_TYPES } from "../constants/mockData";
 
-const LoginScreen = ({ 
-  email, 
-  setEmail, 
-  password, 
-  setPassword, 
-  onLogin, 
+const LoginScreen = ({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  onLogin,
   onNavigate,
   userType,
   setUserType,
   firmCode,
-  setFirmCode
+  setFirmCode,
 }) => {
   const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     if (videoRef.current) {
@@ -30,8 +40,8 @@ const LoginScreen = ({
       <View style={styles.videoWrapper} pointerEvents="none">
         <Video
           ref={videoRef}
-          source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
-          style={[styles.backgroundVideo, { width, height }]}
+          source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
+          style={styles.backgroundVideo}
           resizeMode={ResizeMode.COVER}
           isLooping
           isMuted
@@ -39,81 +49,102 @@ const LoginScreen = ({
         />
         <View style={styles.videoOverlay} />
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Welcome Back</Text>
-        
-        <Text style={styles.sectionLabel}>I am a:</Text>
-        <View style={styles.userTypeContainer}>
+          <Text style={styles.formTitle}>Welcome Back</Text>
+
+          <Text style={styles.sectionLabel}>I am a:</Text>
+          <View style={styles.userTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.userTypeButton,
+                userType === USER_TYPES.INDIVIDUAL &&
+                  styles.userTypeButtonActive,
+              ]}
+              onPress={() => setUserType(USER_TYPES.INDIVIDUAL)}
+            >
+              <Text
+                style={[
+                  styles.userTypeText,
+                  userType === USER_TYPES.INDIVIDUAL &&
+                    styles.userTypeTextActive,
+                ]}
+              >
+                Individual
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.userTypeButton,
+                userType === USER_TYPES.LAW_FIRM && styles.userTypeButtonActive,
+              ]}
+              onPress={() => setUserType(USER_TYPES.LAW_FIRM)}
+            >
+              <Text
+                style={[
+                  styles.userTypeText,
+                  userType === USER_TYPES.LAW_FIRM && styles.userTypeTextActive,
+                ]}
+              >
+                Law Firm
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.userTypeButton,
+                userType === USER_TYPES.MEDICAL_PROVIDER &&
+                  styles.userTypeButtonActive,
+              ]}
+              onPress={() => setUserType(USER_TYPES.MEDICAL_PROVIDER)}
+            >
+              <Text
+                style={[
+                  styles.userTypeText,
+                  userType === USER_TYPES.MEDICAL_PROVIDER &&
+                    styles.userTypeTextActive,
+                ]}
+              >
+                Medical Provider
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={commonStyles.input}
+            placeholder="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          <TextInput
+            style={commonStyles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
           <TouchableOpacity
-            style={[
-              styles.userTypeButton,
-              userType === USER_TYPES.INDIVIDUAL && styles.userTypeButtonActive
-            ]}
-            onPress={() => setUserType(USER_TYPES.INDIVIDUAL)}
+            style={commonStyles.primaryButton}
+            onPress={onLogin}
           >
-            <Text style={[
-              styles.userTypeText,
-              userType === USER_TYPES.INDIVIDUAL && styles.userTypeTextActive
-            ]}>Individual</Text>
+            <Text style={commonStyles.buttonText}>Sign In</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.userTypeButton,
-              userType === USER_TYPES.LAW_FIRM && styles.userTypeButtonActive
-            ]}
-            onPress={() => setUserType(USER_TYPES.LAW_FIRM)}
-          >
-            <Text style={[
-              styles.userTypeText,
-              userType === USER_TYPES.LAW_FIRM && styles.userTypeTextActive
-            ]}>Law Firm</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[
-              styles.userTypeButton,
-              userType === USER_TYPES.MEDICAL_PROVIDER && styles.userTypeButtonActive
-            ]}
-            onPress={() => setUserType(USER_TYPES.MEDICAL_PROVIDER)}
-          >
-            <Text style={[
-              styles.userTypeText,
-              userType === USER_TYPES.MEDICAL_PROVIDER && styles.userTypeTextActive
-            ]}>Medical Provider</Text>
+
+          <TouchableOpacity onPress={() => onNavigate("register")}>
+            <Text style={commonStyles.linkText}>
+              Don't have an account? Sign Up
+            </Text>
           </TouchableOpacity>
         </View>
-        
-        <TextInput
-          style={commonStyles.input}
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={commonStyles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity style={commonStyles.primaryButton} onPress={onLogin}>
-          <Text style={commonStyles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => onNavigate('register')}>
-          <Text style={commonStyles.linkText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
-      </View>
       </ScrollView>
     </View>
   );
@@ -121,37 +152,37 @@ const LoginScreen = ({
 
 const styles = StyleSheet.create({
   videoWrapper: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
     right: 0,
-    width: '100%',
-    height: '100%',
+    width: wp("100%"),
+    height: hp("100%"),
     zIndex: -1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
   backgroundVideo: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
+    width: wp("100%"),
+    height: hp("100%"),
+    alignSelf: "center",
   },
   videoOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
   scrollContainer: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingVertical: 40,
   },
   formContainer: {
@@ -159,26 +190,26 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 30,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginBottom: 12,
     marginTop: 10,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   userTypeContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginBottom: 20,
   },
@@ -188,22 +219,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
+    borderColor: "rgba(255, 255, 255, 0.4)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
   },
   userTypeButtonActive: {
-    backgroundColor: 'rgba(212, 165, 116, 0.7)',
-    borderColor: '#d4a574',
+    backgroundColor: "rgba(212, 165, 116, 0.7)",
+    borderColor: "#d4a574",
   },
   userTypeText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
   },
   userTypeTextActive: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });
 
