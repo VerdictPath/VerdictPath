@@ -405,11 +405,6 @@ const SubscriptionSelectionScreen = ({
   // Video will scale down smoothly when screen size changes
   const resizeMode = ResizeMode.CONTAIN;
   
-  // Use full screen dimensions - CONTAIN mode will ensure full video is visible
-  // without cropping, maintaining aspect ratio
-  const videoWidth = width;
-  const videoHeight = height;
-  
   const [clientCount, setClientCount] = useState("");
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [planType, setPlanType] = useState(
@@ -1375,7 +1370,7 @@ const SubscriptionSelectionScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-          style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
+          style={styles.backgroundVideo}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -1413,9 +1408,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
-    overflow: "hidden",
   },
   backgroundVideo: {
+    width: "100%",
+    height: "100%",
     alignSelf: "center",
   },
   videoOverlay: {

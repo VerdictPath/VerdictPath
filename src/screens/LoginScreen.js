@@ -30,11 +30,6 @@ const LoginScreen = ({
   // Always use CONTAIN mode to prevent cropping and show full video
   // Video will scale down smoothly when screen size changes
   const resizeMode = ResizeMode.CONTAIN;
-  
-  // Use full screen dimensions - CONTAIN mode will ensure full video is visible
-  // without cropping, maintaining aspect ratio
-  const videoWidth = width;
-  const videoHeight = height;
 
   useEffect(() => {
     if (videoRef.current) {
@@ -48,7 +43,7 @@ const LoginScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-          style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
+          style={styles.backgroundVideo}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -170,9 +165,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
-    overflow: "hidden",
   },
   backgroundVideo: {
+    width: "100%",
+    height: "100%",
     alignSelf: "center",
   },
   videoOverlay: {
