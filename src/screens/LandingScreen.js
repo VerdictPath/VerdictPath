@@ -32,7 +32,7 @@ const LandingScreen = ({ onNavigate }) => {
             ref={videoRef}
             source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
             style={styles.backgroundVideo}
-            resizeMode={ResizeMode.COVER}
+            resizeMode={ResizeMode.CONTAIN}
             isLooping
             isMuted
             shouldPlay
@@ -145,19 +145,16 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
   },
   videoWrapper: {
-    width: wp("100%"),
-    height: hp("100%"),
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
   },
   backgroundVideo: {
-    width: wp("100%"),
-    height: hp("100%"),
-    alignSelf: "center",
+    width: "100%",
+    height: "100%",
   },
   overlay: {
     flex: 1,

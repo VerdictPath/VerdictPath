@@ -1369,7 +1369,7 @@ const SubscriptionSelectionScreen = ({
             ref={videoRef}
             source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
             style={styles.backgroundVideo}
-            resizeMode={ResizeMode.COVER}
+            resizeMode={ResizeMode.CONTAIN}
             isLooping
             isMuted
             shouldPlay
@@ -1406,19 +1406,16 @@ const styles = StyleSheet.create({
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
   },
   videoWrapper: {
-    width: wp("100%"),
-    height: hp("100%"),
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
   },
   backgroundVideo: {
-    width: wp("100%"),
-    height: hp("100%"),
-    alignSelf: "center",
+    width: "100%",
+    height: "100%",
   },
   videoOverlay: {
     position: "absolute",
