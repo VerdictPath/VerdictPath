@@ -400,6 +400,17 @@ const SubscriptionSelectionScreen = ({
 }) => {
   const videoRef = useRef(null);
   const { width, height } = useWindowDimensions();
+  
+  // Detect if it's a large screen (tablet/TV) or small screen (phone/Replit)
+  const isLargeScreen = width >= 768; // Tablets and larger
+  const isSmallScreen = width < 768; // Phones and small screens like Replit
+
+  // For small screens, scale down the video (e.g., 80% of screen size)
+  // For large screens, use full screen size
+  const videoWidth = isSmallScreen ? width * 0.8 : width;
+  const videoHeight = isSmallScreen ? height * 0.8 : height;
+  const resizeMode = isLargeScreen ? ResizeMode.COVER : ResizeMode.CONTAIN;
+  
   const [clientCount, setClientCount] = useState("");
   const [billingPeriod, setBillingPeriod] = useState("monthly");
   const [planType, setPlanType] = useState(
@@ -1365,8 +1376,8 @@ const SubscriptionSelectionScreen = ({
         <Video
           ref={videoRef}
           source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-          style={[styles.backgroundVideo, { width, height }]}
-          resizeMode={ResizeMode.CONTAIN}
+          style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
+          resizeMode={resizeMode}
           isLooping
           isMuted
           shouldPlay
