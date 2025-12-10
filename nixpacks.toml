@@ -3,8 +3,8 @@ nixPkgs = ["nodejs_20"]
 
 [phases.install]
 cmds = [
-  "npm install --prefix backend"
+  "npm ci"
 ]
 
 [start]
-cmd = "npm start --prefix backend"
+cmd = "npm start"
