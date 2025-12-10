@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const LoginScreen = ({
   email,
@@ -27,42 +25,68 @@ const LoginScreen = ({
   setFirmCode,
 }) => {
   const videoRef = useRef(null);
+  const { width, height } = useWindowDimensions();
 
-  // Always use CONTAIN mode to prevent cropping and show full video
-  // Video will scale down smoothly when screen size changes
+  // Select video source based on screen width (matching your settings)
+  // Breakpoints: < 600px = mobile, 600-1024px = tablet, >= 1024px = desktop
+  const videoSource = useMemo(() => {
+    if (width < 600) {
+      return require("../../attached_assets/cat_mobile_2.mp4");
+    } else if (width < 1024) {
+      return require("../../attached_assets/cat_tab.mp4");
+    } else {
+      // Use default desktop video (you can rename/create cat_desktop.mp4 if needed)
+      return require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4");
+    }
+  }, [width]);
+
+  // Use CONTAIN mode to show full video centered (no cropping)
   const resizeMode = ResizeMode.CONTAIN;
 
   useEffect(() => {
-    const initializeVideo = async () => {
+    const loadVideo = async () => {
       if (videoRef.current) {
         try {
-          await videoRef.current.loadAsync(
-            require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4"),
-            {
-              shouldPlay: true,
-              isLooping: true,
-              isMuted: true,
-            }
-          );
+          // Unload current video
+          try {
+            await videoRef.current.unloadAsync();
+          } catch (unloadError) {
+            // Ignore unload errors (video might not be loaded yet)
+          }
+
+          // Small delay to ensure unload completes
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Load new video
+          await videoRef.current.loadAsync(videoSource, {
+            shouldPlay: true,
+            isLooping: true,
+            isMuted: true,
+          });
         } catch (error) {
-          console.error("Video load error:", error);
-          // Fallback
+          console.error("[LoginScreen] Video load error:", error);
+          // Fallback - try to play whatever is loaded
           if (videoRef.current) {
-            videoRef.current.playAsync();
+            try {
+              await videoRef.current.playAsync();
+            } catch (playError) {
+              console.error("[LoginScreen] Play error:", playError);
+            }
           }
         }
       }
     };
-    initializeVideo();
-  }, []);
+    loadVideo();
+  }, [width, videoSource]); // Reload video when screen width changes
 
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer} pointerEvents="none">
         <Video
+          key={`video-${width}`}
           ref={videoRef}
-          source={require("../../attached_assets/Cat looking around 10sec_1763360910310.mp4")}
-          style={[styles.backgroundVideo, { width: screenWidth, height: screenHeight }]}
+          source={videoSource}
+          style={styles.backgroundVideo}
           resizeMode={resizeMode}
           isLooping
           isMuted
@@ -178,14 +202,17 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     right: 0,
-    width: screenWidth,
-    height: screenHeight,
+    width: "100%",
+    height: "100%",
     zIndex: -1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
+    overflow: "hidden",
   },
   backgroundVideo: {
+    width: "100%",
+    height: "100%",
     alignSelf: "center",
   },
   videoOverlay: {
