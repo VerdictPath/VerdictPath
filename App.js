@@ -1637,6 +1637,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'medicalprovider-disbursements' && (
+        <ReceivedDisbursementsScreen
+          user={user}
+          userType="medicalprovider"
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+        />
+      )}
+
       {currentScreen === 'StripeConnectOnboarding' && (
         <StripeConnectOnboardingScreen
           user={user}
@@ -1865,7 +1873,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Medical Provider Bottom Navigation */}
         {(() => {
-          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-billing'];
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-billing', 'medicalprovider-disbursements'];
           const shouldShow = medProviderScreens.includes(currentScreen);
           console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
