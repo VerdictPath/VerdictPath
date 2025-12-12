@@ -95,8 +95,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   iconImage: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
   },
   label: {
     fontSize: 9,
