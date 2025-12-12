@@ -1640,7 +1640,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'medicalprovider-disbursements' && (
         <ReceivedDisbursementsScreen
           user={user}
-          userType="medicalprovider"
+          userType="medical_provider"
           onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
         />
       )}
