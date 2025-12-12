@@ -1008,7 +1008,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <Text style={styles.inputLabel}>
-            {isLawFirm ? 'Initial Offer ($) *' : 'Minimum Acceptable Amount ($) *'}
+            {isLawFirm ? 'Offer ($) *' : 'Minimum Acceptable Amount ($) *'}
           </Text>
           <TextInput
             style={styles.input}
