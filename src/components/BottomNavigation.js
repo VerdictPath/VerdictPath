@@ -6,7 +6,7 @@ const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) =>
   const { unreadCount } = useNotifications();
   
   const tabs = [
-    { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765570265027.jpeg'), screen: 'dashboard' },
+    { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'dashboard' },
     { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
     { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
     { name: 'Notifications', icon: '🔔', screen: 'notifications', badge: unreadCount },
