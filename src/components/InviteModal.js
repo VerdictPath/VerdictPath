@@ -258,7 +258,7 @@ const InviteModal = ({ visible, onClose, user }) => {
                 <View style={styles.selectionTextContainer}>
                   <Text style={styles.selectionOptionTitle}>Invite a Colleague</Text>
                   <Text style={styles.selectionOptionDescription}>
-                    Invite other medical providers to join your practice
+                    Invite your staff to join the practice
                   </Text>
                 </View>
                 <Text style={styles.selectionArrow}>→</Text>
