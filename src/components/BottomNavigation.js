@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#000',
     borderTopWidth: 2,
     borderTopColor: '#d4a574',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#2c3e50',
+    borderColor: '#000',
   },
   hiddenBadge: {
     opacity: 0,
