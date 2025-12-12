@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
 
 const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
   console.log('[LawFirmBottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'lawfirm-dashboard' },
+    { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'lawfirm-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'lawfirm-send-notification', badge: notificationCount },
     { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
     { name: 'Activity', icon: '📊', screen: 'lawfirm-activity-dashboard' },
@@ -26,8 +26,16 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
             onPress={() => onNavigate(tab.screen)}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
-              <Text style={styles.icon}>{tab.icon}</Text>
+            <View style={styles.iconContainer}>
+              {tab.imageSource ? (
+                <Image 
+                  source={tab.imageSource} 
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.icon}>{tab.icon}</Text>
+              )}
               {tab.badge !== undefined && (
                 <View style={[styles.badge, !showBadge && styles.hiddenBadge]}>
                   <Text style={styles.badgeText}>
@@ -54,7 +62,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#1e3a5f',
+    backgroundColor: '#000',
     borderTopWidth: 2,
     borderTopColor: '#d4af37',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
@@ -85,6 +93,10 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 22,
+  },
+  iconImage: {
+    width: 32,
+    height: 32,
   },
   label: {
     fontSize: 10,
