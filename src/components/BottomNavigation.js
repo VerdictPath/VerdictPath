@@ -27,7 +27,7 @@ const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) =>
             onPress={() => onNavigate(tab.screen)}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+            <View style={styles.iconContainer}>
               {tab.imageSource ? (
                 <Image 
                   source={tab.imageSource} 
