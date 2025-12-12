@@ -26,58 +26,6 @@ externalPort = 8008
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 34017
-externalPort = 8099
-
-[[ports]]
-localPort = 34871
-externalPort = 9000
-
-[[ports]]
-localPort = 35579
-externalPort = 6000
-
-[[ports]]
-localPort = 36529
-externalPort = 5000
-
-[[ports]]
-localPort = 37043
-externalPort = 8081
-
-[[ports]]
-localPort = 39219
-externalPort = 6800
-
-[[ports]]
-localPort = 40371
-externalPort = 3002
-
-[[ports]]
-localPort = 42447
-externalPort = 3001
-
-[[ports]]
-localPort = 44051
-externalPort = 5173
-
-[[ports]]
-localPort = 44921
-externalPort = 3003
-
-[[ports]]
-localPort = 45083
-externalPort = 8080
-
-[[ports]]
-localPort = 46173
-externalPort = 8000
-
-[[ports]]
-localPort = 46817
-externalPort = 3000
-
 [agent]
 expertMode = true
 
