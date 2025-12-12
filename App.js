@@ -1689,6 +1689,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           patientId={selectedPatientId}
           onBack={() => {
             setSelectedPatientId(null);
+            setMedicalProviderReturnTab('patients');
             setCurrentScreen('medicalprovider-dashboard');
           }}
         />
