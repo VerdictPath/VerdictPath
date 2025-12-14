@@ -1946,7 +1946,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'avatar-selection' && user?.userType === 'individual' && (
+      {currentScreen === 'avatar-selection' && (user?.userType === 'individual' || user?.type === 'individual') && (
         <AvatarSelectionScreen
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
