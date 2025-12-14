@@ -7,10 +7,10 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'lawfirm-dashboard' },
     { name: 'Appointments', icon: '📅', screen: 'lawfirm-client-appointments' },
-    { name: 'Notifications', icon: '🔔', screen: 'lawfirm-send-notification', badge: notificationCount },
     { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
     { name: 'Activity', icon: '📊', screen: 'lawfirm-activity-dashboard' },
     { name: 'Negotiations', icon: '🤝', screen: 'lawfirm-negotiations' },
+    { name: 'Profile', icon: '👤', screen: 'lawfirm-profile' },
   ];
 
   return (

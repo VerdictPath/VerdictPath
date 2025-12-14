@@ -1598,6 +1598,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-profile' && (
+        <NotificationSettingsScreen 
+          user={user}
+          onBack={() => setCurrentScreen('lawfirm-dashboard')}
+        />
+      )}
+
       {currentScreen === 'lawfirm-activity-dashboard' && (
         <LawFirmActivityDashboardScreen
           user={currentLawFirmUser || user}
@@ -1658,6 +1665,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'medicalprovider-settings' && (
         <SettingsScreen
+          user={user}
+          onBack={() => setCurrentScreen('medicalprovider-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-profile' && (
+        <NotificationSettingsScreen 
           user={user}
           onBack={() => setCurrentScreen('medicalprovider-dashboard')}
         />
@@ -2001,7 +2015,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Law Firm Bottom Navigation */}
         {(() => {
-          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar'];
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-profile'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
           console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
@@ -2015,7 +2029,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Medical Provider Bottom Navigation */}
         {(() => {
-          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar'];
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar', 'medicalprovider-profile'];
           const shouldShow = medProviderScreens.includes(currentScreen);
           console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
