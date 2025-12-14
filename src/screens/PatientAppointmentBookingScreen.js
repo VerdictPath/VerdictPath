@@ -7,6 +7,7 @@ import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/api';
+import CalendarService from '../services/CalendarService';
 
 const APPOINTMENT_TYPES = [
   { value: 'Initial Consultation', icon: 'account-search' },
@@ -17,6 +18,22 @@ const APPOINTMENT_TYPES = [
   { value: 'Imaging/X-Ray', icon: 'radioactive' },
   { value: 'Other', icon: 'dots-horizontal' }
 ];
+
+const EVENT_TYPES = [
+  { value: 'court_date', label: 'Court Date', icon: 'gavel' },
+  { value: 'appointment', label: 'Appointment', icon: 'calendar' },
+  { value: 'deposition', label: 'Deposition', icon: 'file-document' },
+  { value: 'deadline', label: 'Deadline', icon: 'clock-alert' },
+  { value: 'reminder', label: 'Reminder', icon: 'bell' }
+];
+
+const EVENT_TYPE_COLORS = {
+  court_date: '#e74c3c',
+  appointment: '#3498db',
+  deposition: '#9b59b6',
+  deadline: '#f39c12',
+  reminder: '#1abc9c'
+};
 
 const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
@@ -34,18 +51,45 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   const [booking, setBooking] = useState(false);
   const [activeTab, setActiveTab] = useState('book');
 
+  const [personalEvents, setPersonalEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [eventFilter, setEventFilter] = useState('all');
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    location: '',
+    eventType: 'reminder',
+    startTime: '',
+    endTime: '',
+    allDay: false,
+    reminderEnabled: true,
+    reminderMinutesBefore: 60
+  });
+
   const patientId = user?.id;
 
   useEffect(() => {
     loadConnectedProviders();
     loadMyAppointments();
+    loadPersonalEvents();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'events') {
+      loadPersonalEvents();
+    }
+  }, [eventFilter, activeTab]);
 
   useEffect(() => {
     if (selectedProvider && selectedDate) {
       loadAvailableSlots();
     }
   }, [selectedProvider, selectedDate]);
+
+  useEffect(() => {
+    updateMarkedDates();
+  }, [myAppointments, personalEvents, activeTab]);
 
   const loadConnectedProviders = async () => {
     try {
@@ -74,19 +118,54 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         const data = await response.json();
         const appointments = data.appointments || [];
         setMyAppointments(appointments);
-
-        const marked = {};
-        appointments.forEach(appt => {
-          marked[appt.appointment_date] = {
-            marked: true,
-            dotColor: appt.status === 'confirmed' ? '#10b981' : '#f59e0b'
-          };
-        });
-        setMarkedDates(marked);
       }
     } catch (error) {
       console.error('Error loading appointments:', error);
     }
+  };
+
+  const loadPersonalEvents = async () => {
+    try {
+      setLoadingEvents(true);
+      const options = {};
+      if (eventFilter !== 'all') {
+        options.eventType = eventFilter;
+      }
+      const fetchedEvents = await CalendarService.fetchEvents(user.token, options);
+      setPersonalEvents(fetchedEvents);
+    } catch (error) {
+      console.error('Error loading personal events:', error);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const updateMarkedDates = () => {
+    const marked = {};
+
+    myAppointments.forEach(appt => {
+      const date = appt.appointment_date;
+      const dotColor = appt.status === 'confirmed' ? '#10b981' : '#f59e0b';
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      marked[date].dots.push({ key: `appt-${appt.id}`, color: dotColor });
+    });
+
+    personalEvents.forEach(event => {
+      const eventDate = moment(event.start_time).format('YYYY-MM-DD');
+      const color = EVENT_TYPE_COLORS[event.event_type] || '#FFD700';
+      if (!marked[eventDate]) {
+        marked[eventDate] = { dots: [] };
+      }
+      marked[eventDate].dots.push({ key: `event-${event.id}`, color });
+    });
+
+    Object.keys(marked).forEach(date => {
+      marked[date].marked = true;
+    });
+
+    setMarkedDates(marked);
   };
 
   const loadAvailableSlots = async () => {
@@ -207,6 +286,150 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     );
   };
 
+  const parseDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return null;
+    const parsed = moment(dateTimeStr, ['YYYY-MM-DD HH:mm', 'YYYY-MM-DD HH:MM', moment.ISO_8601], true);
+    if (parsed.isValid()) {
+      return parsed.toISOString();
+    }
+    return null;
+  };
+
+  const handleAddEvent = async () => {
+    if (!newEvent.title || !newEvent.startTime) {
+      Alert.alert('Required', 'Please provide a title and start date/time');
+      return;
+    }
+
+    const parsedStartTime = parseDateTime(newEvent.startTime);
+    if (!parsedStartTime) {
+      Alert.alert('Invalid Date', 'Please enter a valid date in format YYYY-MM-DD HH:MM (e.g., 2025-12-15 14:00)');
+      return;
+    }
+
+    const parsedEndTime = newEvent.endTime ? parseDateTime(newEvent.endTime) : null;
+    if (newEvent.endTime && !parsedEndTime) {
+      Alert.alert('Invalid End Date', 'Please enter a valid end date in format YYYY-MM-DD HH:MM');
+      return;
+    }
+
+    try {
+      const eventData = {
+        title: newEvent.title,
+        description: newEvent.description,
+        location: newEvent.location,
+        event_type: newEvent.eventType,
+        start_time: parsedStartTime,
+        end_time: parsedEndTime,
+        all_day: newEvent.allDay,
+        reminder_enabled: newEvent.reminderEnabled,
+        reminder_minutes_before: newEvent.reminderMinutesBefore
+      };
+
+      await CalendarService.createEventInBackend(eventData, user.token);
+      
+      setShowAddEventModal(false);
+      resetNewEvent();
+      loadPersonalEvents();
+      
+      Alert.alert('Success', 'Event created successfully!');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      Alert.alert('Error', error.message || 'Failed to create event. Please try again.');
+    }
+  };
+
+  const handleSyncToDevice = async (event) => {
+    try {
+      const hasPermission = await CalendarService.requestPermissions();
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'Calendar permission is required to sync events to your device calendar'
+        );
+        return;
+      }
+
+      await CalendarService.syncEventToDevice(event, user.token);
+      
+      setPersonalEvents(prev => 
+        prev.map(e => 
+          e.id === event.id 
+            ? { ...e, synced_to_device: true }
+            : e
+        )
+      );
+      
+      Alert.alert('Success', 'Event synced to your device calendar!');
+      loadPersonalEvents();
+    } catch (error) {
+      console.error('Error syncing event:', error);
+      Alert.alert('Error', 'Failed to sync event to device calendar');
+    }
+  };
+
+  const handleUnsyncFromDevice = async (event) => {
+    try {
+      await CalendarService.unsyncEventFromDevice(event, user.token);
+      
+      setPersonalEvents(prev => 
+        prev.map(e => 
+          e.id === event.id 
+            ? { ...e, synced_to_device: false, device_event_id: null }
+            : e
+        )
+      );
+      
+      Alert.alert('Success', 'Event removed from device calendar');
+      loadPersonalEvents();
+    } catch (error) {
+      console.error('Error unsyncing event:', error);
+      Alert.alert('Error', 'Failed to remove event from device calendar');
+    }
+  };
+
+  const handleDeleteEvent = (event) => {
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (event.synced_to_device) {
+                await CalendarService.unsyncEventFromDevice(event, user.token);
+              }
+              
+              await CalendarService.deleteEventFromBackend(event.id, user.token);
+              setPersonalEvents(prev => prev.filter(e => e.id !== event.id));
+              Alert.alert('Success', 'Event deleted');
+            } catch (error) {
+              console.error('Error deleting event:', error);
+              Alert.alert('Error', 'Failed to delete event');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const resetNewEvent = () => {
+    setNewEvent({
+      title: '',
+      description: '',
+      location: '',
+      eventType: 'reminder',
+      startTime: '',
+      endTime: '',
+      allDay: false,
+      reminderEnabled: true,
+      reminderMinutesBefore: 60
+    });
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed': return '#10b981';
@@ -227,16 +450,30 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const getEventTypeIcon = (type) => {
+    const eventType = EVENT_TYPES.find(t => t.value === type);
+    return eventType ? eventType.icon : 'calendar';
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
         <Icon name="arrow-left" size={24} color="#FFD700" />
       </TouchableOpacity>
       <View style={styles.headerContent}>
-        <Icon name="hospital-building" size={28} color="#FFD700" />
-        <Text style={styles.headerTitle}>Book Appointment</Text>
+        <Icon name="calendar-month" size={28} color="#FFD700" />
+        <Text style={styles.headerTitle}>Calendar</Text>
       </View>
-      <View style={{ width: 40 }} />
+      {activeTab === 'events' ? (
+        <TouchableOpacity 
+          style={styles.addEventButton} 
+          onPress={() => setShowAddEventModal(true)}
+        >
+          <Icon name="plus" size={24} color="#FFD700" />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 40 }} />
+      )}
     </View>
   );
 
@@ -246,15 +483,22 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         style={[styles.tab, activeTab === 'book' && styles.activeTab]}
         onPress={() => setActiveTab('book')}
       >
-        <Icon name="calendar-plus" size={20} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Book New</Text>
+        <Icon name="calendar-plus" size={18} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Book</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
         onPress={() => setActiveTab('appointments')}
       >
-        <Icon name="calendar-star" size={20} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>My Appointments</Text>
+        <Icon name="calendar-star" size={18} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appointments</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'events' && styles.activeTab]}
+        onPress={() => setActiveTab('events')}
+      >
+        <Icon name="bell-outline" size={18} color={activeTab === 'events' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'events' && styles.activeTabText]}>Personal</Text>
       </TouchableOpacity>
     </View>
   );
@@ -321,12 +565,14 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
             minDate={moment().format('YYYY-MM-DD')}
             maxDate={moment().add(3, 'months').format('YYYY-MM-DD')}
             onDayPress={(day) => setSelectedDate(day.dateString)}
+            markingType="multi-dot"
             markedDates={{
               ...markedDates,
               [selectedDate]: {
-                ...markedDates[selectedDate],
+                ...(markedDates[selectedDate] || {}),
                 selected: true,
-                selectedColor: '#1a5490'
+                selectedColor: '#1a5490',
+                dots: markedDates[selectedDate]?.dots || []
               }
             }}
             theme={{
@@ -509,6 +755,133 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     );
   };
 
+  const renderPersonalEvents = () => {
+    return (
+      <View style={styles.appointmentsContainer}>
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {[{ value: 'all', label: 'All Events' }, ...EVENT_TYPES].map(type => (
+              <TouchableOpacity
+                key={type.value}
+                style={[
+                  styles.filterChip,
+                  eventFilter === type.value && styles.filterChipActive
+                ]}
+                onPress={() => setEventFilter(type.value)}
+              >
+                {type.value !== 'all' && (
+                  <Icon 
+                    name={getEventTypeIcon(type.value)} 
+                    size={14} 
+                    color={eventFilter === type.value ? '#0d2f54' : '#a0aec0'} 
+                    style={{ marginRight: 4 }}
+                  />
+                )}
+                <Text style={[
+                  styles.filterChipText,
+                  eventFilter === type.value && styles.filterChipTextActive
+                ]}>
+                  {type.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {loadingEvents ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFD700" />
+            <Text style={styles.loadingText}>Loading events...</Text>
+          </View>
+        ) : personalEvents.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="calendar-blank-outline" size={64} color="#666" />
+            <Text style={styles.emptyText}>No personal events</Text>
+            <Text style={styles.emptySubtext}>Tap the + button to add your first event</Text>
+          </View>
+        ) : (
+          <View style={styles.eventsList}>
+            {personalEvents.map(event => renderEventCard(event))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderEventCard = (event) => {
+    const formattedEvent = CalendarService.formatEventForDisplay(event);
+    const typeColor = EVENT_TYPE_COLORS[event.event_type] || '#FFD700';
+    
+    return (
+      <View key={event.id} style={styles.eventCard}>
+        <View style={styles.eventHeader}>
+          <View style={[styles.eventTypeBadge, { backgroundColor: typeColor }]}>
+            <Icon name={getEventTypeIcon(event.event_type)} size={20} color="#fff" />
+          </View>
+          <View style={styles.eventInfo}>
+            <Text style={styles.eventTitle}>{event.title}</Text>
+            <Text style={styles.eventTypeLabel}>
+              {event.event_type.replace('_', ' ').toUpperCase()}
+            </Text>
+          </View>
+          {event.synced_to_device && (
+            <View style={styles.syncedBadge}>
+              <Icon name="check" size={12} color="#fff" />
+              <Text style={styles.syncedBadgeText}>Synced</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.eventDetails}>
+          <View style={styles.eventDetailRow}>
+            <Icon name="calendar" size={16} color="#FFD700" />
+            <Text style={styles.eventDetailText}>
+              {formattedEvent.displayDate} at {formattedEvent.displayTime}
+            </Text>
+          </View>
+          
+          {event.location && (
+            <View style={styles.eventDetailRow}>
+              <Icon name="map-marker" size={16} color="#FFD700" />
+              <Text style={styles.eventDetailText}>{event.location}</Text>
+            </View>
+          )}
+
+          {event.description && (
+            <Text style={styles.eventDescription}>{event.description}</Text>
+          )}
+        </View>
+
+        <View style={styles.eventActions}>
+          {!event.synced_to_device ? (
+            <TouchableOpacity
+              style={[styles.eventActionButton, styles.syncButton]}
+              onPress={() => handleSyncToDevice(event)}
+            >
+              <Icon name="cellphone-link" size={16} color="#fff" />
+              <Text style={styles.eventActionText}>Sync to Device</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.eventActionButton, styles.unsyncButton]}
+              onPress={() => handleUnsyncFromDevice(event)}
+            >
+              <Icon name="cellphone-off" size={16} color="#fff" />
+              <Text style={styles.eventActionText}>Unsync</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[styles.eventActionButton, styles.deleteEventButton]}
+            onPress={() => handleDeleteEvent(event)}
+          >
+            <Icon name="delete" size={16} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   const renderBookingModal = () => (
     <Modal
       visible={showBookingModal}
@@ -606,6 +979,120 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     </Modal>
   );
 
+  const renderAddEventModal = () => (
+    <Modal
+      visible={showAddEventModal}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setShowAddEventModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Icon name="calendar-plus" size={24} color="#FFD700" />
+            <Text style={styles.modalTitle}>Add Event</Text>
+            <TouchableOpacity onPress={() => { setShowAddEventModal(false); resetNewEvent(); }}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalLabel}>Event Type</Text>
+            <View style={styles.eventTypesGrid}>
+              {EVENT_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.eventTypeButton,
+                    newEvent.eventType === type.value && styles.eventTypeButtonActive,
+                    { borderColor: EVENT_TYPE_COLORS[type.value] }
+                  ]}
+                  onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
+                >
+                  <Icon
+                    name={type.icon}
+                    size={20}
+                    color={newEvent.eventType === type.value ? '#fff' : EVENT_TYPE_COLORS[type.value]}
+                  />
+                  <Text
+                    style={[
+                      styles.eventTypeButtonText,
+                      newEvent.eventType === type.value && styles.eventTypeButtonTextActive
+                    ]}
+                  >
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Title *</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.title}
+              onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+              placeholder="e.g., Court Hearing"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Description</Text>
+            <TextInput
+              style={[styles.modalInput, styles.textArea]}
+              value={newEvent.description}
+              onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+              placeholder="Event details..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <Text style={styles.modalLabel}>Location</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.location}
+              onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+              placeholder="e.g., Courthouse Room 101"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Start Date & Time *</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.startTime}
+              onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
+              placeholder="YYYY-MM-DD HH:MM (e.g., 2025-12-15 14:00)"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.endTime}
+              onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
+              placeholder="YYYY-MM-DD HH:MM"
+              placeholderTextColor="#999"
+            />
+
+            <View style={styles.infoBox}>
+              <Icon name="information" size={20} color="#FFD700" />
+              <Text style={styles.infoText}>
+                Use format YYYY-MM-DD HH:MM (e.g., 2025-12-15 14:00). You can sync events to your device calendar after creating them.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.bookButton}
+              onPress={handleAddEvent}
+            >
+              <Icon name="check" size={20} color="#fff" />
+              <Text style={styles.bookButtonText}>Create Event</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <View style={styles.fullLoadingContainer}>
@@ -627,13 +1114,16 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
             {renderCalendar()}
             {renderTimeSlots()}
           </>
-        ) : (
+        ) : activeTab === 'appointments' ? (
           renderMyAppointments()
+        ) : (
+          renderPersonalEvents()
         )}
         <View style={styles.bottomPadding} />
       </ScrollView>
 
       {renderBookingModal()}
+      {renderAddEventModal()}
     </View>
   );
 };
@@ -678,6 +1168,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
+  addEventButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -691,17 +1189,17 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#0d2f54',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 12,
-    gap: 12
+    gap: 8
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 8,
+    paddingVertical: 10,
+    gap: 6,
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)'
   },
@@ -712,7 +1210,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: '#a0aec0',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500'
   },
   activeTabText: {
@@ -918,6 +1416,131 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600'
   },
+  filterContainer: {
+    marginBottom: 16
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  filterChipActive: {
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700'
+  },
+  filterChipText: {
+    fontSize: 13,
+    color: '#a0aec0'
+  },
+  filterChipTextActive: {
+    color: '#0d2f54',
+    fontWeight: '600'
+  },
+  eventsList: {
+    gap: 12
+  },
+  eventCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12
+  },
+  eventTypeBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  eventInfo: {
+    flex: 1
+  },
+  eventTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2
+  },
+  eventTypeLabel: {
+    color: '#a0aec0',
+    fontSize: 11,
+    fontWeight: '500'
+  },
+  syncedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#10b981',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12
+  },
+  syncedBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600'
+  },
+  eventDetails: {
+    marginBottom: 12
+  },
+  eventDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4
+  },
+  eventDetailText: {
+    color: '#fff',
+    fontSize: 14
+  },
+  eventDescription: {
+    color: '#a0aec0',
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginTop: 8
+  },
+  eventActions: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  eventActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8
+  },
+  syncButton: {
+    backgroundColor: '#1a5490'
+  },
+  unsyncButton: {
+    backgroundColor: '#6b7280'
+  },
+  deleteEventButton: {
+    backgroundColor: '#ef4444',
+    flex: 0,
+    paddingHorizontal: 16
+  },
+  eventActionText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600'
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -975,6 +1598,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12
   },
+  modalInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 16
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top'
+  },
   appointmentTypesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1002,6 +1639,33 @@ const styles = StyleSheet.create({
   },
   appointmentTypeButtonTextActive: {
     color: '#FFD700',
+    fontWeight: '600'
+  },
+  eventTypesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20
+  },
+  eventTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1
+  },
+  eventTypeButtonActive: {
+    backgroundColor: 'rgba(255, 215, 0, 0.3)'
+  },
+  eventTypeButtonText: {
+    color: '#fff',
+    fontSize: 12
+  },
+  eventTypeButtonTextActive: {
+    color: '#fff',
     fontWeight: '600'
   },
   notesInput: {
