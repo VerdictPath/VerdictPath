@@ -204,9 +204,9 @@ const DashboardScreen = ({
           />
           <QuickActionButton
             icon="📅"
-            title="Calendar"
+            title="Appointments"
             color={selectedAvatar.accentColor}
-            onPress={() => onNavigate('calendar')}
+            onPress={() => onNavigate('appointments')}
           />
           <QuickActionButton
             icon="🏆"
