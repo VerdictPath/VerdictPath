@@ -268,6 +268,8 @@ const MedicalProviderRegistrationScreen = ({
         <Text style={styles.featureItem}>Admin user controls</Text>
         <Text style={styles.featureItem}>Activity logging & reporting</Text>
         <Text style={styles.featureItem}>Secure consent management</Text>
+        <Text style={styles.featureItem}>Law Firm Negotiations Portal</Text>
+        <Text style={styles.featureItem}>Receive Disbursements Portal</Text>
       </View>
     </View>
   );
