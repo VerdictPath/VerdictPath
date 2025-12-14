@@ -13,6 +13,9 @@ import {
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
+// Launch promotion: All subscribers get premium features during launch
+const IS_LAUNCH_PROMO = true;
+
 const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +139,10 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const checkPremiumAccess = () => {
+    // During launch promotion, all subscribers get premium features
+    if (IS_LAUNCH_PROMO) {
+      return true;
+    }
     // Check if subscription is loaded and has premium plan
     if (!subscription || subscription.planType !== 'premium') {
       setShowUpgradeModal(true);
@@ -453,8 +460,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       );
     }
 
-    // Show upgrade invitation for standard plan users
-    if (subscription && subscription.planType !== 'premium') {
+    // Show upgrade invitation for standard plan users (skip during launch promo)
+    if (!IS_LAUNCH_PROMO && subscription && subscription.planType !== 'premium') {
       return (
         <View style={styles.tabContent}>
           <View style={styles.upgradeInvitationCard}>
