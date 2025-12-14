@@ -140,7 +140,12 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
         <Icon name="gavel" size={28} color="#FFD700" />
         <Text style={styles.headerTitle}>Client Medical</Text>
       </View>
-      <View style={{ width: 40 }} />
+      <TouchableOpacity 
+        style={styles.calendarSettingsButton} 
+        onPress={() => onNavigate('lawfirm-calendar')}
+      >
+        <Icon name="cog" size={24} color="#FFD700" />
+      </TouchableOpacity>
     </View>
   );
 
@@ -507,6 +512,14 @@ const styles = StyleSheet.create({
     })
   },
   backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  calendarSettingsButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
