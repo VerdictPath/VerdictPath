@@ -99,7 +99,7 @@ const LawFirmRegistrationScreen = ({
   const renderPricingCard = () => (
     <View style={styles.pricingSection}>
       <View style={styles.pricingHeader}>
-        <Text style={styles.pricingBadge}>LAUNCH SPECIAL</Text>
+        <Text style={styles.pricingBadge}>LIMITED TIME OFFER</Text>
       </View>
       
       <Text style={styles.pricingTitle}>Law Firm Portal Pricing</Text>
@@ -109,7 +109,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Solo/Shingle</Text>
           <Text style={styles.tierRange}>1-24 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$45/mo</Text>
+            <Text style={styles.originalPrice}>$45/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -117,7 +118,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Boutique</Text>
           <Text style={styles.tierRange}>25-49 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$80/mo</Text>
+            <Text style={styles.originalPrice}>$80/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -125,7 +127,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Small Firm</Text>
           <Text style={styles.tierRange}>50-99 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$140/mo</Text>
+            <Text style={styles.originalPrice}>$140/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -133,7 +136,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Medium-Small</Text>
           <Text style={styles.tierRange}>100-199 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$250/mo</Text>
+            <Text style={styles.originalPrice}>$250/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -141,7 +145,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Medium-Large</Text>
           <Text style={styles.tierRange}>200-299 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$420/mo</Text>
+            <Text style={styles.originalPrice}>$420/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -149,7 +154,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Large</Text>
           <Text style={styles.tierRange}>300-499 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$660/mo</Text>
+            <Text style={styles.originalPrice}>$660/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -157,7 +163,8 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Enterprise</Text>
           <Text style={styles.tierRange}>500-999 Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$1,000/mo</Text>
+            <Text style={styles.originalPrice}>$1,000/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
 
@@ -165,9 +172,15 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.tierName}>Mega Firm</Text>
           <Text style={styles.tierRange}>1000+ Clients</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.salePrice}>$1,500/mo</Text>
+            <Text style={styles.originalPrice}>$1,500/mo</Text>
+            <Text style={styles.salePrice}>$40/mo</Text>
           </View>
         </View>
+      </View>
+
+      <View style={styles.savingsBox}>
+        <Text style={styles.savingsText}>SAVE UP TO $1,460/MONTH!</Text>
+        <Text style={styles.savingsSubtext}>Launch Special - Only $40/month for ALL tiers!</Text>
       </View>
 
       <View style={styles.featuresList}>
@@ -214,7 +227,7 @@ const LawFirmRegistrationScreen = ({
             <Text style={styles.optionDescription}>
               Start your own firm and become the administrator
             </Text>
-            <Text style={styles.optionPrice}>Starting at $45/month</Text>
+            <Text style={styles.optionPrice}>Launch Special: Only $40/month!</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -601,11 +614,36 @@ const styles = StyleSheet.create({
   priceRow: {
     flex: 1,
     alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
   salePrice: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#28A745',
+  },
+  savingsBox: {
+    backgroundColor: '#28A745',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  savingsText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  savingsSubtext: {
+    fontSize: 14,
+    color: '#FFF',
+    marginTop: 5,
   },
   featuresList: {
     backgroundColor: theme.colors.background,
