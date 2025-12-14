@@ -14,6 +14,25 @@ async function verifyClientOwnership(req, clientId) {
   return String(req.user.id) === String(clientId);
 }
 
+async function verifyClientConnectedToLawFirm(req, lawFirmId) {
+  if (req.user.userType !== 'individual') return false;
+  const result = await db.query(
+    `SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2`,
+    [lawFirmId, req.user.id]
+  );
+  return result.rows.length > 0;
+}
+
+async function verifyLawFirmOrConnectedClient(req, lawFirmId) {
+  if (req.user.userType === 'lawfirm') {
+    return await verifyLawFirmOwnership(req, lawFirmId);
+  }
+  if (req.user.userType === 'individual') {
+    return await verifyClientConnectedToLawFirm(req, lawFirmId);
+  }
+  return false;
+}
+
 async function verifyAppointmentAccess(req, appointmentId) {
   const result = await db.query(
     `SELECT client_id, law_firm_id FROM law_firm_appointments WHERE id = $1`,
@@ -45,6 +64,10 @@ function formatTime(minutes) {
 router.get('/law-firms/:lawFirmId/availability', authenticateToken, async (req, res) => {
   try {
     const { lawFirmId } = req.params;
+    
+    if (!await verifyLawFirmOrConnectedClient(req, lawFirmId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Access denied' });
+    }
     
     const result = await db.query(
       `SELECT * FROM law_firm_availability 
@@ -136,6 +159,10 @@ router.get('/law-firms/:lawFirmId/blocked-times', authenticateToken, async (req,
   try {
     const { lawFirmId } = req.params;
     
+    if (!await verifyLawFirmOwnership(req, lawFirmId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Access denied' });
+    }
+    
     const result = await db.query(
       `SELECT * FROM law_firm_blocked_times 
        WHERE law_firm_id = $1 AND end_datetime >= NOW()
@@ -176,6 +203,10 @@ router.get('/law-firms/:lawFirmId/available-slots', authenticateToken, async (re
   try {
     const { lawFirmId } = req.params;
     const { date } = req.query;
+    
+    if (!await verifyLawFirmOrConnectedClient(req, lawFirmId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: Access denied' });
+    }
     
     if (!date) {
       return res.status(400).json({ success: false, error: 'Date is required' });

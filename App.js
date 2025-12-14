@@ -76,6 +76,7 @@ import MedicalProviderRegistrationScreen from './src/screens/MedicalProviderRegi
 import MedicalProviderCalendarScreen from './src/screens/MedicalProviderCalendarScreen';
 import PatientAppointmentBookingScreen from './src/screens/PatientAppointmentBookingScreen';
 import LawFirmClientAppointmentsScreen from './src/screens/LawFirmClientAppointmentsScreen';
+import LawFirmCalendarScreen from './src/screens/LawFirmCalendarScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
@@ -1872,6 +1873,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-calendar' && (
+        <LawFirmCalendarScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onBack={() => handleBackToLawFirmDashboard(lawFirmReturnTab)}
+        />
+      )}
+
       {currentScreen === 'appointments' && (
         <PatientAppointmentBookingScreen
           user={user}
@@ -1992,7 +2001,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Law Firm Bottom Navigation */}
         {(() => {
-          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments'];
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
           console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;

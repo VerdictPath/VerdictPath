@@ -1,0 +1,1784 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
+  TextInput, Alert, Modal, Platform
+} from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import moment from 'moment';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { theme } from '../styles/theme';
+import { API_BASE_URL } from '../config/api';
+
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const APPOINTMENT_TYPES = ['consultation', 'case_review', 'deposition', 'mediation', 'court_hearing', 'settlement_conference'];
+const STATUS_COLORS = {
+  pending: '#f59e0b',
+  confirmed: '#10b981',
+  completed: '#6366f1',
+  cancelled: '#ef4444',
+  no_show: '#6b7280'
+};
+
+const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
+  const [viewMode, setViewMode] = useState('month');
+  const [availability, setAvailability] = useState([]);
+  const [blockedTimes, setBlockedTimes] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [markedDates, setMarkedDates] = useState({});
+  const [settings, setSettings] = useState(null);
+  
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [showBlockTimeModal, setShowBlockTimeModal] = useState(false);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showCreateAppointmentModal, setShowCreateAppointmentModal] = useState(false);
+  const [showAvailabilityRequestModal, setShowAvailabilityRequestModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  
+  const [newAvailability, setNewAvailability] = useState({
+    dayOfWeek: 1,
+    startTime: '09:00',
+    endTime: '17:00',
+    slotDuration: 30,
+    bufferMinutes: 15,
+    meetingType: 'consultation'
+  });
+  
+  const [newBlockedTime, setNewBlockedTime] = useState({
+    startDate: moment().format('YYYY-MM-DD'),
+    endDate: moment().format('YYYY-MM-DD'),
+    reason: '',
+    blockType: 'personal',
+    isAllDay: true
+  });
+
+  const [newAppointment, setNewAppointment] = useState({
+    clientId: '',
+    appointmentDate: moment().format('YYYY-MM-DD'),
+    startTime: '09:00',
+    endTime: '09:30',
+    appointmentType: 'consultation',
+    title: '',
+    description: '',
+    location: '',
+    meetingModality: 'in_person'
+  });
+
+  const [newAvailabilityRequest, setNewAvailabilityRequest] = useState({
+    clientId: '',
+    title: '',
+    description: '',
+    appointmentType: 'consultation',
+    priority: 'normal',
+    minDurationMinutes: 30
+  });
+
+  const lawFirmId = user?.lawFirmId || user?.id;
+
+  useEffect(() => {
+    fetchAllData();
+  }, [selectedDate]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchAvailability(),
+        fetchBlockedTimes(),
+        fetchAppointments(),
+        fetchSettings(),
+        fetchClients()
+      ]);
+    } catch (error) {
+      console.error('Error fetching calendar data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAvailability = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/availability`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setAvailability(data.availability || []);
+      }
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    }
+  };
+
+  const fetchBlockedTimes = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/blocked-times`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setBlockedTimes(data.blockedTimes || []);
+        updateMarkedDates(appointments, data.blockedTimes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching blocked times:', error);
+    }
+  };
+
+  const fetchAppointments = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/appointments`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setAppointments(data.appointments || []);
+        updateMarkedDates(data.appointments || [], blockedTimes);
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/calendar-settings`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data.settings);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/lawfirm/clients`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.clients || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
+  const updateMarkedDates = (appts, blocked) => {
+    const marked = {};
+    
+    appts.forEach(appt => {
+      const date = appt.appointment_date;
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      const color = appt.status === 'confirmed' ? '#10b981' : 
+                    appt.status === 'pending' ? '#f59e0b' : '#6b7280';
+      marked[date].dots.push({ key: `appt-${appt.id}`, color });
+    });
+
+    blocked.forEach(block => {
+      const startDate = moment(block.start_datetime).format('YYYY-MM-DD');
+      const endDate = moment(block.end_datetime).format('YYYY-MM-DD');
+      let current = moment(startDate);
+      while (current.isSameOrBefore(endDate)) {
+        const date = current.format('YYYY-MM-DD');
+        if (!marked[date]) {
+          marked[date] = { dots: [] };
+        }
+        marked[date].dots.push({ key: `block-${block.id}-${date}`, color: '#ef4444' });
+        current.add(1, 'day');
+      }
+    });
+
+    setMarkedDates(marked);
+  };
+
+  const handleAddAvailability = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/availability`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newAvailability)
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Availability added successfully!');
+        setShowAvailabilityModal(false);
+        fetchAvailability();
+        setNewAvailability({
+          dayOfWeek: 1,
+          startTime: '09:00',
+          endTime: '17:00',
+          slotDuration: 30,
+          bufferMinutes: 15,
+          meetingType: 'consultation'
+        });
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to add availability');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add availability');
+    }
+  };
+
+  const handleDeleteAvailability = async (availabilityId) => {
+    Alert.alert(
+      'Delete Availability',
+      'Are you sure you want to remove this availability slot?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/availability/${availabilityId}`,
+                {
+                  method: 'DELETE',
+                  headers: { 'Authorization': `Bearer ${user.token}` }
+                }
+              );
+              if (response.ok) {
+                fetchAvailability();
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete availability');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBlockTime = async () => {
+    if (!newBlockedTime.startDate || !newBlockedTime.endDate) {
+      Alert.alert('Error', 'Please select start and end dates');
+      return;
+    }
+    
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/block-time`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            startDatetime: `${newBlockedTime.startDate}T00:00:00`,
+            endDatetime: `${newBlockedTime.endDate}T23:59:59`,
+            reason: newBlockedTime.reason,
+            blockType: newBlockedTime.blockType,
+            isAllDay: newBlockedTime.isAllDay
+          })
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Time blocked successfully!');
+        setShowBlockTimeModal(false);
+        fetchBlockedTimes();
+        setNewBlockedTime({
+          startDate: moment().format('YYYY-MM-DD'),
+          endDate: moment().format('YYYY-MM-DD'),
+          reason: '',
+          blockType: 'personal',
+          isAllDay: true
+        });
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to block time');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to block time');
+    }
+  };
+
+  const handleDeleteBlockedTime = async (blockId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/blocked-times/${blockId}`,
+        {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        }
+      );
+      if (response.ok) {
+        fetchBlockedTimes();
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to remove blocked time');
+    }
+  };
+
+  const handleCreateAppointment = async () => {
+    if (!newAppointment.clientId) {
+      Alert.alert('Error', 'Please select a client');
+      return;
+    }
+    
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/appointments`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newAppointment)
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Appointment created successfully!');
+        setShowCreateAppointmentModal(false);
+        fetchAppointments();
+        setNewAppointment({
+          clientId: '',
+          appointmentDate: moment().format('YYYY-MM-DD'),
+          startTime: '09:00',
+          endTime: '09:30',
+          appointmentType: 'consultation',
+          title: '',
+          description: '',
+          location: '',
+          meetingModality: 'in_person'
+        });
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to create appointment');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create appointment');
+    }
+  };
+
+  const handleSendAvailabilityRequest = async () => {
+    if (!newAvailabilityRequest.clientId) {
+      Alert.alert('Error', 'Please select a client');
+      return;
+    }
+    if (!newAvailabilityRequest.title) {
+      Alert.alert('Error', 'Please enter a title');
+      return;
+    }
+    
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/availability-requests`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newAvailabilityRequest)
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Availability request sent to client!');
+        setShowAvailabilityRequestModal(false);
+        setNewAvailabilityRequest({
+          clientId: '',
+          title: '',
+          description: '',
+          appointmentType: 'consultation',
+          priority: 'normal',
+          minDurationMinutes: 30
+        });
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to send request');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send request');
+    }
+  };
+
+  const handleConfirmAppointment = async (appointmentId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/appointments/${appointmentId}/confirm`,
+        {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Appointment confirmed!');
+        fetchAppointments();
+        setShowAppointmentModal(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to confirm appointment');
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId, reason) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/appointments/${appointmentId}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reason })
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Appointment cancelled');
+        fetchAppointments();
+        setShowAppointmentModal(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to cancel appointment');
+    }
+  };
+
+  const handleCompleteAppointment = async (appointmentId, notes) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/appointments/${appointmentId}/complete`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ firmNotes: notes })
+        }
+      );
+      if (response.ok) {
+        Alert.alert('Success', 'Appointment marked as completed!');
+        fetchAppointments();
+        setShowAppointmentModal(false);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to complete appointment');
+    }
+  };
+
+  const formatTime = (timeStr) => {
+    if (!timeStr) return '';
+    return moment(timeStr, 'HH:mm:ss').format('h:mm A');
+  };
+
+  const onDayPress = (day) => {
+    setSelectedDate(day.dateString);
+    setViewMode('day');
+  };
+
+  const generateTimeSlots = (dayAvailability, dayAppointments, dayBlocked) => {
+    if (!dayAvailability) return [];
+
+    const slots = [];
+    const start = moment(dayAvailability.start_time, 'HH:mm:ss');
+    const end = moment(dayAvailability.end_time, 'HH:mm:ss');
+    const slotDuration = dayAvailability.slot_duration_minutes || 30;
+
+    let current = start.clone();
+
+    while (current.clone().add(slotDuration, 'minutes').isSameOrBefore(end)) {
+      const slotStart = current.format('HH:mm');
+      const slotEnd = current.clone().add(slotDuration, 'minutes').format('HH:mm');
+
+      const appointment = dayAppointments.find(a => 
+        moment(a.start_time, 'HH:mm:ss').format('HH:mm') === slotStart
+      );
+
+      const blocked = dayBlocked.find(b => {
+        const blockStart = moment(b.start_datetime);
+        const blockEnd = moment(b.end_datetime);
+        const slotTime = moment(`${selectedDate} ${slotStart}`);
+        return slotTime.isBetween(blockStart, blockEnd, null, '[]');
+      });
+
+      slots.push({
+        startTime: slotStart,
+        endTime: slotEnd,
+        appointment,
+        blocked
+      });
+
+      current.add(slotDuration, 'minutes');
+    }
+
+    return slots;
+  };
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.headerContent}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Icon name="arrow-left" size={24} color="#FFD700" />
+        </TouchableOpacity>
+        <Icon name="scale-balance" size={28} color="#FFD700" />
+        <Text style={styles.headerTitle}>Law Firm Calendar</Text>
+        <Icon name="gavel" size={24} color="#FFD700" />
+      </View>
+      <Text style={styles.headerSubtitle}>Manage Your Schedule</Text>
+    </View>
+  );
+
+  const renderViewModeSelector = () => (
+    <View style={styles.viewModeContainer}>
+      {['month', 'week', 'day'].map((mode) => (
+        <TouchableOpacity
+          key={mode}
+          style={[styles.viewModeButton, viewMode === mode && styles.viewModeButtonActive]}
+          onPress={() => setViewMode(mode)}
+        >
+          <Icon 
+            name={mode === 'month' ? 'calendar-month' : mode === 'week' ? 'calendar-week' : 'calendar-today'} 
+            size={20} 
+            color={viewMode === mode ? '#FFD700' : '#fff'} 
+          />
+          <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
+            {mode.charAt(0).toUpperCase() + mode.slice(1)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderActionButtons = () => (
+    <View style={styles.actionButtons}>
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityModal(true)}>
+        <Icon name="clock-outline" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Set Hours</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowBlockTimeModal(true)}>
+        <Icon name="block-helper" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Block Time</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowCreateAppointmentModal(true)}>
+        <Icon name="calendar-plus" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>New Appt</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderSecondaryActions = () => (
+    <View style={styles.secondaryActions}>
+      <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAvailabilityRequestModal(true)}>
+        <Icon name="send" size={18} color="#FFD700" />
+        <Text style={styles.secondaryButtonText}>Request Client Availability</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderMonthView = () => (
+    <View style={styles.calendarContainer}>
+      <Calendar
+        current={selectedDate}
+        onDayPress={onDayPress}
+        markedDates={{
+          ...markedDates,
+          [selectedDate]: {
+            ...markedDates[selectedDate],
+            selected: true,
+            selectedColor: '#1a5490'
+          }
+        }}
+        markingType={'multi-dot'}
+        theme={{
+          backgroundColor: 'transparent',
+          calendarBackground: 'rgba(255, 255, 255, 0.1)',
+          textSectionTitleColor: '#FFD700',
+          selectedDayBackgroundColor: '#1a5490',
+          selectedDayTextColor: '#ffffff',
+          todayTextColor: '#FFD700',
+          dayTextColor: '#ffffff',
+          textDisabledColor: '#666',
+          monthTextColor: '#FFD700',
+          arrowColor: '#FFD700',
+        }}
+      />
+    </View>
+  );
+
+  const renderDayView = () => {
+    const dayOfWeek = moment(selectedDate).day();
+    const dayAvailability = availability.find(a => a.day_of_week === dayOfWeek);
+    const dayAppointments = appointments.filter(a => a.appointment_date === selectedDate);
+    const dayBlocked = blockedTimes.filter(b => {
+      const blockStart = moment(b.start_datetime).format('YYYY-MM-DD');
+      const blockEnd = moment(b.end_datetime).format('YYYY-MM-DD');
+      return moment(selectedDate).isBetween(blockStart, blockEnd, null, '[]');
+    });
+    const timeSlots = generateTimeSlots(dayAvailability, dayAppointments, dayBlocked);
+
+    return (
+      <View style={styles.dayViewContainer}>
+        <View style={styles.dayViewHeader}>
+          <Icon name="calendar-star" size={24} color="#FFD700" />
+          <Text style={styles.dayViewTitle}>
+            {moment(selectedDate).format('dddd, MMMM Do, YYYY')}
+          </Text>
+        </View>
+
+        {!dayAvailability ? (
+          <View style={styles.noAvailabilityContainer}>
+            <Icon name="calendar-remove" size={48} color="#666" />
+            <Text style={styles.noAvailabilityText}>No availability set for this day</Text>
+            <Text style={styles.noAvailabilitySubtext}>Set your hours to start accepting appointments</Text>
+          </View>
+        ) : (
+          <View style={styles.timeSlotsContainer}>
+            {timeSlots.map((slot, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.timeSlot,
+                  slot.appointment ? (slot.appointment.status === 'confirmed' ? styles.slotConfirmed : styles.slotPending) :
+                  slot.blocked ? styles.slotBlocked : styles.slotAvailable
+                ]}
+                onPress={() => {
+                  if (slot.appointment) {
+                    setSelectedAppointment(slot.appointment);
+                    setShowAppointmentModal(true);
+                  }
+                }}
+                disabled={!slot.appointment}
+              >
+                <View style={styles.timeSlotTime}>
+                  <Text style={styles.timeSlotTimeText}>
+                    {moment(slot.startTime, 'HH:mm').format('h:mm A')}
+                  </Text>
+                </View>
+
+                <View style={styles.timeSlotContent}>
+                  <Icon 
+                    name={slot.appointment ? 'account-check' : slot.blocked ? 'block-helper' : 'calendar-blank'} 
+                    size={24} 
+                    color="#fff" 
+                  />
+                  {slot.appointment ? (
+                    <View style={styles.appointmentInfo}>
+                      <Text style={styles.appointmentClientName}>
+                        {slot.appointment.client_first_name} {slot.appointment.client_last_name}
+                      </Text>
+                      <Text style={styles.appointmentTypeText}>
+                        {slot.appointment.appointment_type || 'Consultation'}
+                      </Text>
+                    </View>
+                  ) : slot.blocked ? (
+                    <Text style={styles.slotLabel}>Blocked - {slot.blocked.reason || 'Unavailable'}</Text>
+                  ) : (
+                    <Text style={styles.slotLabel}>Available</Text>
+                  )}
+                </View>
+
+                {slot.appointment && (
+                  <Icon
+                    name={slot.appointment.status === 'confirmed' ? 'check-circle' : 'clock-outline'}
+                    size={20}
+                    color={slot.appointment.status === 'confirmed' ? '#10b981' : '#f59e0b'}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderWeekView = () => {
+    const weekStart = moment(selectedDate).startOf('week');
+    const weekDays = Array.from({ length: 7 }, (_, i) => weekStart.clone().add(i, 'days'));
+
+    return (
+      <View style={styles.weekViewContainer}>
+        {weekDays.map(day => {
+          const dayAppointments = appointments.filter(
+            a => a.appointment_date === day.format('YYYY-MM-DD')
+          );
+
+          return (
+            <TouchableOpacity
+              key={day.format('YYYY-MM-DD')}
+              style={[
+                styles.weekDay,
+                day.format('YYYY-MM-DD') === selectedDate && styles.weekDaySelected
+              ]}
+              onPress={() => {
+                setSelectedDate(day.format('YYYY-MM-DD'));
+                setViewMode('day');
+              }}
+            >
+              <View style={styles.weekDayHeader}>
+                <Text style={styles.weekDayName}>{day.format('ddd')}</Text>
+                <Text style={styles.weekDayNumber}>{day.format('D')}</Text>
+              </View>
+              <View style={styles.weekDayAppointments}>
+                {dayAppointments.slice(0, 3).map((appt, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.weekDayAppointment,
+                      { backgroundColor: appt.status === 'confirmed' ? '#10b981' : '#f59e0b' }
+                    ]}
+                  >
+                    <Text style={styles.weekDayAppointmentText} numberOfLines={1}>
+                      {moment(appt.start_time, 'HH:mm:ss').format('h:mm A')}
+                    </Text>
+                  </View>
+                ))}
+                {dayAppointments.length > 3 && (
+                  <Text style={styles.weekDayMore}>+{dayAppointments.length - 3}</Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
+  const renderCurrentAvailability = () => (
+    <View style={styles.availabilitySection}>
+      <Text style={styles.sectionTitle}>Current Availability</Text>
+      {availability.length === 0 ? (
+        <Text style={styles.noDataText}>No availability configured</Text>
+      ) : (
+        availability.map((avail, index) => (
+          <View key={index} style={styles.availabilityItem}>
+            <View style={styles.availabilityInfo}>
+              <Text style={styles.availabilityDay}>{DAYS_OF_WEEK[avail.day_of_week]}</Text>
+              <Text style={styles.availabilityTime}>
+                {formatTime(avail.start_time)} - {formatTime(avail.end_time)}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => handleDeleteAvailability(avail.id)}>
+              <Icon name="delete" size={20} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
+    </View>
+  );
+
+  const renderLegend = () => (
+    <View style={styles.legendContainer}>
+      <Text style={styles.legendTitle}>Legend</Text>
+      <View style={styles.legendRow}>
+        <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
+        <Text style={styles.legendText}>Confirmed</Text>
+      </View>
+      <View style={styles.legendRow}>
+        <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
+        <Text style={styles.legendText}>Pending</Text>
+      </View>
+      <View style={styles.legendRow}>
+        <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
+        <Text style={styles.legendText}>Blocked</Text>
+      </View>
+    </View>
+  );
+
+  const renderAvailabilityModal = () => (
+    <Modal visible={showAvailabilityModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Set Availability</Text>
+            <TouchableOpacity onPress={() => setShowAvailabilityModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalLabel}>Day of Week</Text>
+            <View style={styles.daySelector}>
+              {DAYS_OF_WEEK.map((day, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.dayButton, newAvailability.dayOfWeek === idx && styles.dayButtonActive]}
+                  onPress={() => setNewAvailability({ ...newAvailability, dayOfWeek: idx })}
+                >
+                  <Text style={[styles.dayButtonText, newAvailability.dayOfWeek === idx && styles.dayButtonTextActive]}>
+                    {day.slice(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Start Time</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newAvailability.startTime}
+              onChangeText={(text) => setNewAvailability({ ...newAvailability, startTime: text })}
+              placeholder="09:00"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>End Time</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newAvailability.endTime}
+              onChangeText={(text) => setNewAvailability({ ...newAvailability, endTime: text })}
+              placeholder="17:00"
+              placeholderTextColor="#999"
+            />
+
+            <View style={styles.timeRow}>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>Slot Duration (min)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={String(newAvailability.slotDuration)}
+                  onChangeText={(text) => setNewAvailability({ ...newAvailability, slotDuration: parseInt(text) || 30 })}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>Buffer (min)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={String(newAvailability.bufferMinutes)}
+                  onChangeText={(text) => setNewAvailability({ ...newAvailability, bufferMinutes: parseInt(text) || 15 })}
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleAddAvailability}>
+              <Icon name="content-save" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Save Availability</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderBlockTimeModal = () => (
+    <Modal visible={showBlockTimeModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Block Time</Text>
+            <TouchableOpacity onPress={() => setShowBlockTimeModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalLabel}>Start Date</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newBlockedTime.startDate}
+              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, startDate: text })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>End Date</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newBlockedTime.endDate}
+              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, endDate: text })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Reason</Text>
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              value={newBlockedTime.reason}
+              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, reason: text })}
+              placeholder="Vacation, Court, Conference, etc."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleBlockTime}>
+              <Icon name="block-helper" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Block Time</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderCreateAppointmentModal = () => (
+    <Modal visible={showCreateAppointmentModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Create Appointment</Text>
+            <TouchableOpacity onPress={() => setShowCreateAppointmentModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalLabel}>Select Client</Text>
+            <View style={styles.clientSelector}>
+              {clients.slice(0, 10).map((client) => (
+                <TouchableOpacity
+                  key={client.id}
+                  style={[styles.clientOption, newAppointment.clientId === client.id && styles.clientOptionActive]}
+                  onPress={() => setNewAppointment({ ...newAppointment, clientId: client.id })}
+                >
+                  <Text style={[styles.clientOptionText, newAppointment.clientId === client.id && styles.clientOptionTextActive]}>
+                    {client.first_name} {client.last_name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Date</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newAppointment.appointmentDate}
+              onChangeText={(text) => setNewAppointment({ ...newAppointment, appointmentDate: text })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#999"
+            />
+
+            <View style={styles.timeRow}>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>Start Time</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newAppointment.startTime}
+                  onChangeText={(text) => setNewAppointment({ ...newAppointment, startTime: text })}
+                  placeholder="09:00"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>End Time</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newAppointment.endTime}
+                  onChangeText={(text) => setNewAppointment({ ...newAppointment, endTime: text })}
+                  placeholder="09:30"
+                  placeholderTextColor="#999"
+                />
+              </View>
+            </View>
+
+            <Text style={styles.modalLabel}>Title</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newAppointment.title}
+              onChangeText={(text) => setNewAppointment({ ...newAppointment, title: text })}
+              placeholder="Meeting title"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Description</Text>
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              value={newAppointment.description}
+              onChangeText={(text) => setNewAppointment({ ...newAppointment, description: text })}
+              placeholder="Meeting details..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleCreateAppointment}>
+              <Icon name="calendar-plus" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Create Appointment</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderAvailabilityRequestModal = () => (
+    <Modal visible={showAvailabilityRequestModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Request Client Availability</Text>
+            <TouchableOpacity onPress={() => setShowAvailabilityRequestModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalLabel}>Select Client</Text>
+            <View style={styles.clientSelector}>
+              {clients.slice(0, 10).map((client) => (
+                <TouchableOpacity
+                  key={client.id}
+                  style={[styles.clientOption, newAvailabilityRequest.clientId === client.id && styles.clientOptionActive]}
+                  onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, clientId: client.id })}
+                >
+                  <Text style={[styles.clientOptionText, newAvailabilityRequest.clientId === client.id && styles.clientOptionTextActive]}>
+                    {client.first_name} {client.last_name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Title</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newAvailabilityRequest.title}
+              onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, title: text })}
+              placeholder="e.g., Schedule Case Review"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Description</Text>
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              value={newAvailabilityRequest.description}
+              onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, description: text })}
+              placeholder="Details about the meeting..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <Text style={styles.modalLabel}>Priority</Text>
+            <View style={styles.prioritySelector}>
+              {['normal', 'high', 'urgent'].map((priority) => (
+                <TouchableOpacity
+                  key={priority}
+                  style={[styles.priorityOption, newAvailabilityRequest.priority === priority && styles.priorityOptionActive]}
+                  onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, priority })}
+                >
+                  <Text style={[styles.priorityOptionText, newAvailabilityRequest.priority === priority && styles.priorityOptionTextActive]}>
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleSendAvailabilityRequest}>
+              <Icon name="send" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Send Request</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  const renderAppointmentModal = () => (
+    <Modal visible={showAppointmentModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Appointment Details</Text>
+            <TouchableOpacity onPress={() => setShowAppointmentModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {selectedAppointment && (
+            <ScrollView style={styles.modalContent}>
+              <View style={styles.appointmentDetailCard}>
+                <Icon name="account" size={40} color="#FFD700" />
+                <Text style={styles.appointmentDetailName}>
+                  {selectedAppointment.client_first_name} {selectedAppointment.client_last_name}
+                </Text>
+                <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[selectedAppointment.status] }]}>
+                  <Text style={styles.statusBadgeText}>{selectedAppointment.status}</Text>
+                </View>
+              </View>
+
+              <View style={styles.appointmentDetailRow}>
+                <Icon name="clock-outline" size={20} color="#FFD700" />
+                <Text style={styles.appointmentDetailText}>
+                  {formatTime(selectedAppointment.start_time)} - {formatTime(selectedAppointment.end_time)}
+                </Text>
+              </View>
+
+              <View style={styles.appointmentDetailRow}>
+                <Icon name="briefcase" size={20} color="#FFD700" />
+                <Text style={styles.appointmentDetailText}>
+                  {selectedAppointment.appointment_type || 'Consultation'}
+                </Text>
+              </View>
+
+              {selectedAppointment.title && (
+                <View style={styles.appointmentDetailRow}>
+                  <Icon name="text" size={20} color="#FFD700" />
+                  <Text style={styles.appointmentDetailText}>{selectedAppointment.title}</Text>
+                </View>
+              )}
+
+              {selectedAppointment.description && (
+                <View style={styles.appointmentDetailRow}>
+                  <Icon name="note-text" size={20} color="#FFD700" />
+                  <Text style={styles.appointmentDetailText}>{selectedAppointment.description}</Text>
+                </View>
+              )}
+
+              <View style={styles.appointmentActions}>
+                {selectedAppointment.status === 'pending' && (
+                  <TouchableOpacity
+                    style={[styles.appointmentActionButton, { backgroundColor: '#10b981' }]}
+                    onPress={() => handleConfirmAppointment(selectedAppointment.id)}
+                  >
+                    <Icon name="check" size={20} color="#fff" />
+                    <Text style={styles.appointmentActionText}>Confirm</Text>
+                  </TouchableOpacity>
+                )}
+
+                {selectedAppointment.status === 'confirmed' && (
+                  <TouchableOpacity
+                    style={[styles.appointmentActionButton, { backgroundColor: '#6366f1' }]}
+                    onPress={() => handleCompleteAppointment(selectedAppointment.id, '')}
+                  >
+                    <Icon name="check-all" size={20} color="#fff" />
+                    <Text style={styles.appointmentActionText}>Complete</Text>
+                  </TouchableOpacity>
+                )}
+
+                {['pending', 'confirmed'].includes(selectedAppointment.status) && (
+                  <TouchableOpacity
+                    style={[styles.appointmentActionButton, { backgroundColor: '#ef4444' }]}
+                    onPress={() => handleCancelAppointment(selectedAppointment.id, 'Cancelled by firm')}
+                  >
+                    <Icon name="close" size={20} color="#fff" />
+                    <Text style={styles.appointmentActionText}>Cancel</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFD700" />
+          <Text style={styles.loadingText}>Loading calendar...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {renderHeader()}
+      {renderViewModeSelector()}
+      {renderActionButtons()}
+      {renderSecondaryActions()}
+      
+      <ScrollView style={styles.scrollView}>
+        {viewMode === 'month' && renderMonthView()}
+        {viewMode === 'week' && renderWeekView()}
+        {viewMode === 'day' && renderDayView()}
+        {renderCurrentAvailability()}
+        {renderLegend()}
+      </ScrollView>
+
+      {renderAvailabilityModal()}
+      {renderBlockTimeModal()}
+      {renderCreateAppointmentModal()}
+      {renderAvailabilityRequestModal()}
+      {renderAppointmentModal()}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0a1628'
+  },
+  header: {
+    backgroundColor: '#0d2f54',
+    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 8
+      }
+    })
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    padding: 8
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#fff',
+    textAlign: 'center',
+    marginTop: 4,
+    opacity: 0.9
+  },
+  viewModeContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
+  },
+  viewModeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  viewModeButtonActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
+    borderColor: '#FFD700'
+  },
+  viewModeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  viewModeTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    padding: 16,
+    paddingBottom: 8,
+    gap: 8
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)'
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  secondaryActions: {
+    paddingHorizontal: 16,
+    paddingBottom: 16
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)'
+  },
+  secondaryButtonText: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  scrollView: {
+    flex: 1
+  },
+  calendarContainer: {
+    margin: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 12,
+    fontSize: 16
+  },
+  dayViewContainer: {
+    padding: 16
+  },
+  dayViewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)'
+  },
+  dayViewTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFD700'
+  },
+  noAvailabilityContainer: {
+    alignItems: 'center',
+    padding: 40
+  },
+  noAvailabilityText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center'
+  },
+  noAvailabilitySubtext: {
+    color: '#999',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center'
+  },
+  timeSlotsContainer: {
+    gap: 8
+  },
+  timeSlot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1
+  },
+  slotAvailable: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  slotConfirmed: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: '#10b981'
+  },
+  slotPending: {
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    borderColor: '#f59e0b'
+  },
+  slotBlocked: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: '#ef4444'
+  },
+  timeSlotTime: {
+    width: 80
+  },
+  timeSlotTimeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  timeSlotContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  appointmentInfo: {
+    flex: 1
+  },
+  appointmentClientName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  appointmentTypeText: {
+    color: '#999',
+    fontSize: 13,
+    marginTop: 2
+  },
+  slotLabel: {
+    color: '#fff',
+    fontSize: 14
+  },
+  weekViewContainer: {
+    padding: 16,
+    gap: 8
+  },
+  weekDay: {
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    marginBottom: 8
+  },
+  weekDaySelected: {
+    backgroundColor: 'rgba(26, 84, 144, 0.3)',
+    borderColor: '#FFD700'
+  },
+  weekDayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8
+  },
+  weekDayName: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  weekDayNumber: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
+  weekDayAppointments: {
+    gap: 4
+  },
+  weekDayAppointment: {
+    padding: 6,
+    borderRadius: 6
+  },
+  weekDayAppointmentText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  weekDayMore: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 4
+  },
+  availabilitySection: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  sectionTitle: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12
+  },
+  noDataText: {
+    color: '#999',
+    fontSize: 14,
+    fontStyle: 'italic'
+  },
+  availabilityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 8
+  },
+  availabilityInfo: {
+    flex: 1
+  },
+  availabilityDay: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  availabilityTime: {
+    color: '#999',
+    fontSize: 13,
+    marginTop: 2
+  },
+  legendContainer: {
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  legendTitle: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6
+  },
+  legendText: {
+    color: '#fff',
+    fontSize: 14
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end'
+  },
+  modalContainer: {
+    backgroundColor: '#0d2f54',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    borderTopWidth: 2,
+    borderColor: '#FFD700'
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD700'
+  },
+  modalContent: {
+    padding: 20
+  },
+  modalLabel: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 16
+  },
+  daySelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  dayButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  dayButtonActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  dayButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500'
+  },
+  dayButtonTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  modalInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderRadius: 12,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16
+  },
+  modalTextArea: {
+    minHeight: 80,
+    textAlignVertical: 'top'
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  timeInput: {
+    flex: 1
+  },
+  clientSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  clientOption: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  clientOptionActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  clientOptionText: {
+    color: '#fff',
+    fontSize: 13
+  },
+  clientOptionTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  prioritySelector: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  priorityOption: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center'
+  },
+  priorityOptionActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  priorityOptionText: {
+    color: '#fff',
+    fontSize: 13
+  },
+  priorityOptionTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1a5490',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#FFD700'
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  appointmentDetailCard: {
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    marginBottom: 16
+  },
+  appointmentDetailName: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 12
+  },
+  statusBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 12
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'capitalize'
+  },
+  appointmentDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  appointmentDetailText: {
+    color: '#fff',
+    fontSize: 16
+  },
+  appointmentActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 24
+  },
+  appointmentActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 14,
+    borderRadius: 12
+  },
+  appointmentActionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600'
+  }
+});
+
+export default LawFirmCalendarScreen;

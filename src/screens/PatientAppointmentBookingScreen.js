@@ -19,6 +19,15 @@ const APPOINTMENT_TYPES = [
   { value: 'Other', icon: 'dots-horizontal' }
 ];
 
+const LAW_FIRM_APPOINTMENT_TYPES = [
+  { value: 'consultation', label: 'Consultation', icon: 'account-tie' },
+  { value: 'case_review', label: 'Case Review', icon: 'file-document-outline' },
+  { value: 'deposition', label: 'Deposition', icon: 'microphone' },
+  { value: 'mediation', label: 'Mediation', icon: 'handshake' },
+  { value: 'court_hearing', label: 'Court Hearing', icon: 'gavel' },
+  { value: 'settlement_conference', label: 'Settlement Conference', icon: 'scale-balance' }
+];
+
 const EVENT_TYPES = [
   { value: 'court_date', label: 'Court Date', icon: 'gavel' },
   { value: 'appointment', label: 'Appointment', icon: 'calendar' },
@@ -55,6 +64,18 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [eventFilter, setEventFilter] = useState('all');
+
+  const [lawFirms, setLawFirms] = useState([]);
+  const [selectedLawFirm, setSelectedLawFirm] = useState(null);
+  const [lawFirmSlots, setLawFirmSlots] = useState([]);
+  const [loadingLawFirmSlots, setLoadingLawFirmSlots] = useState(false);
+  const [lawFirmAppointments, setLawFirmAppointments] = useState([]);
+  const [showLawFirmBookingModal, setShowLawFirmBookingModal] = useState(false);
+  const [lawFirmBookingSlot, setLawFirmBookingSlot] = useState(null);
+  const [lawFirmAppointmentType, setLawFirmAppointmentType] = useState('consultation');
+  const [lawFirmNotes, setLawFirmNotes] = useState('');
+  const [bookingLawFirm, setBookingLawFirm] = useState(false);
+
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -73,6 +94,8 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     loadConnectedProviders();
     loadMyAppointments();
     loadPersonalEvents();
+    loadConnectedLawFirms();
+    loadLawFirmAppointments();
   }, []);
 
   useEffect(() => {
@@ -86,6 +109,12 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       loadAvailableSlots();
     }
   }, [selectedProvider, selectedDate]);
+
+  useEffect(() => {
+    if (selectedLawFirm && selectedDate && activeTab === 'lawfirm') {
+      loadLawFirmAvailableSlots();
+    }
+  }, [selectedLawFirm, selectedDate, activeTab]);
 
   useEffect(() => {
     updateMarkedDates();
@@ -192,6 +221,154 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   const handleSlotSelect = (slot) => {
     setBookingSlot(slot);
     setShowBookingModal(true);
+  };
+
+  const loadConnectedLawFirms = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/clients/${patientId}/connected-law-firms`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setLawFirms(data.lawFirms || []);
+      }
+    } catch (error) {
+      console.error('Error loading law firms:', error);
+    }
+  };
+
+  const loadLawFirmAppointments = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/clients/${patientId}/appointments`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setLawFirmAppointments(data.appointments || []);
+      }
+    } catch (error) {
+      console.error('Error loading law firm appointments:', error);
+    }
+  };
+
+  const loadLawFirmAvailableSlots = async () => {
+    if (!selectedLawFirm) return;
+    
+    setLoadingLawFirmSlots(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${selectedLawFirm.id}/available-slots?date=${selectedDate}`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setLawFirmSlots(data.slots || []);
+      }
+    } catch (error) {
+      console.error('Error loading law firm slots:', error);
+      Alert.alert('Error', 'Failed to load available slots');
+    } finally {
+      setLoadingLawFirmSlots(false);
+    }
+  };
+
+  const handleLawFirmSlotSelect = (slot) => {
+    setLawFirmBookingSlot(slot);
+    setShowLawFirmBookingModal(true);
+  };
+
+  const handleBookLawFirmAppointment = async () => {
+    if (!lawFirmAppointmentType) {
+      Alert.alert('Required', 'Please select an appointment type');
+      return;
+    }
+
+    setBookingLawFirm(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/appointments`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            lawFirmId: selectedLawFirm.id,
+            appointmentDate: selectedDate,
+            startTime: lawFirmBookingSlot.startTime,
+            endTime: lawFirmBookingSlot.endTime,
+            appointmentType: lawFirmAppointmentType,
+            clientNotes: lawFirmNotes
+          })
+        }
+      );
+
+      if (response.ok) {
+        Alert.alert(
+          'Success!',
+          'Your appointment has been requested. You\'ll receive a confirmation once the law firm confirms.',
+          [
+            {
+              text: 'Great!',
+              onPress: () => {
+                setShowLawFirmBookingModal(false);
+                setLawFirmBookingSlot(null);
+                setLawFirmAppointmentType('consultation');
+                setLawFirmNotes('');
+                loadLawFirmAppointments();
+                loadLawFirmAvailableSlots();
+              }
+            }
+          ]
+        );
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to book appointment');
+      }
+    } catch (error) {
+      console.error('Error booking law firm appointment:', error);
+      Alert.alert('Error', 'Failed to book appointment');
+    } finally {
+      setBookingLawFirm(false);
+    }
+  };
+
+  const handleCancelLawFirmAppointment = (appointmentId) => {
+    Alert.alert(
+      'Cancel Appointment',
+      'Are you sure you want to cancel this appointment?',
+      [
+        { text: 'No', style: 'cancel' },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/api/law-firm-calendar/appointments/${appointmentId}/cancel`,
+                {
+                  method: 'PATCH',
+                  headers: {
+                    'Authorization': `Bearer ${user.token}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ reason: 'Cancelled by client' })
+                }
+              );
+              if (response.ok) {
+                Alert.alert('Success', 'Appointment cancelled');
+                loadLawFirmAppointments();
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to cancel appointment');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleBookAppointment = async () => {
@@ -483,21 +660,28 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         style={[styles.tab, activeTab === 'book' && styles.activeTab]}
         onPress={() => setActiveTab('book')}
       >
-        <Icon name="calendar-plus" size={18} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Book</Text>
+        <Icon name="hospital-building" size={16} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Medical</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'lawfirm' && styles.activeTab]}
+        onPress={() => setActiveTab('lawfirm')}
+      >
+        <Icon name="scale-balance" size={16} color={activeTab === 'lawfirm' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'lawfirm' && styles.activeTabText]}>Law Firm</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
         onPress={() => setActiveTab('appointments')}
       >
-        <Icon name="calendar-star" size={18} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appointments</Text>
+        <Icon name="calendar-star" size={16} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appts</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'events' && styles.activeTab]}
         onPress={() => setActiveTab('events')}
       >
-        <Icon name="bell-outline" size={18} color={activeTab === 'events' ? '#FFD700' : '#a0aec0'} />
+        <Icon name="bell-outline" size={16} color={activeTab === 'events' ? '#FFD700' : '#a0aec0'} />
         <Text style={[styles.tabText, activeTab === 'events' && styles.activeTabText]}>Personal</Text>
       </TouchableOpacity>
     </View>
@@ -636,31 +820,272 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     );
   };
 
+  const renderLawFirmSelection = () => (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Icon name="scale-balance" size={24} color="#FFD700" />
+        <Text style={styles.sectionTitle}>Select Law Firm</Text>
+      </View>
+      
+      {lawFirms.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Icon name="briefcase-off" size={48} color="#666" />
+          <Text style={styles.emptyText}>No connected law firms</Text>
+          <Text style={styles.emptySubtext}>Connect with a law firm first</Text>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {lawFirms.map((firm) => (
+            <TouchableOpacity
+              key={firm.id}
+              style={[
+                styles.providerCard,
+                selectedLawFirm?.id === firm.id && styles.providerCardSelected
+              ]}
+              onPress={() => {
+                setSelectedLawFirm(firm);
+                setLawFirmSlots([]);
+              }}
+            >
+              <View style={styles.providerIconContainer}>
+                <Icon name="gavel" size={32} color="#FFD700" />
+              </View>
+              <Text style={styles.providerName} numberOfLines={1}>
+                {firm.firm_name}
+              </Text>
+              <Text style={styles.providerSpecialty} numberOfLines={1}>
+                Law Firm
+              </Text>
+              {selectedLawFirm?.id === firm.id && (
+                <Icon name="check-circle" size={20} color="#10b981" style={styles.providerCheck} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+
+  const renderLawFirmCalendar = () => {
+    if (!selectedLawFirm) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="calendar-month" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>Select a Date</Text>
+        </View>
+        
+        <View style={styles.calendarContainer}>
+          <Calendar
+            current={selectedDate}
+            minDate={moment().format('YYYY-MM-DD')}
+            maxDate={moment().add(3, 'months').format('YYYY-MM-DD')}
+            onDayPress={(day) => setSelectedDate(day.dateString)}
+            markingType="multi-dot"
+            markedDates={{
+              ...markedDates,
+              [selectedDate]: {
+                ...(markedDates[selectedDate] || {}),
+                selected: true,
+                selectedColor: '#1a5490',
+                dots: markedDates[selectedDate]?.dots || []
+              }
+            }}
+            theme={{
+              backgroundColor: 'transparent',
+              calendarBackground: 'transparent',
+              textSectionTitleColor: '#FFD700',
+              selectedDayBackgroundColor: '#1a5490',
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: '#FFD700',
+              dayTextColor: '#ffffff',
+              textDisabledColor: '#666',
+              monthTextColor: '#FFD700',
+              arrowColor: '#FFD700',
+            }}
+          />
+        </View>
+      </View>
+    );
+  };
+
+  const renderLawFirmTimeSlots = () => {
+    if (!selectedLawFirm || !selectedDate) return null;
+
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Icon name="clock-outline" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>
+            Available Times - {moment(selectedDate).format('MMMM Do')}
+          </Text>
+        </View>
+
+        {loadingLawFirmSlots ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFD700" />
+            <Text style={styles.loadingText}>Finding available slots...</Text>
+          </View>
+        ) : lawFirmSlots.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="calendar-remove" size={48} color="#666" />
+            <Text style={styles.emptyText}>No available slots for this date</Text>
+            <Text style={styles.emptySubtext}>Try selecting a different date</Text>
+          </View>
+        ) : (
+          <View style={styles.slotsGrid}>
+            {lawFirmSlots.map((slot, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.slotButton}
+                onPress={() => handleLawFirmSlotSelect(slot)}
+              >
+                <Icon name="clock-time-four-outline" size={20} color="#FFD700" />
+                <Text style={styles.slotTime}>
+                  {moment(slot.startTime, 'HH:mm').format('h:mm A')}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderLawFirmBookingModal = () => (
+    <Modal
+      visible={showLawFirmBookingModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowLawFirmBookingModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Icon name="gavel" size={28} color="#FFD700" />
+            <Text style={styles.modalTitle}>Book Appointment</Text>
+            <TouchableOpacity 
+              style={styles.modalCloseButton}
+              onPress={() => setShowLawFirmBookingModal(false)}
+            >
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalBody}>
+            <View style={styles.slotSummary}>
+              <Icon name="scale-balance" size={40} color="#FFD700" />
+              <View style={styles.slotSummaryDetails}>
+                <Text style={styles.slotSummaryProvider}>
+                  {selectedLawFirm?.firm_name}
+                </Text>
+                <Text style={styles.slotSummaryDate}>
+                  {moment(selectedDate).format('dddd, MMMM Do, YYYY')}
+                </Text>
+                <Text style={styles.slotSummaryTime}>
+                  {lawFirmBookingSlot && moment(lawFirmBookingSlot.startTime, 'HH:mm').format('h:mm A')} - 
+                  {lawFirmBookingSlot && moment(lawFirmBookingSlot.endTime, 'HH:mm').format('h:mm A')}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.inputLabel}>Appointment Type *</Text>
+            <View style={styles.appointmentTypesContainer}>
+              {LAW_FIRM_APPOINTMENT_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.appointmentTypeButton,
+                    lawFirmAppointmentType === type.value && styles.appointmentTypeButtonActive
+                  ]}
+                  onPress={() => setLawFirmAppointmentType(type.value)}
+                >
+                  <Icon 
+                    name={type.icon} 
+                    size={18} 
+                    color={lawFirmAppointmentType === type.value ? '#FFD700' : '#a0aec0'} 
+                  />
+                  <Text style={[
+                    styles.appointmentTypeButtonText,
+                    lawFirmAppointmentType === type.value && styles.appointmentTypeButtonTextActive
+                  ]}>
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.inputLabel}>Notes (Optional)</Text>
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Add any notes for your appointment..."
+              placeholderTextColor="#666"
+              multiline
+              value={lawFirmNotes}
+              onChangeText={setLawFirmNotes}
+            />
+
+            <View style={styles.infoBox}>
+              <Icon name="information" size={20} color="#FFD700" />
+              <Text style={styles.infoText}>
+                Your appointment request will be sent to the law firm for confirmation.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.bookButton, bookingLawFirm && styles.bookButtonDisabled]}
+              onPress={handleBookLawFirmAppointment}
+              disabled={bookingLawFirm}
+            >
+              {bookingLawFirm ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Icon name="check" size={20} color="#fff" />
+                  <Text style={styles.bookButtonText}>Confirm Booking</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderMyAppointments = () => {
-    const upcomingAppointments = myAppointments
+    const upcomingMedicalAppointments = myAppointments
       .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
       .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
 
-    const pastAppointments = myAppointments
+    const upcomingLawFirmAppointmentsList = lawFirmAppointments
+      .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
+      .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
+
+    const pastMedicalAppointments = myAppointments
+      .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
+      .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
+
+    const pastLawFirmAppointments = lawFirmAppointments
       .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
       .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
 
     return (
       <View style={styles.appointmentsContainer}>
         <View style={styles.sectionHeader}>
-          <Icon name="calendar-star" size={24} color="#FFD700" />
-          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          <Icon name="hospital-building" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>Medical Appointments</Text>
         </View>
 
-        {upcomingAppointments.length === 0 ? (
+        {upcomingMedicalAppointments.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Icon name="calendar-blank" size={48} color="#666" />
-            <Text style={styles.emptyText}>No upcoming appointments</Text>
+            <Text style={styles.emptyText}>No upcoming medical appointments</Text>
             <Text style={styles.emptySubtext}>Book an appointment to get started!</Text>
           </View>
         ) : (
           <View style={styles.appointmentsList}>
-            {upcomingAppointments.slice(0, 10).map((appointment) => (
+            {upcomingMedicalAppointments.slice(0, 5).map((appointment) => (
               <View key={appointment.id} style={styles.appointmentCard}>
                 <View style={styles.appointmentHeader}>
                   <View style={styles.appointmentDateBadge}>
@@ -679,29 +1104,25 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
                     <Text style={styles.appointmentTime}>
                       {moment(appointment.start_time, 'HH:mm:ss').format('h:mm A')}
                     </Text>
-                    <Text style={styles.appointmentTypeText}>
-                      {appointment.appointment_type || 'Medical Appointment'}
+                    <Text style={styles.appointmentType}>
+                      {appointment.appointment_type}
                     </Text>
                   </View>
 
-                  <View style={styles.appointmentStatus}>
-                    <Icon
-                      name={getStatusIcon(appointment.status)}
-                      size={24}
-                      color={getStatusColor(appointment.status)}
-                    />
-                    <Text style={[styles.appointmentStatusText, { color: getStatusColor(appointment.status) }]}>
-                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) + '20' }]}>
+                    <Icon name={getStatusIcon(appointment.status)} size={14} color={getStatusColor(appointment.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(appointment.status) }]}>
+                      {appointment.status}
                     </Text>
                   </View>
                 </View>
 
-                {['pending', 'confirmed'].includes(appointment.status) && (
-                  <TouchableOpacity
+                {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+                  <TouchableOpacity 
                     style={styles.cancelButton}
                     onPress={() => handleCancelAppointment(appointment.id)}
                   >
-                    <Icon name="close-circle-outline" size={16} color="#ef4444" />
+                    <Icon name="close-circle" size={16} color="#ef4444" />
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                 )}
@@ -710,46 +1131,63 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
           </View>
         )}
 
-        {pastAppointments.length > 0 && (
-          <>
-            <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-              <Icon name="history" size={24} color="#FFD700" />
-              <Text style={styles.sectionTitle}>Past Appointments</Text>
-            </View>
-            <View style={styles.appointmentsList}>
-              {pastAppointments.slice(0, 5).map((appointment) => (
-                <View key={appointment.id} style={[styles.appointmentCard, styles.pastAppointmentCard]}>
-                  <View style={styles.appointmentHeader}>
-                    <View style={styles.appointmentDateBadge}>
-                      <Text style={styles.appointmentMonth}>
-                        {moment(appointment.appointment_date).format('MMM')}
-                      </Text>
-                      <Text style={styles.appointmentDay}>
-                        {moment(appointment.appointment_date).format('DD')}
-                      </Text>
-                    </View>
+        <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+          <Icon name="scale-balance" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>Law Firm Appointments</Text>
+        </View>
 
-                    <View style={styles.appointmentDetails}>
-                      <Text style={styles.appointmentProviderName}>
-                        {appointment.provider_name}
-                      </Text>
-                      <Text style={styles.appointmentTypeText}>
-                        {appointment.appointment_type || 'Medical Appointment'}
-                      </Text>
-                    </View>
+        {upcomingLawFirmAppointmentsList.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="calendar-blank" size={48} color="#666" />
+            <Text style={styles.emptyText}>No upcoming law firm appointments</Text>
+            <Text style={styles.emptySubtext}>Book with your law firm to get started!</Text>
+          </View>
+        ) : (
+          <View style={styles.appointmentsList}>
+            {upcomingLawFirmAppointmentsList.slice(0, 5).map((appointment) => (
+              <View key={`lf-${appointment.id}`} style={styles.appointmentCard}>
+                <View style={styles.appointmentHeader}>
+                  <View style={[styles.appointmentDateBadge, { backgroundColor: 'rgba(153, 102, 255, 0.2)' }]}>
+                    <Text style={styles.appointmentMonth}>
+                      {moment(appointment.appointment_date).format('MMM')}
+                    </Text>
+                    <Text style={styles.appointmentDay}>
+                      {moment(appointment.appointment_date).format('DD')}
+                    </Text>
+                  </View>
 
-                    <View style={styles.appointmentStatus}>
-                      <Icon
-                        name={getStatusIcon(appointment.status)}
-                        size={20}
-                        color={getStatusColor(appointment.status)}
-                      />
-                    </View>
+                  <View style={styles.appointmentDetails}>
+                    <Text style={styles.appointmentProviderName}>
+                      {appointment.firm_name}
+                    </Text>
+                    <Text style={styles.appointmentTime}>
+                      {moment(appointment.start_time, 'HH:mm:ss').format('h:mm A')}
+                    </Text>
+                    <Text style={styles.appointmentType}>
+                      {appointment.appointment_type?.replace(/_/g, ' ')}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) + '20' }]}>
+                    <Icon name={getStatusIcon(appointment.status)} size={14} color={getStatusColor(appointment.status)} />
+                    <Text style={[styles.statusText, { color: getStatusColor(appointment.status) }]}>
+                      {appointment.status}
+                    </Text>
                   </View>
                 </View>
-              ))}
-            </View>
-          </>
+
+                {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => handleCancelLawFirmAppointment(appointment.id)}
+                  >
+                    <Icon name="close-circle" size={16} color="#ef4444" />
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+          </View>
         )}
       </View>
     );
@@ -1114,6 +1552,12 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
             {renderCalendar()}
             {renderTimeSlots()}
           </>
+        ) : activeTab === 'lawfirm' ? (
+          <>
+            {renderLawFirmSelection()}
+            {renderLawFirmCalendar()}
+            {renderLawFirmTimeSlots()}
+          </>
         ) : activeTab === 'appointments' ? (
           renderMyAppointments()
         ) : (
@@ -1124,6 +1568,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
       {renderBookingModal()}
       {renderAddEventModal()}
+      {renderLawFirmBookingModal()}
     </View>
   );
 };

@@ -184,6 +184,7 @@ app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/medical-calendar', require('./routes/medicalCalendar'));
+app.use('/api/law-firm-calendar', require('./routes/lawFirmCalendar'));
 
 // Admin Portal routes
 app.use('/portal/admin', adminPortalRoutes);
