@@ -183,6 +183,7 @@ app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/medical-calendar', require('./routes/medicalCalendar'));
 
 // Admin Portal routes
 app.use('/portal/admin', adminPortalRoutes);
