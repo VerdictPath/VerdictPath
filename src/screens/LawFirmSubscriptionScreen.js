@@ -233,19 +233,31 @@ const LAW_FIRM_PRICING = {
   ]
 };
 
+// Launch promotion: All tiers are $40/month during launch special
+const LAUNCH_PROMO_PRICE = 40;
+const IS_LAUNCH_PROMO = true;
+
 const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrationData, onRegistrationComplete, user }) => {
   const [loading, setLoading] = useState(!isNewRegistration);
   const [updating, setUpdating] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [clientCount, setClientCount] = useState('');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [planType, setPlanType] = useState('standard');
+  // During launch promo, default to premium and Standard is not selectable
+  const [planType, setPlanType] = useState(IS_LAUNCH_PROMO ? 'premium' : 'standard');
 
   useEffect(() => {
     if (!isNewRegistration) {
       fetchSubscriptionDetails();
     }
   }, [isNewRegistration]);
+
+  // Force premium during launch promo
+  useEffect(() => {
+    if (IS_LAUNCH_PROMO && planType !== 'premium') {
+      setPlanType('premium');
+    }
+  }, [planType]);
 
   const fetchSubscriptionDetails = async () => {
     try {
@@ -286,6 +298,16 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
   const currentTier = calculateTier(clientCount);
 
   const getPrice = (tier) => {
+    if (!tier) return 0;
+    // During launch promo, all tiers are $40/month
+    if (IS_LAUNCH_PROMO && billingPeriod === 'monthly') {
+      return LAUNCH_PROMO_PRICE;
+    }
+    const pricing = tier[planType];
+    return billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
+  };
+
+  const getOriginalPrice = (tier) => {
     if (!tier) return 0;
     const pricing = tier[planType];
     return billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
@@ -359,15 +381,18 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
       try {
         setUpdating(true);
         
+        // During launch promo, force premium
+        const effectivePlanType = IS_LAUNCH_PROMO ? 'premium' : planType;
+        
         // DEBUG: Log what we're about to send
         const requestBody = {
           subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
-          planType: planType,
+          planType: effectivePlanType,
           firmSize: {
             clientCount: clientCount ? parseInt(clientCount) : null,
             tierName: selectedTier.name,
             billingPeriod: billingPeriod,
-            planType: planType
+            planType: effectivePlanType
           }
         };
         console.log('[LawFirm Subscription] Sending update request:', requestBody);
@@ -421,6 +446,9 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
     try {
       setUpdating(true);
       
+      // During launch promo, force premium
+      const effectivePlanType = IS_LAUNCH_PROMO ? 'premium' : planType;
+      
       const response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
         method: 'POST',
         body: JSON.stringify({
@@ -430,12 +458,12 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           firstName: registrationData.firstName,
           lastName: registrationData.lastName,
           subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
-          planType: planType,
+          planType: effectivePlanType,
           firmSize: {
             clientCount: clientCount ? parseInt(clientCount) : null,
             tierName: selectedTier.name,
             billingPeriod: billingPeriod,
-            planType: planType
+            planType: effectivePlanType
           },
           privacyAccepted: registrationData.privacyAccepted
         })
@@ -449,7 +477,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         firmCode: response.lawFirm.firmCode,
         token: response.token,
         subscription: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
-        planType: planType,
+        planType: effectivePlanType,
         coins: 0,
         streak: 0
       };
@@ -596,39 +624,48 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           <View style={styles.planTypeSelector}>
             <Text style={styles.planTypeSelectorLabel}>Select Plan Type:</Text>
             <View style={styles.planTypeButtons}>
-              <TouchableOpacity
+              {/* Standard plan - disabled during launch promo */}
+              <View
                 style={[
                   styles.planTypeButton,
-                  planType === 'standard' && styles.planTypeButtonActive
+                  IS_LAUNCH_PROMO && styles.planTypeButtonDisabled
                 ]}
-                onPress={() => setPlanType('standard')}
               >
                 <Text style={[
                   styles.planTypeButtonText,
-                  planType === 'standard' && styles.planTypeButtonTextActive
+                  IS_LAUNCH_PROMO && styles.planTypeButtonTextCrossedOut
                 ]}>
                   Standard
                 </Text>
-                <Text style={styles.planTypeButtonSubtext}>Core features</Text>
-              </TouchableOpacity>
+                <Text style={[styles.planTypeButtonSubtext, IS_LAUNCH_PROMO && styles.planTypeButtonSubtextDisabled]}>
+                  {IS_LAUNCH_PROMO ? 'Not available during promo' : 'Core features'}
+                </Text>
+              </View>
               
               <TouchableOpacity
                 style={[
                   styles.planTypeButton,
-                  planType === 'premium' && styles.planTypeButtonActive
+                  styles.planTypeButtonActive,
+                  IS_LAUNCH_PROMO && styles.planTypeButtonPromo
                 ]}
-                onPress={() => setPlanType('premium')}
+                onPress={() => !IS_LAUNCH_PROMO && setPlanType('premium')}
+                activeOpacity={IS_LAUNCH_PROMO ? 1 : 0.7}
               >
                 <View style={styles.premiumBadgeSmall}>
                   <Text style={styles.premiumBadgeText}>⭐ PREMIUM</Text>
                 </View>
+                {IS_LAUNCH_PROMO && (
+                  <View style={styles.launchPromoBadge}>
+                    <Text style={styles.launchPromoBadgeText}>LAUNCH SPECIAL</Text>
+                  </View>
+                )}
                 <Text style={[
                   styles.planTypeButtonText,
-                  planType === 'premium' && styles.planTypeButtonTextActive
+                  styles.planTypeButtonTextActive
                 ]}>
                   Premium
                 </Text>
-                <Text style={styles.planTypeButtonSubtext}>Advanced features</Text>
+                <Text style={styles.planTypeButtonSubtext}>All features included</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -687,6 +724,11 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
               <Text style={styles.tierDescription}>{currentTier.description}</Text>
 
               <View style={styles.priceDisplay}>
+                {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+                  <Text style={styles.originalPriceDisplay}>
+                    ${getOriginalPrice(currentTier)}/mo
+                  </Text>
+                )}
                 <Text style={styles.priceAmount}>
                   ${getPrice(currentTier)}
                 </Text>
@@ -694,6 +736,14 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                   /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                 </Text>
               </View>
+              {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+                <View style={styles.promoSavingsBox}>
+                  <Text style={styles.promoSavingsText}>
+                    SAVE ${getOriginalPrice(currentTier) - LAUNCH_PROMO_PRICE}/MONTH!
+                  </Text>
+                  <Text style={styles.promoSavingsSubtext}>Launch Special - Premium for only $40/mo!</Text>
+                </View>
+              )}
 
               <View style={styles.priceDetails}>
                 <Text style={styles.perClientText}>
@@ -751,39 +801,19 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
 
           <View style={styles.pricingTableContainer}>
             <View style={styles.pricingTableHeader}>
-              <Text style={styles.pricingTableTitle}>All Tiers at a Glance</Text>
-              <View style={styles.pricingTableToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.tableToggleButton,
-                    planType === 'standard' && styles.tableToggleActive
-                  ]}
-                  onPress={() => setPlanType('standard')}
-                >
-                  <Text style={[
-                    styles.tableToggleText,
-                    planType === 'standard' && styles.tableToggleTextActive
-                  ]}>Standard</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.tableToggleButton,
-                    planType === 'premium' && styles.tableToggleActive
-                  ]}
-                  onPress={() => setPlanType('premium')}
-                >
-                  <Text style={[
-                    styles.tableToggleText,
-                    planType === 'premium' && styles.tableToggleTextActive
-                  ]}>Premium</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.pricingTableTitle}>Select Your Firm Size</Text>
+              {IS_LAUNCH_PROMO && (
+                <View style={styles.tablePromoBanner}>
+                  <Text style={styles.tablePromoBannerText}>🎉 All tiers just $40/mo during launch!</Text>
+                </View>
+              )}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.pricingTable}>
                 {LAW_FIRM_PRICING.tiers.map((tier, index) => {
-                  const pricing = tier[planType];
-                  const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
+                  const pricing = tier.premium; // Always show premium pricing during promo
+                  const originalPrice = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
+                  const promoPrice = IS_LAUNCH_PROMO && billingPeriod === 'monthly' ? LAUNCH_PROMO_PRICE : originalPrice;
                   
                   return (
                     <TouchableOpacity
@@ -792,19 +822,32 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
-                      onPress={() => handleSelectTier(tier)}
+                      onPress={() => {
+                        setClientCount(String(tier.min));
+                        // Tier selection for firm size - registration/update happens via main button
+                      }}
                       disabled={updating}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
                         {tier.min}-{tier.max === Infinity ? '999+' : tier.max}
                       </Text>
-                      <Text style={styles.tableColumnPrice}>
-                        ${price}
+                      {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+                        <Text style={styles.tableColumnOriginalPrice}>
+                          ${originalPrice}
+                        </Text>
+                      )}
+                      <Text style={[styles.tableColumnPrice, IS_LAUNCH_PROMO && styles.tableColumnPromoPrice]}>
+                        ${promoPrice}
                       </Text>
                       <Text style={styles.tableColumnPeriod}>
                         /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                       </Text>
+                      {currentTier?.name === tier.name && (
+                        <View style={styles.selectedBadge}>
+                          <Text style={styles.selectedBadgeText}>SELECTED</Text>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -1281,9 +1324,95 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary
   },
+  tableColumnPromoPrice: {
+    color: '#28A745'
+  },
+  tableColumnOriginalPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
+    marginBottom: 2
+  },
   tableColumnPeriod: {
     fontSize: 10,
     color: theme.colors.textSecondary
+  },
+  selectedBadge: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginTop: 8
+  },
+  selectedBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold'
+  },
+  tablePromoBanner: {
+    backgroundColor: '#28A745',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 8
+  },
+  tablePromoBannerText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  planTypeButtonDisabled: {
+    backgroundColor: '#f0f0f0',
+    borderColor: '#ddd',
+    opacity: 0.7
+  },
+  planTypeButtonTextCrossedOut: {
+    textDecorationLine: 'line-through',
+    color: '#999'
+  },
+  planTypeButtonSubtextDisabled: {
+    color: '#bbb'
+  },
+  planTypeButtonPromo: {
+    borderColor: '#28A745',
+    borderWidth: 3
+  },
+  launchPromoBadge: {
+    backgroundColor: '#28A745',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 4
+  },
+  launchPromoBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff'
+  },
+  originalPriceDisplay: {
+    fontSize: 24,
+    color: '#999',
+    textDecorationLine: 'line-through',
+    marginRight: 12
+  },
+  promoSavingsBox: {
+    backgroundColor: '#28A745',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 8,
+    alignItems: 'center'
+  },
+  promoSavingsText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff'
+  },
+  promoSavingsSubtext: {
+    fontSize: 12,
+    color: '#fff',
+    marginTop: 4
   },
   additionalRevenueBox: {
     backgroundColor: '#fff9e6',
