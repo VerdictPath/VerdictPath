@@ -9,7 +9,7 @@ const calendarController = {
   async getEvents(req, res) {
     try {
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = req.user.userType || req.user.type;
       const { startDate, endDate, eventType } = req.query;
 
       let query = `
@@ -22,12 +22,14 @@ const calendarController = {
       if (userType === 'individual') {
         query += 'user_id = $1';
         params.push(userId);
-      } else if (userType === 'law_firm') {
+      } else if (userType === 'law_firm' || userType === 'lawfirm') {
         query += 'law_firm_id = $1';
         params.push(userId);
       } else if (userType === 'medical_provider') {
         query += 'medical_provider_id = $1';
         params.push(userId);
+      } else {
+        query += '1 = 0';
       }
 
       if (startDate) {
@@ -65,7 +67,7 @@ const calendarController = {
   async createEvent(req, res) {
     try {
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = req.user.userType || req.user.type;
       let {
         eventType,
         title,
@@ -179,7 +181,7 @@ const calendarController = {
     try {
       const { eventId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = req.user.userType || req.user.type;
       const updateData = req.body;
 
       const eventCheck = await pool.query(
@@ -250,7 +252,7 @@ const calendarController = {
     try {
       const { eventId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = req.user.userType || req.user.type;
 
       const eventCheck = await pool.query(
         `SELECT * FROM calendar_events WHERE id = $1`,
@@ -291,7 +293,7 @@ const calendarController = {
     try {
       const { eventId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = req.user.userType || req.user.type;
       let { deviceEventId, device_event_id, syncedToDevice, synced_to_device, lastSyncedAt, last_synced_at } = req.body;
 
       deviceEventId = deviceEventId || device_event_id;
