@@ -72,6 +72,7 @@ import ChatConversationScreen from './src/screens/ChatConversationScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import TaskDetailScreen from './src/screens/TaskDetailScreen';
 import LawFirmRegistrationScreen from './src/screens/LawFirmRegistrationScreen';
+import MedicalProviderRegistrationScreen from './src/screens/MedicalProviderRegistrationScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
@@ -1279,6 +1280,62 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             alert('Welcome to Verdict Path!\n\nYour law firm account has been created successfully!\n\nYour unique Law Firm Code: ' + userData.firmCode + '\n\nShare this code with your clients so they can connect to your firm.');
           }}
           onBack={() => setCurrentScreen('lawfirm-registration')}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-registration' && (
+        <MedicalProviderRegistrationScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          providerName={providerName}
+          setProviderName={setProviderName}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          onSelectSubscription={handleSelectSubscription}
+          onNavigate={handleNavigateInternal}
+          privacyAccepted={privacyAccepted}
+          setPrivacyAccepted={setPrivacyAccepted}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('medicalprovider-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour medical provider account has been created successfully!\n\nYour unique Provider Code: ' + userData.providerCode + '\n\nShare this code with your patients so they can connect to your practice.\n\n100% FREE - No monthly fees ever!');
+          }}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-subscription-selection' && (
+        <MedicalProviderSubscriptionScreen
+          user={null}
+          isNewRegistration={true}
+          registrationData={{
+            providerName: providerName,
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            privacyAccepted: privacyAccepted
+          }}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('medicalprovider-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour medical provider account has been created successfully!\n\nYour unique Provider Code: ' + userData.providerCode + '\n\nShare this code with your patients so they can connect to your practice.');
+          }}
+          onBack={() => setCurrentScreen('medicalprovider-registration')}
           onNavigate={handleNavigateInternal}
         />
       )}

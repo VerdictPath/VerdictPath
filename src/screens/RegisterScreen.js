@@ -90,7 +90,10 @@ const RegisterScreen = ({
           
           <TouchableOpacity 
             style={[styles.toggleButton, userType === USER_TYPES.MEDICAL_PROVIDER && styles.toggleButtonActive]}
-            onPress={() => setUserType(USER_TYPES.MEDICAL_PROVIDER)}
+            onPress={() => {
+              setUserType(USER_TYPES.MEDICAL_PROVIDER);
+              onNavigate('medicalprovider-registration');
+            }}
           >
             <Text style={[styles.toggleText, userType === USER_TYPES.MEDICAL_PROVIDER && styles.toggleTextActive]}>
               Medical Provider
