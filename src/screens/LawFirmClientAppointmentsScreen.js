@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-  Platform, RefreshControl
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, Platform, RefreshControl
 } from 'react-native';
-import { theme } from '../styles/theme';
+import { Calendar } from 'react-native-calendars';
+import moment from 'moment';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/api';
 
 const STATUS_COLORS = {
@@ -22,13 +24,18 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
   const [viewMode, setViewMode] = useState('list');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [markedDates, setMarkedDates] = useState({});
 
   const lawFirmId = user?.lawFirmId || user?.id;
 
   useEffect(() => {
     fetchData();
   }, [selectedClient, statusFilter]);
+
+  useEffect(() => {
+    updateMarkedDates();
+  }, [appointments]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -79,267 +86,117 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const updateMarkedDates = () => {
+    const marked = {};
+    appointments.forEach(appt => {
+      const date = appt.appointment_date;
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      marked[date].dots.push({
+        key: `appt-${appt.id}`,
+        color: STATUS_COLORS[appt.status] || '#6b7280'
+      });
+    });
+    setMarkedDates(marked);
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchData();
     setRefreshing(false);
   };
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatTime = (timeStr) => {
-    if (!timeStr) return '';
-    const [hours, minutes] = timeStr.split(':');
-    const h = parseInt(hours);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
-  };
-
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const days = [];
-    
-    for (let i = 0; i < firstDay.getDay(); i++) {
-      days.push(null);
-    }
-    
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
-    }
-    
-    return days;
-  };
-
   const getAppointmentsForDate = (date) => {
-    if (!date) return [];
-    return appointments.filter(apt =>
-      new Date(apt.appointment_date).toDateString() === date.toDateString()
-    );
+    return appointments.filter(a => a.appointment_date === date);
   };
 
-  const changeMonth = (delta) => {
-    const newMonth = new Date(currentMonth);
-    newMonth.setMonth(newMonth.getMonth() + delta);
-    setCurrentMonth(newMonth);
+  const upcomingAppointments = appointments
+    .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
+    .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
+
+  const pastAppointments = appointments
+    .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
+    .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
+
+  const currentClient = clients.find(c => c.id === selectedClient);
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'confirmed': return 'check-circle';
+      case 'pending': return 'clock-outline';
+      case 'cancelled': return 'close-circle';
+      case 'completed': return 'check-all';
+      default: return 'help-circle';
+    }
   };
 
-  const groupAppointmentsByDate = () => {
-    const grouped = {};
-    appointments.forEach(apt => {
-      const dateKey = apt.appointment_date;
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(apt);
-    });
-    return Object.entries(grouped).sort((a, b) => new Date(a[0]) - new Date(b[0]));
-  };
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Icon name="arrow-left" size={24} color="#FFD700" />
+      </TouchableOpacity>
+      <View style={styles.headerContent}>
+        <Icon name="gavel" size={28} color="#FFD700" />
+        <Text style={styles.headerTitle}>Client Medical</Text>
+      </View>
+      <View style={{ width: 40 }} />
+    </View>
+  );
 
-  const renderFilters = () => (
-    <View style={styles.filtersContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clientFilter}>
+  const renderClientSelector = () => (
+    <View style={styles.clientSelector}>
+      <Text style={styles.clientSelectorLabel}>Select Client:</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <TouchableOpacity
-          style={[styles.filterChip, !selectedClient && styles.filterChipActive]}
+          style={[styles.clientChip, !selectedClient && styles.clientChipActive]}
           onPress={() => setSelectedClient(null)}
         >
-          <Text style={[styles.filterChipText, !selectedClient && styles.filterChipTextActive]}>
+          <Icon name="account-group" size={16} color={!selectedClient ? '#FFD700' : '#fff'} />
+          <Text style={[styles.clientChipText, !selectedClient && styles.clientChipTextActive]}>
             All Clients
           </Text>
         </TouchableOpacity>
-        {clients.map((client) => (
+        {clients.map(client => (
           <TouchableOpacity
             key={client.id}
-            style={[styles.filterChip, selectedClient === client.id && styles.filterChipActive]}
+            style={[styles.clientChip, selectedClient === client.id && styles.clientChipActive]}
             onPress={() => setSelectedClient(client.id)}
           >
-            <Text style={[styles.filterChipText, selectedClient === client.id && styles.filterChipTextActive]}>
+            <Icon
+              name="account"
+              size={16}
+              color={selectedClient === client.id ? '#FFD700' : '#fff'}
+            />
+            <Text style={[styles.clientChipText, selectedClient === client.id && styles.clientChipTextActive]}>
               {client.first_name} {client.last_name?.charAt(0)}.
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilter}>
-        <TouchableOpacity
-          style={[styles.statusChip, !statusFilter && styles.statusChipActive]}
-          onPress={() => setStatusFilter(null)}
-        >
-          <Text style={[styles.statusChipText, !statusFilter && styles.statusChipTextActive]}>All</Text>
-        </TouchableOpacity>
-        {['pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
-          <TouchableOpacity
-            key={status}
-            style={[
-              styles.statusChip, 
-              statusFilter === status && styles.statusChipActive,
-              { borderColor: STATUS_COLORS[status] }
-            ]}
-            onPress={() => setStatusFilter(statusFilter === status ? null : status)}
-          >
-            <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[status] }]} />
-            <Text style={[styles.statusChipText, statusFilter === status && styles.statusChipTextActive]}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
     </View>
   );
 
-  const renderViewToggle = () => (
-    <View style={styles.viewToggle}>
-      <TouchableOpacity
-        style={[styles.viewToggleButton, viewMode === 'list' && styles.viewToggleButtonActive]}
-        onPress={() => setViewMode('list')}
-      >
-        <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>
-          List
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.viewToggleButton, viewMode === 'calendar' && styles.viewToggleButtonActive]}
-        onPress={() => setViewMode('calendar')}
-      >
-        <Text style={[styles.viewToggleText, viewMode === 'calendar' && styles.viewToggleTextActive]}>
-          Calendar
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const renderClientInfoCard = () => {
+    if (!currentClient) return null;
 
-  const renderListView = () => {
-    const groupedAppointments = groupAppointmentsByDate();
-
-    if (appointments.length === 0) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>📅</Text>
-          <Text style={styles.emptyStateText}>No appointments found</Text>
-          <Text style={styles.emptyStateSubtext}>
-            {selectedClient ? 'Try selecting a different client' : 'Your clients have no medical appointments scheduled'}
+    return (
+      <View style={styles.clientInfoCard}>
+        <View style={styles.clientAvatar}>
+          <Icon name="account-circle" size={40} color="#FFD700" />
+        </View>
+        <View style={styles.clientInfo}>
+          <Text style={styles.clientName}>
+            {currentClient.first_name} {currentClient.last_name}
+          </Text>
+          <Text style={styles.clientCase}>
+            Case: {currentClient.case_number || 'N/A'}
           </Text>
         </View>
-      );
-    }
-
-    return (
-      <View>
-        {groupedAppointments.map(([date, dayAppointments]) => (
-          <View key={date} style={styles.dateGroup}>
-            <Text style={styles.dateHeader}>{formatDate(date)}</Text>
-            {dayAppointments.map((apt) => (
-              <View key={apt.id} style={styles.appointmentCard}>
-                <View style={styles.appointmentTop}>
-                  <View style={styles.timeBlock}>
-                    <Text style={styles.timeText}>{formatTime(apt.start_time)}</Text>
-                    <Text style={styles.timeDivider}>-</Text>
-                    <Text style={styles.timeText}>{formatTime(apt.end_time)}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[apt.status] }]}>
-                    <Text style={styles.statusText}>{apt.status}</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.appointmentDetails}>
-                  <View style={styles.personRow}>
-                    <Text style={styles.personLabel}>Client:</Text>
-                    <Text style={styles.personName}>
-                      {apt.patient_first_name} {apt.patient_last_name}
-                    </Text>
-                  </View>
-                  <View style={styles.personRow}>
-                    <Text style={styles.personLabel}>Provider:</Text>
-                    <Text style={styles.personName}>{apt.provider_name}</Text>
-                  </View>
-                  {apt.specialty && (
-                    <Text style={styles.specialty}>{apt.specialty}</Text>
-                  )}
-                  <Text style={styles.appointmentType}>
-                    {apt.appointment_type || 'Consultation'}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        ))}
-      </View>
-    );
-  };
-
-  const renderCalendarView = () => {
-    const days = getDaysInMonth(currentMonth);
-    const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-    
-    return (
-      <View style={styles.calendarContainer}>
-        <View style={styles.calendarHeader}>
-          <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthNavButton}>
-            <Text style={styles.monthNavText}>{'<'}</Text>
-          </TouchableOpacity>
-          <Text style={styles.monthTitle}>{monthName}</Text>
-          <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthNavButton}>
-            <Text style={styles.monthNavText}>{'>'}</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.weekDaysRow}>
-          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-            <Text key={idx} style={styles.weekDayText}>{day}</Text>
-          ))}
-        </View>
-        
-        <View style={styles.daysGrid}>
-          {days.map((date, idx) => {
-            const dayAppointments = getAppointmentsForDate(date);
-            const isToday = date && date.toDateString() === new Date().toDateString();
-            
-            return (
-              <View key={idx} style={[styles.calendarDayCell, isToday && styles.todayCell]}>
-                {date && (
-                  <>
-                    <Text style={[styles.calendarDayText, isToday && styles.todayText]}>
-                      {date.getDate()}
-                    </Text>
-                    {dayAppointments.length > 0 && (
-                      <View style={styles.appointmentIndicators}>
-                        {dayAppointments.slice(0, 3).map((apt, i) => (
-                          <View
-                            key={i}
-                            style={[styles.miniDot, { backgroundColor: STATUS_COLORS[apt.status] }]}
-                          />
-                        ))}
-                        {dayAppointments.length > 3 && (
-                          <Text style={styles.moreIndicator}>+{dayAppointments.length - 3}</Text>
-                        )}
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
-            );
-          })}
-        </View>
-        
-        <View style={styles.legendContainer}>
-          <Text style={styles.legendTitle}>Status Legend:</Text>
-          <View style={styles.legendItems}>
-            {Object.entries(STATUS_COLORS).map(([status, color]) => (
-              <View key={status} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: color }]} />
-                <Text style={styles.legendText}>{status}</Text>
-              </View>
-            ))}
+        <View style={styles.appointmentCounts}>
+          <View style={styles.countBadge}>
+            <Text style={styles.countNumber}>{upcomingAppointments.length}</Text>
+            <Text style={styles.countLabel}>Upcoming</Text>
           </View>
         </View>
       </View>
@@ -357,29 +214,231 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
     return (
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
+          <Icon name="calendar-multiple" size={24} color="#FFD700" />
           <Text style={styles.statNumber}>{stats.total}</Text>
           <Text style={styles.statLabel}>Total</Text>
         </View>
-        <View style={[styles.statCard, { borderLeftColor: STATUS_COLORS.pending }]}>
-          <Text style={[styles.statNumber, { color: STATUS_COLORS.pending }]}>{stats.pending}</Text>
+        <View style={[styles.statCard, styles.statCardPending]}>
+          <Icon name="clock-outline" size={24} color="#f59e0b" />
+          <Text style={[styles.statNumber, { color: '#f59e0b' }]}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pending</Text>
         </View>
-        <View style={[styles.statCard, { borderLeftColor: STATUS_COLORS.confirmed }]}>
-          <Text style={[styles.statNumber, { color: STATUS_COLORS.confirmed }]}>{stats.confirmed}</Text>
+        <View style={[styles.statCard, styles.statCardConfirmed]}>
+          <Icon name="check-circle" size={24} color="#10b981" />
+          <Text style={[styles.statNumber, { color: '#10b981' }]}>{stats.confirmed}</Text>
           <Text style={styles.statLabel}>Confirmed</Text>
         </View>
-        <View style={[styles.statCard, { borderLeftColor: STATUS_COLORS.completed }]}>
-          <Text style={[styles.statNumber, { color: STATUS_COLORS.completed }]}>{stats.completed}</Text>
+        <View style={[styles.statCard, styles.statCardCompleted]}>
+          <Icon name="check-all" size={24} color="#6366f1" />
+          <Text style={[styles.statNumber, { color: '#6366f1' }]}>{stats.completed}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
       </View>
     );
   };
 
+  const renderStatusFilter = () => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusFilter}>
+      <TouchableOpacity
+        style={[styles.statusChip, !statusFilter && styles.statusChipActive]}
+        onPress={() => setStatusFilter(null)}
+      >
+        <Text style={[styles.statusChipText, !statusFilter && styles.statusChipTextActive]}>All</Text>
+      </TouchableOpacity>
+      {['pending', 'confirmed', 'completed', 'cancelled'].map((status) => (
+        <TouchableOpacity
+          key={status}
+          style={[
+            styles.statusChip,
+            statusFilter === status && styles.statusChipActive,
+            { borderColor: STATUS_COLORS[status] }
+          ]}
+          onPress={() => setStatusFilter(statusFilter === status ? null : status)}
+        >
+          <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[status] }]} />
+          <Text style={[styles.statusChipText, statusFilter === status && styles.statusChipTextActive]}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+
+  const renderViewModeToggle = () => (
+    <View style={styles.viewModeContainer}>
+      <TouchableOpacity
+        style={[styles.viewModeButton, viewMode === 'list' && styles.viewModeButtonActive]}
+        onPress={() => setViewMode('list')}
+      >
+        <Icon name="format-list-bulleted" size={20} color={viewMode === 'list' ? '#FFD700' : '#fff'} />
+        <Text style={[styles.viewModeText, viewMode === 'list' && styles.viewModeTextActive]}>
+          List
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.viewModeButton, viewMode === 'calendar' && styles.viewModeButtonActive]}
+        onPress={() => setViewMode('calendar')}
+      >
+        <Icon name="calendar-month" size={20} color={viewMode === 'calendar' ? '#FFD700' : '#fff'} />
+        <Text style={[styles.viewModeText, viewMode === 'calendar' && styles.viewModeTextActive]}>
+          Calendar
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderAppointmentCard = (appointment, isPast = false) => (
+    <View key={appointment.id} style={[styles.appointmentCard, isPast && styles.appointmentCardPast]}>
+      <View style={styles.appointmentCardHeader}>
+        <View style={styles.appointmentDateBadge}>
+          <Text style={styles.appointmentMonth}>
+            {moment(appointment.appointment_date).format('MMM')}
+          </Text>
+          <Text style={styles.appointmentDay}>
+            {moment(appointment.appointment_date).format('DD')}
+          </Text>
+        </View>
+
+        <View style={styles.appointmentCardDetails}>
+          <Text style={styles.appointmentClientName}>
+            {appointment.patient_first_name} {appointment.patient_last_name}
+          </Text>
+          <Text style={styles.appointmentProvider}>
+            {appointment.provider_name}
+          </Text>
+          <View style={styles.appointmentTimeRow}>
+            <Icon name="clock-outline" size={14} color="#FFD700" />
+            <Text style={styles.appointmentTime}>
+              {moment(appointment.start_time, 'HH:mm:ss').format('h:mm A')}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.appointmentStatusBadge}>
+          <Icon
+            name={getStatusIcon(appointment.status)}
+            size={20}
+            color={STATUS_COLORS[appointment.status]}
+          />
+          <Text style={[styles.appointmentStatusText, { color: STATUS_COLORS[appointment.status] }]}>
+            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+          </Text>
+        </View>
+      </View>
+
+      {appointment.appointment_type && (
+        <View style={styles.appointmentFooter}>
+          <Icon name="medical-bag" size={14} color="#999" />
+          <Text style={styles.appointmentTypeText}>
+            {appointment.appointment_type}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderCalendarView = () => (
+    <View style={styles.calendarView}>
+      <Calendar
+        current={selectedDate || moment().format('YYYY-MM-DD')}
+        onDayPress={(day) => setSelectedDate(day.dateString)}
+        markedDates={{
+          ...markedDates,
+          [selectedDate]: {
+            ...markedDates[selectedDate],
+            selected: true,
+            selectedColor: '#1a5490'
+          }
+        }}
+        markingType={'multi-dot'}
+        theme={{
+          backgroundColor: 'transparent',
+          calendarBackground: 'rgba(255, 255, 255, 0.05)',
+          textSectionTitleColor: '#FFD700',
+          selectedDayBackgroundColor: '#1a5490',
+          selectedDayTextColor: '#ffffff',
+          todayTextColor: '#FFD700',
+          dayTextColor: '#ffffff',
+          textDisabledColor: '#666',
+          monthTextColor: '#FFD700',
+          arrowColor: '#FFD700',
+        }}
+      />
+
+      {selectedDate && (
+        <View style={styles.selectedDateAppointments}>
+          <View style={styles.sectionHeader}>
+            <Icon name="calendar-star" size={20} color="#FFD700" />
+            <Text style={styles.selectedDateTitle}>
+              {moment(selectedDate).format('MMMM Do, YYYY')}
+            </Text>
+          </View>
+          {getAppointmentsForDate(selectedDate).length === 0 ? (
+            <View style={styles.noAppointmentsSmall}>
+              <Icon name="calendar-blank" size={32} color="#666" />
+              <Text style={styles.noAppointmentsText}>No appointments on this date</Text>
+            </View>
+          ) : (
+            getAppointmentsForDate(selectedDate).map(appt => renderAppointmentCard(appt))
+          )}
+        </View>
+      )}
+
+      <View style={styles.legendContainer}>
+        <Text style={styles.legendTitle}>Status Legend:</Text>
+        <View style={styles.legendItems}>
+          {Object.entries(STATUS_COLORS).map(([status, color]) => (
+            <View key={status} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: color }]} />
+              <Text style={styles.legendText}>{status}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderListView = () => (
+    <View style={styles.listView}>
+      {upcomingAppointments.length > 0 && (
+        <View style={styles.appointmentsSection}>
+          <View style={styles.sectionHeader}>
+            <Icon name="calendar-clock" size={24} color="#FFD700" />
+            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          </View>
+          {upcomingAppointments.map(appt => renderAppointmentCard(appt))}
+        </View>
+      )}
+
+      {pastAppointments.length > 0 && (
+        <View style={styles.appointmentsSection}>
+          <View style={styles.sectionHeader}>
+            <Icon name="history" size={24} color="#999" />
+            <Text style={[styles.sectionTitle, { color: '#999' }]}>Past Appointments</Text>
+          </View>
+          {pastAppointments.slice(0, 10).map(appt => renderAppointmentCard(appt, true))}
+        </View>
+      )}
+
+      {appointments.length === 0 && (
+        <View style={styles.noAppointmentsContainer}>
+          <Icon name="calendar-blank" size={64} color="#666" />
+          <Text style={styles.noAppointmentsTitle}>No Medical Appointments</Text>
+          <Text style={styles.noAppointmentsSubtext}>
+            {selectedClient
+              ? 'This client hasn\'t scheduled any medical appointments yet'
+              : 'Your clients have no medical appointments scheduled'}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#d4af37" />
+      <View style={styles.fullLoadingContainer}>
+        <ActivityIndicator size="large" color="#FFD700" />
         <Text style={styles.loadingText}>Loading appointments...</Text>
       </View>
     );
@@ -387,27 +446,23 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{'< Back'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Client Appointments</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-      
-      <ScrollView 
-        style={styles.content} 
+      {renderHeader()}
+      {renderClientSelector()}
+      {renderClientInfoCard()}
+
+      <ScrollView
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#d4af37" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFD700" />
         }
       >
         {renderStats()}
-        {renderFilters()}
-        {renderViewToggle()}
-        
-        {viewMode === 'list' ? renderListView() : renderCalendarView()}
-        
+        {renderStatusFilter()}
+        {renderViewModeToggle()}
+
+        {viewMode === 'calendar' ? renderCalendarView() : renderListView()}
+
         <View style={styles.bottomPadding} />
       </ScrollView>
     </View>
@@ -417,104 +472,185 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a1628',
+    backgroundColor: '#0a1628'
   },
-  loadingContainer: {
+  fullLoadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a1628',
+    backgroundColor: '#0a1628'
   },
   loadingText: {
-    color: '#d4af37',
-    marginTop: 10,
-    fontSize: 16,
+    color: '#fff',
+    marginTop: 12,
+    fontSize: 16
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 16,
     backgroundColor: '#0d2f54',
-    borderBottomWidth: 2,
-    borderBottomColor: '#d4af37',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 8
+      }
+    })
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  backButtonText: {
-    color: '#d4af37',
-    fontSize: 16,
-    fontWeight: '600',
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFD700'
   },
-  headerSpacer: {
-    width: 60,
-  },
-  content: {
-    flex: 1,
+  clientSelector: {
     padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
+  },
+  clientSelectorLabel: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8
+  },
+  clientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: 8
+  },
+  clientChipActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  clientChipText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500'
+  },
+  clientChipTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  clientInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 16,
+    marginTop: 0,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(26, 84, 144, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    gap: 12
+  },
+  clientAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  clientInfo: {
+    flex: 1
+  },
+  clientName: {
+    color: '#FFD700',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  clientCase: {
+    color: '#fff',
+    fontSize: 14
+  },
+  appointmentCounts: {
+    alignItems: 'center'
+  },
+  countBadge: {
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  countNumber: {
+    color: '#FFD700',
+    fontSize: 24,
+    fontWeight: 'bold'
+  },
+  countLabel: {
+    color: '#fff',
+    fontSize: 11
+  },
+  scrollView: {
+    flex: 1
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    padding: 16,
+    gap: 8
   },
   statCard: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     padding: 12,
-    marginHorizontal: 4,
     alignItems: 'center',
-    borderLeftWidth: 3,
-    borderLeftColor: '#d4af37',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  statCardPending: {
+    borderColor: 'rgba(245, 158, 11, 0.3)'
+  },
+  statCardConfirmed: {
+    borderColor: 'rgba(16, 185, 129, 0.3)'
+  },
+  statCardCompleted: {
+    borderColor: 'rgba(99, 102, 241, 0.3)'
   },
   statNumber: {
-    color: '#d4af37',
-    fontSize: 24,
+    color: '#FFD700',
+    fontSize: 20,
     fontWeight: 'bold',
+    marginTop: 4
   },
   statLabel: {
     color: '#a0aec0',
     fontSize: 10,
-    marginTop: 2,
-  },
-  filtersContainer: {
-    marginBottom: 16,
-  },
-  clientFilter: {
-    marginBottom: 10,
+    marginTop: 2
   },
   statusFilter: {
-    marginBottom: 4,
-  },
-  filterChip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  filterChipActive: {
-    backgroundColor: '#d4af37',
-    borderColor: '#d4af37',
-  },
-  filterChipText: {
-    color: '#a0aec0',
-    fontSize: 14,
-  },
-  filterChipTextActive: {
-    color: '#000',
-    fontWeight: 'bold',
+    marginBottom: 12
   },
   statusChip: {
     flexDirection: 'row',
@@ -525,257 +661,233 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginRight: 8,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
   },
   statusChipActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: '#FFD700'
   },
   statusChipText: {
     color: '#a0aec0',
-    fontSize: 12,
+    fontSize: 12
   },
   statusChipTextActive: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#FFD700',
+    fontWeight: '600'
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 6,
+    marginRight: 6
   },
-  viewToggle: {
+  viewModeContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
-    padding: 4,
-    marginBottom: 16,
-  },
-  viewToggleButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  viewToggleButtonActive: {
-    backgroundColor: '#d4af37',
-  },
-  viewToggleText: {
-    color: '#a0aec0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  viewToggleTextActive: {
-    color: '#000',
-  },
-  emptyState: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  emptyStateSubtext: {
-    color: '#a0aec0',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  dateGroup: {
-    marginBottom: 20,
-  },
-  dateHeader: {
-    color: '#d4af37',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  appointmentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
+    paddingTop: 4,
+    gap: 8
   },
-  appointmentTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  timeBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  timeText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  timeDivider: {
-    color: '#6b7280',
-    marginHorizontal: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  appointmentDetails: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingTop: 12,
-  },
-  personRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  personLabel: {
-    color: '#6b7280',
-    fontSize: 12,
-    width: 60,
-  },
-  personName: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
+  viewModeButton: {
     flex: 1,
-  },
-  specialty: {
-    color: '#a0aec0',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  appointmentType: {
-    color: '#d4af37',
-    fontSize: 12,
-    marginTop: 4,
-    textTransform: 'capitalize',
-  },
-  calendarContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  calendarHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  monthNavButton: {
-    padding: 8,
-  },
-  monthNavText: {
-    color: '#d4af37',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  monthTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  weekDayText: {
-    flex: 1,
-    textAlign: 'center',
-    color: '#d4af37',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  calendarDayCell: {
-    width: '14.28%',
-    aspectRatio: 1,
-    padding: 4,
-    alignItems: 'center',
-  },
-  todayCell: {
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
-    borderRadius: 8,
-  },
-  calendarDayText: {
-    color: '#fff',
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  todayText: {
-    color: '#d4af37',
-    fontWeight: 'bold',
-  },
-  appointmentIndicators: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 2,
+    gap: 6,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)'
   },
-  miniDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  viewModeButtonActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
+    borderColor: '#FFD700'
   },
-  moreIndicator: {
-    color: '#a0aec0',
-    fontSize: 8,
+  viewModeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  viewModeTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
+  },
+  calendarView: {
+    padding: 16
+  },
+  selectedDateAppointments: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  selectedDateTitle: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  noAppointmentsSmall: {
+    alignItems: 'center',
+    padding: 20
+  },
+  noAppointmentsText: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8
   },
   legendContainer: {
     marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
   },
   legendTitle: {
     color: '#a0aec0',
     fontSize: 12,
-    marginBottom: 8,
+    marginBottom: 8
   },
   legendItems: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 12
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4
   },
   legendText: {
-    color: '#a0aec0',
-    fontSize: 10,
-    textTransform: 'capitalize',
+    color: '#999',
+    fontSize: 11,
+    textTransform: 'capitalize'
+  },
+  listView: {
+    padding: 16,
+    paddingTop: 0
+  },
+  appointmentsSection: {
+    marginBottom: 24
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFD700'
+  },
+  appointmentCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    marginBottom: 12
+  },
+  appointmentCardPast: {
+    opacity: 0.6
+  },
+  appointmentCardHeader: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  appointmentDateBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  appointmentMonth: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase'
+  },
+  appointmentDay: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  appointmentCardDetails: {
+    flex: 1
+  },
+  appointmentClientName: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2
+  },
+  appointmentProvider: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 4
+  },
+  appointmentTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  appointmentTime: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  appointmentStatusBadge: {
+    alignItems: 'center',
+    gap: 4
+  },
+  appointmentStatusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'capitalize'
+  },
+  appointmentFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  appointmentTypeText: {
+    color: '#999',
+    fontSize: 13
+  },
+  noAppointmentsContainer: {
+    alignItems: 'center',
+    padding: 60
+  },
+  noAppointmentsTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8
+  },
+  noAppointmentsSubtext: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center'
   },
   bottomPadding: {
-    height: 100,
-  },
+    height: 100
+  }
 });
 
 export default LawFirmClientAppointmentsScreen;
