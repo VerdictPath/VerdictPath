@@ -599,7 +599,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         );
       } catch (error) {
         console.error('Paid Registration Error:', error);
-        Alert.alert('Registration Error', error.message || 'Failed to create account. Please try again.');
+        const errorMessage = error.response?.message || error.message || 'Failed to create account. Please try again.';
+        Alert.alert('Registration Error', errorMessage);
       }
     }
   };
