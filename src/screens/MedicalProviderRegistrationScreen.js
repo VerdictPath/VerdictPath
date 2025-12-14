@@ -333,7 +333,7 @@ const MedicalProviderRegistrationScreen = ({
 
             <Text style={styles.label}>Provider Type</Text>
             <View style={styles.roleButtons}>
-              {['hospital', 'clinic', 'individual'].map((type) => (
+              {['hospital', 'clinic', 'individual', 'chiropractor', 'imaging', 'orthopedic', 'physical therapy'].map((type) => (
                 <TouchableOpacity
                   key={type}
                   style={[
