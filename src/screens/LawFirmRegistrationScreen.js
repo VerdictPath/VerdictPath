@@ -191,6 +191,8 @@ const LawFirmRegistrationScreen = ({
         <Text style={styles.featureItem}>Secure document access</Text>
         <Text style={styles.featureItem}>Admin user controls</Text>
         <Text style={styles.featureItem}>Activity logging & reporting</Text>
+        <Text style={styles.featureItem}>Med Provider Negotiation Portal</Text>
+        <Text style={styles.featureItem}>Disbursements Portal</Text>
       </View>
     </View>
   );
