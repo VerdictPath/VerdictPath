@@ -771,20 +771,52 @@ router.patch('/availability-requests/:requestId/respond', authenticateToken, asy
   }
 });
 
-// Helper to sync appointments to individual's unified calendar
+// Helper to sync appointments to all calendars (individual, law firm)
 async function syncToIndividualCalendar(userId, appointment, sourceType) {
   try {
-    const eventTitle = appointment.title || `${sourceType === 'law_firm' ? 'Law Firm' : 'Medical'} Appointment`;
     const startTime = new Date(`${appointment.appointment_date}T${appointment.start_time}`);
     const endTime = appointment.end_time ? new Date(`${appointment.appointment_date}T${appointment.end_time}`) : null;
     
+    // Get client name
+    const clientResult = await db.query(
+      `SELECT first_name, last_name FROM users WHERE id = $1`,
+      [userId]
+    );
+    const clientName = clientResult.rows[0] 
+      ? `${clientResult.rows[0].first_name} ${clientResult.rows[0].last_name}` 
+      : 'Client';
+    
+    // Get law firm name if law_firm appointment
+    let firmName = 'Law Firm';
+    if (appointment.law_firm_id) {
+      const firmResult = await db.query(
+        `SELECT firm_name FROM law_firms WHERE id = $1`,
+        [appointment.law_firm_id]
+      );
+      firmName = firmResult.rows[0]?.firm_name || 'Law Firm';
+    }
+    
+    const eventTitle = appointment.title || `${sourceType === 'law_firm' ? 'Law Firm' : 'Medical'} Appointment`;
+    
+    // Create calendar event for the individual/client
     await db.query(
       `INSERT INTO calendar_events 
-       (user_id, event_type, title, description, location, start_time, end_time, created_by_type, created_by_id)
-       VALUES ($1, 'appointment', $2, $3, $4, $5, $6, $7, $8)
+       (user_id, event_type, title, description, location, start_time, end_time, created_by_type, created_by_id, related_appointment_id)
+       VALUES ($1, 'appointment', $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT DO NOTHING`,
-      [userId, eventTitle, appointment.description || null, appointment.location || null, startTime, endTime, sourceType, appointment.id]
+      [userId, `Law Firm Appt: ${firmName}`, appointment.description || `${appointment.appointment_type || 'Appointment'} with ${firmName}`, appointment.location || null, startTime, endTime, sourceType, appointment.id, appointment.id]
     );
+    
+    // Create calendar event for the law firm
+    if (appointment.law_firm_id) {
+      await db.query(
+        `INSERT INTO calendar_events 
+         (law_firm_id, event_type, title, description, location, start_time, end_time, created_by_type, created_by_id, related_appointment_id)
+         VALUES ($1, 'appointment', $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT DO NOTHING`,
+        [appointment.law_firm_id, `Client: ${clientName}`, appointment.description || `${appointment.appointment_type || 'Appointment'} with ${clientName}`, appointment.location || null, startTime, endTime, sourceType, appointment.id, appointment.id]
+      );
+    }
   } catch (error) {
     console.error('Error syncing to calendar:', error);
   }

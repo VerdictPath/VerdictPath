@@ -322,7 +322,54 @@ router.post('/appointments', authenticateToken, async (req, res) => {
       [patientId, providerId, finalLawFirmId, appointmentDate, startTime, endTime, appointmentType || 'consultation', patientNotes || null]
     );
     
-    res.json({ success: true, appointment: result.rows[0], message: 'Appointment booked successfully!' });
+    const appointment = result.rows[0];
+    
+    // Get patient and provider info for event titles
+    const patientResult = await db.query(
+      `SELECT first_name, last_name FROM users WHERE id = $1`,
+      [patientId]
+    );
+    const patientName = patientResult.rows[0] 
+      ? `${patientResult.rows[0].first_name} ${patientResult.rows[0].last_name}` 
+      : 'Patient';
+    
+    const providerResult = await db.query(
+      `SELECT provider_name FROM medical_providers WHERE id = $1`,
+      [providerId]
+    );
+    const providerName = providerResult.rows[0]?.provider_name || 'Medical Provider';
+    
+    // Create start and end datetime strings
+    const startDateTime = `${appointmentDate}T${startTime}`;
+    const endDateTime = `${appointmentDate}T${endTime}`;
+    
+    // Create calendar event for the patient (individual)
+    await db.query(
+      `INSERT INTO calendar_events 
+       (user_id, event_type, title, description, start_time, end_time, reminder_enabled, reminder_minutes_before, related_appointment_id)
+       VALUES ($1, 'appointment', $2, $3, $4, $5, true, 60, $6)`,
+      [patientId, `Medical Appt: ${providerName}`, `${appointmentType || 'Appointment'} with ${providerName}`, startDateTime, endDateTime, appointment.id]
+    );
+    
+    // Create calendar event for the medical provider
+    await db.query(
+      `INSERT INTO calendar_events 
+       (medical_provider_id, event_type, title, description, start_time, end_time, reminder_enabled, reminder_minutes_before, related_appointment_id)
+       VALUES ($1, 'appointment', $2, $3, $4, $5, true, 60, $6)`,
+      [providerId, `Patient: ${patientName}`, `${appointmentType || 'Appointment'} with ${patientName}`, startDateTime, endDateTime, appointment.id]
+    );
+    
+    // Create calendar event for the law firm if connected
+    if (finalLawFirmId) {
+      await db.query(
+        `INSERT INTO calendar_events 
+         (law_firm_id, event_type, title, description, start_time, end_time, reminder_enabled, reminder_minutes_before, related_appointment_id)
+         VALUES ($1, 'appointment', $2, $3, $4, $5, true, 60, $6)`,
+        [finalLawFirmId, `Client Medical Appt: ${patientName}`, `${patientName} - ${appointmentType || 'Appointment'} at ${providerName}`, startDateTime, endDateTime, appointment.id]
+      );
+    }
+    
+    res.json({ success: true, appointment, message: 'Appointment booked successfully!' });
   } catch (error) {
     console.error('Error creating appointment:', error);
     res.status(500).json({ success: false, error: 'Failed to create appointment' });
