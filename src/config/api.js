@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
     REGISTER_CLIENT: `${API_BASE_URL}/api/auth/register/client`,
     REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register/lawfirm`,
     REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register/medicalprovider`,
+    JOIN_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/join/medicalprovider`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     LOGIN_LAWFIRM_USER: `${API_BASE_URL}/api/auth/login/lawfirm-user`,
     LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,

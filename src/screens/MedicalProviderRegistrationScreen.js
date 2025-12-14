@@ -137,7 +137,48 @@ const MedicalProviderRegistrationScreen = ({
       return;
     }
 
-    alert('Join Existing Provider feature is coming soon! For now, please contact your provider administrator to add you as a staff member after you create your own account.');
+    setLoading(true);
+    try {
+      const response = await apiRequest(API_ENDPOINTS.AUTH.JOIN_MEDICALPROVIDER, {
+        method: 'POST',
+        body: JSON.stringify({
+          providerCode: joinProviderCode,
+          firstName: joinFirstName,
+          lastName: joinLastName,
+          email: email,
+          password: password,
+          requestedRole: requestedRole
+        })
+      });
+
+      const userData = {
+        id: response.medicalProvider.id,
+        email: response.medicalProvider.email,
+        type: 'medical_provider',
+        providerName: response.medicalProvider.providerName,
+        providerCode: response.medicalProvider.providerCode,
+        token: response.token,
+        subscription: 'free',
+        coins: 0,
+        streak: 0,
+        role: response.medicalProvider.role,
+        userCode: response.medicalProvider.userCode
+      };
+
+      if (onRegistrationComplete) {
+        onRegistrationComplete(userData);
+      }
+    } catch (error) {
+      console.error('Error joining medical provider:', error);
+      const errorMsg = error.message || 'Failed to join provider. Please check the provider code and try again.';
+      if (Platform.OS === 'web') {
+        alert('Join Error: ' + errorMsg);
+      } else {
+        Alert.alert('Join Error', errorMsg);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderPricingCard = () => (
