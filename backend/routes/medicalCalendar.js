@@ -187,6 +187,14 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.getDay();
     
+    // Get calendar settings for multi-booking
+    const settingsResult = await db.query(
+      `SELECT allow_multi_booking, max_concurrent_bookings FROM calendar_sync_settings WHERE provider_id = $1`,
+      [providerId]
+    );
+    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
+    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
+    
     // Get recurring availability for this day
     const availabilityResult = await db.query(
       `SELECT * FROM provider_availability 
@@ -235,16 +243,21 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
           return slotDateTime >= blockStart && slotDateTime < blockEnd;
         });
         
-        // Check if slot has existing appointment
-        const hasAppointment = existingAppointments.some(appt => {
+        // Count appointments in this slot for multi-booking support
+        const appointmentCount = existingAppointments.filter(appt => {
           return slotStart >= appt.start_time.substring(0, 5) && slotStart < appt.end_time.substring(0, 5);
-        });
+        }).length;
         
-        if (!isBlocked && !hasAppointment) {
+        const hasCapacity = appointmentCount < maxBookings;
+        
+        if (!isBlocked && hasCapacity) {
           slots.push({
             startTime: slotStart,
             endTime: slotEnd,
-            available: true
+            available: true,
+            currentBookings: appointmentCount,
+            maxBookings: maxBookings,
+            spotsRemaining: maxBookings - appointmentCount
           });
         }
         
@@ -252,7 +265,7 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
       }
     }
     
-    res.json({ success: true, date, slots });
+    res.json({ success: true, date, slots, multiBookingEnabled: settings.allow_multi_booking });
   } catch (error) {
     console.error('Error fetching available slots:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch available slots' });
@@ -269,7 +282,15 @@ router.post('/appointments', authenticateToken, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Only patients can book appointments' });
     }
     
-    // Check if slot is available
+    // Get multi-booking settings
+    const settingsResult = await db.query(
+      `SELECT allow_multi_booking, max_concurrent_bookings FROM calendar_sync_settings WHERE provider_id = $1`,
+      [providerId]
+    );
+    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
+    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
+    
+    // Count existing appointments in this slot
     const existingResult = await db.query(
       `SELECT id FROM medical_appointments 
        WHERE provider_id = $1 AND appointment_date = $2 
@@ -277,7 +298,7 @@ router.post('/appointments', authenticateToken, async (req, res) => {
       [providerId, appointmentDate, startTime]
     );
     
-    if (existingResult.rows.length > 0) {
+    if (existingResult.rows.length >= maxBookings) {
       return res.status(400).json({ success: false, error: 'This time slot is no longer available' });
     }
     
@@ -547,7 +568,7 @@ router.get('/providers/:providerId/calendar-settings', authenticateToken, async 
 router.patch('/providers/:providerId/calendar-settings', authenticateToken, async (req, res) => {
   try {
     const { providerId } = req.params;
-    const { timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments } = req.body;
+    const { timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments, allowMultiBooking, maxConcurrentBookings } = req.body;
     
     const result = await db.query(
       `UPDATE calendar_sync_settings 
@@ -559,10 +580,12 @@ router.patch('/providers/:providerId/calendar-settings', authenticateToken, asyn
            email_notifications = COALESCE($7, email_notifications),
            sms_notifications = COALESCE($8, sms_notifications),
            auto_confirm_appointments = COALESCE($9, auto_confirm_appointments),
+           allow_multi_booking = COALESCE($10, allow_multi_booking),
+           max_concurrent_bookings = COALESCE($11, max_concurrent_bookings),
            updated_at = NOW()
        WHERE provider_id = $1
        RETURNING *`,
-      [providerId, timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments]
+      [providerId, timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments, allowMultiBooking, maxConcurrentBookings || 4]
     );
     
     res.json({ success: true, settings: result.rows[0] });

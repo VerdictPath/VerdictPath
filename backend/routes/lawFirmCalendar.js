@@ -215,6 +215,14 @@ router.get('/law-firms/:lawFirmId/available-slots', authenticateToken, async (re
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.getDay();
     
+    // Get calendar settings for multi-booking
+    const settingsResult = await db.query(
+      `SELECT allow_multi_booking, max_concurrent_bookings FROM law_firm_calendar_settings WHERE law_firm_id = $1`,
+      [lawFirmId]
+    );
+    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
+    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
+    
     const availabilityResult = await db.query(
       `SELECT * FROM law_firm_availability 
        WHERE law_firm_id = $1 AND is_active = true
@@ -258,16 +266,22 @@ router.get('/law-firms/:lawFirmId/available-slots', authenticateToken, async (re
           return slotDateTime >= blockStart && slotDateTime < blockEnd;
         });
         
-        const hasAppointment = existingAppointments.some(appt => {
+        // Count appointments in this slot for multi-booking support
+        const appointmentCount = existingAppointments.filter(appt => {
           return slotStart >= appt.start_time.substring(0, 5) && slotStart < appt.end_time.substring(0, 5);
-        });
+        }).length;
         
-        if (!isBlocked && !hasAppointment) {
+        const hasCapacity = appointmentCount < maxBookings;
+        
+        if (!isBlocked && hasCapacity) {
           slots.push({
             startTime: slotStart,
             endTime: slotEnd,
             meetingType: avail.meeting_type,
-            available: true
+            available: true,
+            currentBookings: appointmentCount,
+            maxBookings: maxBookings,
+            spotsRemaining: maxBookings - appointmentCount
           });
         }
         
@@ -275,7 +289,7 @@ router.get('/law-firms/:lawFirmId/available-slots', authenticateToken, async (re
       }
     }
     
-    res.json({ success: true, date, slots });
+    res.json({ success: true, date, slots, multiBookingEnabled: settings.allow_multi_booking });
   } catch (error) {
     console.error('Error fetching available slots:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch available slots' });
@@ -292,6 +306,15 @@ router.post('/appointments', authenticateToken, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Only clients can book appointments' });
     }
     
+    // Get multi-booking settings
+    const settingsResult = await db.query(
+      `SELECT allow_multi_booking, max_concurrent_bookings FROM law_firm_calendar_settings WHERE law_firm_id = $1`,
+      [lawFirmId]
+    );
+    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
+    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
+    
+    // Count existing appointments in this slot
     const existingResult = await db.query(
       `SELECT id FROM law_firm_appointments 
        WHERE law_firm_id = $1 AND appointment_date = $2 
@@ -299,7 +322,7 @@ router.post('/appointments', authenticateToken, async (req, res) => {
       [lawFirmId, appointmentDate, startTime]
     );
     
-    if (existingResult.rows.length > 0) {
+    if (existingResult.rows.length >= maxBookings) {
       return res.status(400).json({ success: false, error: 'This time slot is no longer available' });
     }
     
@@ -542,7 +565,7 @@ router.get('/law-firms/:lawFirmId/calendar-settings', authenticateToken, async (
 router.patch('/law-firms/:lawFirmId/calendar-settings', authenticateToken, async (req, res) => {
   try {
     const { lawFirmId } = req.params;
-    const { timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments } = req.body;
+    const { timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments, allowMultiBooking, maxConcurrentBookings } = req.body;
     
     if (!await verifyLawFirmOwnership(req, lawFirmId)) {
       return res.status(403).json({ success: false, error: 'Unauthorized' });
@@ -558,10 +581,12 @@ router.patch('/law-firms/:lawFirmId/calendar-settings', authenticateToken, async
            email_notifications = COALESCE($7, email_notifications),
            sms_notifications = COALESCE($8, sms_notifications),
            auto_confirm_appointments = COALESCE($9, auto_confirm_appointments),
+           allow_multi_booking = COALESCE($10, allow_multi_booking),
+           max_concurrent_bookings = COALESCE($11, max_concurrent_bookings),
            updated_at = NOW()
        WHERE law_firm_id = $1
        RETURNING *`,
-      [lawFirmId, timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments]
+      [lawFirmId, timezone, defaultSlotDuration, defaultBufferMinutes, advanceBookingDays, minimumNoticeHours, emailNotifications, smsNotifications, autoConfirmAppointments, allowMultiBooking, maxConcurrentBookings || 4]
     );
     
     res.json({ success: true, settings: result.rows[0] });

@@ -35,6 +35,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [showCreateAppointmentModal, setShowCreateAppointmentModal] = useState(false);
   const [showAvailabilityRequestModal, setShowAvailabilityRequestModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   const [newAvailability, setNewAvailability] = useState({
@@ -414,6 +415,32 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const handleUpdateSettings = async (newSettings) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/calendar-settings`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newSettings)
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data.settings);
+        Alert.alert('Success', 'Settings updated successfully!');
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to update settings');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update settings');
+    }
+  };
+
   const handleConfirmAppointment = async (appointmentId) => {
     try {
       const response = await fetch(
@@ -577,6 +604,11 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowCreateAppointmentModal(true)}>
         <Icon name="calendar-plus" size={20} color="#fff" />
         <Text style={styles.actionButtonText}>New Appt</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowSettingsModal(true)}>
+        <Icon name="cog" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Settings</Text>
       </TouchableOpacity>
     </View>
   );
@@ -1179,6 +1211,150 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     </Modal>
   );
 
+  const renderSettingsModal = () => (
+    <Modal visible={showSettingsModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Calendar Settings</Text>
+            <TouchableOpacity onPress={() => setShowSettingsModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Multi-Booking Settings</Text>
+              <Text style={styles.settingsDescription}>
+                Allow multiple clients to book the same time slot. Useful for group sessions or parallel consultations.
+              </Text>
+
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Icon name="account-group" size={24} color="#FFD700" />
+                  <Text style={styles.toggleLabel}>Enable Multi-Booking</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    settings?.allow_multi_booking && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleUpdateSettings({ 
+                    allowMultiBooking: !settings?.allow_multi_booking 
+                  })}
+                >
+                  <View style={[
+                    styles.toggleCircle,
+                    settings?.allow_multi_booking && styles.toggleCircleActive
+                  ]} />
+                </TouchableOpacity>
+              </View>
+
+              {settings?.allow_multi_booking && (
+                <View style={styles.maxBookingsContainer}>
+                  <Text style={styles.modalLabel}>Max Concurrent Bookings</Text>
+                  <Text style={styles.settingsDescription}>
+                    Maximum number of clients that can book the same time slot
+                  </Text>
+                  <View style={styles.maxBookingsSelector}>
+                    {[2, 3, 4, 5, 6].map((num) => (
+                      <TouchableOpacity
+                        key={num}
+                        style={[
+                          styles.maxBookingsOption,
+                          (settings?.max_concurrent_bookings || 4) === num && styles.maxBookingsOptionActive
+                        ]}
+                        onPress={() => handleUpdateSettings({ maxConcurrentBookings: num })}
+                      >
+                        <Text style={[
+                          styles.maxBookingsOptionText,
+                          (settings?.max_concurrent_bookings || 4) === num && styles.maxBookingsOptionTextActive
+                        ]}>
+                          {num}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Notification Preferences</Text>
+
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Icon name="email-outline" size={24} color="#FFD700" />
+                  <Text style={styles.toggleLabel}>Email Notifications</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    settings?.email_notifications && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleUpdateSettings({ 
+                    emailNotifications: !settings?.email_notifications 
+                  })}
+                >
+                  <View style={[
+                    styles.toggleCircle,
+                    settings?.email_notifications && styles.toggleCircleActive
+                  ]} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Icon name="message-text-outline" size={24} color="#FFD700" />
+                  <Text style={styles.toggleLabel}>SMS Notifications</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    settings?.sms_notifications && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleUpdateSettings({ 
+                    smsNotifications: !settings?.sms_notifications 
+                  })}
+                >
+                  <View style={[
+                    styles.toggleCircle,
+                    settings?.sms_notifications && styles.toggleCircleActive
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Booking Preferences</Text>
+
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Icon name="check-circle-outline" size={24} color="#FFD700" />
+                  <Text style={styles.toggleLabel}>Auto-confirm Appointments</Text>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    settings?.auto_confirm_appointments && styles.toggleButtonActive
+                  ]}
+                  onPress={() => handleUpdateSettings({ 
+                    autoConfirmAppointments: !settings?.auto_confirm_appointments 
+                  })}
+                >
+                  <View style={[
+                    styles.toggleCircle,
+                    settings?.auto_confirm_appointments && styles.toggleCircleActive
+                  ]} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -1211,6 +1387,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       {renderCreateAppointmentModal()}
       {renderAvailabilityRequestModal()}
       {renderAppointmentModal()}
+      {renderSettingsModal()}
     </View>
   );
 };
@@ -1778,6 +1955,97 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600'
+  },
+  settingsSection: {
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  settingsSectionTitle: {
+    color: '#FFD700',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8
+  },
+  settingsDescription: {
+    color: '#999',
+    fontSize: 13,
+    marginBottom: 16,
+    lineHeight: 18
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  toggleInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1
+  },
+  toggleLabel: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '500'
+  },
+  toggleButton: {
+    width: 52,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 2,
+    justifyContent: 'center'
+  },
+  toggleButtonActive: {
+    backgroundColor: '#10b981'
+  },
+  toggleCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff'
+  },
+  toggleCircleActive: {
+    marginLeft: 24
+  },
+  maxBookingsContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.3)',
+    borderRadius: 10
+  },
+  maxBookingsSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8
+  },
+  maxBookingsOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center'
+  },
+  maxBookingsOptionActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  maxBookingsOptionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  maxBookingsOptionTextActive: {
+    color: '#FFD700'
   }
 });
 
