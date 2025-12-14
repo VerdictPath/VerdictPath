@@ -414,7 +414,7 @@ router.get('/patients/:patientId/appointments', authenticateToken, async (req, r
 router.get('/providers/:providerId/appointments', authenticateToken, async (req, res) => {
   try {
     const { providerId } = req.params;
-    const { date, status } = req.query;
+    const { date, startDate, endDate, status } = req.query;
     
     if (!await verifyProviderOwnership(req, providerId)) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own appointments' });
@@ -431,7 +431,11 @@ router.get('/providers/:providerId/appointments', authenticateToken, async (req,
     const params = [providerId];
     let paramIndex = 2;
     
-    if (date) {
+    if (startDate && endDate) {
+      query += ` AND ma.appointment_date >= $${paramIndex} AND ma.appointment_date <= $${paramIndex + 1}`;
+      params.push(startDate, endDate);
+      paramIndex += 2;
+    } else if (date) {
       query += ` AND ma.appointment_date = $${paramIndex}`;
       params.push(date);
       paramIndex++;
