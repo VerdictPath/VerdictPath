@@ -3,6 +3,47 @@ const router = express.Router();
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 
+// Authorization helper: Verify provider owns the resource
+async function verifyProviderOwnership(req, providerId) {
+  if (req.user.userType !== 'medical_provider') return false;
+  const userId = req.user.medicalProviderId || req.user.id;
+  return String(userId) === String(providerId);
+}
+
+// Authorization helper: Verify law firm owns the resource
+async function verifyLawFirmOwnership(req, lawFirmId) {
+  if (req.user.userType !== 'lawfirm') return false;
+  const userId = req.user.lawFirmId || req.user.id;
+  return String(userId) === String(lawFirmId);
+}
+
+// Authorization helper: Verify patient owns the resource
+async function verifyPatientOwnership(req, patientId) {
+  if (req.user.userType !== 'individual') return false;
+  return String(req.user.id) === String(patientId);
+}
+
+// Authorization helper: Verify user can access appointment
+async function verifyAppointmentAccess(req, appointmentId) {
+  const result = await db.query(
+    `SELECT patient_id, provider_id, law_firm_id FROM medical_appointments WHERE id = $1`,
+    [appointmentId]
+  );
+  if (result.rows.length === 0) return false;
+  const apt = result.rows[0];
+  
+  if (req.user.userType === 'individual' && String(apt.patient_id) === String(req.user.id)) return true;
+  if (req.user.userType === 'medical_provider') {
+    const provId = req.user.medicalProviderId || req.user.id;
+    if (String(apt.provider_id) === String(provId)) return true;
+  }
+  if (req.user.userType === 'lawfirm' && apt.law_firm_id) {
+    const firmId = req.user.lawFirmId || req.user.id;
+    if (String(apt.law_firm_id) === String(firmId)) return true;
+  }
+  return false;
+}
+
 // Get provider availability
 router.get('/providers/:providerId/availability', authenticateToken, async (req, res) => {
   try {
@@ -28,8 +69,8 @@ router.post('/providers/:providerId/availability', authenticateToken, async (req
     const { providerId } = req.params;
     const { dayOfWeek, startTime, endTime, isRecurring, specificDate, slotDuration, bufferMinutes } = req.body;
     
-    if (req.user.userType !== 'medical_provider') {
-      return res.status(403).json({ success: false, error: 'Only medical providers can set availability' });
+    if (!await verifyProviderOwnership(req, providerId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only manage your own availability' });
     }
     
     const result = await db.query(
@@ -52,6 +93,10 @@ router.delete('/providers/:providerId/availability/:availabilityId', authenticat
   try {
     const { providerId, availabilityId } = req.params;
     
+    if (!await verifyProviderOwnership(req, providerId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only manage your own availability' });
+    }
+    
     await db.query(
       `UPDATE provider_availability SET is_active = false WHERE id = $1 AND provider_id = $2`,
       [availabilityId, providerId]
@@ -69,6 +114,10 @@ router.post('/providers/:providerId/block-time', authenticateToken, async (req, 
   try {
     const { providerId } = req.params;
     const { startDatetime, endDatetime, reason, blockType, isAllDay } = req.body;
+    
+    if (!await verifyProviderOwnership(req, providerId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only manage your own calendar' });
+    }
     
     const result = await db.query(
       `INSERT INTO provider_blocked_times 
@@ -108,6 +157,10 @@ router.get('/providers/:providerId/blocked-times', authenticateToken, async (req
 router.delete('/providers/:providerId/blocked-times/:blockId', authenticateToken, async (req, res) => {
   try {
     const { providerId, blockId } = req.params;
+    
+    if (!await verifyProviderOwnership(req, providerId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only manage your own calendar' });
+    }
     
     await db.query(
       `DELETE FROM provider_blocked_times WHERE id = $1 AND provider_id = $2`,
@@ -261,6 +314,10 @@ router.get('/patients/:patientId/appointments', authenticateToken, async (req, r
     const { patientId } = req.params;
     const { status } = req.query;
     
+    if (!await verifyPatientOwnership(req, patientId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own appointments' });
+    }
+    
     let query = `
       SELECT ma.*, mp.provider_name, mp.specialty, mp.phone_number as provider_phone
       FROM medical_appointments ma
@@ -290,6 +347,10 @@ router.get('/providers/:providerId/appointments', authenticateToken, async (req,
   try {
     const { providerId } = req.params;
     const { date, status } = req.query;
+    
+    if (!await verifyProviderOwnership(req, providerId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own appointments' });
+    }
     
     let query = `
       SELECT ma.*, u.first_name as patient_first_name, u.last_name as patient_last_name, u.email as patient_email,
@@ -329,6 +390,10 @@ router.get('/law-firms/:lawFirmId/client-appointments', authenticateToken, async
   try {
     const { lawFirmId } = req.params;
     const { clientId, status } = req.query;
+    
+    if (!await verifyLawFirmOwnership(req, lawFirmId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own client appointments' });
+    }
     
     let query = `
       SELECT ma.*, 
@@ -370,6 +435,10 @@ router.patch('/appointments/:appointmentId/confirm', authenticateToken, async (r
     const { appointmentId } = req.params;
     const userType = req.user.userType;
     
+    if (!await verifyAppointmentAccess(req, appointmentId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this appointment' });
+    }
+    
     let updateField = userType === 'medical_provider' ? 'provider_confirmed' : 'patient_confirmed';
     
     await db.query(
@@ -401,6 +470,10 @@ router.patch('/appointments/:appointmentId/cancel', authenticateToken, async (re
     const { reason } = req.body;
     const userType = req.user.userType;
     
+    if (!await verifyAppointmentAccess(req, appointmentId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this appointment' });
+    }
+    
     let cancelledBy = 'patient';
     if (userType === 'medical_provider') cancelledBy = 'provider';
     if (userType === 'lawfirm') cancelledBy = 'law_firm';
@@ -425,6 +498,10 @@ router.patch('/appointments/:appointmentId/complete', authenticateToken, async (
   try {
     const { appointmentId } = req.params;
     const { providerNotes } = req.body;
+    
+    if (!await verifyAppointmentAccess(req, appointmentId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You do not have access to this appointment' });
+    }
     
     const result = await db.query(
       `UPDATE medical_appointments 
@@ -499,6 +576,10 @@ router.patch('/providers/:providerId/calendar-settings', authenticateToken, asyn
 router.get('/patients/:patientId/connected-providers', authenticateToken, async (req, res) => {
   try {
     const { patientId } = req.params;
+    
+    if (!await verifyPatientOwnership(req, patientId)) {
+      return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own providers' });
+    }
     
     const result = await db.query(
       `SELECT mp.id, mp.provider_name, mp.specialty, mp.phone_number, mp.email
