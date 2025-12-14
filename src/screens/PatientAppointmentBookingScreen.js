@@ -1,48 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-  TextInput, Alert, Modal, Platform
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Modal, TextInput, Alert, ActivityIndicator, Platform
 } from 'react-native';
-import { theme } from '../styles/theme';
+import { Calendar } from 'react-native-calendars';
+import moment from 'moment';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { API_BASE_URL } from '../config/api';
 
 const APPOINTMENT_TYPES = [
-  { id: 'consultation', label: 'Initial Consultation', icon: '🩺' },
-  { id: 'follow_up', label: 'Follow-up Visit', icon: '📋' },
-  { id: 'treatment', label: 'Treatment', icon: '💊' },
-  { id: 'evaluation', label: 'Evaluation', icon: '📊' },
-  { id: 'imaging', label: 'Imaging/X-Ray', icon: '🔬' }
+  { value: 'Initial Consultation', icon: 'account-search' },
+  { value: 'Follow-up', icon: 'calendar-check' },
+  { value: 'Treatment', icon: 'medical-bag' },
+  { value: 'Evaluation', icon: 'clipboard-text' },
+  { value: 'Therapy Session', icon: 'heart-pulse' },
+  { value: 'Imaging/X-Ray', icon: 'radioactive' },
+  { value: 'Other', icon: 'dots-horizontal' }
 ];
 
 const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
-  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [myAppointments, setMyAppointments] = useState([]);
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [appointmentType, setAppointmentType] = useState('consultation');
-  const [patientNotes, setPatientNotes] = useState('');
-  const [appointments, setAppointments] = useState([]);
-  const [activeTab, setActiveTab] = useState('book');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [loading, setLoading] = useState(true);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [bookingSlot, setBookingSlot] = useState(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [appointmentType, setAppointmentType] = useState('');
+  const [notes, setNotes] = useState('');
+  const [markedDates, setMarkedDates] = useState({});
   const [booking, setBooking] = useState(false);
+  const [activeTab, setActiveTab] = useState('book');
 
   const patientId = user?.id;
 
   useEffect(() => {
-    fetchConnectedProviders();
-    fetchMyAppointments();
+    loadConnectedProviders();
+    loadMyAppointments();
   }, []);
 
   useEffect(() => {
     if (selectedProvider && selectedDate) {
-      fetchAvailableSlots();
+      loadAvailableSlots();
     }
   }, [selectedProvider, selectedDate]);
 
-  const fetchConnectedProviders = async () => {
+  const loadConnectedProviders = async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/medical-calendar/patients/${patientId}/connected-providers`,
@@ -53,13 +58,13 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setProviders(data.providers || []);
       }
     } catch (error) {
-      console.error('Error fetching providers:', error);
+      console.error('Error loading providers:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMyAppointments = async () => {
+  const loadMyAppointments = async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/medical-calendar/patients/${patientId}/appointments`,
@@ -67,21 +72,30 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       );
       if (response.ok) {
         const data = await response.json();
-        setAppointments(data.appointments || []);
+        const appointments = data.appointments || [];
+        setMyAppointments(appointments);
+
+        const marked = {};
+        appointments.forEach(appt => {
+          marked[appt.appointment_date] = {
+            marked: true,
+            dotColor: appt.status === 'confirmed' ? '#10b981' : '#f59e0b'
+          };
+        });
+        setMarkedDates(marked);
       }
     } catch (error) {
-      console.error('Error fetching appointments:', error);
+      console.error('Error loading appointments:', error);
     }
   };
 
-  const fetchAvailableSlots = async () => {
-    if (!selectedProvider || !selectedDate) return;
+  const loadAvailableSlots = async () => {
+    if (!selectedProvider) return;
     
     setLoadingSlots(true);
     try {
-      const dateStr = formatDate(selectedDate);
       const response = await fetch(
-        `${API_BASE_URL}/api/medical-calendar/providers/${selectedProvider.id}/available-slots?date=${dateStr}`,
+        `${API_BASE_URL}/api/medical-calendar/providers/${selectedProvider.id}/available-slots?date=${selectedDate}`,
         { headers: { 'Authorization': `Bearer ${user.token}` } }
       );
       if (response.ok) {
@@ -89,15 +103,21 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setAvailableSlots(data.slots || []);
       }
     } catch (error) {
-      console.error('Error fetching slots:', error);
+      console.error('Error loading slots:', error);
+      Alert.alert('Error', 'Failed to load available slots');
     } finally {
       setLoadingSlots(false);
     }
   };
 
+  const handleSlotSelect = (slot) => {
+    setBookingSlot(slot);
+    setShowBookingModal(true);
+  };
+
   const handleBookAppointment = async () => {
-    if (!selectedProvider || !selectedDate || !selectedSlot) {
-      Alert.alert('Missing Information', 'Please select a provider, date, and time slot');
+    if (!appointmentType.trim()) {
+      Alert.alert('Required', 'Please select an appointment type');
       return;
     }
 
@@ -113,38 +133,46 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
           },
           body: JSON.stringify({
             providerId: selectedProvider.id,
-            appointmentDate: formatDate(selectedDate),
-            startTime: selectedSlot.startTime,
-            endTime: selectedSlot.endTime,
+            appointmentDate: selectedDate,
+            startTime: bookingSlot.startTime,
+            endTime: bookingSlot.endTime,
             appointmentType,
-            patientNotes
+            patientNotes: notes
           })
         }
       );
 
       if (response.ok) {
         Alert.alert(
-          'Appointment Booked!',
-          'Your appointment has been successfully scheduled. The provider will confirm shortly.',
-          [{ text: 'OK', onPress: () => {
-            setSelectedSlot(null);
-            setPatientNotes('');
-            setActiveTab('appointments');
-            fetchMyAppointments();
-          }}]
+          'Success!',
+          'Your appointment has been requested. You\'ll receive a confirmation once the provider confirms.',
+          [
+            {
+              text: 'Great!',
+              onPress: () => {
+                setShowBookingModal(false);
+                setBookingSlot(null);
+                setAppointmentType('');
+                setNotes('');
+                loadMyAppointments();
+                loadAvailableSlots();
+              }
+            }
+          ]
         );
       } else {
         const data = await response.json();
         Alert.alert('Error', data.error || 'Failed to book appointment');
       }
     } catch (error) {
+      console.error('Error booking appointment:', error);
       Alert.alert('Error', 'Failed to book appointment');
     } finally {
       setBooking(false);
     }
   };
 
-  const handleCancelAppointment = async (appointmentId) => {
+  const handleCancelAppointment = (appointmentId) => {
     Alert.alert(
       'Cancel Appointment',
       'Are you sure you want to cancel this appointment?',
@@ -168,7 +196,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
               );
               if (response.ok) {
                 Alert.alert('Success', 'Appointment cancelled');
-                fetchMyAppointments();
+                loadMyAppointments();
               }
             } catch (error) {
               Alert.alert('Error', 'Failed to cancel appointment');
@@ -177,62 +205,6 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         }
       ]
     );
-  };
-
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  };
-
-  const formatTime = (timeStr) => {
-    if (!timeStr) return '';
-    const [hours, minutes] = timeStr.split(':');
-    const h = parseInt(hours);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour12 = h % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
-  };
-
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const days = [];
-    
-    for (let i = 0; i < firstDay.getDay(); i++) {
-      days.push(null);
-    }
-    
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
-    }
-    
-    return days;
-  };
-
-  const isToday = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
-
-  const isPast = (date) => {
-    if (!date) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date < today;
-  };
-
-  const isSelected = (date) => {
-    if (!date || !selectedDate) return false;
-    return date.toDateString() === selectedDate.toDateString();
-  };
-
-  const changeMonth = (delta) => {
-    const newMonth = new Date(currentMonth);
-    newMonth.setMonth(newMonth.getMonth() + delta);
-    setCurrentMonth(newMonth);
   };
 
   const getStatusColor = (status) => {
@@ -245,14 +217,60 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'confirmed': return 'check-circle';
+      case 'pending': return 'clock-outline';
+      case 'cancelled': return 'close-circle';
+      case 'completed': return 'check-all';
+      default: return 'help-circle';
+    }
+  };
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Icon name="arrow-left" size={24} color="#FFD700" />
+      </TouchableOpacity>
+      <View style={styles.headerContent}>
+        <Icon name="hospital-building" size={28} color="#FFD700" />
+        <Text style={styles.headerTitle}>Book Appointment</Text>
+      </View>
+      <View style={{ width: 40 }} />
+    </View>
+  );
+
+  const renderTabs = () => (
+    <View style={styles.tabBar}>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'book' && styles.activeTab]}
+        onPress={() => setActiveTab('book')}
+      >
+        <Icon name="calendar-plus" size={20} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Book New</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
+        onPress={() => setActiveTab('appointments')}
+      >
+        <Icon name="calendar-star" size={20} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
+        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>My Appointments</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderProviderSelection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Select Provider</Text>
+      <View style={styles.sectionHeader}>
+        <Icon name="doctor" size={24} color="#FFD700" />
+        <Text style={styles.sectionTitle}>Select Provider</Text>
+      </View>
+      
       {providers.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>👨‍⚕️</Text>
-          <Text style={styles.emptyStateText}>No connected providers</Text>
-          <Text style={styles.emptyStateSubtext}>Connect with a medical provider first</Text>
+        <View style={styles.emptyContainer}>
+          <Icon name="account-off" size={48} color="#666" />
+          <Text style={styles.emptyText}>No connected providers</Text>
+          <Text style={styles.emptySubtext}>Connect with a medical provider first</Text>
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -265,15 +283,11 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
               ]}
               onPress={() => {
                 setSelectedProvider(provider);
-                setSelectedDate(null);
-                setSelectedSlot(null);
                 setAvailableSlots([]);
               }}
             >
-              <View style={styles.providerAvatar}>
-                <Text style={styles.providerInitial}>
-                  {provider.provider_name?.charAt(0) || 'P'}
-                </Text>
+              <View style={styles.providerIconContainer}>
+                <Icon name="doctor" size={32} color="#FFD700" />
               </View>
               <Text style={styles.providerName} numberOfLines={1}>
                 {provider.provider_name}
@@ -281,6 +295,9 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.providerSpecialty} numberOfLines={1}>
                 {provider.specialty || 'Medical Provider'}
               </Text>
+              {selectedProvider?.id === provider.id && (
+                <Icon name="check-circle" size={20} color="#10b981" style={styles.providerCheck} />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -290,91 +307,80 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
   const renderCalendar = () => {
     if (!selectedProvider) return null;
-    
-    const days = getDaysInMonth(currentMonth);
-    const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-    
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Date</Text>
+        <View style={styles.sectionHeader}>
+          <Icon name="calendar-month" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>Select a Date</Text>
+        </View>
+        
         <View style={styles.calendarContainer}>
-          <View style={styles.calendarHeader}>
-            <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.monthNavButton}>
-              <Text style={styles.monthNavText}>{'<'}</Text>
-            </TouchableOpacity>
-            <Text style={styles.monthTitle}>{monthName}</Text>
-            <TouchableOpacity onPress={() => changeMonth(1)} style={styles.monthNavButton}>
-              <Text style={styles.monthNavText}>{'>'}</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.weekDaysRow}>
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
-              <Text key={idx} style={styles.weekDayText}>{day}</Text>
-            ))}
-          </View>
-          
-          <View style={styles.daysGrid}>
-            {days.map((date, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.dayCell,
-                  isToday(date) && styles.todayCell,
-                  isSelected(date) && styles.selectedCell,
-                  isPast(date) && styles.pastCell
-                ]}
-                onPress={() => date && !isPast(date) && setSelectedDate(date)}
-                disabled={!date || isPast(date)}
-              >
-                {date && (
-                  <Text style={[
-                    styles.dayText,
-                    isToday(date) && styles.todayText,
-                    isSelected(date) && styles.selectedDayText,
-                    isPast(date) && styles.pastDayText
-                  ]}>
-                    {date.getDate()}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Calendar
+            current={selectedDate}
+            minDate={moment().format('YYYY-MM-DD')}
+            maxDate={moment().add(3, 'months').format('YYYY-MM-DD')}
+            onDayPress={(day) => setSelectedDate(day.dateString)}
+            markedDates={{
+              ...markedDates,
+              [selectedDate]: {
+                ...markedDates[selectedDate],
+                selected: true,
+                selectedColor: '#1a5490'
+              }
+            }}
+            theme={{
+              backgroundColor: 'transparent',
+              calendarBackground: 'transparent',
+              textSectionTitleColor: '#FFD700',
+              selectedDayBackgroundColor: '#1a5490',
+              selectedDayTextColor: '#ffffff',
+              todayTextColor: '#FFD700',
+              dayTextColor: '#ffffff',
+              textDisabledColor: '#666',
+              monthTextColor: '#FFD700',
+              arrowColor: '#FFD700',
+            }}
+          />
         </View>
       </View>
     );
   };
 
   const renderTimeSlots = () => {
-    if (!selectedDate) return null;
-    
+    if (!selectedProvider || !selectedDate) return null;
+
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Available Times</Text>
+        <View style={styles.sectionHeader}>
+          <Icon name="clock-outline" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>
+            Available Times - {moment(selectedDate).format('MMMM Do')}
+          </Text>
+        </View>
+
         {loadingSlots ? (
-          <ActivityIndicator size="small" color="#d4af37" />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FFD700" />
+            <Text style={styles.loadingText}>Finding available slots...</Text>
+          </View>
         ) : availableSlots.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>⏰</Text>
-            <Text style={styles.emptyStateText}>No available slots</Text>
-            <Text style={styles.emptyStateSubtext}>Try selecting another date</Text>
+          <View style={styles.emptyContainer}>
+            <Icon name="skull-crossbones" size={48} color="#666" />
+            <Text style={styles.emptyText}>No available slots for this date</Text>
+            <Text style={styles.emptySubtext}>Try selecting a different date, matey!</Text>
           </View>
         ) : (
           <View style={styles.slotsGrid}>
-            {availableSlots.map((slot, idx) => (
+            {availableSlots.map((slot, index) => (
               <TouchableOpacity
-                key={idx}
-                style={[
-                  styles.slotButton,
-                  selectedSlot?.startTime === slot.startTime && styles.slotButtonSelected
-                ]}
-                onPress={() => setSelectedSlot(slot)}
+                key={index}
+                style={styles.slotButton}
+                onPress={() => handleSlotSelect(slot)}
               >
-                <Text style={[
-                  styles.slotText,
-                  selectedSlot?.startTime === slot.startTime && styles.slotTextSelected
-                ]}>
-                  {formatTime(slot.startTime)}
+                <Icon name="clock-time-four-outline" size={20} color="#FFD700" />
+                <Text style={styles.slotTime}>
+                  {moment(slot.startTime, 'HH:mm').format('h:mm A')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -384,131 +390,226 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     );
   };
 
-  const renderAppointmentType = () => {
-    if (!selectedSlot) return null;
-    
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appointment Type</Text>
-        <View style={styles.typeGrid}>
-          {APPOINTMENT_TYPES.map((type) => (
-            <TouchableOpacity
-              key={type.id}
-              style={[
-                styles.typeCard,
-                appointmentType === type.id && styles.typeCardSelected
-              ]}
-              onPress={() => setAppointmentType(type.id)}
-            >
-              <Text style={styles.typeIcon}>{type.icon}</Text>
-              <Text style={[
-                styles.typeLabel,
-                appointmentType === type.id && styles.typeLabelSelected
-              ]}>
-                {type.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Notes for Provider (Optional)</Text>
-        <TextInput
-          style={styles.notesInput}
-          value={patientNotes}
-          onChangeText={setPatientNotes}
-          placeholder="Any information you'd like the provider to know..."
-          placeholderTextColor="#666"
-          multiline
-          numberOfLines={3}
-        />
-        
-        <TouchableOpacity
-          style={[styles.bookButton, booking && styles.bookButtonDisabled]}
-          onPress={handleBookAppointment}
-          disabled={booking}
-        >
-          {booking ? (
-            <ActivityIndicator size="small" color="#000" />
-          ) : (
-            <Text style={styles.bookButtonText}>Book Appointment</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   const renderMyAppointments = () => {
-    const upcomingAppointments = appointments.filter(apt => 
-      new Date(apt.appointment_date) >= new Date() && apt.status !== 'cancelled'
-    );
-    const pastAppointments = appointments.filter(apt => 
-      new Date(apt.appointment_date) < new Date() || apt.status === 'cancelled'
-    );
+    const upcomingAppointments = myAppointments
+      .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
+      .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
+
+    const pastAppointments = myAppointments
+      .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
+      .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
 
     return (
       <View style={styles.appointmentsContainer}>
-        <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+        <View style={styles.sectionHeader}>
+          <Icon name="calendar-star" size={24} color="#FFD700" />
+          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+        </View>
+
         {upcomingAppointments.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateIcon}>📅</Text>
-            <Text style={styles.emptyStateText}>No upcoming appointments</Text>
+          <View style={styles.emptyContainer}>
+            <Icon name="calendar-blank" size={48} color="#666" />
+            <Text style={styles.emptyText}>No upcoming appointments</Text>
+            <Text style={styles.emptySubtext}>Book an appointment to get started!</Text>
           </View>
         ) : (
-          upcomingAppointments.map((apt) => (
-            <View key={apt.id} style={styles.appointmentCard}>
-              <View style={styles.appointmentHeader}>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(apt.status) }]}>
-                  <Text style={styles.statusText}>{apt.status}</Text>
+          <View style={styles.appointmentsList}>
+            {upcomingAppointments.slice(0, 10).map((appointment) => (
+              <View key={appointment.id} style={styles.appointmentCard}>
+                <View style={styles.appointmentHeader}>
+                  <View style={styles.appointmentDateBadge}>
+                    <Text style={styles.appointmentMonth}>
+                      {moment(appointment.appointment_date).format('MMM')}
+                    </Text>
+                    <Text style={styles.appointmentDay}>
+                      {moment(appointment.appointment_date).format('DD')}
+                    </Text>
+                  </View>
+
+                  <View style={styles.appointmentDetails}>
+                    <Text style={styles.appointmentProviderName}>
+                      {appointment.provider_name}
+                    </Text>
+                    <Text style={styles.appointmentTime}>
+                      {moment(appointment.start_time, 'HH:mm:ss').format('h:mm A')}
+                    </Text>
+                    <Text style={styles.appointmentTypeText}>
+                      {appointment.appointment_type || 'Medical Appointment'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.appointmentStatus}>
+                    <Icon
+                      name={getStatusIcon(appointment.status)}
+                      size={24}
+                      color={getStatusColor(appointment.status)}
+                    />
+                    <Text style={[styles.appointmentStatusText, { color: getStatusColor(appointment.status) }]}>
+                      {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    </Text>
+                  </View>
                 </View>
-                {['pending', 'confirmed'].includes(apt.status) && (
+
+                {['pending', 'confirmed'].includes(appointment.status) && (
                   <TouchableOpacity
-                    style={styles.cancelLink}
-                    onPress={() => handleCancelAppointment(apt.id)}
+                    style={styles.cancelButton}
+                    onPress={() => handleCancelAppointment(appointment.id)}
                   >
-                    <Text style={styles.cancelLinkText}>Cancel</Text>
+                    <Icon name="close-circle-outline" size={16} color="#ef4444" />
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
                 )}
               </View>
-              <Text style={styles.appointmentProvider}>{apt.provider_name}</Text>
-              <Text style={styles.appointmentDate}>
-                {new Date(apt.appointment_date).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </Text>
-              <Text style={styles.appointmentTime}>
-                {formatTime(apt.start_time)} - {formatTime(apt.end_time)}
-              </Text>
-              <Text style={styles.appointmentType}>{apt.appointment_type || 'Consultation'}</Text>
-            </View>
-          ))
+            ))}
+          </View>
         )}
 
         {pastAppointments.length > 0 && (
           <>
-            <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Past Appointments</Text>
-            {pastAppointments.slice(0, 5).map((apt) => (
-              <View key={apt.id} style={[styles.appointmentCard, styles.pastAppointmentCard]}>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(apt.status) }]}>
-                  <Text style={styles.statusText}>{apt.status}</Text>
+            <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+              <Icon name="history" size={24} color="#FFD700" />
+              <Text style={styles.sectionTitle}>Past Appointments</Text>
+            </View>
+            <View style={styles.appointmentsList}>
+              {pastAppointments.slice(0, 5).map((appointment) => (
+                <View key={appointment.id} style={[styles.appointmentCard, styles.pastAppointmentCard]}>
+                  <View style={styles.appointmentHeader}>
+                    <View style={styles.appointmentDateBadge}>
+                      <Text style={styles.appointmentMonth}>
+                        {moment(appointment.appointment_date).format('MMM')}
+                      </Text>
+                      <Text style={styles.appointmentDay}>
+                        {moment(appointment.appointment_date).format('DD')}
+                      </Text>
+                    </View>
+
+                    <View style={styles.appointmentDetails}>
+                      <Text style={styles.appointmentProviderName}>
+                        {appointment.provider_name}
+                      </Text>
+                      <Text style={styles.appointmentTypeText}>
+                        {appointment.appointment_type || 'Medical Appointment'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.appointmentStatus}>
+                      <Icon
+                        name={getStatusIcon(appointment.status)}
+                        size={20}
+                        color={getStatusColor(appointment.status)}
+                      />
+                    </View>
+                  </View>
                 </View>
-                <Text style={styles.appointmentProvider}>{apt.provider_name}</Text>
-                <Text style={styles.appointmentDate}>
-                  {new Date(apt.appointment_date).toLocaleDateString()}
-                </Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </>
         )}
       </View>
     );
   };
 
+  const renderBookingModal = () => (
+    <Modal
+      visible={showBookingModal}
+      animationType="slide"
+      transparent
+      onRequestClose={() => setShowBookingModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Icon name="anchor" size={24} color="#FFD700" />
+            <Text style={styles.modalTitle}>Book Appointment</Text>
+            <TouchableOpacity onPress={() => setShowBookingModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.selectedTimeCard}>
+              <Icon name="calendar-check" size={32} color="#FFD700" />
+              <View style={styles.selectedTimeInfo}>
+                <Text style={styles.selectedDate}>
+                  {moment(selectedDate).format('dddd, MMMM Do, YYYY')}
+                </Text>
+                <Text style={styles.selectedTime}>
+                  {bookingSlot && moment(bookingSlot.startTime, 'HH:mm').format('h:mm A')} - 
+                  {bookingSlot && moment(bookingSlot.endTime, 'HH:mm').format('h:mm A')}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.modalLabel}>Type of Appointment</Text>
+            <View style={styles.appointmentTypesGrid}>
+              {APPOINTMENT_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.appointmentTypeButton,
+                    appointmentType === type.value && styles.appointmentTypeButtonActive
+                  ]}
+                  onPress={() => setAppointmentType(type.value)}
+                >
+                  <Icon
+                    name={type.icon}
+                    size={24}
+                    color={appointmentType === type.value ? '#FFD700' : '#fff'}
+                  />
+                  <Text
+                    style={[
+                      styles.appointmentTypeButtonText,
+                      appointmentType === type.value && styles.appointmentTypeButtonTextActive
+                    ]}
+                  >
+                    {type.value}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Additional Notes (Optional)</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Any specific concerns or information for the provider..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={4}
+            />
+
+            <View style={styles.infoBox}>
+              <Icon name="information" size={20} color="#FFD700" />
+              <Text style={styles.infoText}>
+                You'll receive a confirmation via email and text message once the provider accepts your appointment request.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.bookButton, booking && styles.bookButtonDisabled]}
+              onPress={handleBookAppointment}
+              disabled={booking}
+            >
+              {booking ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Icon name="anchor" size={20} color="#fff" />
+                  <Text style={styles.bookButtonText}>Request Appointment</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#d4af37" />
+      <View style={styles.fullLoadingContainer}>
+        <ActivityIndicator size="large" color="#FFD700" />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -516,46 +617,23 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>{'< Back'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Medical Appointments</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-      
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'book' && styles.activeTab]}
-          onPress={() => setActiveTab('book')}
-        >
-          <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>
-            Book New
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
-          onPress={() => setActiveTab('appointments')}
-        >
-          <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>
-            My Appointments
-          </Text>
-        </TouchableOpacity>
-      </View>
-      
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      {renderHeader()}
+      {renderTabs()}
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {activeTab === 'book' ? (
           <>
             {renderProviderSelection()}
             {renderCalendar()}
             {renderTimeSlots()}
-            {renderAppointmentType()}
           </>
         ) : (
           renderMyAppointments()
         )}
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      {renderBookingModal()}
     </View>
   );
 };
@@ -563,363 +641,415 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a1628',
+    backgroundColor: '#0a1628'
   },
-  loadingContainer: {
+  fullLoadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0a1628',
-  },
-  loadingText: {
-    color: '#d4af37',
-    marginTop: 10,
-    fontSize: 16,
+    backgroundColor: '#0a1628'
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 16,
     backgroundColor: '#0d2f54',
-    borderBottomWidth: 2,
-    borderBottomColor: '#d4af37',
+    padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 8
+      }
+    })
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  backButtonText: {
-    color: '#d4af37',
-    fontSize: 16,
-    fontWeight: '600',
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
-  },
-  headerSpacer: {
-    width: 60,
+    color: '#FFD700'
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#0d2f54',
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
+    gap: 12
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)'
   },
   activeTab: {
-    borderBottomColor: '#d4af37',
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: '#FFD700'
   },
   tabText: {
     color: '#a0aec0',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: '500'
   },
   activeTabText: {
-    color: '#d4af37',
-    fontWeight: 'bold',
+    color: '#FFD700',
+    fontWeight: 'bold'
   },
-  content: {
-    flex: 1,
-    padding: 16,
+  scrollView: {
+    flex: 1
   },
   section: {
-    marginBottom: 24,
+    margin: 16,
+    marginBottom: 8
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12
   },
   sectionTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 12,
+    color: '#FFD700'
   },
   providerCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginRight: 12,
     width: 140,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: 'rgba(255, 215, 0, 0.2)'
   },
   providerCardSelected: {
-    borderColor: '#d4af37',
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderColor: '#FFD700',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)'
   },
-  providerAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#d4af37',
-    justifyContent: 'center',
+  providerIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  providerInitial: {
-    color: '#000',
-    fontSize: 24,
-    fontWeight: 'bold',
+    justifyContent: 'center',
+    marginBottom: 8
   },
   providerName: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   providerSpecialty: {
     color: '#a0aec0',
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 2,
+    marginTop: 2
+  },
+  providerCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8
   },
   calendarContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
-    padding: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.2)',
+    padding: 8
   },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center'
   },
-  monthNavButton: {
-    padding: 8,
-  },
-  monthNavText: {
-    color: '#d4af37',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  monthTitle: {
+  loadingText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    marginTop: 12,
+    fontSize: 14
   },
-  weekDaysRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center'
   },
-  weekDayText: {
-    flex: 1,
-    textAlign: 'center',
-    color: '#d4af37',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCell: {
-    width: '14.28%',
-    aspectRatio: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
-  },
-  todayCell: {
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
-    borderRadius: 8,
-  },
-  selectedCell: {
-    backgroundColor: '#d4af37',
-    borderRadius: 8,
-  },
-  pastCell: {
-    opacity: 0.3,
-  },
-  dayText: {
+  emptyText: {
     color: '#fff',
-    fontSize: 14,
-  },
-  todayText: {
-    color: '#d4af37',
-    fontWeight: 'bold',
-  },
-  selectedDayText: {
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  pastDayText: {
-    color: '#6b7280',
-  },
-  emptyState: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.1)',
-  },
-  emptyStateIcon: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    color: '#a0aec0',
     fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    textAlign: 'center'
   },
-  emptyStateSubtext: {
-    color: '#6b7280',
+  emptySubtext: {
+    color: '#999',
     fontSize: 14,
-    textAlign: 'center',
-    marginTop: 4,
+    marginTop: 8,
+    textAlign: 'center'
   },
   slotsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8
   },
   slotButton: {
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    minWidth: '30%'
   },
-  slotButtonSelected: {
-    backgroundColor: '#d4af37',
-    borderColor: '#d4af37',
-  },
-  slotText: {
+  slotTime: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
-  },
-  slotTextSelected: {
-    color: '#000',
-  },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  typeCard: {
-    width: '48%',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-  },
-  typeCardSelected: {
-    borderColor: '#d4af37',
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-  },
-  typeIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
-  typeLabel: {
-    color: '#a0aec0',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  typeLabelSelected: {
-    color: '#d4af37',
-    fontWeight: '600',
-  },
-  notesInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    padding: 16,
-    color: '#fff',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  bookButton: {
-    backgroundColor: '#d4af37',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  bookButtonDisabled: {
-    opacity: 0.7,
-  },
-  bookButtonText: {
-    color: '#000',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600'
   },
   appointmentsContainer: {
-    paddingBottom: 100,
+    padding: 16
+  },
+  appointmentsList: {
+    gap: 12
   },
   appointmentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: 'rgba(255, 215, 0, 0.2)'
   },
   pastAppointmentCard: {
-    opacity: 0.7,
+    opacity: 0.7
   },
   appointmentHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    gap: 12
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  appointmentDateBadge: {
+    width: 60,
+    height: 60,
     borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  statusText: {
-    color: '#fff',
+  appointmentMonth: {
+    color: '#FFD700',
     fontSize: 12,
     fontWeight: '600',
-    textTransform: 'capitalize',
+    textTransform: 'uppercase'
   },
-  cancelLink: {
-    padding: 4,
+  appointmentDay: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold'
   },
-  cancelLinkText: {
-    color: '#ef4444',
-    fontSize: 14,
+  appointmentDetails: {
+    flex: 1
   },
-  appointmentProvider: {
-    color: '#d4af37',
+  appointmentProviderName: {
+    color: '#FFD700',
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  appointmentDate: {
-    color: '#fff',
-    fontSize: 14,
-    marginBottom: 2,
+    marginBottom: 2
   },
   appointmentTime: {
-    color: '#a0aec0',
+    color: '#fff',
     fontSize: 14,
-    marginBottom: 4,
+    marginBottom: 2
   },
-  appointmentType: {
-    color: '#6b7280',
-    fontSize: 12,
-    textTransform: 'capitalize',
+  appointmentTypeText: {
+    color: '#a0aec0',
+    fontSize: 13
+  },
+  appointmentStatus: {
+    alignItems: 'center'
+  },
+  appointmentStatusText: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase'
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)'
+  },
+  cancelButtonText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '600'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'flex-end'
+  },
+  modalContainer: {
+    backgroundColor: '#0d2f54',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%'
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 215, 0, 0.2)'
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFD700'
+  },
+  modalContent: {
+    padding: 20
+  },
+  selectedTimeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    marginBottom: 20
+  },
+  selectedTimeInfo: {
+    flex: 1
+  },
+  selectedDate: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  selectedTime: {
+    color: '#fff',
+    fontSize: 14
+  },
+  modalLabel: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12
+  },
+  appointmentTypesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20
+  },
+  appointmentTypeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  appointmentTypeButtonActive: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderColor: '#FFD700'
+  },
+  appointmentTypeButtonText: {
+    color: '#fff',
+    fontSize: 13
+  },
+  appointmentTypeButtonTextActive: {
+    color: '#FFD700',
+    fontWeight: '600'
+  },
+  notesInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 16
+  },
+  infoBox: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    marginBottom: 20
+  },
+  infoText: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 13,
+    lineHeight: 18
+  },
+  bookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#1a5490'
+  },
+  bookButtonDisabled: {
+    opacity: 0.6
+  },
+  bookButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold'
   },
   bottomPadding: {
-    height: 100,
-  },
+    height: 100
+  }
 });
 
 export default PatientAppointmentBookingScreen;
