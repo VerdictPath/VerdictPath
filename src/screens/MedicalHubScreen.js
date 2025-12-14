@@ -108,7 +108,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                   'Authorization': `Bearer ${authToken}`,
                   'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ medicalProviderId: providerId })
+                body: JSON.stringify({ providerId: providerId })
               });
 
               if (response.ok) {
