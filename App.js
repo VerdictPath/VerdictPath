@@ -71,6 +71,7 @@ import ChatListScreen from './src/screens/ChatListScreen';
 import ChatConversationScreen from './src/screens/ChatConversationScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import TaskDetailScreen from './src/screens/TaskDetailScreen';
+import LawFirmRegistrationScreen from './src/screens/LawFirmRegistrationScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
@@ -1231,6 +1232,53 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           privacyAccepted={privacyAccepted}
           setPrivacyAccepted={setPrivacyAccepted}
           onRegister={handleRegister}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-registration' && (
+        <LawFirmRegistrationScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          firmName={firmName}
+          setFirmName={setFirmName}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          onSelectSubscription={handleSelectSubscription}
+          onNavigate={handleNavigateInternal}
+          privacyAccepted={privacyAccepted}
+          setPrivacyAccepted={setPrivacyAccepted}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-subscription-selection' && (
+        <LawFirmSubscriptionScreen
+          user={null}
+          isNewRegistration={true}
+          registrationData={{
+            firmName: firmName,
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            privacyAccepted: privacyAccepted
+          }}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('lawfirm-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour law firm account has been created successfully!\n\nYour unique Law Firm Code: ' + userData.firmCode + '\n\nShare this code with your clients so they can connect to your firm.');
+          }}
+          onBack={() => setCurrentScreen('lawfirm-registration')}
           onNavigate={handleNavigateInternal}
         />
       )}

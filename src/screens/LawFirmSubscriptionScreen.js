@@ -233,8 +233,8 @@ const LAW_FIRM_PRICING = {
   ]
 };
 
-const LawFirmSubscriptionScreen = ({ token, onBack }) => {
-  const [loading, setLoading] = useState(true);
+const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrationData, onRegistrationComplete, user }) => {
+  const [loading, setLoading] = useState(!isNewRegistration);
   const [updating, setUpdating] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [clientCount, setClientCount] = useState('');
@@ -242,8 +242,10 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
   const [planType, setPlanType] = useState('standard');
 
   useEffect(() => {
-    fetchSubscriptionDetails();
-  }, []);
+    if (!isNewRegistration) {
+      fetchSubscriptionDetails();
+    }
+  }, [isNewRegistration]);
 
   const fetchSubscriptionDetails = async () => {
     try {
@@ -410,6 +412,72 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
     confirmDowngrade(selectedTier, performUpdate);
   };
 
+  const handleNewRegistration = async (selectedTier) => {
+    if (!registrationData) {
+      alert('Registration data is missing. Please go back and try again.');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      
+      const response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
+        method: 'POST',
+        body: JSON.stringify({
+          firmName: registrationData.firmName,
+          email: registrationData.email,
+          password: registrationData.password,
+          firstName: registrationData.firstName,
+          lastName: registrationData.lastName,
+          subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+          planType: planType,
+          firmSize: {
+            clientCount: clientCount ? parseInt(clientCount) : null,
+            tierName: selectedTier.name,
+            billingPeriod: billingPeriod,
+            planType: planType
+          },
+          privacyAccepted: registrationData.privacyAccepted
+        })
+      });
+
+      const userData = {
+        id: response.lawFirm.id,
+        email: response.lawFirm.email,
+        type: 'law_firm',
+        firmName: response.lawFirm.firmName,
+        firmCode: response.lawFirm.firmCode,
+        token: response.token,
+        subscription: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+        planType: planType,
+        coins: 0,
+        streak: 0
+      };
+
+      if (onRegistrationComplete) {
+        onRegistrationComplete(userData);
+      }
+    } catch (error) {
+      console.error('Error registering law firm:', error);
+      const errorMsg = error.message || 'Failed to create account. Please try again.';
+      if (Platform.OS === 'web') {
+        alert('Registration Error: ' + errorMsg);
+      } else {
+        Alert.alert('Registration Error', errorMsg);
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSelectTier = (selectedTier) => {
+    if (isNewRegistration) {
+      handleNewRegistration(selectedTier);
+    } else {
+      handleUpdateSubscription(selectedTier);
+    }
+  };
+
   const renderCurrentPlan = () => {
     if (!currentSubscription) return null;
 
@@ -494,15 +562,15 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
     <ScrollView style={styles.container}>
       {onBack && (
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back to Dashboard</Text>
+          <Text style={styles.backButtonText}>{isNewRegistration ? '← Back' : '← Back to Dashboard'}</Text>
         </TouchableOpacity>
       )}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>⚖️ Subscription Management</Text>
-        <Text style={styles.headerSubtitle}>Manage your law firm subscription</Text>
+        <Text style={styles.headerTitle}>{isNewRegistration ? '⚖️ Select Your Plan' : '⚖️ Subscription Management'}</Text>
+        <Text style={styles.headerSubtitle}>{isNewRegistration ? 'Choose a subscription plan for your law firm' : 'Manage your law firm subscription'}</Text>
       </View>
 
-      {renderCurrentPlan()}
+      {!isNewRegistration && renderCurrentPlan()}
 
       {renderFeatureComparison()}
 
@@ -656,14 +724,14 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
                   planType === 'premium' && styles.selectButtonPremium,
                   updating && styles.selectButtonDisabled
                 ]}
-                onPress={() => handleUpdateSubscription(currentTier)}
+                onPress={() => handleSelectTier(currentTier)}
                 disabled={updating}
               >
                 {updating ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={styles.selectButtonText}>
-                    Update to {currentTier.name} {planType === 'premium' ? 'Premium' : 'Standard'}
+                    {isNewRegistration ? 'Select' : 'Update to'} {currentTier.name} {planType === 'premium' ? 'Premium' : 'Standard'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -724,7 +792,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack }) => {
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
-                      onPress={() => handleUpdateSubscription(tier)}
+                      onPress={() => handleSelectTier(tier)}
                       disabled={updating}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>

@@ -78,7 +78,10 @@ const RegisterScreen = ({
           
           <TouchableOpacity 
             style={[styles.toggleButton, userType === USER_TYPES.LAW_FIRM && styles.toggleButtonActive]}
-            onPress={() => setUserType(USER_TYPES.LAW_FIRM)}
+            onPress={() => {
+              setUserType(USER_TYPES.LAW_FIRM);
+              onNavigate('lawfirm-registration');
+            }}
           >
             <Text style={[styles.toggleText, userType === USER_TYPES.LAW_FIRM && styles.toggleTextActive]}>
               Law Firm
