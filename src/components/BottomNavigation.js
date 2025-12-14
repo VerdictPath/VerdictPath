@@ -4,6 +4,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 
 const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) => {
   const { unreadCount } = useNotifications();
+  console.log('[BottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'dashboard' },
