@@ -9,8 +9,8 @@ const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) =>
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'dashboard' },
     { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
     { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
+    { name: 'Appointments', icon: '📅', screen: 'appointments' },
     { name: 'Notifications', icon: '🔔', screen: 'notifications', badge: unreadCount },
-    { name: 'Tasks', icon: '⚓', screen: 'actions' },
     { name: 'Profile', icon: '👤', screen: 'profile' },
   ];
 

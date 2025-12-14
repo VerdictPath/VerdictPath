@@ -1,0 +1,930 @@
+// Medical Calendar API Endpoints for Verdict Path
+// Node.js/Express Backend with PostgreSQL
+
+const express = require('express');
+const router = express.Router();
+const { Pool } = require('pg');
+const nodemailer = require('nodemailer');
+const twilio = require('twilio');
+const ical = require('ical');
+const moment = require('moment-timezone');
+
+// Database connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+// Twilio setup for SMS
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+// Email setup
+const emailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// ============================================
+// PROVIDER AVAILABILITY ENDPOINTS
+// ============================================
+
+// Get provider's availability schedule
+router.get('/api/providers/:providerId/availability', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    // Get recurring availability patterns
+    const recurringQuery = `
+      SELECT * FROM provider_availability 
+      WHERE provider_id = $1 AND is_recurring = true
+      ORDER BY day_of_week, start_time
+    `;
+    const recurring = await pool.query(recurringQuery, [providerId]);
+
+    // Get blocked times
+    const blockedQuery = `
+      SELECT * FROM provider_blocked_times 
+      WHERE provider_id = $1 
+      AND start_datetime >= $2 
+      AND end_datetime <= $3
+      ORDER BY start_datetime
+    `;
+    const blocked = await pool.query(blockedQuery, [providerId, startDate, endDate]);
+
+    // Get existing appointments
+    const appointmentsQuery = `
+      SELECT * FROM medical_appointments 
+      WHERE provider_id = $1 
+      AND appointment_date >= $2 
+      AND appointment_date <= $3
+      AND status NOT IN ('cancelled')
+      ORDER BY appointment_date, start_time
+    `;
+    const appointments = await pool.query(appointmentsQuery, [providerId, startDate, endDate]);
+
+    res.json({
+      recurring: recurring.rows,
+      blocked: blocked.rows,
+      appointments: appointments.rows
+    });
+  } catch (error) {
+    console.error('Error fetching availability:', error);
+    res.status(500).json({ error: 'Failed to fetch availability' });
+  }
+});
+
+// Set provider availability pattern
+router.post('/api/providers/:providerId/availability', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { dayOfWeek, startTime, endTime, isRecurring, effectiveDate } = req.body;
+
+    const query = `
+      INSERT INTO provider_availability 
+      (provider_id, day_of_week, start_time, end_time, is_recurring, effective_date)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    const result = await pool.query(query, [
+      providerId, dayOfWeek, startTime, endTime, isRecurring, effectiveDate
+    ]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error setting availability:', error);
+    res.status(500).json({ error: 'Failed to set availability' });
+  }
+});
+
+// Delete availability pattern
+router.delete('/api/providers/:providerId/availability/:availabilityId', async (req, res) => {
+  try {
+    const { availabilityId } = req.params;
+
+    const query = 'DELETE FROM provider_availability WHERE id = $1';
+    await pool.query(query, [availabilityId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting availability:', error);
+    res.status(500).json({ error: 'Failed to delete availability' });
+  }
+});
+
+// Block time slot
+router.post('/api/providers/:providerId/block-time', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { startDatetime, endDatetime, reason } = req.body;
+
+    const query = `
+      INSERT INTO provider_blocked_times 
+      (provider_id, start_datetime, end_datetime, reason)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `;
+    const result = await pool.query(query, [providerId, startDatetime, endDatetime, reason]);
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error blocking time:', error);
+    res.status(500).json({ error: 'Failed to block time' });
+  }
+});
+
+// ============================================
+// APPOINTMENT BOOKING ENDPOINTS
+// ============================================
+
+// Get available time slots for a specific date
+router.get('/api/providers/:providerId/available-slots', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { date } = req.query;
+    
+    const dayOfWeek = moment(date).day();
+    
+    // Get provider's settings
+    const settingsQuery = 'SELECT * FROM calendar_sync_settings WHERE provider_id = $1';
+    const settings = await pool.query(settingsQuery, [providerId]);
+    const appointmentDuration = settings.rows[0]?.default_appointment_duration || 30;
+    const bufferTime = settings.rows[0]?.buffer_time_minutes || 0;
+    
+    // Get availability for this day
+    const availQuery = `
+      SELECT start_time, end_time FROM provider_availability 
+      WHERE provider_id = $1 AND day_of_week = $2 AND is_recurring = true
+    `;
+    const avail = await pool.query(availQuery, [providerId, dayOfWeek]);
+    
+    if (avail.rows.length === 0) {
+      return res.json({ slots: [] });
+    }
+    
+    // Get existing appointments for this date
+    const apptQuery = `
+      SELECT start_time, end_time FROM medical_appointments 
+      WHERE provider_id = $1 AND appointment_date = $2 
+      AND status NOT IN ('cancelled')
+    `;
+    const appointments = await pool.query(apptQuery, [providerId, date]);
+    
+    // Get blocked times for this date
+    const blockedQuery = `
+      SELECT start_datetime, end_datetime FROM provider_blocked_times 
+      WHERE provider_id = $1 
+      AND DATE(start_datetime) <= $2 
+      AND DATE(end_datetime) >= $2
+    `;
+    const blocked = await pool.query(blockedQuery, [providerId, date]);
+    
+    // Generate available slots
+    const slots = generateAvailableSlots(
+      avail.rows[0],
+      appointments.rows,
+      blocked.rows,
+      appointmentDuration,
+      bufferTime,
+      date
+    );
+    
+    res.json({ slots });
+  } catch (error) {
+    console.error('Error fetching available slots:', error);
+    res.status(500).json({ error: 'Failed to fetch available slots' });
+  }
+});
+
+// Create appointment
+router.post('/api/appointments', async (req, res) => {
+  try {
+    const {
+      patientId,
+      providerId,
+      lawFirmId,
+      caseId,
+      appointmentDate,
+      startTime,
+      endTime,
+      appointmentType,
+      notes,
+      createdBy
+    } = req.body;
+
+    // Calculate duration
+    const start = moment(startTime, 'HH:mm');
+    const end = moment(endTime, 'HH:mm');
+    const durationMinutes = end.diff(start, 'minutes');
+
+    const query = `
+      INSERT INTO medical_appointments 
+      (patient_id, provider_id, law_firm_id, case_id, appointment_date, 
+       start_time, end_time, duration_minutes, appointment_type, notes, 
+       created_by, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [
+      patientId, providerId, lawFirmId, caseId, appointmentDate,
+      startTime, endTime, durationMinutes, appointmentType, notes, createdBy
+    ]);
+
+    const appointment = result.rows[0];
+
+    // Send notifications
+    await sendAppointmentNotifications(appointment, 'created');
+
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ error: 'Failed to create appointment' });
+  }
+});
+
+// Confirm appointment
+router.patch('/api/appointments/:appointmentId/confirm', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { confirmedBy } = req.body; // 'patient' or 'provider'
+
+    const confirmField = confirmedBy === 'patient' 
+      ? 'patient_confirmed_at' 
+      : 'provider_confirmed_at';
+
+    const query = `
+      UPDATE medical_appointments 
+      SET ${confirmField} = CURRENT_TIMESTAMP,
+          status = CASE 
+            WHEN patient_confirmed_at IS NOT NULL AND provider_confirmed_at IS NOT NULL 
+            THEN 'confirmed' 
+            ELSE status 
+          END,
+          confirmed_at = CASE 
+            WHEN patient_confirmed_at IS NOT NULL AND provider_confirmed_at IS NOT NULL 
+            THEN CURRENT_TIMESTAMP 
+            ELSE confirmed_at 
+          END
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [appointmentId]);
+    
+    if (result.rows[0].status === 'confirmed') {
+      await sendAppointmentNotifications(result.rows[0], 'confirmed');
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error confirming appointment:', error);
+    res.status(500).json({ error: 'Failed to confirm appointment' });
+  }
+});
+
+// Cancel appointment
+router.patch('/api/appointments/:appointmentId/cancel', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { cancellationReason } = req.body;
+
+    const query = `
+      UPDATE medical_appointments 
+      SET status = 'cancelled',
+          cancelled_at = CURRENT_TIMESTAMP,
+          cancellation_reason = $1
+      WHERE id = $2
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [cancellationReason, appointmentId]);
+    
+    await sendAppointmentNotifications(result.rows[0], 'cancelled');
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    res.status(500).json({ error: 'Failed to cancel appointment' });
+  }
+});
+
+// Reschedule appointment
+router.patch('/api/appointments/:appointmentId/reschedule', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const { newDate, newStartTime, newEndTime, reason, rescheduledBy } = req.body;
+
+    // Get current appointment details
+    const currentAppt = await pool.query(
+      'SELECT * FROM medical_appointments WHERE id = $1',
+      [appointmentId]
+    );
+
+    if (currentAppt.rows.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    const current = currentAppt.rows[0];
+
+    // Save to reschedule history
+    await pool.query(`
+      INSERT INTO appointment_reschedule_history 
+      (appointment_id, original_date, original_start_time, original_end_time,
+       new_date, new_start_time, new_end_time, rescheduled_by, reason)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, [
+      appointmentId, current.appointment_date, current.start_time, current.end_time,
+      newDate, newStartTime, newEndTime, rescheduledBy, reason
+    ]);
+
+    // Update appointment
+    const start = moment(newStartTime, 'HH:mm');
+    const end = moment(newEndTime, 'HH:mm');
+    const durationMinutes = end.diff(start, 'minutes');
+
+    const updateQuery = `
+      UPDATE medical_appointments 
+      SET appointment_date = $1,
+          start_time = $2,
+          end_time = $3,
+          duration_minutes = $4,
+          status = 'pending',
+          patient_confirmed_at = NULL,
+          provider_confirmed_at = NULL
+      WHERE id = $5
+      RETURNING *
+    `;
+    
+    const result = await pool.query(updateQuery, [
+      newDate, newStartTime, newEndTime, durationMinutes, appointmentId
+    ]);
+
+    await sendAppointmentNotifications(result.rows[0], 'rescheduled');
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error rescheduling appointment:', error);
+    res.status(500).json({ error: 'Failed to reschedule appointment' });
+  }
+});
+
+// Get patient's appointments
+router.get('/api/patients/:patientId/appointments', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const { startDate, endDate, status } = req.query;
+
+    let query = `
+      SELECT a.*, 
+             p.name as provider_name,
+             p.specialty as provider_specialty
+      FROM medical_appointments a
+      JOIN medical_providers p ON a.provider_id = p.id
+      WHERE a.patient_id = $1
+    `;
+    
+    const params = [patientId];
+    let paramCount = 1;
+
+    if (startDate && endDate) {
+      paramCount++;
+      query += ` AND appointment_date >= $${paramCount}`;
+      params.push(startDate);
+      paramCount++;
+      query += ` AND appointment_date <= $${paramCount}`;
+      params.push(endDate);
+    }
+
+    if (status) {
+      paramCount++;
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+    }
+
+    query += ' ORDER BY appointment_date, start_time';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching patient appointments:', error);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+});
+
+// Get provider's appointments
+router.get('/api/providers/:providerId/appointments', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { startDate, endDate, status } = req.query;
+
+    let query = `
+      SELECT a.*, 
+             pat.first_name as patient_first_name,
+             pat.last_name as patient_last_name,
+             lf.name as law_firm_name
+      FROM medical_appointments a
+      JOIN patients pat ON a.patient_id = pat.id
+      LEFT JOIN law_firms lf ON a.law_firm_id = lf.id
+      WHERE a.provider_id = $1
+    `;
+    
+    const params = [providerId];
+    let paramCount = 1;
+
+    if (startDate && endDate) {
+      paramCount++;
+      query += ` AND appointment_date >= $${paramCount}`;
+      params.push(startDate);
+      paramCount++;
+      query += ` AND appointment_date <= $${paramCount}`;
+      params.push(endDate);
+    }
+
+    if (status) {
+      paramCount++;
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+    }
+
+    query += ' ORDER BY appointment_date, start_time';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching provider appointments:', error);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+});
+
+// Get law firm's client appointments
+router.get('/api/law-firms/:lawFirmId/client-appointments', async (req, res) => {
+  try {
+    const { lawFirmId } = req.params;
+    const { startDate, endDate, clientId } = req.query;
+
+    let query = `
+      SELECT a.*, 
+             pat.first_name as patient_first_name,
+             pat.last_name as patient_last_name,
+             p.name as provider_name,
+             p.specialty as provider_specialty
+      FROM medical_appointments a
+      JOIN patients pat ON a.patient_id = pat.id
+      JOIN medical_providers p ON a.provider_id = p.id
+      WHERE a.law_firm_id = $1
+    `;
+    
+    const params = [lawFirmId];
+    let paramCount = 1;
+
+    if (clientId) {
+      paramCount++;
+      query += ` AND a.patient_id = $${paramCount}`;
+      params.push(clientId);
+    }
+
+    if (startDate && endDate) {
+      paramCount++;
+      query += ` AND appointment_date >= $${paramCount}`;
+      params.push(startDate);
+      paramCount++;
+      query += ` AND appointment_date <= $${paramCount}`;
+      params.push(endDate);
+    }
+
+    query += ' ORDER BY appointment_date, start_time';
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching law firm appointments:', error);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+});
+
+// ============================================
+// CALENDAR IMPORT ENDPOINTS
+// ============================================
+
+// Import calendar from ICS file
+router.post('/api/providers/:providerId/import-calendar', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const { icsContent, fileName } = req.body;
+
+    const events = ical.parseICS(icsContent);
+    let imported = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const event of Object.values(events)) {
+      if (event.type === 'VEVENT') {
+        try {
+          // Parse event and create availability or block time
+          const start = moment(event.start);
+          const end = moment(event.end);
+          
+          // If it's a recurring event, create availability pattern
+          if (event.rrule) {
+            const dayOfWeek = start.day();
+            const startTime = start.format('HH:mm:ss');
+            const endTime = end.format('HH:mm:ss');
+            
+            await pool.query(`
+              INSERT INTO provider_availability 
+              (provider_id, day_of_week, start_time, end_time, is_recurring)
+              VALUES ($1, $2, $3, $4, true)
+              ON CONFLICT DO NOTHING
+            `, [providerId, dayOfWeek, startTime, endTime]);
+            
+            imported++;
+          } else {
+            // One-time event - could be availability or blocked time
+            // If marked as "busy" or has certain keywords, treat as blocked
+            const isBusy = event.status === 'BUSY' || 
+                          event.summary?.toLowerCase().includes('vacation') ||
+                          event.summary?.toLowerCase().includes('out of office');
+            
+            if (isBusy) {
+              await pool.query(`
+                INSERT INTO provider_blocked_times 
+                (provider_id, start_datetime, end_datetime, reason)
+                VALUES ($1, $2, $3, $4)
+              `, [providerId, start.toISOString(), end.toISOString(), event.summary]);
+            } else {
+              await pool.query(`
+                INSERT INTO provider_availability 
+                (provider_id, day_of_week, start_time, end_time, is_recurring, effective_date)
+                VALUES ($1, $2, $3, $4, false, $5)
+              `, [
+                providerId,
+                start.day(),
+                start.format('HH:mm:ss'),
+                end.format('HH:mm:ss'),
+                start.format('YYYY-MM-DD')
+              ]);
+            }
+            
+            imported++;
+          }
+        } catch (err) {
+          failed++;
+          errors.push({ event: event.summary, error: err.message });
+        }
+      }
+    }
+
+    // Log import history
+    await pool.query(`
+      INSERT INTO calendar_import_history 
+      (provider_id, import_source, file_name, events_imported, events_failed, 
+       import_status, error_log)
+      VALUES ($1, 'ics_file', $2, $3, $4, $5, $6)
+    `, [
+      providerId,
+      fileName,
+      imported,
+      failed,
+      failed > 0 ? 'partial' : 'success',
+      errors.length > 0 ? JSON.stringify(errors) : null
+    ]);
+
+    res.json({
+      success: true,
+      imported,
+      failed,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error importing calendar:', error);
+    
+    await pool.query(`
+      INSERT INTO calendar_import_history 
+      (provider_id, import_source, events_imported, events_failed, 
+       import_status, error_log)
+      VALUES ($1, 'ics_file', 0, 0, 'failed', $2)
+    `, [req.params.providerId, error.message]);
+    
+    res.status(500).json({ error: 'Failed to import calendar' });
+  }
+});
+
+// Get calendar sync settings
+router.get('/api/providers/:providerId/calendar-settings', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+
+    const query = 'SELECT * FROM calendar_sync_settings WHERE provider_id = $1';
+    const result = await pool.query(query, [providerId]);
+
+    if (result.rows.length === 0) {
+      // Create default settings
+      const insertQuery = `
+        INSERT INTO calendar_sync_settings (provider_id)
+        VALUES ($1)
+        RETURNING *
+      `;
+      const newSettings = await pool.query(insertQuery, [providerId]);
+      return res.json(newSettings.rows[0]);
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching calendar settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Update calendar sync settings
+router.patch('/api/providers/:providerId/calendar-settings', async (req, res) => {
+  try {
+    const { providerId } = req.params;
+    const settings = req.body;
+
+    const query = `
+      UPDATE calendar_sync_settings 
+      SET email_notifications = COALESCE($1, email_notifications),
+          sms_notifications = COALESCE($2, sms_notifications),
+          notification_lead_time = COALESCE($3, notification_lead_time),
+          default_appointment_duration = COALESCE($4, default_appointment_duration),
+          buffer_time_minutes = COALESCE($5, buffer_time_minutes),
+          timezone = COALESCE($6, timezone)
+      WHERE provider_id = $7
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [
+      settings.emailNotifications,
+      settings.smsNotifications,
+      settings.notificationLeadTime,
+      settings.defaultAppointmentDuration,
+      settings.bufferTimeMinutes,
+      settings.timezone,
+      providerId
+    ]);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating calendar settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+function generateAvailableSlots(availability, appointments, blockedTimes, duration, buffer, date) {
+  const slots = [];
+  
+  if (!availability) return slots;
+  
+  const start = moment(`${date} ${availability.start_time}`, 'YYYY-MM-DD HH:mm:ss');
+  const end = moment(`${date} ${availability.end_time}`, 'YYYY-MM-DD HH:mm:ss');
+  
+  let current = start.clone();
+  const slotDuration = duration + buffer;
+  
+  while (current.clone().add(duration, 'minutes').isSameOrBefore(end)) {
+    const slotEnd = current.clone().add(duration, 'minutes');
+    
+    // Check if slot conflicts with existing appointments
+    const hasConflict = appointments.some(appt => {
+      const apptStart = moment(`${date} ${appt.start_time}`, 'YYYY-MM-DD HH:mm:ss');
+      const apptEnd = moment(`${date} ${appt.end_time}`, 'YYYY-MM-DD HH:mm:ss');
+      return current.isBefore(apptEnd) && slotEnd.isAfter(apptStart);
+    });
+    
+    // Check if slot conflicts with blocked times
+    const isBlocked = blockedTimes.some(block => {
+      const blockStart = moment(block.start_datetime);
+      const blockEnd = moment(block.end_datetime);
+      return current.isBefore(blockEnd) && slotEnd.isAfter(blockStart);
+    });
+    
+    if (!hasConflict && !isBlocked) {
+      slots.push({
+        startTime: current.format('HH:mm'),
+        endTime: slotEnd.format('HH:mm'),
+        available: true
+      });
+    }
+    
+    current.add(slotDuration, 'minutes');
+  }
+  
+  return slots;
+}
+
+async function sendAppointmentNotifications(appointment, eventType) {
+  try {
+    // Get patient, provider, and law firm details
+    const detailsQuery = `
+      SELECT 
+        a.*,
+        p.email as patient_email, p.phone as patient_phone,
+        p.first_name as patient_first_name, p.last_name as patient_last_name,
+        mp.email as provider_email, mp.phone as provider_phone,
+        mp.name as provider_name,
+        lf.email as lawfirm_email, lf.name as lawfirm_name
+      FROM medical_appointments a
+      JOIN patients p ON a.patient_id = p.id
+      JOIN medical_providers mp ON a.provider_id = mp.id
+      LEFT JOIN law_firms lf ON a.law_firm_id = lf.id
+      WHERE a.id = $1
+    `;
+    
+    const result = await pool.query(detailsQuery, [appointment.id]);
+    const appt = result.rows[0];
+    
+    const appointmentDateTime = moment(`${appt.appointment_date} ${appt.start_time}`)
+      .format('MMMM Do, YYYY [at] h:mm A');
+    
+    // Email templates
+    const emailSubject = {
+      created: '🏴‍☠️ New Medical Appointment Scheduled - Verdict Path',
+      confirmed: '✅ Appointment Confirmed - Verdict Path',
+      cancelled: '❌ Appointment Cancelled - Verdict Path',
+      rescheduled: '🔄 Appointment Rescheduled - Verdict Path'
+    }[eventType];
+    
+    // Send to patient
+    if (appt.patient_email) {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: appt.patient_email,
+        subject: emailSubject,
+        html: generatePatientEmail(appt, eventType, appointmentDateTime)
+      });
+      
+      await pool.query(
+        'UPDATE medical_appointments SET patient_email_sent = true WHERE id = $1',
+        [appointment.id]
+      );
+    }
+    
+    // Send SMS to patient
+    if (appt.patient_phone) {
+      await twilioClient.messages.create({
+        body: generatePatientSMS(appt, eventType, appointmentDateTime),
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: appt.patient_phone
+      });
+      
+      await pool.query(
+        'UPDATE medical_appointments SET patient_sms_sent = true WHERE id = $1',
+        [appointment.id]
+      );
+    }
+    
+    // Send to provider
+    if (appt.provider_email) {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: appt.provider_email,
+        subject: emailSubject,
+        html: generateProviderEmail(appt, eventType, appointmentDateTime)
+      });
+      
+      await pool.query(
+        'UPDATE medical_appointments SET provider_email_sent = true WHERE id = $1',
+        [appointment.id]
+      );
+    }
+    
+    // Send to law firm
+    if (appt.lawfirm_email) {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: appt.lawfirm_email,
+        subject: emailSubject,
+        html: generateLawFirmEmail(appt, eventType, appointmentDateTime)
+      });
+      
+      await pool.query(
+        'UPDATE medical_appointments SET lawfirm_email_sent = true WHERE id = $1',
+        [appointment.id]
+      );
+    }
+  } catch (error) {
+    console.error('Error sending notifications:', error);
+  }
+}
+
+function generatePatientEmail(appt, eventType, appointmentDateTime) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1a5490 0%, #0d2f54 100%); padding: 20px; text-align: center;">
+        <h1 style="color: #FFD700; margin: 0;">⚓ Verdict Path</h1>
+        <p style="color: white; margin: 5px 0;">Your Legal Journey Companion</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f5f5f5;">
+        <h2 style="color: #1a5490;">Medical Appointment ${eventType === 'created' ? 'Scheduled' : eventType === 'confirmed' ? 'Confirmed' : eventType === 'cancelled' ? 'Cancelled' : 'Rescheduled'}</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Provider:</strong> ${appt.provider_name}</p>
+          <p><strong>Date & Time:</strong> ${appointmentDateTime}</p>
+          <p><strong>Type:</strong> ${appt.appointment_type || 'Medical Appointment'}</p>
+          ${appt.notes ? `<p><strong>Notes:</strong> ${appt.notes}</p>` : ''}
+        </div>
+        
+        ${eventType === 'created' ? `
+          <p style="color: #666;">Please confirm your appointment through the Verdict Path app or by contacting the provider directly.</p>
+        ` : ''}
+        
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+          Access your full schedule and case details in the Verdict Path app.
+        </p>
+      </div>
+      
+      <div style="background: #0d2f54; padding: 20px; text-align: center; color: white; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Verdict Path. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+}
+
+function generateProviderEmail(appt, eventType, appointmentDateTime) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1a5490 0%, #0d2f54 100%); padding: 20px; text-align: center;">
+        <h1 style="color: #FFD700; margin: 0;">⚓ Verdict Path</h1>
+        <p style="color: white; margin: 5px 0;">Medical Provider Portal</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f5f5f5;">
+        <h2 style="color: #1a5490;">Appointment ${eventType === 'created' ? 'Request' : eventType === 'confirmed' ? 'Confirmed' : eventType === 'cancelled' ? 'Cancelled' : 'Rescheduled'}</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Patient:</strong> ${appt.patient_first_name} ${appt.patient_last_name}</p>
+          <p><strong>Date & Time:</strong> ${appointmentDateTime}</p>
+          <p><strong>Type:</strong> ${appt.appointment_type || 'Medical Appointment'}</p>
+          ${appt.lawfirm_name ? `<p><strong>Law Firm:</strong> ${appt.lawfirm_name}</p>` : ''}
+          ${appt.notes ? `<p><strong>Notes:</strong> ${appt.notes}</p>` : ''}
+        </div>
+        
+        ${eventType === 'created' ? `
+          <p style="color: #666;">Please confirm this appointment in your Verdict Path provider portal.</p>
+        ` : ''}
+        
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+          Manage your calendar and appointments in the Verdict Path provider portal.
+        </p>
+      </div>
+      
+      <div style="background: #0d2f54; padding: 20px; text-align: center; color: white; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Verdict Path. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+}
+
+function generateLawFirmEmail(appt, eventType, appointmentDateTime) {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1a5490 0%, #0d2f54 100%); padding: 20px; text-align: center;">
+        <h1 style="color: #FFD700; margin: 0;">⚓ Verdict Path</h1>
+        <p style="color: white; margin: 5px 0;">Law Firm Portal</p>
+      </div>
+      
+      <div style="padding: 30px; background: #f5f5f5;">
+        <h2 style="color: #1a5490;">Client Medical Appointment ${eventType === 'created' ? 'Scheduled' : eventType === 'confirmed' ? 'Confirmed' : eventType === 'cancelled' ? 'Cancelled' : 'Rescheduled'}</h2>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Client:</strong> ${appt.patient_first_name} ${appt.patient_last_name}</p>
+          <p><strong>Provider:</strong> ${appt.provider_name}</p>
+          <p><strong>Date & Time:</strong> ${appointmentDateTime}</p>
+          <p><strong>Type:</strong> ${appt.appointment_type || 'Medical Appointment'}</p>
+        </div>
+        
+        <p style="color: #666;">This appointment has been added to your client's timeline in the Verdict Path law firm portal.</p>
+        
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+          View all client appointments and case progress in your law firm dashboard.
+        </p>
+      </div>
+      
+      <div style="background: #0d2f54; padding: 20px; text-align: center; color: white; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Verdict Path. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+}
+
+function generatePatientSMS(appt, eventType, appointmentDateTime) {
+  const messages = {
+    created: `Verdict Path: Medical appointment scheduled with ${appt.provider_name} on ${appointmentDateTime}. Please confirm in the app.`,
+    confirmed: `Verdict Path: Your appointment with ${appt.provider_name} on ${appointmentDateTime} is confirmed!`,
+    cancelled: `Verdict Path: Your appointment with ${appt.provider_name} on ${appointmentDateTime} has been cancelled.`,
+    rescheduled: `Verdict Path: Your appointment has been rescheduled to ${appointmentDateTime} with ${appt.provider_name}.`
+  };
+  
+  return messages[eventType];
+}
+
+module.exports = router;
