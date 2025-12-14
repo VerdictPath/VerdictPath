@@ -408,7 +408,7 @@ router.get('/clients/:clientId/appointments', authenticateToken, async (req, res
 router.get('/law-firms/:lawFirmId/appointments', authenticateToken, async (req, res) => {
   try {
     const { lawFirmId } = req.params;
-    const { date, status, clientId } = req.query;
+    const { date, startDate, endDate, status, clientId } = req.query;
     
     if (!await verifyLawFirmOwnership(req, lawFirmId)) {
       return res.status(403).json({ success: false, error: 'Unauthorized: You can only view your own appointments' });
@@ -423,7 +423,11 @@ router.get('/law-firms/:lawFirmId/appointments', authenticateToken, async (req, 
     const params = [lawFirmId];
     let paramIndex = 2;
     
-    if (date) {
+    if (startDate && endDate) {
+      query += ` AND lfa.appointment_date >= $${paramIndex} AND lfa.appointment_date <= $${paramIndex + 1}`;
+      params.push(startDate, endDate);
+      paramIndex += 2;
+    } else if (date) {
       query += ` AND lfa.appointment_date = $${paramIndex}`;
       params.push(date);
       paramIndex++;
