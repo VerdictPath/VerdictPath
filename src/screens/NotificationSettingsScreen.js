@@ -425,10 +425,10 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#F5F7FA'
   },
   header: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#1E3A5F',
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
     paddingHorizontal: 15,
@@ -451,14 +451,14 @@ const styles = StyleSheet.create({
     paddingRight: 15
   },
   backButtonText: {
-    color: '#fff',
+    color: '#C0C0C0',
     fontSize: 16,
     fontWeight: '600'
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
     flex: 1
   },
   loadingContainer: {
@@ -470,18 +470,18 @@ const styles = StyleSheet.create({
     flex: 1
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     marginTop: 20,
     paddingHorizontal: 15,
     paddingVertical: 15,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: '#E2E8F0'
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 15
   },
   settingRow: {
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#F5F7FA'
   },
   settingInfo: {
     flex: 1,
@@ -499,44 +499,44 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 4
   },
   settingDescription: {
     fontSize: 13,
-    color: '#666',
+    color: '#64748B',
     lineHeight: 18
   },
   quietHoursConfig: {
     marginTop: 15,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
+    borderTopColor: '#E2E8F0'
   },
   timeSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#F5F7FA',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: '#E2E8F0'
   },
   timeSelectorLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333'
+    color: '#1E3A5F'
   },
   timeSelectorValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: '#1E3A5F'
   },
   quietHoursNote: {
     fontSize: 12,
-    color: '#e67e22',
+    color: '#F59E0B',
     marginTop: 10,
     lineHeight: 16,
     fontStyle: 'italic'
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: '#666',
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 20
   },
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(30, 58, 95, 0.7)',
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -569,21 +569,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(30, 58, 95, 0.5)',
     justifyContent: 'center',
     alignItems: 'center'
   },
   timePickerModal: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 20,
     width: '85%',
     maxWidth: 400,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: '#1E3A5F',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 8
       },
       android: {
@@ -594,26 +594,26 @@ const styles = StyleSheet.create({
   timePickerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 8,
     textAlign: 'center'
   },
   timePickerSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748B',
     marginBottom: 20,
     textAlign: 'center'
   },
   timeInput: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#F5F7FA',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#E2E8F0',
     borderRadius: 8,
     padding: 15,
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 20
   },
   timePickerButtons: {
@@ -628,22 +628,22 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F5F7FA',
     borderWidth: 1,
-    borderColor: '#ddd'
+    borderColor: '#E2E8F0'
   },
   confirmButton: {
-    backgroundColor: theme.colors.primary
+    backgroundColor: '#1E3A5F'
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666'
+    color: '#64748B'
   },
   confirmButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff'
+    color: '#FFFFFF'
   }
 });
 
