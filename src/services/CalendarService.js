@@ -298,16 +298,16 @@ class CalendarService {
     const endDate = event.end_time ? new Date(event.end_time) : null;
     
     const timeOptions = { hour: 'numeric', minute: '2-digit' };
-    const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+    const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' };
 
     return {
       ...event,
-      displayDate: startDate.toLocaleDateString('en-US', dateOptions),
+      displayDate: startDate.toLocaleDateString('en-GB', dateOptions),
       displayTime: event.all_day 
         ? 'All Day' 
-        : startDate.toLocaleTimeString('en-US', timeOptions),
+        : startDate.toLocaleTimeString('en-GB', timeOptions),
       displayEndTime: endDate && !event.all_day
-        ? endDate.toLocaleTimeString('en-US', timeOptions)
+        ? endDate.toLocaleTimeString('en-GB', timeOptions)
         : null
     };
   }

@@ -266,11 +266,13 @@ const calendarController = {
       const event = eventCheck.rows[0];
       
       const isOwner = 
-        (userType === 'individual' && event.user_id === userId) ||
-        (userType === 'law_firm' && event.law_firm_id === userId) ||
-        (userType === 'medical_provider' && event.medical_provider_id === userId);
+        (userType === 'individual' && String(event.user_id) === String(userId)) ||
+        (userType === 'law_firm' && String(event.law_firm_id) === String(userId)) ||
+        (userType === 'lawfirm' && String(event.law_firm_id) === String(userId)) ||
+        (userType === 'medical_provider' && String(event.medical_provider_id) === String(userId));
 
       if (!isOwner) {
+        console.log('Delete unauthorized - userType:', userType, 'userId:', userId, 'event.user_id:', event.user_id);
         return res.status(403).json({ error: 'Unauthorized to delete this event' });
       }
 

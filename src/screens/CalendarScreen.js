@@ -175,9 +175,9 @@ const CalendarScreen = ({ user, onBack }) => {
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return '';
     const date = new Date(dateTimeString);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-GB', { 
+      day: 'numeric',
       month: 'short', 
-      day: 'numeric', 
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit'
