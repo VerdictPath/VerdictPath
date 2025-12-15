@@ -206,13 +206,12 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#F5F7FA',
   },
   header: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#1E3A5F',
     padding: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.secondary,
+    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -222,13 +221,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: theme.colors.mahogany,
+    color: '#C0C0C0',
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 60,
@@ -240,24 +239,22 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     fontSize: 16,
   },
   content: {
     flex: 1,
   },
   summaryCard: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: '#1E3A5F',
     margin: 16,
     padding: 20,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.warmGold,
-    shadowColor: '#000',
+    shadowColor: 'rgba(30, 58, 95, 0.2)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 4,
   },
@@ -270,13 +267,13 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: theme.colors.lightCream,
+    color: '#C0C0C0',
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.colors.cream,
+    color: '#FFFFFF',
   },
   disbursementsList: {
     padding: 16,
@@ -285,16 +282,18 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 12,
   },
   disbursementCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E3A5F',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -314,12 +313,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 2,
   },
   cardSubtitle: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -332,7 +331,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: theme.colors.warmGray + '40',
+    backgroundColor: '#E2E8F0',
     marginBottom: 12,
   },
   cardBody: {
@@ -345,17 +344,17 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     fontWeight: '500',
   },
   infoValue: {
     fontSize: 14,
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     fontWeight: '600',
   },
   infoValueSmall: {
     fontSize: 12,
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     fontWeight: '500',
     maxWidth: 200,
   },
@@ -370,12 +369,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
   },
