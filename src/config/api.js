@@ -54,15 +54,15 @@ export const API_ENDPOINTS = {
     DASHBOARD: `${API_BASE_URL}/api/lawfirm/dashboard`,
     CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
     GET_CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
-    CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}`,
-    CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}/progress`,
+    CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/client/${clientId}`,
+    CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/client/${clientId}/progress`,
   },
 
   // Medical Provider
   MEDICALPROVIDER: {
     DASHBOARD: `${API_BASE_URL}/api/medicalprovider/dashboard`,
     PATIENTS: `${API_BASE_URL}/api/medicalprovider/patients`,
-    PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patients/${patientId}`,
+    PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patient/${patientId}`,
     LAW_FIRMS: `${API_BASE_URL}/api/connections/law-firms`,
     ADD_LAW_FIRM: `${API_BASE_URL}/api/connections/add-law-firm`,
     REMOVE_LAW_FIRM: `${API_BASE_URL}/api/connections/remove-law-firm`,
