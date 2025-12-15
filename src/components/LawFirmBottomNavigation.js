@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
+import { theme } from '../styles/theme';
 
 const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
   console.log('[LawFirmBottomNavigation] Rendering for screen:', currentScreen);
@@ -62,12 +63,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#000',
+    backgroundColor: theme.lawFirm.primary,
     borderTopWidth: 2,
-    borderTopColor: '#d4af37',
+    borderTopColor: theme.lawFirm.accent,
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     paddingTop: 10,
-    shadowColor: '#000',
+    shadowColor: theme.lawFirm.primaryDark,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activeIconContainer: {
-    backgroundColor: '#d4af37',
+    backgroundColor: theme.lawFirm.accent,
   },
   icon: {
     fontSize: 22,
@@ -100,11 +101,11 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    color: '#a0aec0',
+    color: theme.lawFirm.accentLight,
     marginTop: 2,
   },
   activeLabel: {
-    color: '#d4af37',
+    color: theme.lawFirm.accent,
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -112,14 +113,14 @@ const styles = StyleSheet.create({
     top: 0,
     width: 30,
     height: 3,
-    backgroundColor: '#d4af37',
+    backgroundColor: theme.lawFirm.accent,
     borderRadius: 2,
   },
   badge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#e74c3c',
+    backgroundColor: theme.lawFirm.error,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
