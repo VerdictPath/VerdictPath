@@ -8,10 +8,29 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Modal
+  Modal,
+  Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { API_BASE_URL } from '../config/api';
+
+const formatDate = (date) => {
+  if (!date) return '';
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`;
+};
+
+const formatTime = (date) => {
+  if (!date) return '';
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes} ${ampm}`;
+};
 
 export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const [loading, setLoading] = useState(true);
@@ -30,6 +49,22 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const [durationMinutes, setDurationMinutes] = useState('60');
   const [notes, setNotes] = useState('');
   const [clientSearchQuery, setClientSearchQuery] = useState('');
+
+  // Date/time options state (4 options for client to choose from)
+  const getDefaultDateTime = (daysFromNow, hour) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+
+  const [dateTimeOptions, setDateTimeOptions] = useState([
+    { date: getDefaultDateTime(7, 10), startTime: getDefaultDateTime(7, 10) },
+    { date: getDefaultDateTime(8, 14), startTime: getDefaultDateTime(8, 14) },
+    { date: getDefaultDateTime(9, 10), startTime: getDefaultDateTime(9, 10) },
+    { date: getDefaultDateTime(10, 14), startTime: getDefaultDateTime(10, 14) }
+  ]);
+  const [showDatePicker, setShowDatePicker] = useState({ visible: false, index: -1, type: 'date' });
 
   useEffect(() => {
     fetchData();
@@ -70,8 +105,30 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       return;
     }
 
+    // Validate all 4 date/time options are set
+    const validOptions = dateTimeOptions.filter(opt => opt.date && opt.startTime);
+    if (validOptions.length !== 4) {
+      Alert.alert('Error', 'Please provide all 4 date/time options for the client to choose from');
+      return;
+    }
+
     try {
       const token = user?.token || await AsyncStorage.getItem('authToken');
+      
+      // Build proposed dates array with start and end times based on duration
+      const duration = parseInt(durationMinutes) || 60;
+      const proposedDates = dateTimeOptions.map(opt => {
+        const startTime = new Date(opt.date);
+        startTime.setHours(opt.startTime.getHours(), opt.startTime.getMinutes(), 0, 0);
+        
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + duration);
+        
+        return {
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString()
+        };
+      });
       
       const response = await fetch(`${API_BASE_URL}/api/event-requests`, {
         method: 'POST',
@@ -85,13 +142,14 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
           title,
           description,
           location,
-          durationMinutes: parseInt(durationMinutes) || 60,
-          notes
+          durationMinutes: duration,
+          notes,
+          proposedDates
         })
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Event request sent to client');
+        Alert.alert('Success', 'Event request sent to client with 4 date options');
         setShowCreateModal(false);
         resetForm();
         fetchData();
@@ -102,6 +160,40 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     } catch (error) {
       console.error('Error creating event request:', error);
       Alert.alert('Error', 'Failed to create event request');
+    }
+  };
+  
+  const handleDateTimeChange = (event, selectedValue, index, type) => {
+    if (event.type === 'dismissed') {
+      setShowDatePicker({ visible: false, index: -1, type: 'date' });
+      return;
+    }
+    
+    if (selectedValue) {
+      const newOptions = [...dateTimeOptions];
+      if (type === 'date') {
+        newOptions[index].date = selectedValue;
+        newOptions[index].startTime = new Date(
+          selectedValue.getFullYear(),
+          selectedValue.getMonth(),
+          selectedValue.getDate(),
+          newOptions[index].startTime.getHours(),
+          newOptions[index].startTime.getMinutes()
+        );
+      } else {
+        newOptions[index].startTime = new Date(
+          newOptions[index].date.getFullYear(),
+          newOptions[index].date.getMonth(),
+          newOptions[index].date.getDate(),
+          selectedValue.getHours(),
+          selectedValue.getMinutes()
+        );
+      }
+      setDateTimeOptions(newOptions);
+    }
+    
+    if (Platform.OS !== 'ios') {
+      setShowDatePicker({ visible: false, index: -1, type: 'date' });
     }
   };
 
@@ -163,11 +255,19 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     setDurationMinutes('60');
     setNotes('');
     setClientSearchQuery('');
+    setDateTimeOptions([
+      { date: getDefaultDateTime(7, 10), startTime: getDefaultDateTime(7, 10) },
+      { date: getDefaultDateTime(8, 14), startTime: getDefaultDateTime(8, 14) },
+      { date: getDefaultDateTime(9, 10), startTime: getDefaultDateTime(9, 10) },
+      { date: getDefaultDateTime(10, 14), startTime: getDefaultDateTime(10, 14) }
+    ]);
+    setShowDatePicker({ visible: false, index: -1, type: 'date' });
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return '#FFA500';
+      case 'dates_offered': return '#1E90FF';
       case 'dates_submitted': return '#4169E1';
       case 'confirmed': return '#32CD32';
       case 'cancelled': return '#DC143C';
@@ -178,6 +278,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const getStatusLabel = (status) => {
     switch (status) {
       case 'pending': return 'Awaiting Response';
+      case 'dates_offered': return 'Awaiting Selection';
       case 'dates_submitted': return 'Dates Received';
       case 'confirmed': return 'Confirmed';
       case 'cancelled': return 'Cancelled';
@@ -402,6 +503,45 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                 multiline
                 numberOfLines={2}
               />
+
+              <Text style={styles.sectionTitle}>Date/Time Options for Client *</Text>
+              <Text style={styles.sectionSubtext}>Provide 4 options for the client to choose from</Text>
+
+              {dateTimeOptions.map((option, index) => (
+                <View key={index} style={styles.dateTimeOptionCard}>
+                  <Text style={styles.dateTimeOptionLabel}>Option {index + 1}</Text>
+                  <View style={styles.dateTimeRow}>
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker({ visible: true, index, type: 'date' })}
+                    >
+                      <Text style={styles.datePickerLabel}>Date</Text>
+                      <Text style={styles.datePickerValue}>{formatDate(option.date)}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker({ visible: true, index, type: 'time' })}
+                    >
+                      <Text style={styles.datePickerLabel}>Time</Text>
+                      <Text style={styles.datePickerValue}>{formatTime(option.startTime)}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+
+              {showDatePicker.visible && (
+                <DateTimePicker
+                  value={showDatePicker.type === 'date' 
+                    ? dateTimeOptions[showDatePicker.index].date 
+                    : dateTimeOptions[showDatePicker.index].startTime}
+                  mode={showDatePicker.type}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, selectedValue) => 
+                    handleDateTimeChange(event, selectedValue, showDatePicker.index, showDatePicker.type)
+                  }
+                  minimumDate={new Date()}
+                />
+              )}
             </ScrollView>
 
             <View style={styles.modalButtons}>
@@ -829,6 +969,51 @@ const styles = StyleSheet.create({
     color: '#8B4513',
     marginTop: 20,
     marginBottom: 12,
+  },
+  sectionSubtext: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  dateTimeOptionCard: {
+    backgroundColor: '#F5E6D3',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+  },
+  dateTimeOptionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8B4513',
+    marginBottom: 8,
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  datePickerButton: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    alignItems: 'center',
+  },
+  datePickerLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  datePickerValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B4513',
   },
   proposedDateCard: {
     backgroundColor: '#F5E6D3',
