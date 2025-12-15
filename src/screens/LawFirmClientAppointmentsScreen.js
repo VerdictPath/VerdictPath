@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Platform, RefreshControl
+  ActivityIndicator, Platform, RefreshControl, TextInput, FlatList
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
@@ -26,6 +26,8 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
   const [viewMode, setViewMode] = useState('list');
   const [selectedDate, setSelectedDate] = useState(null);
   const [markedDates, setMarkedDates] = useState({});
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
 
   const lawFirmId = user?.lawFirmId || user?.id;
 
@@ -121,6 +123,43 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
 
   const currentClient = clients.find(c => c.id === selectedClient);
 
+  const sortedClients = useMemo(() => {
+    return [...clients].sort((a, b) => {
+      const lastNameA = (a.last_name || a.lastName || '').toLowerCase();
+      const lastNameB = (b.last_name || b.lastName || '').toLowerCase();
+      const firstNameA = (a.first_name || a.firstName || '').toLowerCase();
+      const firstNameB = (b.first_name || b.firstName || '').toLowerCase();
+      const lastNameCompare = lastNameA.localeCompare(lastNameB);
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return firstNameA.localeCompare(firstNameB);
+    });
+  }, [clients]);
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return sortedClients;
+    const search = clientSearch.toLowerCase().trim();
+    return sortedClients.filter((client) => {
+      const firstName = (client.first_name || client.firstName || '').toLowerCase();
+      const lastName = (client.last_name || client.lastName || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`;
+      const reverseName = `${lastName} ${firstName}`;
+      return firstName.includes(search) || lastName.includes(search) || 
+             fullName.includes(search) || reverseName.includes(search);
+    });
+  }, [sortedClients, clientSearch]);
+
+  const getClientDisplayName = (client) => {
+    const firstName = client.first_name || client.firstName || '';
+    const lastName = client.last_name || client.lastName || '';
+    return `${lastName}, ${firstName}`;
+  };
+
+  const getSelectedClientName = () => {
+    if (!selectedClient) return 'All Clients';
+    const client = clients.find(c => c.id === selectedClient);
+    return client ? getClientDisplayName(client) : 'Select a client...';
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'confirmed': return 'check-circle';
@@ -137,8 +176,8 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
         <Icon name="arrow-left" size={24} color="#FFD700" />
       </TouchableOpacity>
       <View style={styles.headerContent}>
-        <Icon name="gavel" size={28} color="#FFD700" />
-        <Text style={styles.headerTitle}>Client Medical</Text>
+        <Icon name="calendar-month" size={28} color="#FFD700" />
+        <Text style={styles.headerTitle}>Calendar</Text>
       </View>
       <TouchableOpacity 
         style={styles.calendarSettingsButton} 
@@ -152,33 +191,81 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
   const renderClientSelector = () => (
     <View style={styles.clientSelector}>
       <Text style={styles.clientSelectorLabel}>Select Client:</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <TouchableOpacity
-          style={[styles.clientChip, !selectedClient && styles.clientChipActive]}
-          onPress={() => setSelectedClient(null)}
-        >
-          <Icon name="account-group" size={16} color={!selectedClient ? '#FFD700' : '#fff'} />
-          <Text style={[styles.clientChipText, !selectedClient && styles.clientChipTextActive]}>
-            All Clients
-          </Text>
-        </TouchableOpacity>
-        {clients.map(client => (
-          <TouchableOpacity
-            key={client.id}
-            style={[styles.clientChip, selectedClient === client.id && styles.clientChipActive]}
-            onPress={() => setSelectedClient(client.id)}
-          >
-            <Icon
-              name="account"
-              size={16}
-              color={selectedClient === client.id ? '#FFD700' : '#fff'}
+      <TouchableOpacity
+        style={styles.clientDropdownButton}
+        onPress={() => setShowClientDropdown(!showClientDropdown)}
+      >
+        <Icon name={selectedClient ? "account" : "account-group"} size={20} color="#1E3A5F" />
+        <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
+          {getSelectedClientName()}
+        </Text>
+        <Icon name={showClientDropdown ? "chevron-up" : "chevron-down"} size={20} color="#1E3A5F" />
+      </TouchableOpacity>
+      {showClientDropdown && (
+        <View style={styles.clientDropdownList}>
+          <View style={styles.searchContainer}>
+            <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search clients..."
+              placeholderTextColor="#94A3B8"
+              value={clientSearch}
+              onChangeText={setClientSearch}
+              autoCapitalize="none"
             />
-            <Text style={[styles.clientChipText, selectedClient === client.id && styles.clientChipTextActive]}>
-              {client.first_name} {client.last_name?.charAt(0)}.
+            {clientSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
+                <Icon name="close-circle" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.clientDropdownItem, !selectedClient && styles.clientDropdownItemActive]}
+            onPress={() => {
+              setSelectedClient(null);
+              setShowClientDropdown(false);
+              setClientSearch('');
+            }}
+          >
+            <Icon name="account-group" size={18} color={!selectedClient ? '#1E3A5F' : '#64748B'} />
+            <Text style={[styles.clientDropdownItemText, !selectedClient && styles.clientDropdownItemTextActive]}>
+              All Clients
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          <FlatList
+            data={filteredClients}
+            keyExtractor={(item) => item.id.toString()}
+            style={styles.clientList}
+            nestedScrollEnabled={true}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.clientDropdownItem,
+                  selectedClient === item.id && styles.clientDropdownItemActive
+                ]}
+                onPress={() => {
+                  setSelectedClient(item.id);
+                  setShowClientDropdown(false);
+                  setClientSearch('');
+                }}
+              >
+                <Icon name="account" size={18} color={selectedClient === item.id ? '#1E3A5F' : '#64748B'} />
+                <Text style={[
+                  styles.clientDropdownItemText,
+                  selectedClient === item.id && styles.clientDropdownItemTextActive
+                ]}>
+                  {getClientDisplayName(item)}
+                </Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptySearchResult}>
+                <Text style={styles.emptySearchText}>No clients found</Text>
+              </View>
+            }
+          />
+        </View>
+      )}
     </View>
   );
 
@@ -571,6 +658,82 @@ const styles = StyleSheet.create({
   clientChipTextActive: {
     color: '#FFD700',
     fontWeight: 'bold'
+  },
+  clientDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10
+  },
+  clientDropdownButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1E3A5F',
+    fontWeight: '500'
+  },
+  clientDropdownList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    maxHeight: 300,
+    overflow: 'hidden'
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingHorizontal: 12,
+    paddingVertical: 10
+  },
+  searchIcon: {
+    marginRight: 8
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1E3A5F',
+    padding: 0
+  },
+  clearSearchButton: {
+    padding: 4
+  },
+  clientDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F7FA',
+    gap: 10
+  },
+  clientDropdownItemActive: {
+    backgroundColor: '#EDF1F7'
+  },
+  clientDropdownItemText: {
+    fontSize: 15,
+    color: '#64748B'
+  },
+  clientDropdownItemTextActive: {
+    color: '#1E3A5F',
+    fontWeight: '600'
+  },
+  clientList: {
+    maxHeight: 200
+  },
+  emptySearchResult: {
+    padding: 20,
+    alignItems: 'center'
+  },
+  emptySearchText: {
+    color: '#94A3B8',
+    fontSize: 14
   },
   clientInfoCard: {
     flexDirection: 'row',
