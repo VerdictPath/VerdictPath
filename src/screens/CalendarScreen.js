@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import CalendarService from '../services/CalendarService';
 
@@ -246,16 +247,21 @@ const CalendarScreen = ({ user, onBack }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity onPress={onBack} style={styles.homeButton}>
+          <Icon name="sail-boat" size={28} color="#FFD700" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>📅 Calendar</Text>
-        <TouchableOpacity
-          onPress={() => setShowAddModal(true)}
-          style={styles.addButton}
-        >
-          <Text style={styles.addButtonText}>+ Add Event</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => setShowAddModal(true)}
+            style={styles.addButton}
+          >
+            <Text style={styles.addButtonText}>+ Add</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
+            <Icon name="minus" size={24} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.filterContainer}>
@@ -417,13 +423,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: '#8B4513',
   },
-  backButton: {
+  homeButton: {
     padding: 8,
   },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  minimizeButton: {
+    padding: 8,
   },
   headerTitle: {
     fontSize: 20,
@@ -432,8 +441,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: '#2ECC71',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   addButtonText: {
