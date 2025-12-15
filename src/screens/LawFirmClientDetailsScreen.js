@@ -23,10 +23,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     try {
       console.log('[ClientDetails] Fetching client details for clientId:', clientId);
       console.log('[ClientDetails] Token:', user?.token ? 'Present' : 'Missing');
-      console.log('[ClientDetails] API URL:', `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`);
+      console.log('[ClientDetails] API URL:', API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId));
       
       const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`,
+        API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId),
         {
           headers: {
             'Authorization': `Bearer ${user.token}`

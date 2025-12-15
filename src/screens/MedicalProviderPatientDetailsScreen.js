@@ -25,7 +25,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const fetchPatientDetails = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId)}`,
+        API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId),
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
