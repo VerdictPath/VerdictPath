@@ -24,17 +24,22 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const fetchPatientDetails = async () => {
     try {
-      const response = await fetch(
-        API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId),
-        {
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
+      const url = API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId);
+      console.log('[PatientDetails] Fetching patient details for patientId:', patientId);
+      console.log('[PatientDetails] API URL:', url);
+      console.log('[PatientDetails] Token:', user?.token ? 'Present' : 'Missing');
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
         }
-      );
+      });
+
+      console.log('[PatientDetails] Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[PatientDetails] Data received:', data);
         setPatient(data.patient);
         setLitigationProgress(data.litigationProgress);
         
@@ -43,7 +48,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         setMedicalBilling(data.medicalBilling || []);
         setEvidence(data.evidence || []);
       } else {
-        console.error('Failed to fetch patient details');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[PatientDetails] Failed response:', response.status, errorData);
       }
     } catch (error) {
       console.error('Error fetching patient details:', error);
