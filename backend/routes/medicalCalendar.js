@@ -468,7 +468,11 @@ router.get('/law-firms/:lawFirmId/client-appointments', authenticateToken, async
     }
     
     let query = `
-      SELECT ma.*, 
+      SELECT ma.id, ma.patient_id, ma.provider_id, ma.law_firm_id,
+             TO_CHAR(ma.appointment_date, 'YYYY-MM-DD') as appointment_date,
+             ma.start_time, ma.end_time, ma.appointment_type, ma.status,
+             ma.patient_notes, ma.provider_notes, ma.patient_confirmed, ma.provider_confirmed,
+             ma.created_at, ma.updated_at,
              u.first_name as patient_first_name, u.last_name as patient_last_name,
              mp.provider_name, mp.specialty
       FROM medical_appointments ma
