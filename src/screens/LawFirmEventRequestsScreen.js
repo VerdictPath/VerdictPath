@@ -38,19 +38,21 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = user?.token || await AsyncStorage.getItem('authToken');
       
       // Fetch event requests
       const requestsResponse = await fetch(`${API_BASE_URL}/api/event-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const requestsData = await requestsResponse.json();
+      console.log('[EventRequests] Requests response:', requestsData);
       
       // Fetch clients
       const clientsResponse = await fetch(`${API_BASE_URL}/api/lawfirm/clients`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const clientsData = await clientsResponse.json();
+      console.log('[EventRequests] Clients response:', clientsData);
       
       setEventRequests(requestsData.eventRequests || []);
       setClients(clientsData.clients || []);
@@ -69,7 +71,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     }
 
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = user?.token || await AsyncStorage.getItem('authToken');
       
       const response = await fetch(`${API_BASE_URL}/api/event-requests`, {
         method: 'POST',
@@ -105,7 +107,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
 
   const handleViewDetails = async (request) => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = user?.token || await AsyncStorage.getItem('authToken');
       
       const response = await fetch(`${API_BASE_URL}/api/event-requests/${request.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -124,7 +126,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
 
   const handleConfirmDate = async (proposedDateId) => {
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = user?.token || await AsyncStorage.getItem('authToken');
       
       const response = await fetch(
         `${API_BASE_URL}/api/event-requests/${selectedRequest.eventRequest.id}/confirm`,
