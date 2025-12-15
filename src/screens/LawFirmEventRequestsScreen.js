@@ -41,13 +41,13 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       const token = await AsyncStorage.getItem('authToken');
       
       // Fetch event requests
-      const requestsResponse = await fetch(`${API_BASE_URL}/event-requests`, {
+      const requestsResponse = await fetch(`${API_BASE_URL}/api/event-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const requestsData = await requestsResponse.json();
       
       // Fetch clients
-      const clientsResponse = await fetch(`${API_BASE_URL}/lawfirm/clients`, {
+      const clientsResponse = await fetch(`${API_BASE_URL}/api/lawfirm/clients`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const clientsData = await clientsResponse.json();
@@ -71,7 +71,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     try {
       const token = await AsyncStorage.getItem('authToken');
       
-      const response = await fetch(`${API_BASE_URL}/event-requests`, {
+      const response = await fetch(`${API_BASE_URL}/api/event-requests`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -107,7 +107,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     try {
       const token = await AsyncStorage.getItem('authToken');
       
-      const response = await fetch(`${API_BASE_URL}/event-requests/${request.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/event-requests/${request.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -127,7 +127,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       const token = await AsyncStorage.getItem('authToken');
       
       const response = await fetch(
-        `${API_BASE_URL}/event-requests/${selectedRequest.eventRequest.id}/confirm`,
+        `${API_BASE_URL}/api/event-requests/${selectedRequest.eventRequest.id}/confirm`,
         {
           method: 'POST',
           headers: {
