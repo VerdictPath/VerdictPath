@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, ImageBackground, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
@@ -512,67 +512,59 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={require('../../attached_assets/Ship_1764133439198.png')}
-        style={[styles.backgroundImage, { width, height }]}
-        resizeMode="cover"
-      >
-        <View style={styles.overlay}>
-          <View style={styles.header}>
-            <View style={styles.firmInfo}>
-              <Text style={styles.firmName}>⚓ {firmData?.firmName || 'Law Firm Portal'}</Text>
-              <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.inviteButton} 
-              onPress={() => setInviteModalVisible(true)}
-            >
-              <Text style={styles.inviteButtonText}>👍 Invite</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity 
-            style={styles.disbursementCTA} 
-            onPress={handleNavigateToDisbursements}
-          >
-            <View style={styles.disbursementCTAContent}>
-              <Text style={styles.disbursementCTAIcon}>💰</Text>
-              <View style={styles.disbursementCTATextContainer}>
-                <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
-                <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
-              </View>
-              <Text style={styles.disbursementCTAArrow}>→</Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.tabBar}>
-            {renderTabButton('clients', 'Clients', '👥')}
-            {renderTabButton('analytics', 'Analytics', '📊')}
-            {renderTabButton('notifications', 'Notifications', '🔔')}
-            {renderTabButton('subscription', 'Subscription', '💳')}
-            {renderTabButton('settings', 'Settings', '⚙️')}
-          </View>
-
-          <ScrollView style={styles.content}>
-            {activeTab === 'clients' && renderClientsTab()}
-            {activeTab === 'analytics' && renderAnalyticsTab()}
-            {activeTab === 'notifications' && renderNotificationsTab()}
-            {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
-            {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
-
-            <TouchableOpacity 
-              style={styles.connectionsButton} 
-              onPress={() => setConnectionsModalVisible(true)}
-            >
-              <Text style={styles.connectionsButtonText}>🔗 My Connections</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-              <Text style={styles.logoutText}>🚪 Sign Out</Text>
-            </TouchableOpacity>
-          </ScrollView>
+      <View style={styles.header}>
+        <View style={styles.firmInfo}>
+          <Text style={styles.firmName}>{firmData?.firmName || 'Law Firm Portal'}</Text>
+          <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
         </View>
-      </ImageBackground>
+        <TouchableOpacity 
+          style={styles.inviteButton} 
+          onPress={() => setInviteModalVisible(true)}
+        >
+          <Text style={styles.inviteButtonText}>+ Invite</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.disbursementCTA} 
+        onPress={handleNavigateToDisbursements}
+      >
+        <View style={styles.disbursementCTAContent}>
+          <Text style={styles.disbursementCTAIcon}>💰</Text>
+          <View style={styles.disbursementCTATextContainer}>
+            <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
+            <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
+          </View>
+          <Text style={styles.disbursementCTAArrow}>→</Text>
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.tabBar}>
+        {renderTabButton('clients', 'Clients', '👥')}
+        {renderTabButton('analytics', 'Analytics', '📊')}
+        {renderTabButton('notifications', 'Notifications', '🔔')}
+        {renderTabButton('subscription', 'Subscription', '💳')}
+        {renderTabButton('settings', 'Settings', '⚙️')}
+      </View>
+
+      <ScrollView style={styles.content}>
+        {activeTab === 'clients' && renderClientsTab()}
+        {activeTab === 'analytics' && renderAnalyticsTab()}
+        {activeTab === 'notifications' && renderNotificationsTab()}
+        {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
+        {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
+
+        <TouchableOpacity 
+          style={styles.connectionsButton} 
+          onPress={() => setConnectionsModalVisible(true)}
+        >
+          <Text style={styles.connectionsButtonText}>My Connections</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
 
       <ConnectionsModal
         visible={connectionsModalVisible}
