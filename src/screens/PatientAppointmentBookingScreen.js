@@ -75,6 +75,11 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   const [lawFirmAppointmentType, setLawFirmAppointmentType] = useState('consultation');
   const [lawFirmNotes, setLawFirmNotes] = useState('');
   const [bookingLawFirm, setBookingLawFirm] = useState(false);
+  
+  const [apptsSelectedDate, setApptsSelectedDate] = useState(null);
+  const [eventsSelectedDate, setEventsSelectedDate] = useState(null);
+  const [apptsMarkedDates, setApptsMarkedDates] = useState({});
+  const [eventsMarkedDates, setEventsMarkedDates] = useState({});
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -119,6 +124,14 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   useEffect(() => {
     updateMarkedDates();
   }, [myAppointments, personalEvents, activeTab]);
+
+  useEffect(() => {
+    updateApptsMarkedDates();
+  }, [myAppointments, lawFirmAppointments]);
+
+  useEffect(() => {
+    updateEventsMarkedDates();
+  }, [personalEvents]);
 
   const loadConnectedProviders = async () => {
     try {
@@ -195,6 +208,67 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     });
 
     setMarkedDates(marked);
+  };
+
+  const updateApptsMarkedDates = () => {
+    const marked = {};
+
+    myAppointments.forEach(appt => {
+      const date = appt.appointment_date;
+      const dotColor = appt.status === 'confirmed' ? '#10b981' : 
+                       appt.status === 'pending' ? '#f59e0b' : '#6b7280';
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      marked[date].dots.push({ key: `med-${appt.id}`, color: dotColor });
+    });
+
+    lawFirmAppointments.forEach(appt => {
+      const date = appt.appointment_date;
+      const dotColor = appt.status === 'confirmed' ? '#3b82f6' : 
+                       appt.status === 'pending' ? '#8b5cf6' : '#6b7280';
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      marked[date].dots.push({ key: `law-${appt.id}`, color: dotColor });
+    });
+
+    Object.keys(marked).forEach(date => {
+      marked[date].marked = true;
+    });
+
+    setApptsMarkedDates(marked);
+  };
+
+  const updateEventsMarkedDates = () => {
+    const marked = {};
+
+    personalEvents.forEach(event => {
+      const eventDate = moment(event.start_time).format('YYYY-MM-DD');
+      const color = EVENT_TYPE_COLORS[event.event_type] || '#FFD700';
+      if (!marked[eventDate]) {
+        marked[eventDate] = { dots: [] };
+      }
+      marked[eventDate].dots.push({ key: `event-${event.id}`, color });
+    });
+
+    Object.keys(marked).forEach(date => {
+      marked[date].marked = true;
+    });
+
+    setEventsMarkedDates(marked);
+  };
+
+  const getAppointmentsForDate = (date) => {
+    const medicalForDate = myAppointments.filter(a => a.appointment_date === date);
+    const lawFirmForDate = lawFirmAppointments.filter(a => a.appointment_date === date);
+    return { medical: medicalForDate, lawFirm: lawFirmForDate };
+  };
+
+  const getEventsForDate = (date) => {
+    return personalEvents.filter(event => 
+      moment(event.start_time).format('YYYY-MM-DD') === date
+    );
   };
 
   const loadAvailableSlots = async () => {
@@ -1054,6 +1128,8 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   );
 
   const renderMyAppointments = () => {
+    const selectedDateAppts = apptsSelectedDate ? getAppointmentsForDate(apptsSelectedDate) : { medical: [], lawFirm: [] };
+    
     const upcomingMedicalAppointments = myAppointments
       .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
       .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
@@ -1062,20 +1138,93 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       .filter(a => moment(a.appointment_date).isSameOrAfter(moment(), 'day') && a.status !== 'cancelled')
       .sort((a, b) => moment(a.appointment_date).diff(moment(b.appointment_date)));
 
-    const pastMedicalAppointments = myAppointments
-      .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
-      .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
-
-    const pastLawFirmAppointments = lawFirmAppointments
-      .filter(a => moment(a.appointment_date).isBefore(moment(), 'day') || a.status === 'cancelled')
-      .sort((a, b) => moment(b.appointment_date).diff(moment(a.appointment_date)));
-
     return (
       <View style={styles.appointmentsContainer}>
-        <View style={styles.sectionHeader}>
-          <Icon name="hospital-building" size={24} color="#FFD700" />
-          <Text style={styles.sectionTitle}>Medical Appointments</Text>
+        <Calendar
+          current={apptsSelectedDate || moment().format('YYYY-MM-DD')}
+          onDayPress={(day) => setApptsSelectedDate(day.dateString)}
+          markedDates={{
+            ...apptsMarkedDates,
+            ...(apptsSelectedDate && {
+              [apptsSelectedDate]: {
+                ...apptsMarkedDates[apptsSelectedDate],
+                selected: true,
+                selectedColor: '#1a5490'
+              }
+            })
+          }}
+          markingType={'multi-dot'}
+          theme={{
+            backgroundColor: 'transparent',
+            calendarBackground: 'rgba(255, 255, 255, 0.05)',
+            textSectionTitleColor: '#FFD700',
+            selectedDayBackgroundColor: '#1a5490',
+            selectedDayTextColor: '#ffffff',
+            todayTextColor: '#FFD700',
+            dayTextColor: '#ffffff',
+            textDisabledColor: '#666',
+            monthTextColor: '#FFD700',
+            arrowColor: '#FFD700',
+          }}
+        />
+
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
+            <Text style={styles.legendText}>Medical Confirmed</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
+            <Text style={styles.legendText}>Medical Pending</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} />
+            <Text style={styles.legendText}>Law Firm Confirmed</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#8b5cf6' }]} />
+            <Text style={styles.legendText}>Law Firm Pending</Text>
+          </View>
         </View>
+
+        {apptsSelectedDate ? (
+          <View style={styles.selectedDateSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="calendar-star" size={20} color="#FFD700" />
+              <Text style={styles.sectionTitle}>{moment(apptsSelectedDate).format('MMMM D, YYYY')}</Text>
+              <TouchableOpacity onPress={() => setApptsSelectedDate(null)} style={styles.clearDateButton}>
+                <Text style={styles.clearDateText}>Show All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {selectedDateAppts.medical.length === 0 && selectedDateAppts.lawFirm.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Icon name="calendar-blank" size={48} color="#666" />
+                <Text style={styles.emptyText}>No appointments on this date</Text>
+              </View>
+            ) : (
+              <>
+                {selectedDateAppts.medical.length > 0 && (
+                  <View>
+                    <Text style={styles.subSectionTitle}>Medical</Text>
+                    {selectedDateAppts.medical.map(appointment => renderAppointmentCard(appointment, 'medical'))}
+                  </View>
+                )}
+                {selectedDateAppts.lawFirm.length > 0 && (
+                  <View>
+                    <Text style={styles.subSectionTitle}>Law Firm</Text>
+                    {selectedDateAppts.lawFirm.map(appointment => renderAppointmentCard(appointment, 'lawfirm'))}
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        ) : (
+          <>
+            <View style={styles.sectionHeader}>
+              <Icon name="hospital-building" size={24} color="#FFD700" />
+              <Text style={styles.sectionTitle}>Medical Appointments</Text>
+            </View>
 
         {upcomingMedicalAppointments.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -1189,13 +1338,115 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
             ))}
           </View>
         )}
+          </>
+        )}
+      </View>
+    );
+  };
+
+  const renderAppointmentCard = (appointment, type) => {
+    const isMedical = type === 'medical';
+    return (
+      <View key={`${type}-${appointment.id}`} style={styles.appointmentCard}>
+        <View style={styles.appointmentHeader}>
+          <View style={[styles.appointmentDateBadge, !isMedical && { backgroundColor: 'rgba(153, 102, 255, 0.2)' }]}>
+            <Text style={styles.appointmentMonth}>
+              {moment(appointment.appointment_date).format('MMM')}
+            </Text>
+            <Text style={styles.appointmentDay}>
+              {moment(appointment.appointment_date).format('DD')}
+            </Text>
+          </View>
+
+          <View style={styles.appointmentDetails}>
+            <Text style={styles.appointmentProviderName}>
+              {isMedical ? appointment.provider_name : appointment.firm_name}
+            </Text>
+            <Text style={styles.appointmentTime}>
+              {moment(appointment.start_time, 'HH:mm:ss').format('h:mm A')}
+            </Text>
+            <Text style={styles.appointmentType}>
+              {appointment.appointment_type?.replace(/_/g, ' ')}
+            </Text>
+          </View>
+
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(appointment.status) + '20' }]}>
+            <Icon name={getStatusIcon(appointment.status)} size={14} color={getStatusColor(appointment.status)} />
+            <Text style={[styles.statusText, { color: getStatusColor(appointment.status) }]}>
+              {appointment.status}
+            </Text>
+          </View>
+        </View>
+
+        {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+          <TouchableOpacity 
+            style={styles.cancelButton}
+            onPress={() => isMedical ? handleCancelAppointment(appointment.id) : handleCancelLawFirmAppointment(appointment.id)}
+          >
+            <Icon name="close-circle" size={16} color="#ef4444" />
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
 
   const renderPersonalEvents = () => {
+    const selectedDateEvents = eventsSelectedDate ? getEventsForDate(eventsSelectedDate) : [];
+    
     return (
       <View style={styles.appointmentsContainer}>
+        <Calendar
+          current={eventsSelectedDate || moment().format('YYYY-MM-DD')}
+          onDayPress={(day) => setEventsSelectedDate(day.dateString)}
+          markedDates={{
+            ...eventsMarkedDates,
+            ...(eventsSelectedDate && {
+              [eventsSelectedDate]: {
+                ...eventsMarkedDates[eventsSelectedDate],
+                selected: true,
+                selectedColor: '#1a5490'
+              }
+            })
+          }}
+          markingType={'multi-dot'}
+          theme={{
+            backgroundColor: 'transparent',
+            calendarBackground: 'rgba(255, 255, 255, 0.05)',
+            textSectionTitleColor: '#FFD700',
+            selectedDayBackgroundColor: '#1a5490',
+            selectedDayTextColor: '#ffffff',
+            todayTextColor: '#FFD700',
+            dayTextColor: '#ffffff',
+            textDisabledColor: '#666',
+            monthTextColor: '#FFD700',
+            arrowColor: '#FFD700',
+          }}
+        />
+
+        <View style={styles.legendContainer}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} />
+            <Text style={styles.legendText}>Court Date</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
+            <Text style={styles.legendText}>Appointment</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#9b59b6' }]} />
+            <Text style={styles.legendText}>Deposition</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#f39c12' }]} />
+            <Text style={styles.legendText}>Deadline</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#1abc9c' }]} />
+            <Text style={styles.legendText}>Reminder</Text>
+          </View>
+        </View>
+
         <View style={styles.filterContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {[{ value: 'all', label: 'All Events' }, ...EVENT_TYPES].map(type => (
@@ -1226,21 +1477,46 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
           </ScrollView>
         </View>
 
-        {loadingEvents ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FFD700" />
-            <Text style={styles.loadingText}>Loading events...</Text>
-          </View>
-        ) : personalEvents.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Icon name="calendar-blank-outline" size={64} color="#666" />
-            <Text style={styles.emptyText}>No personal events</Text>
-            <Text style={styles.emptySubtext}>Tap the + button to add your first event</Text>
+        {eventsSelectedDate ? (
+          <View style={styles.selectedDateSection}>
+            <View style={styles.sectionHeader}>
+              <Icon name="calendar-star" size={20} color="#FFD700" />
+              <Text style={styles.sectionTitle}>{moment(eventsSelectedDate).format('MMMM D, YYYY')}</Text>
+              <TouchableOpacity onPress={() => setEventsSelectedDate(null)} style={styles.clearDateButton}>
+                <Text style={styles.clearDateText}>Show All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {selectedDateEvents.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Icon name="calendar-blank" size={48} color="#666" />
+                <Text style={styles.emptyText}>No events on this date</Text>
+              </View>
+            ) : (
+              <View style={styles.eventsList}>
+                {selectedDateEvents.map(event => renderEventCard(event))}
+              </View>
+            )}
           </View>
         ) : (
-          <View style={styles.eventsList}>
-            {personalEvents.map(event => renderEventCard(event))}
-          </View>
+          <>
+            {loadingEvents ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#FFD700" />
+                <Text style={styles.loadingText}>Loading events...</Text>
+              </View>
+            ) : personalEvents.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Icon name="calendar-blank-outline" size={64} color="#666" />
+                <Text style={styles.emptyText}>No personal events</Text>
+                <Text style={styles.emptySubtext}>Tap the + button to add your first event</Text>
+              </View>
+            ) : (
+              <View style={styles.eventsList}>
+                {personalEvents.map(event => renderEventCard(event))}
+              </View>
+            )}
+          </>
         )}
       </View>
     );
@@ -1678,7 +1954,53 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFD700'
+    color: '#FFD700',
+    flex: 1
+  },
+  subSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#a0aec0',
+    marginTop: 12,
+    marginBottom: 8
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 8,
+    marginVertical: 8
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5
+  },
+  legendText: {
+    color: '#a0aec0',
+    fontSize: 11
+  },
+  selectedDateSection: {
+    marginTop: 16
+  },
+  clearDateButton: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12
+  },
+  clearDateText: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: '600'
   },
   providerCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
