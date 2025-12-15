@@ -2145,7 +2145,7 @@ exports.getNotificationAnalytics = async (req, res) => {
       FROM notifications
       WHERE ${whereClause}
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT 50
     `;
 
     const recentResult = await pool.query(recentQuery, params);

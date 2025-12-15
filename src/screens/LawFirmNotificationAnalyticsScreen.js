@@ -1,7 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, FlatList } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'clicked': return '#9b59b6';
+    case 'read': return '#3498db';
+    case 'delivered': return '#27ae60';
+    default: return '#95a5a6';
+  }
+};
+
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'clicked': return '🖱';
+    case 'read': return '👁';
+    case 'delivered': return '✓';
+    default: return '📤';
+  }
+};
+
+const getTypeIcon = (type) => {
+  switch (type) {
+    case 'deadline_reminder': return '⏰';
+    case 'task_reminder': return '📋';
+    case 'task_assigned': return '📌';
+    case 'document_request': return '📄';
+    case 'appointment_reminder': return '📅';
+    default: return '📢';
+  }
+};
 
 const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [analytics, setAnalytics] = useState(null);
@@ -303,6 +338,94 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
               />
             </View>
           </View>
+
+          {/* Individual Notification Items */}
+          {analytics?.recentNotifications && analytics.recentNotifications.length > 0 && (
+            <View style={styles.notificationItemsSection}>
+              <Text style={styles.itemsSectionTitle}>Individual Notifications</Text>
+              <View style={styles.statusLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#95a5a6' }]} />
+                  <Text style={styles.legendText}>Sent</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#27ae60' }]} />
+                  <Text style={styles.legendText}>Delivered</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
+                  <Text style={styles.legendText}>Read</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#9b59b6' }]} />
+                  <Text style={styles.legendText}>Clicked</Text>
+                </View>
+              </View>
+              
+              {analytics.recentNotifications.map((notification) => (
+                <View key={notification.id} style={styles.notificationItemCard}>
+                  <View style={styles.notificationItemHeader}>
+                    <View style={styles.notificationTypeIcon}>
+                      <Text style={styles.notificationTypeEmoji}>{getTypeIcon(notification.type)}</Text>
+                    </View>
+                    <View style={styles.notificationItemInfo}>
+                      <Text style={styles.notificationItemTitle} numberOfLines={1}>
+                        {notification.title}
+                      </Text>
+                      <Text style={styles.notificationItemRecipient}>
+                        To: {notification.recipientName}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notification.status) }]}>
+                      <Text style={styles.statusBadgeText}>
+                        {getStatusIcon(notification.status)} {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.notificationTimeline}>
+                    <View style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, { backgroundColor: '#95a5a6' }]} />
+                      <View style={styles.timelineContent}>
+                        <Text style={styles.timelineLabel}>Sent</Text>
+                        <Text style={styles.timelineTime}>{formatDate(notification.createdAt)}</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.timelineConnector, { backgroundColor: notification.deliveredAt ? '#27ae60' : '#e0e0e0' }]} />
+                    <View style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, { backgroundColor: notification.deliveredAt ? '#27ae60' : '#e0e0e0' }]} />
+                      <View style={styles.timelineContent}>
+                        <Text style={[styles.timelineLabel, !notification.deliveredAt && styles.timelineLabelInactive]}>Delivered</Text>
+                        <Text style={[styles.timelineTime, !notification.deliveredAt && styles.timelineTimeInactive]}>
+                          {formatDate(notification.deliveredAt)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                    <View style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                      <View style={styles.timelineContent}>
+                        <Text style={[styles.timelineLabel, !notification.readAt && styles.timelineLabelInactive]}>Read</Text>
+                        <Text style={[styles.timelineTime, !notification.readAt && styles.timelineTimeInactive]}>
+                          {formatDate(notification.readAt)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.timelineConnector, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
+                    <View style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
+                      <View style={styles.timelineContent}>
+                        <Text style={[styles.timelineLabel, !notification.clickedAt && styles.timelineLabelInactive]}>Clicked</Text>
+                        <Text style={[styles.timelineTime, !notification.clickedAt && styles.timelineTimeInactive]}>
+                          {formatDate(notification.clickedAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* By Type */}
@@ -605,6 +728,129 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  notificationItemsSection: {
+    marginTop: 24,
+  },
+  itemsSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+  },
+  statusLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  notificationItemCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  notificationItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  notificationTypeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  notificationTypeEmoji: {
+    fontSize: 20,
+  },
+  notificationItemInfo: {
+    flex: 1,
+  },
+  notificationItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  notificationItemRecipient: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  notificationTimeline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  timelineItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  timelineContent: {
+    alignItems: 'center',
+  },
+  timelineLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  timelineLabelInactive: {
+    color: '#ccc',
+  },
+  timelineTime: {
+    fontSize: 9,
+    color: '#666',
+    textAlign: 'center',
+  },
+  timelineTimeInactive: {
+    color: '#ccc',
+  },
+  timelineConnector: {
+    height: 2,
+    flex: 0.5,
+    marginBottom: 20,
   },
 });
 
