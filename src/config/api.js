@@ -1,6 +1,6 @@
-// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend [v2.1.0]
+// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend [v2.2.0]
 // Replace your existing /src/config/api.js with this file
-// CACHE BUST: Notification endpoints fixed - November 22, 2025
+// CACHE BUST: Fixed client/patient singular endpoints - December 15, 2025
 
 // ============================================================================
 // API BASE URL CONFIGURATION
