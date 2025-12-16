@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Alert } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { commonStyles } from '../styles/commonStyles';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
 
 const MedicalProviderRegistrationScreen = ({ 

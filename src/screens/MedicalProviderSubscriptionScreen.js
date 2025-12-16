@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const MEDICAL_PROVIDER_PRICING = {

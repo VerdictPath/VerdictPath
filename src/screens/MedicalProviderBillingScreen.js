@@ -7,7 +7,7 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import ReceivedDisbursementsScreen from './ReceivedDisbursementsScreen';
 import NegotiationsScreen from './NegotiationsScreen';
 

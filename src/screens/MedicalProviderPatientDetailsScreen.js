@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
 import alert from '../utils/alert';

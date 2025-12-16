@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, Alert
 } from 'react-native';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
