@@ -276,11 +276,15 @@ const calendarController = {
         return res.status(403).json({ error: 'Unauthorized to delete this event' });
       }
 
+      // Delete shared calendar entries first (foreign key constraint)
+      await pool.query('DELETE FROM shared_calendar_events WHERE calendar_event_id = $1', [eventId]);
+      
+      // Delete the main calendar event
       await pool.query('DELETE FROM calendar_events WHERE id = $1', [eventId]);
 
       res.json({
         success: true,
-        message: 'Event deleted successfully'
+        message: 'Event deleted successfully and removed from all shared calendars'
       });
     } catch (error) {
       console.error('Error deleting calendar event:', error);
