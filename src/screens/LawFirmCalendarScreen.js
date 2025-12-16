@@ -693,12 +693,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     <View style={styles.header}>
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Icon name="sail-boat" size={28} color="#FFD700" />
+          <Icon name="sail-boat" size={28} color="#C0C0C0" />
         </TouchableOpacity>
-        <Icon name="scale-balance" size={28} color="#FFD700" />
+        <Icon name="scale-balance" size={28} color="#C0C0C0" />
         <Text style={styles.headerTitle}>Law Firm Calendar</Text>
         <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-          <Icon name="minus" size={24} color="#FFD700" />
+          <Icon name="minus" size={24} color="#C0C0C0" />
         </TouchableOpacity>
       </View>
       <Text style={styles.headerSubtitle}>Manage Your Schedule</Text>
@@ -716,7 +716,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <Icon 
             name={mode === 'month' ? 'calendar-month' : mode === 'week' ? 'calendar-week' : 'calendar-today'} 
             size={20} 
-            color={viewMode === mode ? '#FFD700' : '#fff'} 
+            color={viewMode === mode ? '#C0C0C0' : '#fff'} 
           />
           <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
             {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -758,7 +758,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const renderSecondaryActions = () => (
     <View style={styles.secondaryActions}>
       <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAvailabilityRequestModal(true)}>
-        <Icon name="send" size={18} color="#FFD700" />
+        <Icon name="send" size={18} color="#C0C0C0" />
         <Text style={styles.secondaryButtonText}>Request Client Availability</Text>
       </TouchableOpacity>
     </View>
@@ -781,14 +781,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         theme={{
           backgroundColor: 'transparent',
           calendarBackground: 'rgba(255, 255, 255, 0.1)',
-          textSectionTitleColor: '#FFD700',
+          textSectionTitleColor: '#C0C0C0',
           selectedDayBackgroundColor: '#1a5490',
           selectedDayTextColor: '#ffffff',
-          todayTextColor: '#FFD700',
+          todayTextColor: '#C0C0C0',
           dayTextColor: '#ffffff',
           textDisabledColor: '#666',
-          monthTextColor: '#FFD700',
-          arrowColor: '#FFD700',
+          monthTextColor: '#C0C0C0',
+          arrowColor: '#C0C0C0',
         }}
       />
     </View>
@@ -808,7 +808,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     return (
       <View style={styles.dayViewContainer}>
         <View style={styles.dayViewHeader}>
-          <Icon name="calendar-star" size={24} color="#FFD700" />
+          <Icon name="calendar-star" size={24} color="#C0C0C0" />
           <Text style={styles.dayViewTitle}>
             {moment(selectedDate).format('dddd, MMMM Do, YYYY')}
           </Text>
@@ -1139,7 +1139,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
                   {getSelectedClientName(newAppointment.clientId)}
                 </Text>
-                <Icon name={showClientDropdown ? "chevron-up" : "chevron-down"} size={20} color="#FFD700" />
+                <Icon name={showClientDropdown ? "chevron-up" : "chevron-down"} size={20} color="#C0C0C0" />
               </TouchableOpacity>
               {showClientDropdown && (
                 <View style={styles.clientDropdownList}>
@@ -1273,7 +1273,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
                   {getSelectedClientName(newAvailabilityRequest.clientId)}
                 </Text>
-                <Icon name={showClientDropdownAvailability ? "chevron-up" : "chevron-down"} size={20} color="#FFD700" />
+                <Icon name={showClientDropdownAvailability ? "chevron-up" : "chevron-down"} size={20} color="#C0C0C0" />
               </TouchableOpacity>
               {showClientDropdownAvailability && (
                 <View style={styles.clientDropdownList}>
@@ -1368,7 +1368,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           {selectedAppointment && (
             <ScrollView style={styles.modalContent}>
               <View style={styles.appointmentDetailCard}>
-                <Icon name="account" size={40} color="#FFD700" />
+                <Icon name="account" size={40} color="#C0C0C0" />
                 <Text style={styles.appointmentDetailName}>
                   {selectedAppointment.client_first_name} {selectedAppointment.client_last_name}
                 </Text>
@@ -1378,14 +1378,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
 
               <View style={styles.appointmentDetailRow}>
-                <Icon name="clock-outline" size={20} color="#FFD700" />
+                <Icon name="clock-outline" size={20} color="#C0C0C0" />
                 <Text style={styles.appointmentDetailText}>
                   {formatTime(selectedAppointment.start_time)} - {formatTime(selectedAppointment.end_time)}
                 </Text>
               </View>
 
               <View style={styles.appointmentDetailRow}>
-                <Icon name="briefcase" size={20} color="#FFD700" />
+                <Icon name="briefcase" size={20} color="#C0C0C0" />
                 <Text style={styles.appointmentDetailText}>
                   {selectedAppointment.appointment_type || 'Consultation'}
                 </Text>
@@ -1393,14 +1393,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               {selectedAppointment.title && (
                 <View style={styles.appointmentDetailRow}>
-                  <Icon name="text" size={20} color="#FFD700" />
+                  <Icon name="text" size={20} color="#C0C0C0" />
                   <Text style={styles.appointmentDetailText}>{selectedAppointment.title}</Text>
                 </View>
               )}
 
               {selectedAppointment.description && (
                 <View style={styles.appointmentDetailRow}>
-                  <Icon name="note-text" size={20} color="#FFD700" />
+                  <Icon name="note-text" size={20} color="#C0C0C0" />
                   <Text style={styles.appointmentDetailText}>{selectedAppointment.description}</Text>
                 </View>
               )}
@@ -1463,7 +1463,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="account-group" size={24} color="#FFD700" />
+                  <Icon name="account-group" size={24} color="#C0C0C0" />
                   <Text style={styles.toggleLabel}>Enable Multi-Booking</Text>
                 </View>
                 <TouchableOpacity
@@ -1516,7 +1516,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="email-outline" size={24} color="#FFD700" />
+                  <Icon name="email-outline" size={24} color="#C0C0C0" />
                   <Text style={styles.toggleLabel}>Email Notifications</Text>
                 </View>
                 <TouchableOpacity
@@ -1537,7 +1537,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="message-text-outline" size={24} color="#FFD700" />
+                  <Icon name="message-text-outline" size={24} color="#C0C0C0" />
                   <Text style={styles.toggleLabel}>SMS Notifications</Text>
                 </View>
                 <TouchableOpacity
@@ -1562,7 +1562,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="check-circle-outline" size={24} color="#FFD700" />
+                  <Icon name="check-circle-outline" size={24} color="#C0C0C0" />
                   <Text style={styles.toggleLabel}>Auto-confirm Appointments</Text>
                 </View>
                 <TouchableOpacity
@@ -1652,7 +1652,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                   ]}
                   onPress={() => setNewEvent({ ...newEvent, selectedClientId: '' })}
                 >
-                  <Icon name="account-off" size={16} color={!newEvent.selectedClientId ? '#FFD700' : '#999'} />
+                  <Icon name="account-off" size={16} color={!newEvent.selectedClientId ? '#C0C0C0' : '#999'} />
                   <Text style={[styles.clientChipText, !newEvent.selectedClientId && styles.clientChipTextSelected]}>
                     Don't Share
                   </Text>
@@ -1666,7 +1666,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     ]}
                     onPress={() => setNewEvent({ ...newEvent, selectedClientId: client.id })}
                   >
-                    <Icon name="account" size={16} color={newEvent.selectedClientId === client.id ? '#FFD700' : '#999'} />
+                    <Icon name="account" size={16} color={newEvent.selectedClientId === client.id ? '#C0C0C0' : '#999'} />
                     <Text style={[styles.clientChipText, newEvent.selectedClientId === client.id && styles.clientChipTextSelected]}>
                       {client.first_name} {client.last_name}
                     </Text>
@@ -1722,7 +1722,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
             <View style={styles.toggleRow}>
               <View style={styles.toggleInfo}>
-                <Icon name="bell-outline" size={24} color="#FFD700" />
+                <Icon name="bell-outline" size={24} color="#C0C0C0" />
                 <Text style={styles.toggleLabel}>Enable Reminder</Text>
               </View>
               <TouchableOpacity
@@ -1748,7 +1748,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       <View style={styles.container}>
         {renderHeader()}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFD700" />
+          <ActivityIndicator size="large" color="#C0C0C0" />
           <Text style={styles.loadingText}>Loading calendar...</Text>
         </View>
       </View>
@@ -1784,10 +1784,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a1628'
+    backgroundColor: '#1E3A5F'
   },
   header: {
-    backgroundColor: '#0d2f54',
+    backgroundColor: '#152d4a',
     padding: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
     borderBottomLeftRadius: 20,
@@ -1823,7 +1823,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFD700',
+    color: '#C0C0C0',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2
@@ -1855,7 +1855,7 @@ const styles = StyleSheet.create({
   },
   viewModeButtonActive: {
     backgroundColor: 'rgba(26, 84, 144, 0.5)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   viewModeText: {
     color: '#fff',
@@ -1863,7 +1863,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   viewModeTextActive: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: 'bold'
   },
   actionButtons: {
@@ -1882,7 +1882,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
+    borderColor: 'rgba(192, 192, 192, 0.3)'
   },
   actionButtonText: {
     color: '#fff',
@@ -1900,12 +1900,12 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    backgroundColor: 'rgba(192, 192, 192, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
+    borderColor: 'rgba(192, 192, 192, 0.3)'
   },
   secondaryButtonText: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 14,
     fontWeight: '600'
   },
@@ -1918,7 +1918,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)'
+    borderColor: 'rgba(192, 192, 192, 0.2)'
   },
   loadingContainer: {
     flex: 1,
@@ -1942,13 +1942,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(26, 84, 144, 0.3)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
+    borderColor: 'rgba(192, 192, 192, 0.3)'
   },
   dayViewTitle: {
     flex: 1,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFD700'
+    color: '#C0C0C0'
   },
   noAvailabilityContainer: {
     alignItems: 'center',
@@ -2034,12 +2034,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: 'rgba(192, 192, 192, 0.2)',
     marginBottom: 8
   },
   weekDaySelected: {
     backgroundColor: 'rgba(26, 84, 144, 0.3)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   weekDayHeader: {
     flexDirection: 'row',
@@ -2048,7 +2048,7 @@ const styles = StyleSheet.create({
     marginBottom: 8
   },
   weekDayName: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 16,
     fontWeight: 'bold'
   },
@@ -2080,10 +2080,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)'
+    borderColor: 'rgba(192, 192, 192, 0.2)'
   },
   sectionTitle: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12
@@ -2121,10 +2121,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)'
+    borderColor: 'rgba(192, 192, 192, 0.2)'
   },
   legendTitle: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 12
@@ -2150,12 +2150,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end'
   },
   modalContainer: {
-    backgroundColor: '#0d2f54',
+    backgroundColor: '#1E3A5F',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '80%',
     borderTopWidth: 2,
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   modalHeader: {
     flexDirection: 'row',
@@ -2163,18 +2163,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 215, 0, 0.2)'
+    borderBottomColor: 'rgba(192, 192, 192, 0.2)'
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFD700'
+    color: '#C0C0C0'
   },
   modalContent: {
     padding: 20
   },
   modalLabel: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
@@ -2186,7 +2186,7 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(192, 192, 192, 0.3)',
     borderRadius: 12,
     padding: 12,
     color: '#fff',
@@ -2231,15 +2231,15 @@ const styles = StyleSheet.create({
     marginRight: 8
   },
   clientChipSelected: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderColor: '#FFD700'
+    backgroundColor: 'rgba(192, 192, 192, 0.2)',
+    borderColor: '#C0C0C0'
   },
   clientChipText: {
     color: '#999',
     fontSize: 13
   },
   clientChipTextSelected: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: '600'
   },
   daySelector: {
@@ -2257,7 +2257,7 @@ const styles = StyleSheet.create({
   },
   dayButtonActive: {
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   dayButtonText: {
     color: '#fff',
@@ -2265,13 +2265,13 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   dayButtonTextActive: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: 'bold'
   },
   modalInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(192, 192, 192, 0.3)',
     borderRadius: 12,
     padding: 12,
     color: '#fff',
@@ -2301,7 +2301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(192, 192, 192, 0.3)',
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 8
@@ -2324,7 +2324,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(192, 192, 192, 0.3)',
     borderRadius: 12,
     padding: 12
   },
@@ -2338,7 +2338,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     backgroundColor: 'rgba(26, 84, 144, 0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.5)',
+    borderColor: 'rgba(192, 192, 192, 0.5)',
     borderRadius: 12,
     maxHeight: 200,
     overflow: 'hidden'
@@ -2353,14 +2353,14 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.1)'
   },
   clientDropdownItemActive: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)'
+    backgroundColor: 'rgba(192, 192, 192, 0.2)'
   },
   clientDropdownItemText: {
     color: '#fff',
     fontSize: 15
   },
   clientDropdownItemTextActive: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: 'bold'
   },
   noClientsText: {
@@ -2379,14 +2379,14 @@ const styles = StyleSheet.create({
   },
   clientOptionActive: {
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   clientOptionText: {
     color: '#fff',
     fontSize: 13
   },
   clientOptionTextActive: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: 'bold'
   },
   prioritySelector: {
@@ -2405,14 +2405,14 @@ const styles = StyleSheet.create({
   },
   priorityOptionActive: {
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   priorityOptionText: {
     color: '#fff',
     fontSize: 13
   },
   priorityOptionTextActive: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontWeight: 'bold'
   },
   saveButton: {
@@ -2425,7 +2425,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 24,
     borderWidth: 1,
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   saveButtonText: {
     color: '#fff',
@@ -2494,10 +2494,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)'
+    borderColor: 'rgba(192, 192, 192, 0.2)'
   },
   settingsSectionTitle: {
-    color: '#FFD700',
+    color: '#C0C0C0',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8
@@ -2569,7 +2569,7 @@ const styles = StyleSheet.create({
   },
   maxBookingsOptionActive: {
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
-    borderColor: '#FFD700'
+    borderColor: '#C0C0C0'
   },
   maxBookingsOptionText: {
     color: '#fff',
@@ -2577,7 +2577,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   maxBookingsOptionTextActive: {
-    color: '#FFD700'
+    color: '#C0C0C0'
   }
 });
 
