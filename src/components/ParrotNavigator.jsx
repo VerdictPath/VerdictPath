@@ -1,545 +1,454 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  StyleSheet,
-  Animated,
-  Dimensions,
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  ScrollView, 
   KeyboardAvoidingView,
   Platform,
-  Modal
+  Animated,
+  StyleSheet
 } from 'react-native';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
-const { width, height } = Dimensions.get('window');
-
-const ParrotNavigator = ({ visible, onClose, onNavigate, userType = 'individual' }) => {
-  const [messages, setMessages] = useState([]);
+const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      text: "Ahoy there, matey! 🦜 I be Polly, yer trusty navigator aboard the Verdict Path! Ask me how to find any feature or navigate the app, and I'll point ye in the right direction!",
+      isParrot: true,
+      timestamp: new Date()
+    }
+  ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const scrollViewRef = useRef(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(height)).current;
+  const scrollViewRef = useRef();
+  const parrotBounce = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) {
-      setMessages([{
-        id: 1,
-        type: 'bot',
-        text: "Ahoy, matey! 🦜 I be Polly, yer trusty navigator! What treasure of knowledge can I help ye find today? Ask me about settlements, medical records, appointments, or any feature ye be seekin'!",
-        timestamp: new Date()
-      }]);
-      
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true
+    const bounceAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(parrotBounce, {
+          toValue: -10,
+          duration: 500,
+          useNativeDriver: true,
         }),
-        Animated.spring(slideAnim, {
+        Animated.timing(parrotBounce, {
           toValue: 0,
-          tension: 65,
-          friction: 11,
-          useNativeDriver: true
-        })
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true
+          duration: 500,
+          useNativeDriver: true,
         }),
-        Animated.timing(slideAnim, {
-          toValue: height,
-          duration: 200,
-          useNativeDriver: true
-        })
-      ]).start();
-    }
-  }, [visible]);
+      ])
+    );
+    bounceAnimation.start();
+    return () => bounceAnimation.stop();
+  }, []);
 
-  const getParrotResponse = (question) => {
-    const q = question.toLowerCase();
+  const getParrotResponse = (userQuestion) => {
+    const question = userQuestion.toLowerCase();
 
-    // Settlement related
-    if (q.includes('settlement') || q.includes('disbursement') || q.includes('payout')) {
+    if (question.includes('settlement') || question.includes('money') || question.includes('disbursement')) {
       return {
-        text: "Arr! Lookin' for yer treasure, eh? 💰 The Settlement Tracker be where ye can view all yer settlement details and disbursement status. Head to the Dashboard and look for 'Settlement' in yer navigation!",
-        action: { screen: 'dashboard', section: 'settlement' }
+        text: "Arr! To view yer treasure (settlement info), navigate to the **Settlement Tracker** on yer main dashboard. Ye can see the breakdown of yer booty, upload documents, and track the disbursement process. Tap the treasure chest icon to get started! 💰",
+        screen: 'dashboard'
       };
     }
 
-    // Medical records
-    if (q.includes('medical') || q.includes('records') || q.includes('documents') || q.includes('upload')) {
+    if (question.includes('medical') && (question.includes('record') || question.includes('upload'))) {
       return {
-        text: "Aye, yer medical scrolls! 📜 Navigate to the Medical Hub from yer dashboard to upload documents, view yer medical history, and manage all yer health records. Keep 'em organized like a proper ship's log!",
-        action: { screen: 'medical' }
+        text: "Ahoy! To upload yer medical scrolls, sail to the **Medical Hub** from yer main menu. Tap the upload button and ye can snap photos or choose files from yer device! 📜",
+        screen: 'medical'
       };
     }
 
-    // Appointments / Calendar
-    if (q.includes('appointment') || q.includes('calendar') || q.includes('schedule') || q.includes('booking')) {
+    if (question.includes('appointment') || question.includes('calendar') || question.includes('schedule')) {
       return {
-        text: "Time to chart yer course! 📅 The Appointments screen shows all yer scheduled meetings and court dates. Ye can book new appointments, sync to yer device calendar, and never miss an important date!",
-        action: { screen: 'appointments' }
+        text: "Need to chart yer course for appointments? Head to the **Appointments Calendar** 📅 from the main dashboard. Ye can view all appointments, sync to yer device calendar, and never miss a port o' call!",
+        screen: 'appointments'
       };
     }
 
-    // Law firm / Attorney
-    if (q.includes('attorney') || q.includes('lawyer') || q.includes('law firm') || q.includes('legal')) {
+    if (question.includes('attorney') || question.includes('lawyer') || question.includes('law firm')) {
       return {
-        text: "Seekin' yer legal captain, are ye? ⚖️ Yer law firm's contact info and case updates can be found in Messages. Send 'em a message anytime through the secure chat system!",
-        action: { screen: 'chat-list' }
+        text: "Lookin' for yer legal crew? Navigate to **Messages** to see yer attorney's messages, send secure communications, and view case updates. All messages be encrypted for yer privacy! ⚖️",
+        screen: 'chat-list'
       };
     }
 
-    // Roadmap / Case progress
-    if (q.includes('roadmap') || q.includes('progress') || q.includes('case') || q.includes('stage') || q.includes('litigation')) {
+    if (question.includes('roadmap') || question.includes('progress') || question.includes('case status') || question.includes('litigation')) {
       return {
-        text: "Aye, the treasure map of yer journey! 🗺️ The Litigation Roadmap shows ye exactly where ye be on yer legal voyage. Each stage be marked with X's as ye complete 'em. Find it on yer Dashboard!",
-        action: { screen: 'roadmap' }
+        text: "Arr! The **Litigation Roadmap** 🗺️ be yer treasure map to victory! Find it on yer dashboard - it shows every step of yer journey, from filing to settlement, with coins to collect along the way!",
+        screen: 'roadmap'
       };
     }
 
-    // Coins / Rewards / Gamification
-    if (q.includes('coin') || q.includes('reward') || q.includes('streak') || q.includes('badge') || q.includes('points')) {
+    if (question.includes('coin') || question.includes('reward') || question.includes('earn') || question.includes('streak')) {
       return {
-        text: "Arr, the doubloons! 🪙 Ye earn coins by completin' tasks, loggin' in daily, and hittin' milestones. Check yer coin balance on the Dashboard. Keep yer streak goin' for bonus treasure!",
-        action: { screen: 'dashboard' }
+        text: "Shiver me timbers! Earn coins by completin' tasks on yer Litigation Roadmap, daily logins, and uploadin' documents. Check yer **Coin Balance** on the dashboard. Keep yer streak goin' for bonus treasure! 🪙",
+        screen: 'dashboard'
       };
     }
 
-    // Messages
-    if (q.includes('message') || q.includes('chat') || q.includes('contact') || q.includes('communicate')) {
+    if (question.includes('message') || question.includes('chat') || question.includes('contact')) {
       return {
-        text: "Time to send a message in a bottle! 💬 The Messages tab lets ye communicate securely with yer law firm and medical providers. All messages be encrypted for yer privacy!",
-        action: { screen: 'chat-list' }
+        text: "To send messages to yer crew (law firm or medical providers), tap the **Messages** tab. Ye can start new conversations or reply to existing ones - all encrypted for yer privacy! 💬",
+        screen: 'chat-list'
       };
     }
 
-    // Notifications
-    if (q.includes('notification') || q.includes('alert') || q.includes('remind')) {
+    if (question.includes('document') && !question.includes('medical')) {
       return {
-        text: "Keep yer spyglass ready! 🔔 The Notifications tab shows all yer important updates. Ye can customize which alerts ye receive in yer Profile settings - push, email, or SMS!",
-        action: { screen: 'notifications' }
+        text: "All yer important documents be stored in the **Medical Hub** 📂. Access it from the dashboard - ye can upload, organize, and share papers with yer attorney!",
+        screen: 'medical'
       };
     }
 
-    // Profile / Settings
-    if (q.includes('profile') || q.includes('setting') || q.includes('account') || q.includes('preference')) {
+    if (question.includes('notification') || question.includes('alert')) {
       return {
-        text: "Aye, yer captain's quarters! ⚙️ The Profile tab be where ye manage yer account, notification preferences, and personal details. Keep yer info shipshape!",
-        action: { screen: 'profile' }
+        text: "Manage yer ship's signals in the **Notifications** tab. Ye can see all yer updates and customize which alerts ye receive in yer Profile settings! 🔔",
+        screen: 'notifications'
       };
     }
 
-    // Tasks / Actions
-    if (q.includes('task') || q.includes('action') || q.includes('todo') || q.includes('assignment')) {
+    if (question.includes('profile') || question.includes('account') || question.includes('settings')) {
       return {
-        text: "Yer crew's orders! 📋 The Actions tab shows tasks assigned by yer law firm. Complete 'em to earn coins and keep yer case movin' forward!",
-        action: { screen: 'actions' }
+        text: "To update yer captain's profile, navigate to the **Profile** tab. There ye can change notification preferences, manage yer account, and update contact info! ⚙️",
+        screen: 'profile'
       };
     }
 
-    // Help / How to use
-    if (q.includes('help') || q.includes('how') || q.includes('what') || q.includes('where')) {
+    if (question.includes('task') || question.includes('action') || question.includes('todo') || question.includes('assignment')) {
       return {
-        text: "Need a compass, matey? 🧭 I can help ye navigate to any part of the app! Ask me about:\n\n• Settlement tracking\n• Medical records\n• Appointments\n• Messages\n• Roadmap progress\n• Coins & rewards\n• Notifications\n• Profile settings\n\nJust ask away!"
+        text: "Yer crew's orders be in the **Actions** tab! 📋 Complete tasks assigned by yer law firm to earn coins and keep yer case movin' forward!",
+        screen: 'actions'
       };
     }
 
-    // Greeting
-    if (q.includes('hello') || q.includes('hi') || q.includes('hey') || q.includes('ahoy')) {
+    if (question.includes('dashboard') || question.includes('home') || question.includes('main')) {
       return {
-        text: "Ahoy there, shipmate! 🦜 Polly at yer service! What can I help ye navigate today?"
+        text: "The **Dashboard** be yer ship's command center! 🏴‍☠️ It shows yer coins, streak, quick actions, and access to all features!",
+        screen: 'dashboard'
       };
     }
 
-    // Thank you
-    if (q.includes('thank') || q.includes('thanks')) {
+    if (question.includes('badge') || question.includes('achievement')) {
       return {
-        text: "Ye be most welcome, matey! 🏴‍☠️ Fair winds and following seas to ye! If ye need anything else, just give old Polly a squawk!"
+        text: "Earn **Badges** and **Achievements** by completin' milestones on yer legal journey! Check yer progress from the Dashboard - each badge be a trophy of yer voyage! 🏆",
+        screen: 'achievements'
       };
     }
 
-    // Default response
+    if (question.includes('help') || question.includes('support') || question.includes('stuck')) {
+      return {
+        text: "If ye be truly lost at sea, I'm here to help, matey! 🆘 Just ask me about any feature and I'll point ye in the right direction. Ye can also check the Notifications for updates from yer legal crew!",
+        screen: null
+      };
+    }
+
     return {
-      text: "Shiver me timbers! 🦜 I'm not quite sure what ye be askin', but I can help ye find:\n\n• Settlement info\n• Medical records\n• Appointments\n• Messages\n• Case roadmap\n• Coins & rewards\n\nTry askin' about one of these treasures!"
+      text: "Arr, I didn't quite catch that, matey! 🦜 Try askin' me:\n\n• How to find settlements\n• Where to upload medical records\n• How to schedule appointments\n• Where to see my case progress\n• How to earn coins\n• Where to message my attorney\n• How to view my tasks\n\nWhat can I help ye navigate to?",
+      screen: null
     };
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
 
     const userMessage = {
-      id: Date.now(),
-      type: 'user',
-      text: inputText.trim(),
+      id: messages.length + 1,
+      text: inputText,
+      isParrot: false,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const questionText = inputText;
     setInputText('');
     setIsTyping(true);
 
     setTimeout(() => {
-      const response = getParrotResponse(inputText);
-      const botMessage = {
-        id: Date.now() + 1,
-        type: 'bot',
+      const response = getParrotResponse(questionText);
+      const parrotMessage = {
+        id: messages.length + 2,
         text: response.text,
-        action: response.action,
-        timestamp: new Date()
+        isParrot: true,
+        timestamp: new Date(),
+        screen: response.screen
       };
-      setMessages(prev => [...prev, botMessage]);
+
+      setMessages(prev => [...prev, parrotMessage]);
       setIsTyping(false);
-    }, 800 + Math.random() * 700);
+    }, 1000);
   };
 
-  const handleQuickAction = (action) => {
-    if (action && onNavigate) {
-      onNavigate(action.screen, action.section);
-      onClose();
+  const handleQuickAction = (screen) => {
+    if (screen && onNavigate) {
+      onNavigate(screen);
+      onClose?.();
     }
   };
 
-  const renderMessage = (message) => {
-    const isBot = message.type === 'bot';
-    
-    return (
-      <View
-        key={message.id}
-        style={[
-          styles.messageContainer,
-          isBot ? styles.botMessage : styles.userMessage
-        ]}
-      >
-        {isBot && (
-          <View style={styles.parrotAvatar}>
-            <Text style={styles.parrotEmoji}>🦜</Text>
-          </View>
-        )}
-        <View style={[
-          styles.messageBubble,
-          isBot ? styles.botBubble : styles.userBubble
-        ]}>
-          <Text style={[styles.messageText, isBot ? styles.botText : styles.userText]}>
-            {message.text}
-          </Text>
-          {message.action && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleQuickAction(message.action)}
-            >
-              <Icon name="compass" size={16} color="#FFD700" />
-              <Text style={styles.actionButtonText}>Navigate There</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  const quickQuestions = [
-    { label: "Settlement", icon: "treasure-chest", query: "Where can I see my settlement?" },
-    { label: "Medical", icon: "medical-bag", query: "How do I upload medical records?" },
-    { label: "Appointments", icon: "calendar", query: "Where are my appointments?" },
-    { label: "Messages", icon: "message", query: "How do I message my attorney?" }
-  ];
-
-  if (!visible) return null;
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
-    >
-      <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-        <BlurView intensity={20} style={StyleSheet.absoluteFill} />
-        
-        <KeyboardAvoidingView
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['rgba(26, 35, 126, 0.95)', 'rgba(13, 71, 161, 0.95)', 'rgba(1, 87, 155, 0.95)']}
+        style={styles.gradient}
+      >
+        <BlurView intensity={20} tint="dark" style={styles.header}>
+          <View style={styles.headerContent}>
+            <Animated.Text 
+              style={[
+                styles.parrotEmoji,
+                { transform: [{ translateY: parrotBounce }] }
+              ]}
+            >
+              🦜
+            </Animated.Text>
+            <View style={styles.headerText}>
+              <Text style={styles.headerTitle}>Polly the Navigator</Text>
+              <Text style={styles.headerSubtitle}>Yer Trusty Guide</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+
+        <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
+          keyboardVerticalOffset={100}
         >
-          <Animated.View
-            style={[
-              styles.container,
-              { transform: [{ translateY: slideAnim }] }
-            ]}
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           >
-            <LinearGradient
-              colors={['#0d2f54', '#1a5490', '#0d2f54']}
-              style={styles.gradient}
-            >
-              <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                  <Text style={styles.parrotIcon}>🦜</Text>
-                  <View>
-                    <Text style={styles.headerTitle}>Polly the Navigator</Text>
-                    <Text style={styles.headerSubtitle}>Yer Trusty Guide</Text>
-                  </View>
-                </View>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <Icon name="close" size={24} color="#FFD700" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView
-                ref={scrollViewRef}
-                style={styles.messagesContainer}
-                contentContainerStyle={styles.messagesContent}
-                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+            {messages.map((message) => (
+              <View
+                key={message.id}
+                style={[
+                  styles.messageBubble,
+                  message.isParrot ? styles.parrotBubble : styles.userBubble
+                ]}
               >
-                {messages.map(renderMessage)}
-                
-                {isTyping && (
-                  <View style={[styles.messageContainer, styles.botMessage]}>
-                    <View style={styles.parrotAvatar}>
-                      <Text style={styles.parrotEmoji}>🦜</Text>
-                    </View>
-                    <View style={[styles.messageBubble, styles.botBubble]}>
-                      <Text style={styles.typingText}>Polly is thinking...</Text>
-                    </View>
-                  </View>
-                )}
-              </ScrollView>
-
-              {messages.length === 1 && (
-                <View style={styles.quickQuestionsContainer}>
-                  <Text style={styles.quickQuestionsTitle}>Quick Questions:</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {quickQuestions.map((q, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.quickQuestionChip}
-                        onPress={() => {
-                          setInputText(q.query);
-                          setTimeout(handleSend, 100);
-                        }}
-                      >
-                        <Icon name={q.icon} size={16} color="#FFD700" />
-                        <Text style={styles.quickQuestionText}>{q.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ask Polly anything..."
-                  placeholderTextColor="#999"
-                  value={inputText}
-                  onChangeText={setInputText}
-                  onSubmitEditing={handleSend}
-                  returnKeyType="send"
-                />
-                <TouchableOpacity
-                  style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                  onPress={handleSend}
-                  disabled={!inputText.trim()}
+                <BlurView 
+                  intensity={message.isParrot ? 30 : 20} 
+                  tint={message.isParrot ? "dark" : "light"}
+                  style={styles.bubbleBlur}
                 >
-                  <Icon name="send" size={20} color={inputText.trim() ? "#FFD700" : "#666"} />
-                </TouchableOpacity>
+                  {message.isParrot && (
+                    <Text style={styles.parrotIcon}>🦜</Text>
+                  )}
+                  <Text style={[
+                    styles.messageText,
+                    message.isParrot ? styles.parrotText : styles.userText
+                  ]}>
+                    {message.text}
+                  </Text>
+                  {message.screen && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => handleQuickAction(message.screen)}
+                    >
+                      <Text style={styles.actionButtonText}>Take Me There! ⚓</Text>
+                    </TouchableOpacity>
+                  )}
+                </BlurView>
               </View>
-            </LinearGradient>
-          </Animated.View>
+            ))}
+
+            {isTyping && (
+              <View style={[styles.messageBubble, styles.parrotBubble]}>
+                <BlurView intensity={30} tint="dark" style={styles.bubbleBlur}>
+                  <Text style={styles.parrotIcon}>🦜</Text>
+                  <Text style={styles.typingText}>Polly be thinkin'...</Text>
+                </BlurView>
+              </View>
+            )}
+          </ScrollView>
+
+          <BlurView intensity={40} tint="dark" style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder="Ask Polly for navigation help..."
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                multiline
+                maxLength={200}
+                onSubmitEditing={handleSend}
+              />
+              <TouchableOpacity
+                style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+                onPress={handleSend}
+                disabled={!inputText.trim()}
+              >
+                <Text style={styles.sendButtonText}>🚀</Text>
+              </TouchableOpacity>
+            </View>
+          </BlurView>
         </KeyboardAvoidingView>
-      </Animated.View>
-    </Modal>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)'
-  },
-  keyboardView: {
-    flex: 1,
-    justifyContent: 'flex-end'
-  },
   container: {
-    height: height * 0.75,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden'
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
   },
   gradient: {
-    flex: 1
+    flex: 1,
   },
   header: {
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 215, 0, 0.2)'
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12
+  parrotEmoji: {
+    fontSize: 40,
   },
-  parrotIcon: {
-    fontSize: 36
+  headerText: {
+    flex: 1,
+    marginLeft: 15,
   },
   headerTitle: {
-    fontSize: 18,
+    color: '#FFD700',
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFD700'
   },
   headerSubtitle: {
-    fontSize: 12,
-    color: '#C0C0C0'
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
   },
   closeButton: {
-    padding: 8
-  },
-  messagesContainer: {
-    flex: 1
-  },
-  messagesContent: {
-    padding: 16,
-    paddingBottom: 8
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    alignItems: 'flex-end'
-  },
-  botMessage: {
-    justifyContent: 'flex-start'
-  },
-  userMessage: {
-    justifyContent: 'flex-end'
-  },
-  parrotAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8
-  },
-  parrotEmoji: {
-    fontSize: 20
-  },
-  messageBubble: {
-    maxWidth: '75%',
-    padding: 12,
-    borderRadius: 16
-  },
-  botBubble: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.3)',
-    borderBottomLeftRadius: 4
+  },
+  closeButtonText: {
+    color: '#FFD700',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  messagesContainer: {
+    flex: 1,
+    paddingHorizontal: 15,
+  },
+  messagesContent: {
+    paddingVertical: 20,
+  },
+  messageBubble: {
+    marginBottom: 15,
+    maxWidth: '85%',
+  },
+  parrotBubble: {
+    alignSelf: 'flex-start',
   },
   userBubble: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    alignSelf: 'flex-end',
+  },
+  bubbleBlur: {
+    borderRadius: 20,
+    padding: 15,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#FFD700',
-    borderBottomRightRadius: 4,
-    marginLeft: 'auto'
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  parrotIcon: {
+    fontSize: 24,
+    marginBottom: 8,
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 20
+    fontSize: 15,
+    lineHeight: 22,
   },
-  botText: {
-    color: '#fff'
+  parrotText: {
+    color: '#FFFFFF',
   },
   userText: {
-    color: '#FFD700'
+    color: '#1a237e',
   },
   typingText: {
-    color: '#999',
-    fontStyle: 'italic'
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontStyle: 'italic',
+    fontSize: 14,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    marginTop: 12,
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 20,
-    alignSelf: 'flex-start'
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#FFD700',
   },
   actionButtonText: {
     color: '#FFD700',
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  quickQuestionsContainer: {
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 215, 0, 0.1)'
-  },
-  quickQuestionsTitle: {
-    color: '#999',
-    fontSize: 12,
-    marginBottom: 8
-  },
-  quickQuestionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
-  },
-  quickQuestionText: {
-    color: '#fff',
-    fontSize: 12
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
+    padding: 15,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 215, 0, 0.2)',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)'
+    borderTopColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   input: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 24,
-    paddingVertical: 12,
+    borderRadius: 20,
     paddingHorizontal: 16,
-    color: '#fff',
-    fontSize: 14,
+    paddingVertical: 12,
+    color: '#FFFFFF',
+    fontSize: 15,
+    maxHeight: 100,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)'
+    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   sendButton: {
+    marginLeft: 10,
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8
+    borderWidth: 1,
+    borderColor: '#FFD700',
   },
   sendButtonDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)'
-  }
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  sendButtonText: {
+    fontSize: 20,
+  },
 });
 
 export default ParrotNavigator;
