@@ -48,6 +48,15 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
   const getParrotResponse = (userQuestion) => {
     const question = userQuestion.toLowerCase();
 
+    if (question.includes('upload') || question.includes('picture') || question.includes('pic') || 
+        question.includes('photo') || question.includes('evidence') || question.includes('file') ||
+        (question.includes('doc') && !question.includes('medical'))) {
+      return {
+        text: "Ahoy, matey! 📸 To upload yer pictures, documents, and evidence, set sail to the **Litigation Roadmap** and open the **Pre-Litigation** stage! There ye'll find upload buttons for Camera, Gallery, and Documents in each substage. Yer uploads will automatically appear in yer law firm's Evidence Locker! 🗺️",
+        screen: 'roadmap'
+      };
+    }
+
     if (question.includes('settlement') || question.includes('money') || question.includes('disbursement')) {
       return {
         text: "Arr! To view yer treasure (settlement and disbursement info), navigate to the **Disbursements** page. Ye can see the breakdown of yer booty, track payments, and monitor the distribution of yer hard-won treasure! 💰",
