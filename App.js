@@ -71,6 +71,7 @@ import ChatListScreen from './src/screens/ChatListScreen';
 import ChatConversationScreen from './src/screens/ChatConversationScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import TaskDetailScreen from './src/screens/TaskDetailScreen';
+import IndividualDisbursementsScreen from './src/screens/IndividualDisbursementsScreen';
 import LawFirmRegistrationScreen from './src/screens/LawFirmRegistrationScreen';
 import MedicalProviderRegistrationScreen from './src/screens/MedicalProviderRegistrationScreen';
 import MedicalProviderCalendarScreen from './src/screens/MedicalProviderCalendarScreen';
@@ -1489,6 +1490,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'profile' && (
         <NotificationSettingsScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+
+      {currentScreen === 'disbursements' && (
+        <IndividualDisbursementsScreen 
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
         />

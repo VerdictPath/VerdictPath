@@ -226,6 +226,12 @@ const DashboardScreen = ({
             color={selectedAvatar.accentColor}
             onPress={() => setConnectionsModalVisible(true)}
           />
+          <QuickActionButton
+            icon="💰"
+            title="Disbursements"
+            color={selectedAvatar.accentColor}
+            onPress={() => onNavigate('disbursements')}
+          />
         </View>
 
         <TouchableOpacity 

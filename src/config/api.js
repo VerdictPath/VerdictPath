@@ -206,6 +206,13 @@ export const API_ENDPOINTS = {
     GET_DETAILS: (disbursementId) => `${API_BASE_URL}/api/disbursements/${disbursementId}`,
   },
 
+  // Bank Information (Individual Users)
+  BANK_INFO: {
+    GET: `${API_BASE_URL}/api/bank-info`,
+    SAVE: `${API_BASE_URL}/api/bank-info`,
+    DELETE: `${API_BASE_URL}/api/bank-info`,
+  },
+
   // Stripe Connect (Payment Setup)
   STRIPE_CONNECT: {
     // Shared endpoints (role-aware)

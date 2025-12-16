@@ -33,6 +33,7 @@ const notificationQueueRoutes = require('./routes/notification-queue');
 const chatRoutes = require('./routes/chat');
 const adminPortalRoutes = require('./routes/adminPortal');
 const smsTestRoutes = require('./routes/smsTestRoutes');
+const bankInfoRoutes = require('./routes/bankInfo');
 const { startReminderScheduler } = require('./services/taskReminderService');
 // Coin purchase routes merged into coins.js
 
@@ -173,6 +174,7 @@ app.use('/api/notification-queue', notificationQueueRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/disbursements', disbursementsRoutes);
+app.use('/api/bank-info', bankInfoRoutes);
 app.use('/api/settlements', settlementsRoutes);
 app.use('/api/stripe-connect', stripeConnectRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
