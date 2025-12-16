@@ -133,12 +133,30 @@ const completeSubstage = async (req, res) => {
 
     // Check if a completion record exists (active or reverted)
     const existing = await db.query(
-      'SELECT id, coins_earned, is_reverted FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3',
+      'SELECT id, coins_earned, is_reverted, data_value FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3',
       [userId, stageId, substageId]
     );
 
-    // If active (not reverted) completion exists, user can't complete again
+    // If active (not reverted) completion exists with data_value update request, allow update
     if (existing.rows.length > 0 && !existing.rows[0].is_reverted) {
+      // For data_entry substages, allow updating the data_value
+      if (substageType === 'data_entry' && dataValue !== undefined) {
+        const updateResult = await db.query(
+          `UPDATE litigation_substage_completions 
+           SET data_value = $1, completed_at = CURRENT_TIMESTAMP
+           WHERE id = $2
+           RETURNING *`,
+          [dataValue, existing.rows[0].id]
+        );
+        console.log(`[Litigation] Updated data_value for substage ${substageId}: ${dataValue}`);
+        return res.json({
+          message: 'Data entry updated successfully',
+          completion: updateResult.rows[0],
+          coinsEarned: 0,
+          coinsAlreadyEarnedBefore: true,
+          dataUpdated: true
+        });
+      }
       return res.status(400).json({ error: 'Substage already completed' });
     }
 
