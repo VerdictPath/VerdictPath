@@ -1111,10 +1111,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
     if (authToken) {
       try {
-        const stage = litigationStages.find(s => s.id === stageId);
+        // Use LITIGATION_STAGES constant to avoid stale state issues
+        const stage = LITIGATION_STAGES.find(s => s.id === stageId);
         const subStage = stage?.subStages?.find(s => s.id === subStageId);
         
-        await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
+        console.log('[App] Saving data entry to backend:', { stageId, subStageId, data, stageName: stage?.name, substageName: subStage?.name });
+        
+        const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1130,9 +1133,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             coinsEarned: subStage?.coins || 0
           }),
         });
-        console.log('[App] Data entry saved to backend:', subStageId, data);
+        
+        const responseData = await response.json();
+        console.log('[App] Data entry backend response:', response.status, responseData);
+        
+        if (!response.ok) {
+          console.error('[App] Data entry save failed:', responseData);
+        }
       } catch (error) {
-        console.error('[App] Error saving data entry to backend:', error);
+        console.error('[App] Error saving data entry to backend:', error.message || error);
       }
     }
   };
