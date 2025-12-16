@@ -427,7 +427,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.lawFirm.background,
   },
   header: {
     flexDirection: 'row',
@@ -435,9 +435,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: theme.colors.primary,
+    paddingTop: 50,
+    backgroundColor: theme.lawFirm.primary,
     borderBottomWidth: 2,
-    borderBottomColor: '#d4a574',
+    borderBottomColor: theme.lawFirm.accent,
   },
   backButton: {
     paddingVertical: 8,
@@ -445,51 +446,51 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: theme.lawFirm.surface,
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.lawFirm.surface,
   },
   placeholder: {
     width: 60,
   },
   filterContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.lawFirm.border,
     position: 'relative',
     zIndex: 1000,
   },
   filterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: theme.lawFirm.text,
     marginBottom: 8,
   },
   clientPickerButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.lawFirm.surfaceAlt,
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.lawFirm.border,
   },
   clientPickerText: {
     fontSize: 16,
-    color: '#333',
+    color: theme.lawFirm.text,
     fontWeight: '500',
   },
   dropdownIcon: {
     fontSize: 12,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   dropdownBackdrop: {
     position: 'absolute',
@@ -505,12 +506,12 @@ const styles = StyleSheet.create({
     top: 80,
     left: 20,
     right: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#d4a574',
+    borderColor: theme.lawFirm.accent,
     maxHeight: 300,
-    shadowColor: '#000',
+    shadowColor: theme.lawFirm.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -522,33 +523,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#ffffff',
+    borderBottomColor: theme.lawFirm.border,
+    backgroundColor: theme.lawFirm.surface,
   },
   clientOptionSelected: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: theme.lawFirm.surfaceAlt,
   },
   clientOptionText: {
     fontSize: 16,
-    color: '#333',
+    color: theme.lawFirm.text,
     fontWeight: '500',
   },
   clientOptionTextSelected: {
-    color: theme.colors.primary,
+    color: theme.lawFirm.primary,
     fontWeight: '700',
   },
   clientEmailText: {
     fontSize: 13,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
     marginTop: 4,
   },
   timeRangeContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.lawFirm.border,
     gap: 10,
   },
   timeRangeButton: {
@@ -556,21 +557,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.lawFirm.surfaceAlt,
   },
   timeRangeButtonActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.lawFirm.primary,
   },
   timeRangeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   timeRangeTextActive: {
-    color: '#fff',
+    color: theme.lawFirm.surface,
   },
   scrollContent: {
     flex: 1,
+    backgroundColor: theme.lawFirm.background,
   },
   contentContainer: {
     padding: 20,
@@ -582,7 +584,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.lawFirm.primary,
     marginBottom: 16,
   },
   statsGrid: {
@@ -592,34 +594,34 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%',
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.lawFirm.border,
   },
   statValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: theme.lawFirm.primary,
     marginBottom: 8,
   },
   statLabel: {
     fontSize: 14,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
     textAlign: 'center',
   },
   section: {
     marginBottom: 30,
   },
   rateCard: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.lawFirm.border,
   },
   rateHeader: {
     flexDirection: 'row',
@@ -630,16 +632,16 @@ const styles = StyleSheet.create({
   rateLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: theme.lawFirm.text,
   },
   ratePercentage: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: theme.lawFirm.primary,
   },
   progressBar: {
     height: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.lawFirm.surfaceAlt,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -648,12 +650,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   typeCard: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.lawFirm.border,
   },
   typeHeader: {
     flexDirection: 'row',
@@ -664,12 +666,12 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: theme.lawFirm.text,
   },
   typeCount: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: theme.lawFirm.primary,
   },
   typeStats: {
     flexDirection: 'row',
@@ -677,17 +679,18 @@ const styles = StyleSheet.create({
   },
   typeStat: {
     fontSize: 13,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: theme.lawFirm.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   notificationItemsSection: {
     marginTop: 24,
@@ -695,7 +698,7 @@ const styles = StyleSheet.create({
   itemsSectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
+    color: theme.lawFirm.text,
     marginBottom: 12,
   },
   statusLegend: {
@@ -704,7 +707,7 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 16,
     padding: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.lawFirm.surfaceAlt,
     borderRadius: 8,
   },
   legendItem: {
@@ -719,15 +722,15 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   notificationItemCard: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: theme.lawFirm.border,
   },
   notificationItemHeader: {
     flexDirection: 'row',
@@ -738,7 +741,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: theme.lawFirm.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -752,12 +755,12 @@ const styles = StyleSheet.create({
   notificationItemTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: theme.lawFirm.text,
     marginBottom: 2,
   },
   notificationItemRecipient: {
     fontSize: 12,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -765,7 +768,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusBadgeText: {
-    color: '#fff',
+    color: theme.lawFirm.surface,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -775,7 +778,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: theme.lawFirm.border,
   },
   timelineItem: {
     alignItems: 'center',
@@ -793,19 +796,19 @@ const styles = StyleSheet.create({
   timelineLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#333',
+    color: theme.lawFirm.text,
     marginBottom: 2,
   },
   timelineLabelInactive: {
-    color: '#ccc',
+    color: theme.lawFirm.border,
   },
   timelineTime: {
     fontSize: 9,
-    color: '#666',
+    color: theme.lawFirm.textSecondary,
     textAlign: 'center',
   },
   timelineTimeInactive: {
-    color: '#ccc',
+    color: theme.lawFirm.border,
   },
   timelineConnector: {
     height: 2,
