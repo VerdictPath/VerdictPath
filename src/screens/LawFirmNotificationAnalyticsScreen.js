@@ -255,12 +255,6 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
               <Text style={styles.statLabel}>Total Sent</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: '#27ae60' }]}>
-                {analytics?.totalDelivered || 0}
-              </Text>
-              <Text style={styles.statLabel}>Delivered</Text>
-            </View>
-            <View style={styles.statCard}>
               <Text style={[styles.statValue, { color: '#3498db' }]}>
                 {analytics?.totalRead || 0}
               </Text>
@@ -281,29 +275,9 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           
           <View style={styles.rateCard}>
             <View style={styles.rateHeader}>
-              <Text style={styles.rateLabel}>Delivery Rate</Text>
-              <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalDelivered, analytics?.totalSent)}%
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${calculatePercentage(analytics?.totalDelivered, analytics?.totalSent)}%`,
-                    backgroundColor: '#27ae60'
-                  }
-                ]}
-              />
-            </View>
-          </View>
-
-          <View style={styles.rateCard}>
-            <View style={styles.rateHeader}>
               <Text style={styles.rateLabel}>Read Rate</Text>
               <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalRead, analytics?.totalDelivered)}%
+                {calculatePercentage(analytics?.totalRead, analytics?.totalSent)}%
               </Text>
             </View>
             <View style={styles.progressBar}>
@@ -311,7 +285,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${calculatePercentage(analytics?.totalRead, analytics?.totalDelivered)}%`,
+                    width: `${calculatePercentage(analytics?.totalRead, analytics?.totalSent)}%`,
                     backgroundColor: '#3498db'
                   }
                 ]}
@@ -347,10 +321,6 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#95a5a6' }]} />
                   <Text style={styles.legendText}>Sent</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#27ae60' }]} />
-                  <Text style={styles.legendText}>Delivered</Text>
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
@@ -389,16 +359,6 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                       <View style={styles.timelineContent}>
                         <Text style={styles.timelineLabel}>Sent</Text>
                         <Text style={styles.timelineTime}>{formatDate(notification.createdAt)}</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.timelineConnector, { backgroundColor: notification.deliveredAt ? '#27ae60' : '#e0e0e0' }]} />
-                    <View style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, { backgroundColor: notification.deliveredAt ? '#27ae60' : '#e0e0e0' }]} />
-                      <View style={styles.timelineContent}>
-                        <Text style={[styles.timelineLabel, !notification.deliveredAt && styles.timelineLabelInactive]}>Delivered</Text>
-                        <Text style={[styles.timelineTime, !notification.deliveredAt && styles.timelineTimeInactive]}>
-                          {formatDate(notification.deliveredAt)}
-                        </Text>
                       </View>
                     </View>
                     <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
