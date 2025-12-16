@@ -14,7 +14,8 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 // Get theme colors based on user type
 const getThemeColors = (userType) => {
-  if (userType === 'medical_provider' || userType === 'medicalprovider') {
+  const normalizedType = (userType || '').toLowerCase().replace(/_/g, '');
+  if (normalizedType === 'medicalprovider') {
     return {
       primary: medicalProviderTheme.colors.primary,
       primaryDark: medicalProviderTheme.colors.primaryDark,
@@ -110,7 +111,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   };
 
   const renderDisbursementCard = (disbursement) => {
-    const isMedicalProvider = userType === 'medical_provider';
+    const isMedicalProvider = (userType || '').toLowerCase().includes('medical');
 
     return (
       <View key={disbursement.id} style={[styles.disbursementCard, { borderLeftColor: themeColors.primary }]}>
@@ -118,7 +119,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.cardIcon}>💰</Text>
             <View>
-              <Text style={styles.cardTitle}>
+              <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]}>
                 {isMedicalProvider ? 'Medical Services Payment' : 'Settlement Disbursement'}
               </Text>
               <Text style={styles.cardSubtitle}>
@@ -135,16 +136,16 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
         <View style={styles.cardBody}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Amount:</Text>
-            <Text style={styles.infoValue}>{formatCurrency(disbursement.amount)}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatCurrency(disbursement.amount)}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Date:</Text>
-            <Text style={styles.infoValue}>{formatDate(disbursement.createdAt)}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatDate(disbursement.createdAt)}</Text>
           </View>
           {disbursement.stripeTransferId && (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Transaction ID:</Text>
-              <Text style={styles.infoValueSmall} numberOfLines={1} ellipsizeMode="middle">
+              <Text style={[styles.infoValueSmall, { color: themeColors.textPrimary }]} numberOfLines={1} ellipsizeMode="middle">
                 {disbursement.stripeTransferId}
               </Text>
             </View>
@@ -155,12 +156,12 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   };
 
   const renderEmptyState = () => {
-    const isMedicalProvider = userType === 'medical_provider';
+    const isMedicalProvider = (userType || '').toLowerCase().includes('medical');
 
     return (
       <View style={styles.emptyState}>
         <Text style={styles.emptyIcon}>📭</Text>
-        <Text style={styles.emptyTitle}>No Disbursements Yet</Text>
+        <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>No Disbursements Yet</Text>
         <Text style={styles.emptyText}>
           {isMedicalProvider
             ? 'When law firms send you payments for medical services, they will appear here.'
@@ -224,7 +225,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           renderEmptyState()
         ) : (
           <View style={styles.disbursementsList}>
-            <Text style={styles.listTitle}>Payment History</Text>
+            <Text style={[styles.listTitle, { color: themeColors.textPrimary }]}>Payment History</Text>
             {disbursements.map(renderDisbursementCard)}
           </View>
         )}

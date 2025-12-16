@@ -23,7 +23,8 @@ import {
 
 // Get theme colors based on user type
 const getThemeColors = (userType) => {
-  if (userType === 'medical_provider' || userType === 'medicalprovider') {
+  const normalizedType = (userType || '').toLowerCase().replace(/_/g, '');
+  if (normalizedType === 'medicalprovider') {
     return {
       primary: medicalProviderTheme.colors.primary,
       primaryDark: medicalProviderTheme.colors.primaryDark,
@@ -682,7 +683,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
     return (
       <TouchableOpacity
         key={negotiation.id}
-        style={styles.negotiationCard}
+        style={[styles.negotiationCard, { borderLeftColor: themeColors.primary }]}
         onPress={() => setSelectedNegotiation(negotiation)}
       >
         <View style={styles.cardHeader}>
@@ -758,7 +759,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
         onRequestClose={() => setSelectedNegotiation(null)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
             <Text style={styles.modalTitle}>Negotiation Details</Text>
             <TouchableOpacity onPress={() => setSelectedNegotiation(null)}>
               <Text style={styles.closeButton}>✕</Text>
@@ -787,7 +788,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
               </View>
               <View style={styles.amountDetailCol}>
                 <Text style={styles.amountDetailLabel}>Current Offer</Text>
-                <Text style={[styles.amountDetailValue, { color: theme.colors.primary }]}>
+                <Text style={[styles.amountDetailValue, { color: themeColors.primary }]}>
                   ${(selectedNegotiation.currentOffer || 0).toFixed(2)}
                 </Text>
               </View>
@@ -944,7 +945,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowNewNegotiationModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>New Negotiation</Text>
           <TouchableOpacity onPress={() => setShowNewNegotiationModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1057,7 +1058,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleInitiateNegotiation}
             disabled={loading}
           >
@@ -1079,7 +1080,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowCounterOfferModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>Counter Offer</Text>
           <TouchableOpacity onPress={() => setShowCounterOfferModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1114,7 +1115,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleSendCounterOffer}
             disabled={loading}
           >
@@ -1136,7 +1137,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowCallRequestModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>Request Call</Text>
           <TouchableOpacity onPress={() => setShowCallRequestModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1168,7 +1169,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleRequestCall}
             disabled={loading}
           >
