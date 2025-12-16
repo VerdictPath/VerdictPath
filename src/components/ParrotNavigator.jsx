@@ -50,8 +50,8 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
 
     if (question.includes('settlement') || question.includes('money') || question.includes('disbursement')) {
       return {
-        text: "Arr! To view yer treasure (settlement info), navigate to the **Settlement Tracker** on yer main dashboard. Ye can see the breakdown of yer booty, upload documents, and track the disbursement process. Tap the treasure chest icon to get started! 💰",
-        screen: 'dashboard'
+        text: "Arr! To view yer treasure (settlement and disbursement info), navigate to the **Disbursements** page. Ye can see the breakdown of yer booty, track payments, and monitor the distribution of yer hard-won treasure! 💰",
+        screen: 'disbursements'
       };
     }
 
@@ -147,7 +147,7 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
     }
 
     return {
-      text: "Arr, I didn't quite catch that, matey! 🦜 Try askin' me:\n\n• How to find settlements\n• Where to upload medical records\n• How to schedule appointments\n• Where to see my case progress\n• How to earn coins\n• Where to message my attorney\n• How to view my tasks\n\nWhat can I help ye navigate to?",
+      text: "Arr, I didn't quite catch that, matey! 🦜 Try askin' me:\n\n• How to find disbursements\n• Where to upload medical records\n• How to schedule appointments\n• Where to see my case progress\n• How to earn coins\n• Where to message my attorney\n• How to view my tasks\n\nWhat can I help ye navigate to?",
       screen: null
     };
   };
