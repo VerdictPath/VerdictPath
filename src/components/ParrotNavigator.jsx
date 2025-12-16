@@ -302,7 +302,7 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
                 onPress={handleSend}
                 disabled={!inputText.trim()}
               >
-                <Text style={styles.sendButtonText}>🚀</Text>
+                <Text style={styles.sendButtonText}>💣</Text>
               </TouchableOpacity>
             </View>
           </View>
