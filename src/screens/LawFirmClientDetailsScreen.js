@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
@@ -9,6 +9,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [litigationProgress, setLitigationProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [viewingDocument, setViewingDocument] = useState(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
   
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
@@ -76,6 +78,81 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       }
     } catch (error) {
       console.error('[ClientDetails] Error fetching client litigation progress:', error);
+    }
+  };
+
+  const isImageFile = (mimeType) => {
+    return mimeType && mimeType.startsWith('image/');
+  };
+
+  const viewDocument = async (doc) => {
+    setDocumentLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (isImageFile(doc.mime_type)) {
+          setViewingDocument({
+            ...doc,
+            presignedUrl: data.presignedUrl
+          });
+        } else {
+          if (Platform.OS === 'web') {
+            window.open(data.presignedUrl, '_blank');
+          } else {
+            Linking.openURL(data.presignedUrl);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
+        alert('Failed to load document. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert('Failed to load document. Please try again.');
+    } finally {
+      setDocumentLoading(false);
+    }
+  };
+
+  const downloadDocument = async (doc) => {
+    setDocumentLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Platform.OS === 'web') {
+          window.open(data.presignedUrl, '_blank');
+        } else {
+          Linking.openURL(data.presignedUrl);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
+        alert('Failed to download document. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document. Please try again.');
+    } finally {
+      setDocumentLoading(false);
     }
   };
 
@@ -395,7 +472,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
             evidenceDocuments.documents.map((doc) => (
               <View key={doc.id} style={styles.documentCard}>
                 <View style={styles.documentHeader}>
-                  <Text style={styles.documentTitle}>📎 {doc.title}</Text>
+                  <Text style={styles.documentTitle}>
+                    {isImageFile(doc.mime_type) ? '🖼️' : '📎'} {doc.title}
+                  </Text>
                   <Text style={styles.documentBadge}>{doc.file_name}</Text>
                 </View>
                 {doc.evidence_type && (
@@ -417,6 +496,17 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 <Text style={styles.documentDate}>
                   Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
                 </Text>
+                <View style={styles.documentActions}>
+                  <TouchableOpacity 
+                    style={styles.viewButton}
+                    onPress={() => viewDocument(doc)}
+                    disabled={documentLoading}
+                  >
+                    <Text style={styles.viewButtonText}>
+                      {isImageFile(doc.mime_type) ? '👁️ View Image' : '📥 Download'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           )}
@@ -524,6 +614,61 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={viewingDocument !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setViewingDocument(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.imageModalContent}>
+            <View style={styles.imageModalHeader}>
+              <Text style={styles.imageModalTitle}>
+                {viewingDocument?.title || 'Evidence Image'}
+              </Text>
+              <TouchableOpacity 
+                style={styles.imageModalCloseBtn}
+                onPress={() => setViewingDocument(null)}
+              >
+                <Text style={styles.imageModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {viewingDocument?.presignedUrl && (
+              <Image 
+                source={{ uri: viewingDocument.presignedUrl }}
+                style={styles.evidenceImage}
+                resizeMode="contain"
+              />
+            )}
+            <View style={styles.imageModalActions}>
+              <TouchableOpacity 
+                style={styles.downloadButton}
+                onPress={() => {
+                  if (viewingDocument) {
+                    downloadDocument(viewingDocument);
+                  }
+                }}
+              >
+                <Text style={styles.downloadButtonText}>📥 Download Original</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.closeModalButton}
+                onPress={() => setViewingDocument(null)}
+              >
+                <Text style={styles.closeModalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {documentLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C0C0C0" />
+          <Text style={styles.loadingOverlayText}>Loading document...</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -962,6 +1107,119 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderColor: '#FFD700',
     borderWidth: 1,
+  },
+  documentActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  viewButton: {
+    backgroundColor: '#1E3A5F',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#C0C0C0',
+  },
+  viewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  imageModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    maxWidth: 800,
+    width: '100%',
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  imageModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#1E3A5F',
+    borderBottomWidth: 2,
+    borderBottomColor: '#C0C0C0',
+  },
+  imageModalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  imageModalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalCloseBtnText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  evidenceImage: {
+    width: '100%',
+    height: 400,
+    backgroundColor: '#f0f0f0',
+  },
+  imageModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 15,
+    gap: 15,
+    backgroundColor: '#f5f5f5',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  downloadButton: {
+    backgroundColor: '#1E3A5F',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  downloadButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  closeModalButton: {
+    backgroundColor: '#C0C0C0',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  closeModalButtonText: {
+    color: '#1E3A5F',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlayText: {
+    color: '#FFFFFF',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 
