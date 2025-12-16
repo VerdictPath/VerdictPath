@@ -80,6 +80,7 @@ import LawFirmCalendarScreen from './src/screens/LawFirmCalendarScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
+import FloatingParrotButton from './src/components/FloatingParrotButton';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
@@ -2004,7 +2005,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
       
-        {/* Bottom Navigation - only show for individual user screens */}
+        {/* Polly the Navigator - Floating Parrot Button for Individual Users */}
+      {user && (user.type === 'individual' || user.userType === 'individual') && 
+        ['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
+        <FloatingParrotButton onNavigate={handleNavigateInternal} />
+      )}
+
+      {/* Bottom Navigation - only show for individual user screens */}
         {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
           <BottomNavigation 
             currentScreen={currentScreen}

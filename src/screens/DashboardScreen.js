@@ -17,7 +17,6 @@ import { AVATARS } from '../constants/avatars';
 import { useVideoPreloader } from '../hooks/useVideoPreloader';
 import { useNotifications } from '../contexts/NotificationContext';
 import { API_BASE_URL } from '../config/api';
-import FloatingParrotButton from '../components/FloatingParrotButton';
 
 const { width } = Dimensions.get('window');
 
@@ -265,11 +264,6 @@ const DashboardScreen = ({
         visible={connectionsModalVisible}
         onClose={handleConnectionsClose}
         user={user}
-      />
-
-      <FloatingParrotButton 
-        onNavigate={onNavigate}
-        userType="individual"
       />
     </View>
   );
