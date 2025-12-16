@@ -62,7 +62,7 @@ Key technical features include:
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers. Multi-user accounts with role-based permissions for law firms (admin, attorney, staff) and medical providers (admin, physician, nurse, staff, billing).
 - **Subscription Pricing Structure**: Tiered pricing for law firms (8 tiers), individuals (3 tiers), and medical providers (4 tiers).
-- **Interactive Pirate Map**: A 9-stage litigation journey with progress tracking, detailed substages, modal descriptions, and interactive audio.
+- **Interactive Pirate Map**: A 9-stage litigation journey with progress tracking, detailed substages, modal descriptions, and interactive audio. Includes file upload functionality in Pre-Litigation phase substages with support for camera (mobile only), gallery, and document uploads. Uploaded evidence is automatically visible to connected law firms in the Evidence Locker.
 - **Video Library**: Integrated educational tutorials.
 - **Medical Hub**: HIPAA-compliant document storage placeholder.
 - **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients.
