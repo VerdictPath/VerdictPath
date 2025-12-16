@@ -6,9 +6,12 @@ import {
   StyleSheet,
   View,
   Text,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import ParrotNavigator from './ParrotNavigator';
+
+const PollyImage = require('../../attached_assets/Polly_Profile_Left_w_Hat_1765858321178.png');
 
 const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -96,7 +99,7 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
           style={styles.buttonTouchable}
         >
           <View style={styles.buttonContent}>
-            <Text style={styles.parrotEmoji}>🦜</Text>
+            <Image source={PollyImage} style={styles.pollyImage} />
             <View style={styles.pulseRing} />
           </View>
         </TouchableOpacity>
@@ -171,8 +174,11 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
     overflow: 'hidden',
   },
-  parrotEmoji: {
-    fontSize: 36,
+  pollyImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    resizeMode: 'cover',
   },
   pulseRing: {
     position: 'absolute',
