@@ -148,6 +148,11 @@ const RoadmapScreen = ({
 
   const pickImageFromGallery = async (stageId, subStageId, substageName) => {
     try {
+      if (Platform.OS === 'web') {
+        pickFileFromWeb(stageId, subStageId, substageName, 'image/*');
+        return;
+      }
+      
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
         alert('Permission Required', 'Please grant permission to access your photos.');
@@ -168,6 +173,27 @@ const RoadmapScreen = ({
       console.error('Error picking image:', error);
       alert('Error', 'Failed to pick image. Please try again.');
     }
+  };
+  
+  const pickFileFromWeb = (stageId, subStageId, substageName, acceptTypes) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = acceptTypes;
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const webFile = {
+          uri: URL.createObjectURL(file),
+          name: file.name,
+          fileName: file.name,
+          type: file.type,
+          mimeType: file.type,
+          file: file,
+        };
+        await uploadEvidenceFile(webFile, stageId, subStageId, substageName);
+      }
+    };
+    input.click();
   };
 
   const pickImageFromCamera = async (stageId, subStageId, substageName) => {
@@ -200,6 +226,11 @@ const RoadmapScreen = ({
 
   const pickDocumentFromDevice = async (stageId, subStageId, substageName) => {
     try {
+      if (Platform.OS === 'web') {
+        pickFileFromWeb(stageId, subStageId, substageName, '.pdf,.doc,.docx,image/*');
+        return;
+      }
+      
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         copyToCacheDirectory: true,
@@ -232,9 +263,13 @@ const RoadmapScreen = ({
       const fileType = file.mimeType || file.type || 'application/octet-stream';
       
       if (Platform.OS === 'web') {
-        const response = await fetch(fileUri);
-        const blob = await response.blob();
-        formData.append('file', blob, fileName);
+        if (file.file) {
+          formData.append('file', file.file, fileName);
+        } else {
+          const response = await fetch(fileUri);
+          const blob = await response.blob();
+          formData.append('file', blob, fileName);
+        }
       } else {
         formData.append('file', {
           uri: fileUri,
