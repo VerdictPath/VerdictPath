@@ -26,6 +26,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [availability, setAvailability] = useState([]);
   const [blockedTimes, setBlockedTimes] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [patients, setPatients] = useState([]);
   const [markedDates, setMarkedDates] = useState({});
   const [settings, setSettings] = useState(null);
   
@@ -44,7 +45,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     eventType: 'appointment',
     startTime: '',
     endTime: '',
-    reminderEnabled: true
+    reminderEnabled: true,
+    selectedPatientId: ''
   });
 
   const EVENT_TYPES = [
@@ -92,12 +94,28 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchAvailability(),
         fetchBlockedTimes(),
         fetchAppointments(),
-        fetchSettings()
+        fetchSettings(),
+        fetchPatients()
       ]);
     } catch (error) {
       console.error('Error fetching calendar data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPatients = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/medical-providers/${providerId}/patients`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setPatients(data.patients || []);
+      }
+    } catch (error) {
+      console.error('Error fetching patients:', error);
     }
   };
 
@@ -383,7 +401,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           start_time: parsedStartTime.toISOString(),
           end_time: parsedEndTime.toISOString(),
           all_day: false,
-          reminder_enabled: newEvent.reminderEnabled
+          reminder_enabled: newEvent.reminderEnabled,
+          share_with_client_id: newEvent.selectedPatientId || null
         })
       });
 
@@ -397,7 +416,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           eventType: 'appointment',
           startTime: '',
           endTime: '',
-          reminderEnabled: true
+          reminderEnabled: true,
+          selectedPatientId: ''
         });
         fetchAppointments();
       } else {
@@ -1223,6 +1243,42 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Share with Patient</Text>
+              <Text style={styles.settingsDescription}>
+                Select a patient to automatically add this event to their calendar
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientScrollView}>
+                <TouchableOpacity
+                  style={[
+                    styles.patientChip,
+                    !newEvent.selectedPatientId && styles.patientChipSelected
+                  ]}
+                  onPress={() => setNewEvent({ ...newEvent, selectedPatientId: '' })}
+                >
+                  <Icon name="account-off" size={16} color={!newEvent.selectedPatientId ? '#FFD700' : '#999'} />
+                  <Text style={[styles.patientChipText, !newEvent.selectedPatientId && styles.patientChipTextSelected]}>
+                    Don't Share
+                  </Text>
+                </TouchableOpacity>
+                {patients.map((patient) => (
+                  <TouchableOpacity
+                    key={patient.id}
+                    style={[
+                      styles.patientChip,
+                      newEvent.selectedPatientId === patient.id && styles.patientChipSelected
+                    ]}
+                    onPress={() => setNewEvent({ ...newEvent, selectedPatientId: patient.id })}
+                  >
+                    <Icon name="account" size={16} color={newEvent.selectedPatientId === patient.id ? '#FFD700' : '#999'} />
+                    <Text style={[styles.patientChipText, newEvent.selectedPatientId === patient.id && styles.patientChipTextSelected]}>
+                      {patient.first_name} {patient.last_name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.modalLabel}>Start Date & Time *</Text>
               <TextInput
                 style={styles.textInput}
@@ -1696,6 +1752,33 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 13,
     fontWeight: '500'
+  },
+  patientScrollView: {
+    marginTop: 8
+  },
+  patientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: 8
+  },
+  patientChipSelected: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: '#FFD700'
+  },
+  patientChipText: {
+    color: '#999',
+    fontSize: 13
+  },
+  patientChipTextSelected: {
+    color: '#FFD700',
+    fontWeight: '600'
   },
   daySelector: {
     flexDirection: 'row',

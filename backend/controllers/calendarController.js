@@ -12,44 +12,67 @@ const calendarController = {
       const userType = req.user.userType || req.user.type;
       const { startDate, endDate, eventType } = req.query;
 
-      let query = `
-        SELECT * FROM calendar_events
-        WHERE 
-      `;
-
+      let query = '';
       const params = [];
       
       if (userType === 'individual') {
-        query += 'user_id = $1';
+        // For individuals, get their own events PLUS shared events from law firms/providers
+        query = `
+          SELECT ce.*, 
+            NULL as shared_by_type, 
+            NULL as shared_by_id,
+            NULL as shared_by_name,
+            false as is_shared
+          FROM calendar_events ce
+          WHERE ce.user_id = $1
+          
+          UNION ALL
+          
+          SELECT ce.*, 
+            sce.shared_by_type,
+            sce.shared_by_id,
+            CASE 
+              WHEN sce.shared_by_type = 'law_firm' THEN (SELECT firm_name FROM law_firms WHERE id = sce.shared_by_id)
+              WHEN sce.shared_by_type = 'medical_provider' THEN (SELECT practice_name FROM medical_providers WHERE id = sce.shared_by_id)
+              ELSE NULL
+            END as shared_by_name,
+            true as is_shared
+          FROM calendar_events ce
+          JOIN shared_calendar_events sce ON ce.id = sce.event_id
+          WHERE sce.shared_with_user_id = $1
+        `;
         params.push(userId);
       } else if (userType === 'law_firm' || userType === 'lawfirm') {
-        query += 'law_firm_id = $1';
+        query = `SELECT *, false as is_shared FROM calendar_events WHERE law_firm_id = $1`;
         params.push(userId);
       } else if (userType === 'medical_provider') {
-        query += 'medical_provider_id = $1';
+        query = `SELECT *, false as is_shared FROM calendar_events WHERE medical_provider_id = $1`;
         params.push(userId);
       } else {
-        query += '1 = 0';
+        query = `SELECT *, false as is_shared FROM calendar_events WHERE 1 = 0`;
       }
+
+      // Wrap query to apply filters
+      let wrappedQuery = `SELECT * FROM (${query}) AS events WHERE 1=1`;
 
       if (startDate) {
         params.push(startDate);
-        query += ` AND start_time >= $${params.length}`;
+        wrappedQuery += ` AND start_time >= $${params.length}`;
       }
 
       if (endDate) {
         params.push(endDate);
-        query += ` AND start_time <= $${params.length}`;
+        wrappedQuery += ` AND start_time <= $${params.length}`;
       }
 
       if (eventType) {
         params.push(eventType);
-        query += ` AND event_type = $${params.length}`;
+        wrappedQuery += ` AND event_type = $${params.length}`;
       }
 
-      query += ' ORDER BY start_time ASC';
+      wrappedQuery += ' ORDER BY start_time ASC';
 
-      const result = await pool.query(query, params);
+      const result = await pool.query(wrappedQuery, params);
 
       res.json({
         success: true,
@@ -89,9 +112,12 @@ const calendarController = {
         caseRelated,
         case_related,
         litigationStageId,
-        litigation_stage_id
+        litigation_stage_id,
+        shareWithClientId,
+        share_with_client_id
       } = req.body;
 
+      const clientToShareWith = shareWithClientId || share_with_client_id;
       startTime = startTime || start_time;
       endTime = endTime || end_time;
       allDay = allDay !== undefined ? allDay : (all_day !== undefined ? all_day : false);
@@ -162,11 +188,40 @@ const calendarController = {
       insertQuery += ') RETURNING *';
 
       const result = await pool.query(insertQuery, values);
+      const createdEvent = result.rows[0];
+
+      // If a client/patient is specified, create a shared calendar entry
+      if (clientToShareWith && (userType === 'law_firm' || userType === 'medical_provider')) {
+        try {
+          await pool.query(`
+            INSERT INTO shared_calendar_events (
+              event_id, 
+              shared_with_user_id, 
+              can_edit, 
+              can_delete, 
+              shared_by_type, 
+              shared_by_id
+            ) VALUES ($1, $2, $3, $4, $5, $6)
+          `, [
+            createdEvent.id,
+            clientToShareWith,
+            false,
+            false,
+            userType,
+            userId
+          ]);
+          console.log(`Event ${createdEvent.id} shared with user ${clientToShareWith}`);
+        } catch (shareError) {
+          console.error('Error sharing event:', shareError);
+          // Don't fail the whole request if sharing fails
+        }
+      }
 
       res.status(201).json({
         success: true,
         message: 'Event created successfully',
-        event: result.rows[0]
+        event: createdEvent,
+        sharedWithClient: clientToShareWith ? true : false
       });
     } catch (error) {
       console.error('Error creating calendar event:', error);
@@ -277,7 +332,7 @@ const calendarController = {
       }
 
       // Delete shared calendar entries first (foreign key constraint)
-      await pool.query('DELETE FROM shared_calendar_events WHERE calendar_event_id = $1', [eventId]);
+      await pool.query('DELETE FROM shared_calendar_events WHERE event_id = $1', [eventId]);
       
       // Delete the main calendar event
       await pool.query('DELETE FROM calendar_events WHERE id = $1', [eventId]);

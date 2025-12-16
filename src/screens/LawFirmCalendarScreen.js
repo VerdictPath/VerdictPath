@@ -46,7 +46,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     eventType: 'meeting',
     startTime: '',
     endTime: '',
-    reminderEnabled: true
+    reminderEnabled: true,
+    selectedClientId: ''
   });
 
   const EVENT_TYPES = [
@@ -436,7 +437,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           start_time: parsedStartTime.toISOString(),
           end_time: parsedEndTime.toISOString(),
           all_day: false,
-          reminder_enabled: newEvent.reminderEnabled
+          reminder_enabled: newEvent.reminderEnabled,
+          share_with_client_id: newEvent.selectedClientId || null
         })
       });
 
@@ -450,7 +452,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           eventType: 'meeting',
           startTime: '',
           endTime: '',
-          reminderEnabled: true
+          reminderEnabled: true,
+          selectedClientId: ''
         });
         fetchAppointments();
       } else {
@@ -1637,6 +1640,42 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Share with Client</Text>
+              <Text style={styles.settingsDescription}>
+                Select a client to automatically add this event to their calendar
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clientScrollView}>
+                <TouchableOpacity
+                  style={[
+                    styles.clientChip,
+                    !newEvent.selectedClientId && styles.clientChipSelected
+                  ]}
+                  onPress={() => setNewEvent({ ...newEvent, selectedClientId: '' })}
+                >
+                  <Icon name="account-off" size={16} color={!newEvent.selectedClientId ? '#FFD700' : '#999'} />
+                  <Text style={[styles.clientChipText, !newEvent.selectedClientId && styles.clientChipTextSelected]}>
+                    Don't Share
+                  </Text>
+                </TouchableOpacity>
+                {clients.map((client) => (
+                  <TouchableOpacity
+                    key={client.id}
+                    style={[
+                      styles.clientChip,
+                      newEvent.selectedClientId === client.id && styles.clientChipSelected
+                    ]}
+                    onPress={() => setNewEvent({ ...newEvent, selectedClientId: client.id })}
+                  >
+                    <Icon name="account" size={16} color={newEvent.selectedClientId === client.id ? '#FFD700' : '#999'} />
+                    <Text style={[styles.clientChipText, newEvent.selectedClientId === client.id && styles.clientChipTextSelected]}>
+                      {client.first_name} {client.last_name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.inputGroup}>
               <Text style={styles.modalLabel}>Start Date & Time *</Text>
               <TextInput
                 style={styles.textInput}
@@ -2175,6 +2214,33 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 13,
     fontWeight: '500'
+  },
+  clientScrollView: {
+    marginTop: 8
+  },
+  clientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: 8
+  },
+  clientChipSelected: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderColor: '#FFD700'
+  },
+  clientChipText: {
+    color: '#999',
+    fontSize: 13
+  },
+  clientChipTextSelected: {
+    color: '#FFD700',
+    fontWeight: '600'
   },
   daySelector: {
     flexDirection: 'row',
