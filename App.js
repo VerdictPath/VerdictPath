@@ -1,6 +1,6 @@
 // APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, Alert, Platform, View } from 'react-native';
+import { SafeAreaView, StatusBar, Alert, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
@@ -18,6 +18,7 @@ import { NotificationProvider, useNotifications } from './src/contexts/Notificat
 import NotificationService from './src/services/NotificationService';
 import ActionVideoModal from './src/components/ActionVideoModal';
 import { AVATARS } from './src/constants/avatars';
+import useSessionTimeout from './src/hooks/useSessionTimeout';
 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -138,6 +139,23 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     message: '',
     coinsEarned: 0,
   });
+
+  const handleSessionLogout = async () => {
+    console.log('[SessionTimeout] Logging out user due to inactivity');
+    try {
+      if (user?.token && user?.id) {
+        await NotificationService.unregisterDeviceFromBackend(user.token, user.id);
+      }
+      await notificationContext.logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+    setIsLoggedIn(false);
+    setUser(null);
+    setCurrentScreen('landing');
+  };
+
+  const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
 
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
@@ -2093,6 +2111,56 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             notificationCount={0}
           />
         )}
+
+      {/* Session Timeout Warning Modal */}
+      {showSessionWarning && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}>
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            padding: 24,
+            margin: 20,
+            maxWidth: 400,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 10,
+          }}>
+            <Text style={{ fontSize: 24, marginBottom: 12 }}>⏰</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8, textAlign: 'center' }}>
+              Session About to Expire
+            </Text>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 16, textAlign: 'center' }}>
+              You will be logged out in {timeRemaining} seconds due to inactivity.
+            </Text>
+            <TouchableOpacity
+              onPress={extendSession}
+              style={{
+                backgroundColor: '#1E3A5F',
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+                Stay Logged In
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Global Action Video Modal - Individual Users Only */}
       {user && user.userType === 'individual' && user.avatarType && (
