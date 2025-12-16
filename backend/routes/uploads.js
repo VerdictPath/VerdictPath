@@ -39,6 +39,26 @@ router.post('/evidence',
   uploadController.uploadEvidence
 );
 
+router.get('/my-evidence', async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const userId = req.user.id;
+    
+    const result = await db.query(
+      `SELECT id, evidence_type, title, description, file_name, mime_type, uploaded_at 
+       FROM evidence 
+       WHERE user_id = $1 
+       ORDER BY uploaded_at DESC`,
+      [userId]
+    );
+    
+    res.json({ evidence: result.rows });
+  } catch (error) {
+    console.error('Error fetching user evidence:', error);
+    res.status(500).json({ error: 'Failed to fetch evidence' });
+  }
+});
+
 router.get('/download/:type/:fileId', 
   burstProtectionLimiter,
   downloadRateLimiter,

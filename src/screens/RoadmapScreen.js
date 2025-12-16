@@ -102,6 +102,43 @@ const RoadmapScreen = ({
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [uploadProgress, setUploadProgress] = useState({});
 
+  useEffect(() => {
+    if (authToken && !readOnly) {
+      fetchUploadedEvidence();
+    }
+  }, [authToken, readOnly]);
+
+  const fetchUploadedEvidence = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/my-evidence`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const filesMap = {};
+        data.evidence.forEach(doc => {
+          const substageId = doc.evidence_type;
+          if (!filesMap[substageId]) {
+            filesMap[substageId] = [];
+          }
+          filesMap[substageId].push({
+            id: doc.id,
+            fileName: doc.file_name,
+            title: doc.title,
+            uploadedAt: doc.uploaded_at,
+            mimeType: doc.mime_type
+          });
+        });
+        setUploadedFiles(filesMap);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded evidence:', error);
+    }
+  };
+
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
     mapContainer: {
