@@ -172,9 +172,52 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
     }
   };
 
+  const handleSelectOfferedDate = async (proposedDateId) => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      
+      const response = await fetch(
+        `${API_BASE_URL}/event-requests/${selectedRequest.eventRequest.id}/select-date`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ proposedDateId })
+        }
+      );
+
+      if (response.ok) {
+        Alert.alert('Success', 'Date selected! The event has been added to your calendar.');
+        setShowDetailModal(false);
+        fetchEventRequests();
+      } else {
+        const error = await response.json();
+        Alert.alert('Error', error.error || 'Failed to select date');
+      }
+    } catch (error) {
+      console.error('Error selecting date:', error);
+      Alert.alert('Error', 'Failed to select date');
+    }
+  };
+
+  const formatDateUS = (dateString) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${month}/${day}/${year} at ${hours}:${minutes} ${ampm}`;
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return '#FFA500';
+      case 'dates_offered': return '#1E90FF';
       case 'dates_submitted': return '#4169E1';
       case 'confirmed': return '#32CD32';
       case 'cancelled': return '#DC143C';
@@ -185,6 +228,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
   const getStatusLabel = (status) => {
     switch (status) {
       case 'pending': return 'Action Required';
+      case 'dates_offered': return 'Select a Date';
       case 'dates_submitted': return 'Awaiting Confirmation';
       case 'confirmed': return 'Confirmed';
       case 'cancelled': return 'Cancelled';
@@ -251,6 +295,11 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
               {request.status === 'pending' && (
                 <View style={styles.actionRequiredBanner}>
                   <Text style={styles.actionRequiredText}>📅 Please select 3 available dates</Text>
+                </View>
+              )}
+              {request.status === 'dates_offered' && (
+                <View style={[styles.actionRequiredBanner, { backgroundColor: '#1E90FF' }]}>
+                  <Text style={styles.actionRequiredText}>📅 Choose one of the offered times</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -332,6 +381,32 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
                             <Text style={styles.dateButtonValue}>
                               {date.endTime ? date.endTime.toLocaleString() : 'Tap to select'}
                             </Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </>
+                  )}
+
+                  {selectedRequest.eventRequest.status === 'dates_offered' && (
+                    <>
+                      <Text style={styles.sectionTitle}>Select a Date</Text>
+                      <Text style={styles.instructionText}>
+                        Your law firm has offered the following times. Please select one that works for you.
+                      </Text>
+                      {selectedRequest.proposedDates && selectedRequest.proposedDates.map((date, index) => (
+                        <View key={date.id} style={styles.offeredDateCard}>
+                          <Text style={styles.offeredDateLabel}>Option {index + 1}</Text>
+                          <Text style={styles.offeredDateTime}>
+                            {formatDateUS(date.proposedStartTime)}
+                          </Text>
+                          <Text style={styles.offeredDateDuration}>
+                            Duration: {selectedRequest.eventRequest.durationMinutes} minutes
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.selectDateButton}
+                            onPress={() => handleSelectOfferedDate(date.id)}
+                          >
+                            <Text style={styles.selectDateButtonText}>Select This Time</Text>
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -631,6 +706,43 @@ const styles = StyleSheet.create({
   proposedDateDuration: {
     fontSize: 14,
     color: '#666',
+  },
+  offeredDateCard: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#1E90FF',
+  },
+  offeredDateLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E3A5F',
+    marginBottom: 6,
+  },
+  offeredDateTime: {
+    fontSize: 17,
+    color: '#1E3A5F',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  offeredDateDuration: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  selectDateButton: {
+    backgroundColor: '#1E90FF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  selectDateButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 15,
   },
   selectedBadge: {
     backgroundColor: '#32CD32',
