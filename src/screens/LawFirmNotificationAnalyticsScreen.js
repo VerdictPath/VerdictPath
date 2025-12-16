@@ -255,16 +255,16 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
               <Text style={styles.statLabel}>Total Sent</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: '#3498db' }]}>
-                {analytics?.totalRead || 0}
-              </Text>
-              <Text style={styles.statLabel}>Read</Text>
-            </View>
-            <View style={styles.statCard}>
               <Text style={[styles.statValue, { color: '#9b59b6' }]}>
                 {analytics?.totalClicked || 0}
               </Text>
               <Text style={styles.statLabel}>Clicked</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={[styles.statValue, { color: '#3498db' }]}>
+                {analytics?.totalRead || 0}
+              </Text>
+              <Text style={styles.statLabel}>Read</Text>
             </View>
           </View>
         </View>
@@ -275,9 +275,9 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           
           <View style={styles.rateCard}>
             <View style={styles.rateHeader}>
-              <Text style={styles.rateLabel}>Read Rate</Text>
+              <Text style={styles.rateLabel}>Click Rate</Text>
               <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalRead, analytics?.totalSent)}%
+                {calculatePercentage(analytics?.totalClicked, analytics?.totalSent)}%
               </Text>
             </View>
             <View style={styles.progressBar}>
@@ -285,8 +285,8 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${calculatePercentage(analytics?.totalRead, analytics?.totalSent)}%`,
-                    backgroundColor: '#3498db'
+                    width: `${calculatePercentage(analytics?.totalClicked, analytics?.totalSent)}%`,
+                    backgroundColor: '#9b59b6'
                   }
                 ]}
               />
@@ -295,9 +295,9 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
 
           <View style={styles.rateCard}>
             <View style={styles.rateHeader}>
-              <Text style={styles.rateLabel}>Click Rate</Text>
+              <Text style={styles.rateLabel}>Read Rate</Text>
               <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalClicked, analytics?.totalRead)}%
+                {calculatePercentage(analytics?.totalRead, analytics?.totalClicked)}%
               </Text>
             </View>
             <View style={styles.progressBar}>
@@ -305,8 +305,8 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                 style={[
                   styles.progressFill,
                   {
-                    width: `${calculatePercentage(analytics?.totalClicked, analytics?.totalRead)}%`,
-                    backgroundColor: '#9b59b6'
+                    width: `${calculatePercentage(analytics?.totalRead, analytics?.totalClicked)}%`,
+                    backgroundColor: '#3498db'
                   }
                 ]}
               />
@@ -323,12 +323,12 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                   <Text style={styles.legendText}>Sent</Text>
                 </View>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
-                  <Text style={styles.legendText}>Read</Text>
-                </View>
-                <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#9b59b6' }]} />
                   <Text style={styles.legendText}>Clicked</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
+                  <Text style={styles.legendText}>Read</Text>
                 </View>
               </View>
               
@@ -361,16 +361,6 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                         <Text style={styles.timelineTime}>{formatDate(notification.createdAt)}</Text>
                       </View>
                     </View>
-                    <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
-                    <View style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
-                      <View style={styles.timelineContent}>
-                        <Text style={[styles.timelineLabel, !notification.readAt && styles.timelineLabelInactive]}>Read</Text>
-                        <Text style={[styles.timelineTime, !notification.readAt && styles.timelineTimeInactive]}>
-                          {formatDate(notification.readAt)}
-                        </Text>
-                      </View>
-                    </View>
                     <View style={[styles.timelineConnector, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
                     <View style={styles.timelineItem}>
                       <View style={[styles.timelineDot, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
@@ -378,6 +368,16 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                         <Text style={[styles.timelineLabel, !notification.clickedAt && styles.timelineLabelInactive]}>Clicked</Text>
                         <Text style={[styles.timelineTime, !notification.clickedAt && styles.timelineTimeInactive]}>
                           {formatDate(notification.clickedAt)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                    <View style={styles.timelineItem}>
+                      <View style={[styles.timelineDot, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                      <View style={styles.timelineContent}>
+                        <Text style={[styles.timelineLabel, !notification.readAt && styles.timelineLabelInactive]}>Read</Text>
+                        <Text style={[styles.timelineTime, !notification.readAt && styles.timelineTimeInactive]}>
+                          {formatDate(notification.readAt)}
                         </Text>
                       </View>
                     </View>
