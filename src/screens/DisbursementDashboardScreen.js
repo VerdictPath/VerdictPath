@@ -16,6 +16,28 @@ import { apiRequest, API_ENDPOINTS } from '../config/api';
 // Launch promotion: All subscribers get premium features during launch
 const IS_LAUNCH_PROMO = true;
 
+// Helper to sanitize currency input - removes commas, $, and other non-numeric characters
+const sanitizeCurrencyInput = (value) => {
+  if (!value) return '';
+  // Remove $ signs, commas, and spaces, keep only digits and decimal point
+  let sanitized = value.replace(/[$,\s]/g, '');
+  // Only allow one decimal point
+  const parts = sanitized.split('.');
+  if (parts.length > 2) {
+    sanitized = parts[0] + '.' + parts.slice(1).join('');
+  }
+  // Only allow digits and one decimal point
+  sanitized = sanitized.replace(/[^0-9.]/g, '');
+  return sanitized;
+};
+
+// Helper to parse currency safely
+const parseCurrency = (value) => {
+  const sanitized = sanitizeCurrencyInput(value);
+  const parsed = parseFloat(sanitized);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,7 +218,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const calculateTotalDisbursement = () => {
-    const clientAmount = parseFloat(disbursementAmount) || 0;
+    const clientAmount = parseCurrency(disbursementAmount);
     const medicalTotal = totalMedicalPayments;
     const platformFee = calculatePlatformFee();
     
@@ -204,7 +226,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const validateDisbursement = () => {
-    const clientAmount = parseFloat(disbursementAmount);
+    const clientAmount = parseCurrency(disbursementAmount);
     
     if (!clientAmount || clientAmount <= 0) {
       Alert.alert('Error', 'Please enter a valid client disbursement amount');
@@ -214,8 +236,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     // Validate medical provider payments
     for (let payment of medicalProviderPayments) {
       if (payment.amount && payment.amount.trim() !== '') {
-        const amt = parseFloat(payment.amount);
-        if (isNaN(amt) || amt <= 0) {
+        const amt = parseCurrency(payment.amount);
+        if (amt <= 0) {
           Alert.alert('Error', `Invalid amount for ${payment.providerName}`);
           return false;
         }
@@ -230,7 +252,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       return;
     }
 
-    const clientAmount = parseFloat(disbursementAmount);
+    const clientAmount = parseCurrency(disbursementAmount);
     const totalAmount = calculateTotalDisbursement();
 
     Alert.alert(
@@ -256,11 +278,11 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     try {
       // Filter out medical payments with no amount
       const validMedicalPayments = medicalProviderPayments
-        .filter(p => p.amount && parseFloat(p.amount) > 0)
+        .filter(p => p.amount && parseCurrency(p.amount) > 0)
         .map(p => ({
           providerId: p.providerId,
           providerName: p.providerName,
-          amount: parseFloat(p.amount),
+          amount: parseCurrency(p.amount),
           email: p.email
         }));
 
@@ -271,7 +293,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         },
         body: JSON.stringify({
           clientId: selectedClient.id,
-          clientAmount: parseFloat(disbursementAmount),
+          clientAmount: parseCurrency(disbursementAmount),
           medicalPayments: validMedicalPayments,
           platformFee: calculatePlatformFee()
         })
@@ -333,7 +355,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
               placeholder="0.00"
               keyboardType="decimal-pad"
               value={disbursementAmount}
-              onChangeText={setDisbursementAmount}
+              onChangeText={(text) => setDisbursementAmount(sanitizeCurrencyInput(text))}
             />
           </View>
 
@@ -360,7 +382,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     value={payment.amount}
-                    onChangeText={(text) => updateMedicalPayment(index, text)}
+                    onChangeText={(text) => updateMedicalPayment(index, sanitizeCurrencyInput(text))}
                   />
                 </View>
               ))
@@ -374,7 +396,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Client Payment:</Text>
               <Text style={styles.summaryValue}>
-                ${(parseFloat(disbursementAmount) || 0).toFixed(2)}
+                ${parseCurrency(disbursementAmount).toFixed(2)}
               </Text>
             </View>
 
