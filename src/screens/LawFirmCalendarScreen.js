@@ -36,7 +36,34 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [showCreateAppointmentModal, setShowCreateAppointmentModal] = useState(false);
   const [showAvailabilityRequestModal, setShowAvailabilityRequestModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    location: '',
+    eventType: 'meeting',
+    startTime: '',
+    endTime: '',
+    reminderEnabled: true
+  });
+
+  const EVENT_TYPES = [
+    { value: 'meeting', label: 'Meeting', icon: 'account-group' },
+    { value: 'court_date', label: 'Court Date', icon: 'gavel' },
+    { value: 'deposition', label: 'Deposition', icon: 'file-document' },
+    { value: 'deadline', label: 'Deadline', icon: 'clock-alert' },
+    { value: 'reminder', label: 'Reminder', icon: 'bell' }
+  ];
+
+  const EVENT_TYPE_COLORS = {
+    meeting: '#3498db',
+    court_date: '#e74c3c',
+    deposition: '#9b59b6',
+    deadline: '#f39c12',
+    reminder: '#1abc9c'
+  };
   
   const [newAvailability, setNewAvailability] = useState({
     dayOfWeek: 1,
@@ -371,6 +398,71 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const handleAddEvent = async () => {
+    if (!newEvent.title || !newEvent.startTime) {
+      Alert.alert('Error', 'Please enter a title and start time');
+      return;
+    }
+
+    const parsedStartTime = new Date(newEvent.startTime.replace(' ', 'T'));
+    if (isNaN(parsedStartTime.getTime())) {
+      Alert.alert('Error', 'Invalid start time format. Use YYYY-MM-DD HH:MM');
+      return;
+    }
+
+    let parsedEndTime = parsedStartTime;
+    if (newEvent.endTime) {
+      parsedEndTime = new Date(newEvent.endTime.replace(' ', 'T'));
+      if (isNaN(parsedEndTime.getTime())) {
+        Alert.alert('Error', 'Invalid end time format. Use YYYY-MM-DD HH:MM');
+        return;
+      }
+    } else {
+      parsedEndTime = new Date(parsedStartTime.getTime() + 60 * 60 * 1000);
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/calendar/events`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: newEvent.title,
+          description: newEvent.description,
+          location: newEvent.location,
+          event_type: newEvent.eventType,
+          start_time: parsedStartTime.toISOString(),
+          end_time: parsedEndTime.toISOString(),
+          all_day: false,
+          reminder_enabled: newEvent.reminderEnabled
+        })
+      });
+
+      if (response.ok) {
+        Alert.alert('Success', 'Event created successfully!');
+        setShowAddEventModal(false);
+        setNewEvent({
+          title: '',
+          description: '',
+          location: '',
+          eventType: 'meeting',
+          startTime: '',
+          endTime: '',
+          reminderEnabled: true
+        });
+        fetchAppointments();
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to create event');
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
+      Alert.alert('Error', 'Failed to create event');
+    }
+  };
+
   const handleCreateAppointment = async () => {
     if (!newAppointment.clientId) {
       Alert.alert('Error', 'Please select a client');
@@ -646,6 +738,11 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowCreateAppointmentModal(true)}>
         <Icon name="calendar-plus" size={20} color="#fff" />
         <Text style={styles.actionButtonText}>New Appt</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddEventModal(true)}>
+        <Icon name="calendar-star" size={20} color="#fff" />
+        <Text style={styles.actionButtonText}>Add Event</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowSettingsModal(true)}>
@@ -1487,6 +1584,126 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     </Modal>
   );
 
+  const renderAddEventModal = () => (
+    <Modal visible={showAddEventModal} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add Event</Text>
+            <TouchableOpacity onPress={() => setShowAddEventModal(false)}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Event Title *</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter event title"
+                placeholderTextColor="#999"
+                value={newEvent.title}
+                onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Event Type</Text>
+              <View style={styles.eventTypeGrid}>
+                {EVENT_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.eventTypeOption,
+                      newEvent.eventType === type.value && styles.eventTypeOptionActive,
+                      { borderColor: EVENT_TYPE_COLORS[type.value] }
+                    ]}
+                    onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
+                  >
+                    <Icon 
+                      name={type.icon} 
+                      size={20} 
+                      color={newEvent.eventType === type.value ? EVENT_TYPE_COLORS[type.value] : '#999'} 
+                    />
+                    <Text style={[
+                      styles.eventTypeLabel,
+                      newEvent.eventType === type.value && { color: EVENT_TYPE_COLORS[type.value] }
+                    ]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Start Date & Time *</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="YYYY-MM-DD HH:MM (e.g., 2025-01-15 09:00)"
+                placeholderTextColor="#999"
+                value={newEvent.startTime}
+                onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="YYYY-MM-DD HH:MM (defaults to 1 hour after start)"
+                placeholderTextColor="#999"
+                value={newEvent.endTime}
+                onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Location (Optional)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter location"
+                placeholderTextColor="#999"
+                value={newEvent.location}
+                onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Description (Optional)</Text>
+              <TextInput
+                style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
+                placeholder="Enter description"
+                placeholderTextColor="#999"
+                value={newEvent.description}
+                onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+                multiline
+              />
+            </View>
+
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleInfo}>
+                <Icon name="bell-outline" size={24} color="#FFD700" />
+                <Text style={styles.toggleLabel}>Enable Reminder</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.toggleButton, newEvent.reminderEnabled && styles.toggleButtonActive]}
+                onPress={() => setNewEvent({ ...newEvent, reminderEnabled: !newEvent.reminderEnabled })}
+              >
+                <View style={[styles.toggleCircle, newEvent.reminderEnabled && styles.toggleCircleActive]} />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.submitButton} onPress={handleAddEvent}>
+              <Icon name="calendar-check" size={20} color="#fff" />
+              <Text style={styles.submitButtonText}>Create Event</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -1520,6 +1737,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       {renderAvailabilityRequestModal()}
       {renderAppointmentModal()}
       {renderSettingsModal()}
+      {renderAddEventModal()}
     </View>
   );
 };
@@ -1922,6 +2140,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 16
+  },
+  inputGroup: {
+    marginBottom: 16
+  },
+  textInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderRadius: 12,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16
+  },
+  eventTypeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  eventTypeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2
+  },
+  eventTypeOptionActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  eventTypeLabel: {
+    color: '#999',
+    fontSize: 13,
+    fontWeight: '500'
   },
   daySelector: {
     flexDirection: 'row',
