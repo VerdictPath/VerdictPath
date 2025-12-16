@@ -277,7 +277,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               <Text style={styles.notificationActionIconText}>📊</Text>
             </View>
             <View style={styles.notificationActionContent}>
-              <Text style={styles.notificationActionTitle}>View Analytics</Text>
+              <Text style={styles.notificationActionTitle}>Client Tracking</Text>
               <Text style={styles.notificationActionDescription}>
                 Track notification delivery, read, and click rates
               </Text>
