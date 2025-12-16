@@ -43,7 +43,7 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
         <View style={styles.content}>
           {activeTab === 'negotiations' ? (
             <NegotiationsScreen 
-              user={user} 
+              user={{...user, userType: 'medical_provider'}} 
               onBack={onBack} 
               hideHeader={true}
               bottomPadding={100}
@@ -66,7 +66,7 @@ const MedicalProviderBillingScreen = ({ user, onBack }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.offWhite,
   },
   container: {
     flex: 1,
@@ -76,20 +76,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#0d4d4d',
-    borderBottomWidth: 2,
-    borderBottomColor: '#d4af37',
+    backgroundColor: theme.colors.deepTeal,
+    ...theme.shadows.header,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#d4af37',
+    color: theme.colors.clinicalWhite,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#f8f1e7',
+    backgroundColor: theme.colors.clinicalWhite,
     borderBottomWidth: 1,
-    borderBottomColor: '#d4af37',
+    borderBottomColor: theme.colors.lightGray,
   },
   tab: {
     flex: 1,
@@ -99,16 +98,16 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#d4af37',
-    backgroundColor: '#fff',
+    borderBottomColor: theme.colors.clinicalTeal,
+    backgroundColor: theme.colors.offWhite,
   },
   tabText: {
     fontSize: 16,
-    color: '#8B6F47',
+    color: theme.colors.darkGray,
     fontWeight: '500',
   },
   activeTabText: {
-    color: '#0d4d4d',
+    color: theme.colors.deepTeal,
     fontWeight: 'bold',
   },
   content: {

@@ -9,9 +9,39 @@ import {
   RefreshControl
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
+// Get theme colors based on user type
+const getThemeColors = (userType) => {
+  if (userType === 'medical_provider' || userType === 'medicalprovider') {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      primaryDark: medicalProviderTheme.colors.primaryDark,
+      background: medicalProviderTheme.colors.offWhite,
+      cardBackground: medicalProviderTheme.colors.clinicalWhite,
+      textPrimary: medicalProviderTheme.colors.charcoal,
+      textSecondary: medicalProviderTheme.colors.darkGray,
+      accent: medicalProviderTheme.colors.clinicalTeal,
+      border: medicalProviderTheme.colors.lightGray,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    primaryDark: '#152942',
+    background: '#F5F7FA',
+    cardBackground: '#FFFFFF',
+    textPrimary: '#1E3A5F',
+    textSecondary: '#64748B',
+    accent: '#C0C0C0',
+    border: '#E2E8F0',
+  };
+};
+
 const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = false, bottomPadding = 0 }) => {
+  // Get dynamic theme colors based on user type
+  const themeColors = getThemeColors(userType || user?.userType || user?.type);
+  
   const [disbursements, setDisbursements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,7 +113,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
     const isMedicalProvider = userType === 'medical_provider';
 
     return (
-      <View key={disbursement.id} style={styles.disbursementCard}>
+      <View key={disbursement.id} style={[styles.disbursementCard, { borderLeftColor: themeColors.primary }]}>
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.cardIcon}>💰</Text>
@@ -142,9 +172,9 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
         {!hideHeader && (
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -153,7 +183,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.mahogany} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
           <Text style={styles.loadingText}>Loading disbursements...</Text>
         </View>
       </View>
@@ -161,9 +191,9 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {!hideHeader && (
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
@@ -182,7 +212,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.summaryIcon}>📊</Text>
           <View style={styles.summaryContent}>
             <Text style={styles.summaryLabel}>Total Disbursements</Text>

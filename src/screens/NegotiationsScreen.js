@@ -13,12 +13,39 @@ import {
   Platform
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { 
   initializeFirebase, 
   subscribeToNegotiations, 
   authenticateWithBackend 
 } from '../services/firebaseService';
+
+// Get theme colors based on user type
+const getThemeColors = (userType) => {
+  if (userType === 'medical_provider' || userType === 'medicalprovider') {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      primaryDark: medicalProviderTheme.colors.primaryDark,
+      background: medicalProviderTheme.colors.offWhite,
+      cardBackground: medicalProviderTheme.colors.clinicalWhite,
+      textPrimary: medicalProviderTheme.colors.charcoal,
+      textSecondary: medicalProviderTheme.colors.darkGray,
+      accent: medicalProviderTheme.colors.clinicalTeal,
+      border: medicalProviderTheme.colors.lightGray,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    primaryDark: '#152942',
+    background: '#F5F7FA',
+    cardBackground: '#FFFFFF',
+    textPrimary: '#1E3A5F',
+    textSecondary: '#64748B',
+    accent: '#C0C0C0',
+    border: '#E2E8F0',
+  };
+};
 
 // Cross-platform alert that works on both mobile and web
 const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
@@ -43,6 +70,9 @@ const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
 };
 
 const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 0 }) => {
+  // Get dynamic theme colors based on user type
+  const themeColors = getThemeColors(user?.userType || user?.type);
+  
   const [loading, setLoading] = useState(true);
   const [negotiations, setNegotiations] = useState([]);
   const [selectedNegotiation, setSelectedNegotiation] = useState(null);
@@ -1155,9 +1185,9 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
 
   if (loading && negotiations.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
         {!hideHeader && (
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -1165,16 +1195,16 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {!hideHeader && (
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
@@ -1184,7 +1214,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
 
       <View style={styles.content}>
         <TouchableOpacity
-          style={styles.newNegotiationButton}
+          style={[styles.newNegotiationButton, { backgroundColor: themeColors.primary }]}
           onPress={() => setShowNewNegotiationModal(true)}
         >
           <Text style={styles.newNegotiationButtonText}>+ Start New Negotiation</Text>
