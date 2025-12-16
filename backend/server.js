@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const securityHeaders = require('./middleware/securityHeaders');
 
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
@@ -105,6 +106,7 @@ const corsMiddleware = (req, res, next) => {
 };
 
 app.use(corsMiddleware);
+app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Use cookieParser with secret for signed cookies (uses JWT_SECRET if COOKIE_SECRET not set)
