@@ -8,9 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  StyleSheet
+  StyleSheet,
+  Image
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+
+const PollyImage = require('../../attached_assets/Polly_Profile_Left_w_Hat_1765858321178.png');
 
 const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
   const [messages, setMessages] = useState([
@@ -206,14 +209,14 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
       >
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <Animated.Text 
+            <Animated.View 
               style={[
-                styles.parrotEmoji,
+                styles.pollyImageContainer,
                 Platform.OS !== 'web' && { transform: [{ translateY: parrotBounce }] }
               ]}
             >
-              🦜
-            </Animated.Text>
+              <Image source={PollyImage} style={styles.pollyImage} />
+            </Animated.View>
             <View style={styles.headerText}>
               <Text style={styles.headerTitle}>Polly the Navigator</Text>
               <Text style={styles.headerSubtitle}>Yer Trusty Guide</Text>
@@ -248,7 +251,9 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
                   message.isParrot ? styles.parrotBubbleContent : styles.userBubbleContent
                 ]}>
                   {message.isParrot && (
-                    <Text style={styles.parrotIcon}>🦜</Text>
+                    <View style={styles.messagePollyContainer}>
+                      <Image source={PollyImage} style={styles.messagePollyImage} />
+                    </View>
                   )}
                   <Text style={[
                     styles.messageText,
@@ -271,7 +276,9 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
             {isTyping && (
               <View style={[styles.messageBubble, styles.parrotBubble]}>
                 <View style={[styles.bubbleContent, styles.parrotBubbleContent]}>
-                  <Text style={styles.parrotIcon}>🦜</Text>
+                  <View style={styles.messagePollyContainer}>
+                    <Image source={PollyImage} style={styles.messagePollyImage} />
+                  </View>
                   <Text style={styles.typingText}>Polly be thinkin'...</Text>
                 </View>
               </View>
@@ -326,8 +333,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  parrotEmoji: {
-    fontSize: 40,
+  pollyImageContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    backgroundColor: '#1a237e',
+  },
+  pollyImage: {
+    width: 50,
+    height: 50,
+    resizeMode: 'cover',
   },
   headerText: {
     flex: 1,
@@ -389,9 +407,20 @@ const styles = StyleSheet.create({
   userBubbleContent: {
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
   },
-  parrotIcon: {
-    fontSize: 24,
+  messagePollyContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    backgroundColor: '#1a237e',
     marginBottom: 8,
+  },
+  messagePollyImage: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
   },
   messageText: {
     fontSize: 15,
