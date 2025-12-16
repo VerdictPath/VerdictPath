@@ -696,7 +696,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <Icon name="sail-boat" size={28} color="#C0C0C0" />
         </TouchableOpacity>
         <Icon name="scale-balance" size={28} color="#C0C0C0" />
-        <Text style={styles.headerTitle}>Law Firm Calendar</Text>
+        <Text style={styles.headerTitle}>Client Calendars</Text>
         <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
           <Icon name="minus" size={24} color="#C0C0C0" />
         </TouchableOpacity>
