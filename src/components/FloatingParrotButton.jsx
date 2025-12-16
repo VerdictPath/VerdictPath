@@ -1,203 +1,208 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  TouchableOpacity,
+import { 
+  TouchableOpacity, 
+  Animated, 
+  Modal,
   StyleSheet,
-  Animated,
-  Text,
-  Platform
+  View,
+  Text
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import ParrotNavigator from './ParrotNavigator';
 
-const FloatingParrotButton = ({ onNavigate, userType = 'individual', style }) => {
-  const [showNavigator, setShowNavigator] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const bounceAnim = useRef(new Animated.Value(1)).current;
+const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const tooltipAnim = useRef(new Animated.Value(0)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const bounceLoop = Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: 1.1,
-          duration: 1500,
-          useNativeDriver: true
+        Animated.timing(pulseAnim, {
+          toValue: 1.15,
+          duration: 1000,
+          useNativeDriver: true,
         }),
-        Animated.timing(bounceAnim, {
+        Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1500,
-          useNativeDriver: true
-        })
+          duration: 1000,
+          useNativeDriver: true,
+        }),
       ])
     );
-    bounceLoop.start();
+    pulse.start();
+
+    Animated.timing(tooltipAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
 
     const tooltipTimer = setTimeout(() => {
-      setShowTooltip(true);
       Animated.timing(tooltipAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true
-      }).start();
-
-      setTimeout(() => {
-        Animated.timing(tooltipAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true
-        }).start(() => setShowTooltip(false));
-      }, 4000);
-    }, 3000);
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => setShowTooltip(false));
+    }, 5000);
 
     return () => {
-      bounceLoop.stop();
+      pulse.stop();
       clearTimeout(tooltipTimer);
     };
   }, []);
 
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true
-      }),
-      Animated.timing(rotateAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true
-      })
-    ]).start();
-
-    setShowNavigator(true);
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const rotateInterpolate = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '15deg']
-  });
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePress = () => {
+    setIsVisible(true);
+  };
 
   return (
     <>
-      <View style={[styles.container, style]}>
+      <Animated.View
+        style={[
+          styles.floatingButton,
+          {
+            transform: [
+              { scale: Animated.multiply(scaleAnim, pulseAnim) }
+            ]
+          }
+        ]}
+      >
+        <TouchableOpacity
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
+          activeOpacity={0.8}
+          style={styles.buttonTouchable}
+        >
+          <BlurView intensity={30} tint="dark" style={styles.buttonBlur}>
+            <View style={styles.buttonContent}>
+              <Text style={styles.parrotEmoji}>🦜</Text>
+              <View style={styles.pulseRing} />
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+
         {showTooltip && (
           <Animated.View
             style={[
               styles.tooltip,
               {
                 opacity: tooltipAnim,
-                transform: [{
-                  translateX: tooltipAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0]
-                  })
-                }]
-              }
+                transform: [
+                  {
+                    translateX: tooltipAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
+              },
             ]}
           >
-            <Text style={styles.tooltipText}>Need help navigating? 🗺️</Text>
-            <View style={styles.tooltipArrow} />
+            <BlurView intensity={40} tint="dark" style={styles.tooltipBlur}>
+              <Text style={styles.tooltipText}>Need help navigating? Tap me! 🗺️</Text>
+            </BlurView>
           </Animated.View>
         )}
-        
-        <Animated.View
-          style={[
-            styles.buttonWrapper,
-            {
-              transform: [
-                { scale: bounceAnim },
-                { rotate: rotateInterpolate }
-              ]
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handlePress}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.parrotEmoji}>🦜</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
+      </Animated.View>
 
-      <ParrotNavigator
-        visible={showNavigator}
-        onClose={() => setShowNavigator(false)}
-        onNavigate={onNavigate}
-        userType={userType}
-      />
+      <Modal
+        visible={isVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsVisible(false)}
+      >
+        <ParrotNavigator 
+          visible={isVisible}
+          onNavigate={onNavigate}
+          onClose={() => setIsVisible(false)}
+          userType={userType}
+        />
+      </Modal>
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  floatingButton: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 100 : 80,
-    right: 16,
+    bottom: 100,
+    right: 20,
     zIndex: 1000,
-    alignItems: 'flex-end'
   },
-  buttonWrapper: {
-    ...Platform.select({
-      ios: {
-        shadowColor: '#FFD700',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8
-      },
-      android: {
-        elevation: 8
-      }
-    })
+  buttonTouchable: {
+    shadowColor: '#FFD700',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  button: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#0d2f54',
+  buttonBlur: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
+  buttonContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFD700'
+    backgroundColor: 'rgba(26, 35, 126, 0.7)',
   },
   parrotEmoji: {
-    fontSize: 28
+    fontSize: 36,
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   tooltip: {
     position: 'absolute',
-    right: 70,
-    bottom: 12,
-    backgroundColor: '#0d2f54',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    right: 80,
+    top: 15,
+    maxWidth: 180,
+  },
+  tooltipBlur: {
     borderRadius: 12,
+    padding: 12,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#FFD700',
-    flexDirection: 'row',
-    alignItems: 'center'
+    borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   tooltipText: {
     color: '#FFD700',
-    fontSize: 12,
-    fontWeight: '500'
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
   },
-  tooltipArrow: {
-    position: 'absolute',
-    right: -6,
-    top: '50%',
-    marginTop: -6,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderLeftColor: '#FFD700',
-    borderTopWidth: 6,
-    borderTopColor: 'transparent',
-    borderBottomWidth: 6,
-    borderBottomColor: 'transparent'
-  }
 });
 
 export default FloatingParrotButton;
