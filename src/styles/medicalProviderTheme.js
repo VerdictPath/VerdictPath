@@ -1,13 +1,28 @@
-// Medical Provider Theme - HIPAA-compliant clinical design system
+// Medical Provider Theme - Deep Teal & Silver Professional Design System
+// Color Scheme: Deep Teal (#115E59), Medical Silver (#A8A8A8), Clean White (#F5F7FA), Charcoal (#374151)
 
 export const medicalProviderTheme = {
   colors: {
-    // Primary medical colors
-    deepTeal: '#006B7D',
-    clinicalTeal: '#008C9E',
-    medicalTeal: '#00A8C8',
-    accentTeal: '#00BCD4',
-    lightTeal: '#B2EBF2',
+    // Primary Deep Teal palette
+    primary: '#115E59',
+    primaryDark: '#0D4F4A',
+    primaryLight: '#1A7A73',
+    primaryMuted: '#2D8A84',
+    
+    // Medical Silver palette
+    silver: '#A8A8A8',
+    silverLight: '#C0C0C0',
+    silverDark: '#8A8A8A',
+    
+    // Background colors
+    background: '#F5F7FA',
+    backgroundDark: '#E8EAED',
+    cardBackground: '#FFFFFF',
+    
+    // Accent colors
+    accent: '#374151',
+    accentLight: '#4B5563',
+    accentDark: '#1F2937',
     
     // Clinical whites and grays
     clinicalWhite: '#FFFFFF',
@@ -15,58 +30,82 @@ export const medicalProviderTheme = {
     lightGray: '#F5F5F5',
     mediumGray: '#9E9E9E',
     darkGray: '#616161',
-    charcoal: '#37474F',
+    charcoal: '#374151',
+    
+    // Text colors
+    textPrimary: '#1F2937',
+    textSecondary: '#4B5563',
+    textMuted: '#6B7280',
+    textLight: '#9CA3AF',
+    textOnPrimary: '#FFFFFF',
     
     // Medical status colors
-    healthy: '#4CAF50',
-    stable: '#8BC34A',
-    warning: '#FF9800',
-    critical: '#F44336',
-    emergencyRed: '#D32F2F',
+    healthy: '#10B981',
+    stable: '#34D399',
+    warning: '#F59E0B',
+    critical: '#EF4444',
+    emergencyRed: '#DC2626',
     
     // Healthcare accents
-    prescriptionGreen: '#66BB6A',
-    medicalBlue: '#42A5F5',
-    mintGreen: '#80CBC4',
+    prescriptionGreen: '#10B981',
+    medicalBlue: '#3B82F6',
+    mintGreen: '#5EEAD4',
     
     // Professional neutrals
-    steel: '#607D8B',
-    slate: '#455A64',
+    steel: '#64748B',
+    slate: '#475569',
+    
+    // Legacy colors for compatibility
+    deepTeal: '#115E59',
+    clinicalTeal: '#115E59',
+    medicalTeal: '#1A7A73',
+    accentTeal: '#2D8A84',
+    lightTeal: '#CCFBF1',
     
     // Transparency overlays
-    overlayLight: 'rgba(255, 255, 255, 0.85)',
+    overlayLight: 'rgba(255, 255, 255, 0.95)',
     overlayDark: 'rgba(0, 0, 0, 0.3)',
-    glassOverlay: 'rgba(255, 255, 255, 0.6)',
+    glassOverlay: 'rgba(255, 255, 255, 0.8)',
+    cardOverlay: 'rgba(255, 255, 255, 0.98)',
   },
   
   gradients: {
-    primary: ['#006B7D', '#00A8C8'],
-    clinical: ['#FFFFFF', '#F5F5F5'],
-    success: ['#4CAF50', '#66BB6A'],
-    alert: ['#FF9800', '#F57C00'],
-    critical: ['#F44336', '#D32F2F'],
-    mint: ['#80CBC4', '#B2DFDB'],
+    primary: ['#115E59', '#1A7A73'],
+    header: ['#115E59', '#0D4F4A'],
+    clinical: ['#FFFFFF', '#F5F7FA'],
+    success: ['#10B981', '#34D399'],
+    alert: ['#F59E0B', '#D97706'],
+    critical: ['#EF4444', '#DC2626'],
+    mint: ['#5EEAD4', '#99F6E4'],
+    silver: ['#A8A8A8', '#C0C0C0'],
   },
   
   shadows: {
     card: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 0.06,
       shadowRadius: 8,
       elevation: 3,
     },
     elevated: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
+      shadowOpacity: 0.1,
       shadowRadius: 12,
       elevation: 5,
     },
     header: {
-      shadowColor: '#000',
+      shadowColor: '#115E59',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    subtle: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
       shadowRadius: 4,
       elevation: 2,
     },
@@ -103,7 +142,7 @@ export const medicalProviderTheme = {
     },
     h3: {
       fontSize: 20,
-      fontWeight: '700',
+      fontWeight: '600',
       lineHeight: 28,
     },
     body: {

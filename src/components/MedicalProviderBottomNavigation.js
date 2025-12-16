@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 
 const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
   console.log('[MedicalProviderBottomNavigation] Rendering for screen:', currentScreen);
@@ -27,7 +28,7 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
             onPress={() => onNavigate(tab.screen)}
             activeOpacity={0.7}
           >
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
               {tab.imageSource ? (
                 <Image 
                   source={tab.imageSource} 
@@ -63,15 +64,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#000',
-    borderTopWidth: 2,
-    borderTopColor: '#d4af37',
+    backgroundColor: medicalProviderTheme.colors.primary,
+    borderTopWidth: 3,
+    borderTopColor: medicalProviderTheme.colors.silver,
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     paddingTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
+    shadowColor: medicalProviderTheme.colors.primary,
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 10,
     zIndex: 1000,
   },
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activeIconContainer: {
-    backgroundColor: '#d4af37',
+    backgroundColor: 'rgba(168, 168, 168, 0.2)',
   },
   icon: {
     fontSize: 22,
@@ -98,14 +99,15 @@ const styles = StyleSheet.create({
   iconImage: {
     width: 32,
     height: 32,
+    borderRadius: 16,
   },
   label: {
     fontSize: 10,
-    color: '#a0aec0',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   activeLabel: {
-    color: '#d4af37',
+    color: medicalProviderTheme.colors.silverLight,
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -113,14 +115,14 @@ const styles = StyleSheet.create({
     top: 0,
     width: 30,
     height: 3,
-    backgroundColor: '#d4af37',
+    backgroundColor: medicalProviderTheme.colors.silver,
     borderRadius: 2,
   },
   badge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#e74c3c',
+    backgroundColor: medicalProviderTheme.colors.critical,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
