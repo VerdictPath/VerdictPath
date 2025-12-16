@@ -154,7 +154,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 onPress={() => onNavigate && onNavigate('lawfirm-activity-dashboard')}
               >
                 <Text style={styles.quickActionIcon}>📊</Text>
-                <Text style={styles.quickActionText}>Activity Logs</Text>
+                <Text style={styles.quickActionText}>User Activity Logs</Text>
               </TouchableOpacity>
             </View>
             
