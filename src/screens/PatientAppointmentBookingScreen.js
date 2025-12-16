@@ -591,6 +591,14 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleSyncToDevice = async (event) => {
+    if (Platform.OS === 'web') {
+      Alert.alert(
+        'Mobile Feature',
+        'Syncing to device calendar is only available on the mobile app. Please use the Verdict Path mobile app to sync events to your device calendar.'
+      );
+      return;
+    }
+    
     try {
       const hasPermission = await CalendarService.requestPermissions();
       if (!hasPermission) {
@@ -650,7 +658,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              if (event.synced_to_device) {
+              if (event.synced_to_device && Platform.OS !== 'web') {
                 await CalendarService.unsyncEventFromDevice(event, user.token);
               }
               
