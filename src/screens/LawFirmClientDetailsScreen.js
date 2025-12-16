@@ -270,32 +270,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     const { client, medicalRecords, medicalBilling } = clientData;
 
     return (
-      <ImageBackground
-        source={require('../../attached_assets/Medical Ward_1764038075699.png')}
-        style={styles.medicalHubBackground}
-        resizeMode="cover"
-      >
-        <View style={styles.medicalHubOverlay}>
-          <View style={[
-            styles.medicalHubContent,
-            { 
-              paddingHorizontal: isDesktop ? 40 : isTablet ? 30 : 15,
-              paddingTop: isDesktop ? 30 : 20,
-            }
-          ]}>
-            <View style={[
-              styles.section,
-              styles.medicalHubSection
-            ]}>
+      <View style={styles.tabContent}>
+        <View style={[
+          styles.medicalHubContent,
+          { 
+            paddingHorizontal: isDesktop ? 40 : isTablet ? 30 : 15,
+            paddingTop: isDesktop ? 30 : 20,
+          }
+        ]}>
+            <View style={styles.section}>
               <Text style={[
                 styles.sectionTitle,
-                styles.medicalHubSectionTitle,
                 { fontSize: isDesktop ? 24 : 20 }
               ]}>📋 Medical Records</Text>
               {medicalRecords.records.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📋</Text>
-                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical records uploaded yet</Text>
+                  <Text style={styles.emptyText}>No medical records uploaded yet</Text>
                 </View>
               ) : (
                 <>
@@ -325,19 +316,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               )}
             </View>
 
-            <View style={[
-              styles.section,
-              styles.medicalHubSection
-            ]}>
+            <View style={styles.section}>
               <Text style={[
                 styles.sectionTitle,
-                styles.medicalHubSectionTitle,
                 { fontSize: isDesktop ? 24 : 20 }
               ]}>💰 Medical Billing</Text>
               {medicalBilling.bills.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>💰</Text>
-                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical bills uploaded yet</Text>
+                  <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
                 </View>
               ) : (
                 <>
@@ -376,15 +363,14 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               )}
             </View>
 
-            <View style={[styles.infoSection, styles.medicalHubInfoSection]}>
+            <View style={styles.infoSection}>
               <Text style={styles.infoIcon}>ℹ️</Text>
-              <Text style={[styles.infoText, { color: '#FFFFFF' }]}>
+              <Text style={styles.infoText}>
                 All medical records and billing can be accessed by {client.displayName} with proper consent.
               </Text>
             </View>
           </View>
-        </View>
-      </ImageBackground>
+      </View>
     );
   };
 
