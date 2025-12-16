@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
@@ -494,7 +494,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'roadmap' && styles.activeTab]}
           onPress={() => setActiveTab('roadmap')}
         >
-          <Text style={styles.tabIcon}>🗺️</Text>
+          <Image 
+            source={require('../../attached_assets/MAP_1763356928680.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'roadmap' && styles.activeTabText]}>
             Roadmap
           </Text>
@@ -503,7 +506,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'medicalHub' && styles.activeTab]}
           onPress={() => setActiveTab('medicalHub')}
         >
-          <Text style={styles.tabIcon}>🏥</Text>
+          <Image 
+            source={require('../../attached_assets/Medical Symbol Latin_1764039151974.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'medicalHub' && styles.activeTabText]}>
             Medical Hub
           </Text>
@@ -512,7 +518,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'evidence' && styles.activeTab]}
           onPress={() => setActiveTab('evidence')}
         >
-          <Text style={styles.tabIcon}>🗃️</Text>
+          <Image 
+            source={require('../../attached_assets/Evidence Vault_1764037430801.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'evidence' && styles.activeTabText]}>
             Evidence Locker
           </Text>
@@ -622,6 +631,12 @@ const styles = StyleSheet.create({
   tabIcon: {
     fontSize: 20,
     marginBottom: 4,
+  },
+  tabIconImage: {
+    width: 24,
+    height: 24,
+    marginBottom: 4,
+    resizeMode: 'contain',
   },
   tabText: {
     fontSize: 12,
