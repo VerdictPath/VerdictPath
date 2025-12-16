@@ -1090,7 +1090,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     );
   };
 
-  const handleDataEntry = (stageId, subStageId, data) => {
+  const handleDataEntry = async (stageId, subStageId, data) => {
     setLitigationStages(prevStages =>
       prevStages.map(stage => {
         if (stage.id === stageId) {
@@ -1108,6 +1108,33 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         return stage;
       })
     );
+
+    if (authToken) {
+      try {
+        const stage = litigationStages.find(s => s.id === stageId);
+        const subStage = stage?.subStages?.find(s => s.id === subStageId);
+        
+        await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            stageId,
+            stageName: stage?.name || 'Unknown Stage',
+            substageId: subStageId,
+            substageName: subStage?.name || 'Unknown Substage',
+            substageType: 'data_entry',
+            dataValue: data,
+            coinsEarned: subStage?.coins || 0
+          }),
+        });
+        console.log('[App] Data entry saved to backend:', subStageId, data);
+      } catch (error) {
+        console.error('[App] Error saving data entry to backend:', error);
+      }
+    }
   };
 
   const handleMedicalHubUpload = (documentType, fileName) => {
@@ -1123,20 +1150,22 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return JSON.parse(JSON.stringify(LITIGATION_STAGES));
     }
 
-    // Create a Set of completed backend IDs (format: 'pre-1', 'cf-1', etc.)
-    const completedIds = new Set(
-      completedSubstagesData.completedSubstages.map(sub => sub.substage_id)
+    // Create a map of completed backend data (format: 'pre-1' => { data_value, completed_at, etc })
+    const completedMap = new Map(
+      completedSubstagesData.completedSubstages.map(sub => [sub.substage_id, sub])
     );
 
     // Deep clone LITIGATION_STAGES to avoid state contamination
     return JSON.parse(JSON.stringify(LITIGATION_STAGES)).map(stage => {
-      // Map substages with completion status
+      // Map substages with completion status and data values
       const mappedSubStages = stage.subStages?.map((subStage) => {
         // Backend uses IDs like 'pre-1', 'pre-2', 'cf-1', 'cf-2'
         // Match using the substage's own ID field
+        const backendData = completedMap.get(subStage.id);
         return {
           ...subStage,
-          completed: completedIds.has(subStage.id)
+          completed: !!backendData,
+          enteredData: backendData?.data_value || subStage.enteredData || ''
         };
       }) || [];
       
