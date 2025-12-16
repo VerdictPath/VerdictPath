@@ -13,7 +13,7 @@ if (Platform.OS !== 'web') {
 }
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
-import { apiRequest, API_ENDPOINTS } from './src/config/api';
+import { apiRequest, API_ENDPOINTS, API_BASE_URL } from './src/config/api';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import NotificationService from './src/services/NotificationService';
 import ActionVideoModal from './src/components/ActionVideoModal';
