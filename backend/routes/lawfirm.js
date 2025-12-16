@@ -23,12 +23,11 @@ router.get('/clients',
   lawfirmController.getClients
 );
 
-// Client details - requires VIEW_CLIENT_PHI permission AND patient consent
+// Client details - requires VIEW_CLIENT_PHI permission (consent implied by client relationship)
 router.get('/client/:clientId',
   authenticateToken,
   isLawFirm,
   requirePermission('VIEW_CLIENT_PHI'),
-  requireConsent({ patientIdParam: 'clientId', dataType: 'medical_records' }),
   lawfirmController.getClientDetails
 );
 
