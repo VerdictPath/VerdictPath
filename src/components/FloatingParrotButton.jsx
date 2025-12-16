@@ -5,9 +5,9 @@ import {
   Modal,
   StyleSheet,
   View,
-  Text
+  Text,
+  Platform
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import ParrotNavigator from './ParrotNavigator';
 
 const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
@@ -21,14 +21,14 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.15,
+          toValue: 1.1,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     );
@@ -37,14 +37,14 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
     Animated.timing(tooltipAnim, {
       toValue: 1,
       duration: 500,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
 
     const tooltipTimer = setTimeout(() => {
       Animated.timing(tooltipAnim, {
         toValue: 0,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start(() => setShowTooltip(false));
     }, 5000);
 
@@ -57,7 +57,7 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.9,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
@@ -66,7 +66,7 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
       toValue: 1,
       friction: 3,
       tension: 40,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start();
   };
 
@@ -79,7 +79,9 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
       <Animated.View
         style={[
           styles.floatingButton,
-          {
+          Platform.OS === 'web' ? {
+            transform: [{ scale: 1 }]
+          } : {
             transform: [
               { scale: Animated.multiply(scaleAnim, pulseAnim) }
             ]
@@ -93,19 +95,19 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
           activeOpacity={0.8}
           style={styles.buttonTouchable}
         >
-          <BlurView intensity={30} tint="dark" style={styles.buttonBlur}>
-            <View style={styles.buttonContent}>
-              <Text style={styles.parrotEmoji}>🦜</Text>
-              <View style={styles.pulseRing} />
-            </View>
-          </BlurView>
+          <View style={styles.buttonContent}>
+            <Text style={styles.parrotEmoji}>🦜</Text>
+            <View style={styles.pulseRing} />
+          </View>
         </TouchableOpacity>
 
         {showTooltip && (
           <Animated.View
             style={[
               styles.tooltip,
-              {
+              Platform.OS === 'web' ? {
+                opacity: 1,
+              } : {
                 opacity: tooltipAnim,
                 transform: [
                   {
@@ -118,9 +120,9 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
               },
             ]}
           >
-            <BlurView intensity={40} tint="dark" style={styles.tooltipBlur}>
+            <View style={styles.tooltipContent}>
               <Text style={styles.tooltipText}>Need help navigating? Tap me! 🗺️</Text>
-            </BlurView>
+            </View>
           </Animated.View>
         )}
       </Animated.View>
@@ -132,7 +134,6 @@ const FloatingParrotButton = ({ onNavigate, userType = 'individual' }) => {
         onRequestClose={() => setIsVisible(false)}
       >
         <ParrotNavigator 
-          visible={isVisible}
           onNavigate={onNavigate}
           onClose={() => setIsVisible(false)}
           userType={userType}
@@ -159,19 +160,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  buttonBlur: {
+  buttonContent: {
     width: 70,
     height: 70,
     borderRadius: 35,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#FFD700',
-  },
-  buttonContent: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(26, 35, 126, 0.7)',
+    backgroundColor: 'rgba(26, 35, 126, 0.95)',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    overflow: 'hidden',
   },
   parrotEmoji: {
     fontSize: 36,
@@ -190,10 +188,10 @@ const styles = StyleSheet.create({
     top: 15,
     maxWidth: 180,
   },
-  tooltipBlur: {
+  tooltipContent: {
     borderRadius: 12,
     padding: 12,
-    overflow: 'hidden',
+    backgroundColor: 'rgba(26, 35, 126, 0.95)',
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.5)',
   },

@@ -11,7 +11,6 @@ import {
   StyleSheet
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 
 const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
   const [messages, setMessages] = useState([
@@ -33,12 +32,12 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
         Animated.timing(parrotBounce, {
           toValue: -10,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.timing(parrotBounce, {
           toValue: 0,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: Platform.OS !== 'web',
         }),
       ])
     );
@@ -193,15 +192,15 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['rgba(26, 35, 126, 0.95)', 'rgba(13, 71, 161, 0.95)', 'rgba(1, 87, 155, 0.95)']}
+        colors={['#1a237e', '#0d47a1', '#01579b']}
         style={styles.gradient}
       >
-        <BlurView intensity={20} tint="dark" style={styles.header}>
+        <View style={styles.header}>
           <View style={styles.headerContent}>
             <Animated.Text 
               style={[
                 styles.parrotEmoji,
-                { transform: [{ translateY: parrotBounce }] }
+                Platform.OS !== 'web' && { transform: [{ translateY: parrotBounce }] }
               ]}
             >
               🦜
@@ -214,7 +213,7 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
-        </BlurView>
+        </View>
 
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -235,11 +234,10 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
                   message.isParrot ? styles.parrotBubble : styles.userBubble
                 ]}
               >
-                <BlurView 
-                  intensity={message.isParrot ? 30 : 20} 
-                  tint={message.isParrot ? "dark" : "light"}
-                  style={styles.bubbleBlur}
-                >
+                <View style={[
+                  styles.bubbleContent,
+                  message.isParrot ? styles.parrotBubbleContent : styles.userBubbleContent
+                ]}>
                   {message.isParrot && (
                     <Text style={styles.parrotIcon}>🦜</Text>
                   )}
@@ -257,21 +255,21 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
                       <Text style={styles.actionButtonText}>Take Me There! ⚓</Text>
                     </TouchableOpacity>
                   )}
-                </BlurView>
+                </View>
               </View>
             ))}
 
             {isTyping && (
               <View style={[styles.messageBubble, styles.parrotBubble]}>
-                <BlurView intensity={30} tint="dark" style={styles.bubbleBlur}>
+                <View style={[styles.bubbleContent, styles.parrotBubbleContent]}>
                   <Text style={styles.parrotIcon}>🦜</Text>
                   <Text style={styles.typingText}>Polly be thinkin'...</Text>
-                </BlurView>
+                </View>
               </View>
             )}
           </ScrollView>
 
-          <BlurView intensity={40} tint="dark" style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
@@ -291,7 +289,7 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
                 <Text style={styles.sendButtonText}>🚀</Text>
               </TouchableOpacity>
             </View>
-          </BlurView>
+          </View>
         </KeyboardAvoidingView>
       </LinearGradient>
     </View>
@@ -301,7 +299,7 @@ const ParrotNavigator = ({ onNavigate, onClose, userType = 'individual' }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: '#000',
   },
   gradient: {
     flex: 1,
@@ -312,6 +310,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   headerContent: {
     flexDirection: 'row',
@@ -369,12 +368,17 @@ const styles = StyleSheet.create({
   userBubble: {
     alignSelf: 'flex-end',
   },
-  bubbleBlur: {
+  bubbleContent: {
     borderRadius: 20,
     padding: 15,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  parrotBubbleContent: {
+    backgroundColor: 'rgba(26, 35, 126, 0.8)',
+  },
+  userBubbleContent: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
   },
   parrotIcon: {
     fontSize: 24,
@@ -388,7 +392,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   userText: {
-    color: '#1a237e',
+    color: '#FFD700',
   },
   typingText: {
     color: 'rgba(255, 255, 255, 0.7)',
@@ -414,6 +418,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 215, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   inputWrapper: {
     flexDirection: 'row',
