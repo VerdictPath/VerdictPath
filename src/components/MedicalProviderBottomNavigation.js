@@ -64,14 +64,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: medicalProviderTheme.colors.primary,
-    borderTopWidth: 3,
-    borderTopColor: medicalProviderTheme.colors.silver,
+    backgroundColor: '#000000',
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     paddingTop: 10,
-    shadowColor: medicalProviderTheme.colors.primary,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.5,
     shadowRadius: 8,
     elevation: 10,
     zIndex: 1000,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activeIconContainer: {
-    backgroundColor: 'rgba(168, 168, 168, 0.2)',
+    backgroundColor: 'rgba(17, 94, 89, 0.4)',
   },
   icon: {
     fontSize: 22,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   activeLabel: {
-    color: medicalProviderTheme.colors.silverLight,
+    color: medicalProviderTheme.colors.clinicalTeal,
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 30,
     height: 3,
-    backgroundColor: medicalProviderTheme.colors.silver,
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
     borderRadius: 2,
   },
   badge: {
