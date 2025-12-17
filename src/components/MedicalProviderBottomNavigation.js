@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activeIconContainer: {
-    backgroundColor: 'rgba(17, 94, 89, 0.4)',
+    // No background - only line indicator above icon
   },
   icon: {
     fontSize: 22,
