@@ -60,7 +60,7 @@ async function _cleanupNotificationsInternal() {
       DELETE FROM notifications 
       WHERE auto_delete_at < $1 
         AND (archived = false OR archived IS NULL)
-      RETURNING id, recipient_id, subject
+      RETURNING id, recipient_id, title
     `, [now]);
     
     const deletedCount = deleteResult.rowCount;
@@ -69,7 +69,7 @@ async function _cleanupNotificationsInternal() {
       console.log(`🗑️ Notification Cleanup Service: Deleted ${deletedCount} expired notifications`);
       
       deleteResult.rows.slice(0, 5).forEach(notification => {
-        console.log(`   - Deleted notification ${notification.id}: "${notification.subject?.substring(0, 30)}..."`);
+        console.log(`   - Deleted notification ${notification.id}: "${notification.title?.substring(0, 30) || 'No title'}..."`);
       });
       
       if (deletedCount > 5) {
