@@ -1,7 +1,37 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, FlatList, TextInput } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+
+const getThemeForUserType = (isMedicalProvider) => {
+  if (isMedicalProvider) {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      background: medicalProviderTheme.colors.background,
+      surface: medicalProviderTheme.colors.surface,
+      surfaceAlt: medicalProviderTheme.colors.surfaceAlt,
+      text: medicalProviderTheme.colors.text,
+      textSecondary: medicalProviderTheme.colors.textSecondary,
+      border: medicalProviderTheme.colors.border,
+      headerBg: medicalProviderTheme.colors.primary,
+      headerText: '#FFFFFF',
+      backButtonText: '#A8A8A8',
+    };
+  }
+  return {
+    primary: colors.primary,
+    background: colors.background,
+    surface: colors.surface,
+    surfaceAlt: colors.surfaceAlt,
+    text: colors.text,
+    textSecondary: colors.textSecondary,
+    border: colors.border,
+    headerBg: colors.primary,
+    headerText: '#FFFFFF',
+    backButtonText: '#C0C0C0',
+  };
+};
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
@@ -48,6 +78,13 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [clientSearchQuery, setClientSearchQuery] = useState('');
 
+  // Determine if this is a medical provider user
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  
+  // Get theme colors based on user type
+  const themeColors = useMemo(() => getThemeForUserType(isMedicalProvider), [isMedicalProvider]);
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
+
   const filteredClients = useMemo(() => {
     if (!clientSearchQuery.trim()) return clients;
     const query = clientSearchQuery.toLowerCase().trim();
@@ -58,9 +95,6 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
       return displayName.includes(query) || email.includes(query);
     });
   }, [clients, clientSearchQuery]);
-
-  // Determine if this is a medical provider user
-  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
 
   useEffect(() => {
     fetchClients();
@@ -139,7 +173,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
           <Text style={styles.loadingText}>Loading analytics...</Text>
         </View>
       </View>
@@ -275,7 +309,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[theme.colors.primary]}
+            colors={[themeColors.primary]}
           />
         }
       >
@@ -457,10 +491,10 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.lawFirm.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -469,9 +503,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     paddingTop: 50,
-    backgroundColor: theme.lawFirm.primary,
+    backgroundColor: colors.headerBg,
     borderBottomWidth: 2,
-    borderBottomColor: theme.lawFirm.accent,
+    borderBottomColor: colors.primary,
   },
   backButton: {
     paddingVertical: 8,
@@ -479,51 +513,51 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: theme.lawFirm.surface,
+    color: colors.backButtonText,
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.lawFirm.surface,
+    color: colors.headerText,
   },
   placeholder: {
     width: 60,
   },
   filterContainer: {
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.lawFirm.border,
+    borderBottomColor: colors.border,
     position: 'relative',
     zIndex: 1000,
   },
   filterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.lawFirm.text,
+    color: colors.text,
     marginBottom: 8,
   },
   clientPickerButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: theme.lawFirm.border,
+    borderColor: colors.border,
   },
   clientPickerText: {
     fontSize: 16,
-    color: theme.lawFirm.text,
+    color: colors.text,
     fontWeight: '500',
   },
   dropdownIcon: {
     fontSize: 12,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   dropdownBackdrop: {
     position: 'absolute',
@@ -539,12 +573,12 @@ const styles = StyleSheet.create({
     top: 80,
     left: 20,
     right: 20,
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.lawFirm.accent,
+    borderColor: colors.accent,
     maxHeight: 300,
-    shadowColor: theme.lawFirm.primaryDark,
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -556,24 +590,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: theme.lawFirm.border,
-    backgroundColor: theme.lawFirm.surface,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   clientOptionSelected: {
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   clientOptionText: {
     fontSize: 16,
-    color: theme.lawFirm.text,
+    color: colors.text,
     fontWeight: '500',
   },
   clientOptionTextSelected: {
-    color: theme.lawFirm.primary,
+    color: colors.primary,
     fontWeight: '700',
   },
   clientEmailText: {
     fontSize: 13,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
     marginTop: 4,
   },
   searchInputContainer: {
@@ -582,8 +616,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.lawFirm.border,
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
   },
   searchIcon: {
     fontSize: 16,
@@ -592,7 +626,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: theme.lawFirm.text,
+    color: colors.text,
     paddingVertical: 6,
   },
   clearSearchButton: {
@@ -600,18 +634,18 @@ const styles = StyleSheet.create({
   },
   clearSearchText: {
     fontSize: 16,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   clientListScroll: {
     maxHeight: 240,
   },
   timeRangeContainer: {
     flexDirection: 'row',
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.lawFirm.border,
+    borderBottomColor: colors.border,
     gap: 10,
   },
   timeRangeButton: {
@@ -619,22 +653,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
   },
   timeRangeButtonActive: {
-    backgroundColor: theme.lawFirm.primary,
+    backgroundColor: colors.primary,
   },
   timeRangeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   timeRangeTextActive: {
-    color: theme.lawFirm.surface,
+    color: colors.surface,
   },
   scrollContent: {
     flex: 1,
-    backgroundColor: theme.lawFirm.background,
+    backgroundColor: colors.background,
   },
   contentContainer: {
     padding: 20,
@@ -646,7 +680,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.lawFirm.primary,
+    color: colors.primary,
     marginBottom: 16,
   },
   statsGrid: {
@@ -656,34 +690,34 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: '48%',
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.lawFirm.border,
+    borderColor: colors.border,
   },
   statValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.lawFirm.primary,
+    color: colors.primary,
     marginBottom: 8,
   },
   statLabel: {
     fontSize: 14,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   section: {
     marginBottom: 30,
   },
   rateCard: {
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.lawFirm.border,
+    borderColor: colors.border,
   },
   rateHeader: {
     flexDirection: 'row',
@@ -694,16 +728,16 @@ const styles = StyleSheet.create({
   rateLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.lawFirm.text,
+    color: colors.text,
   },
   ratePercentage: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.lawFirm.primary,
+    color: colors.primary,
   },
   progressBar: {
     height: 8,
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -712,12 +746,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   typeCard: {
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.lawFirm.border,
+    borderColor: colors.border,
   },
   typeHeader: {
     flexDirection: 'row',
@@ -728,12 +762,12 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.lawFirm.text,
+    color: colors.text,
   },
   typeCount: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.lawFirm.primary,
+    color: colors.primary,
   },
   typeStats: {
     flexDirection: 'row',
@@ -741,18 +775,18 @@ const styles = StyleSheet.create({
   },
   typeStat: {
     fontSize: 13,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.lawFirm.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   notificationItemsSection: {
     marginTop: 24,
@@ -760,7 +794,7 @@ const styles = StyleSheet.create({
   itemsSectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: theme.lawFirm.text,
+    color: colors.text,
     marginBottom: 12,
   },
   statusLegend: {
@@ -769,7 +803,7 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 16,
     padding: 12,
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 8,
   },
   legendItem: {
@@ -784,15 +818,15 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   notificationItemCard: {
-    backgroundColor: theme.lawFirm.surface,
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.lawFirm.border,
+    borderColor: colors.border,
   },
   notificationItemHeader: {
     flexDirection: 'row',
@@ -803,7 +837,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.lawFirm.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -817,12 +851,12 @@ const styles = StyleSheet.create({
   notificationItemTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.lawFirm.text,
+    color: colors.text,
     marginBottom: 2,
   },
   notificationItemRecipient: {
     fontSize: 12,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -830,7 +864,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusBadgeText: {
-    color: theme.lawFirm.surface,
+    color: colors.surface,
     fontSize: 11,
     fontWeight: '600',
   },
@@ -840,7 +874,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: theme.lawFirm.border,
+    borderTopColor: colors.border,
   },
   timelineItem: {
     alignItems: 'center',
@@ -858,19 +892,19 @@ const styles = StyleSheet.create({
   timelineLabel: {
     fontSize: 10,
     fontWeight: '600',
-    color: theme.lawFirm.text,
+    color: colors.text,
     marginBottom: 2,
   },
   timelineLabelInactive: {
-    color: theme.lawFirm.border,
+    color: colors.border,
   },
   timelineTime: {
     fontSize: 9,
-    color: theme.lawFirm.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   timelineTimeInactive: {
-    color: theme.lawFirm.border,
+    color: colors.border,
   },
   timelineConnector: {
     height: 2,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,40 @@ import {
   TextInput
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
 
+const getThemeForUserType = (isMedicalProvider) => {
+  if (isMedicalProvider) {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      headerBg: medicalProviderTheme.colors.primary,
+      headerText: '#FFFFFF',
+      backButtonText: '#A8A8A8',
+      background: medicalProviderTheme.colors.background,
+      surface: medicalProviderTheme.colors.surface,
+      text: medicalProviderTheme.colors.text,
+      textSecondary: medicalProviderTheme.colors.textSecondary,
+      border: medicalProviderTheme.colors.border,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    headerBg: '#1E3A5F',
+    headerText: '#FFFFFF',
+    backButtonText: '#C0C0C0',
+    background: '#F5F7FA',
+    surface: '#FFFFFF',
+    text: '#1E3A5F',
+    textSecondary: '#64748B',
+    border: '#E2E8F0',
+  };
+};
+
 const NotificationSettingsScreen = ({ user, onBack }) => {
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  const themeColors = useMemo(() => getThemeForUserType(isMedicalProvider), [isMedicalProvider]);
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(null);
@@ -167,7 +198,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           <Text style={styles.headerTitle}>Notification Settings</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
         </View>
       </View>
     );
@@ -197,7 +228,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.pushNotificationsEnabled}
               onValueChange={(value) => handleToggle('pushNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.pushNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -213,7 +244,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.emailNotificationsEnabled}
               onValueChange={(value) => handleToggle('emailNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.emailNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -229,7 +260,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.smsNotificationsEnabled}
               onValueChange={(value) => handleToggle('smsNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.smsNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -250,7 +281,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.quietHoursEnabled}
               onValueChange={(value) => handleToggle('quietHoursEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.quietHoursEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -301,7 +332,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.urgentNotifications}
               onValueChange={(value) => handleToggle('urgentNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.urgentNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -317,7 +348,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.taskNotifications}
               onValueChange={(value) => handleToggle('taskNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.taskNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -333,7 +364,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.systemNotifications}
               onValueChange={(value) => handleToggle('systemNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.systemNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -349,7 +380,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.marketingNotifications}
               onValueChange={(value) => handleToggle('marketingNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.marketingNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -422,13 +453,13 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA'
+    backgroundColor: colors.background
   },
   header: {
-    backgroundColor: '#1E3A5F',
+    backgroundColor: colors.headerBg,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
     paddingHorizontal: 15,
@@ -451,14 +482,14 @@ const styles = StyleSheet.create({
     paddingRight: 15
   },
   backButtonText: {
-    color: '#C0C0C0',
+    color: colors.backButtonText,
     fontSize: 16,
     fontWeight: '600'
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: colors.headerText,
     flex: 1
   },
   loadingContainer: {
@@ -470,18 +501,18 @@ const styles = StyleSheet.create({
     flex: 1
   },
   section: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     marginTop: 20,
     paddingHorizontal: 15,
     paddingVertical: 15,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: colors.border
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1E3A5F',
+    color: colors.text,
     marginBottom: 15
   },
   settingRow: {
@@ -490,7 +521,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F7FA'
+    borderBottomColor: colors.background
   },
   settingInfo: {
     flex: 1,
@@ -499,40 +530,40 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E3A5F',
+    color: colors.text,
     marginBottom: 4
   },
   settingDescription: {
     fontSize: 13,
-    color: '#64748B',
+    color: colors.textSecondary,
     lineHeight: 18
   },
   quietHoursConfig: {
     marginTop: 15,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0'
+    borderTopColor: colors.border
   },
   timeSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: colors.border
   },
   timeSelectorLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E3A5F'
+    color: colors.text
   },
   timeSelectorValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1E3A5F'
+    color: colors.text
   },
   quietHoursNote: {
     fontSize: 12,
@@ -547,7 +578,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: '#64748B',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20
   },
@@ -557,7 +588,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(30, 58, 95, 0.7)',
+    backgroundColor: `${colors.primary}B3`,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -569,19 +600,19 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(30, 58, 95, 0.5)',
+    backgroundColor: `${colors.primary}80`,
     justifyContent: 'center',
     alignItems: 'center'
   },
   timePickerModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     width: '85%',
     maxWidth: 400,
     ...Platform.select({
       ios: {
-        shadowColor: '#1E3A5F',
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8
@@ -594,26 +625,26 @@ const styles = StyleSheet.create({
   timePickerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1E3A5F',
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center'
   },
   timePickerSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginBottom: 20,
     textAlign: 'center'
   },
   timeInput: {
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 15,
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#1E3A5F',
+    color: colors.text,
     marginBottom: 20
   },
   timePickerButtons: {
@@ -628,17 +659,17 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cancelButton: {
-    backgroundColor: '#F5F7FA',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderColor: colors.border
   },
   confirmButton: {
-    backgroundColor: '#1E3A5F'
+    backgroundColor: colors.primary
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748B'
+    color: colors.textSecondary
   },
   confirmButtonText: {
     fontSize: 16,
