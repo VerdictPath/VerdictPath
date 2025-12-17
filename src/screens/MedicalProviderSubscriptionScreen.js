@@ -364,6 +364,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
         standardDescription="Core features for your practice"
         premiumLabel="Premium"
         premiumDescription="Advanced features"
+        userType="medical_provider"
       />
 
       <View style={styles.calculatorContainer}>

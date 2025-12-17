@@ -1,6 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
+
+const getThemeColors = (userType) => {
+  if (userType === 'medical_provider') {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      accent: medicalProviderTheme.colors.primaryLight,
+    };
+  }
+  return {
+    primary: theme.colors.mahogany,
+    accent: theme.colors.warmGold,
+  };
+};
 
 const FeatureComparisonMatrix = ({
   heading = '📊 Compare Plans',
@@ -12,8 +26,11 @@ const FeatureComparisonMatrix = ({
   standardLabel = 'Standard',
   standardDescription = 'Core features for your practice',
   premiumLabel = 'Premium',
-  premiumDescription = null
+  premiumDescription = null,
+  userType = null
 }) => {
+  const themeColors = useMemo(() => getThemeColors(userType), [userType]);
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
   const premiumDescText = premiumDescription || `Everything in ${standardLabel}, plus:`;
   const defaultDisbursementNote = 'Settlement Disbursements is a premium-only feature. Upgrade to Premium to process payments to clients and medical providers.';
   const noteText = disbursementNoteText || defaultDisbursementNote;
@@ -74,7 +91,7 @@ const FeatureComparisonMatrix = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
@@ -92,7 +109,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 8
   },
@@ -116,8 +133,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0'
   },
   columnPremium: {
-    backgroundColor: '#fff9e6',
-    borderColor: theme.colors.warmGold,
+    backgroundColor: '#f0fdf9',
+    borderColor: colors.accent,
     borderWidth: 2
   },
   header: {
@@ -127,7 +144,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0'
   },
   headerPremium: {
-    borderBottomColor: theme.colors.warmGold
+    borderBottomColor: colors.accent
   },
   planName: {
     fontSize: 18,
@@ -136,7 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: 4
   },
   planNamePremium: {
-    color: theme.colors.mahogany
+    color: colors.primary
   },
   planDescription: {
     fontSize: 13,
@@ -170,7 +187,7 @@ const styles = StyleSheet.create({
     lineHeight: 18
   },
   badge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: colors.accent,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 12,
@@ -182,7 +199,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: theme.colors.navy
+    color: '#fff'
   },
   note: {
     backgroundColor: '#e8f4ff',
@@ -192,7 +209,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary
+    borderLeftColor: colors.primary
   },
   noteIcon: {
     fontSize: 18,

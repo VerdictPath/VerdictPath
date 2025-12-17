@@ -1,8 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Share, Platform, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+
+const getThemeColors = (isMedicalProvider) => {
+  if (isMedicalProvider) {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      secondary: medicalProviderTheme.colors.silver,
+      background: medicalProviderTheme.colors.cardBackground,
+      accent: medicalProviderTheme.colors.primaryLight,
+      lightBackground: medicalProviderTheme.colors.offWhite,
+      text: medicalProviderTheme.colors.textPrimary,
+      textSecondary: medicalProviderTheme.colors.textSecondary,
+    };
+  }
+  return {
+    primary: theme.colors.mahogany,
+    secondary: theme.colors.secondary,
+    background: theme.colors.cream,
+    accent: theme.colors.warmGold,
+    lightBackground: theme.colors.lightCream,
+    text: theme.colors.navy,
+    textSecondary: theme.colors.textSecondary,
+  };
+};
 
 const InviteModal = ({ visible, onClose, user }) => {
   const [loading, setLoading] = useState(false);
@@ -10,6 +34,9 @@ const InviteModal = ({ visible, onClose, user }) => {
   const [copied, setCopied] = useState(false);
   const [selectedInviteType, setSelectedInviteType] = useState(null);
   const isMedicalProvider = user?.userType === 'medical_provider';
+  
+  const themeColors = useMemo(() => getThemeColors(isMedicalProvider), [isMedicalProvider]);
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
 
   useEffect(() => {
     if (visible && user?.token) {
@@ -204,7 +231,7 @@ const InviteModal = ({ visible, onClose, user }) => {
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.colors.mahogany} />
+              <ActivityIndicator size="large" color={themeColors.primary} />
               <Text style={styles.loadingText}>Generating your invite code...</Text>
             </View>
           ) : isMedicalProvider && !selectedInviteType ? (
@@ -369,7 +396,7 @@ const InviteModal = ({ visible, onClose, user }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -378,13 +405,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: colors.background,
     borderRadius: 16,
     width: '95%',
     maxWidth: 600,
     maxHeight: '90%',
     borderWidth: 3,
-    borderColor: theme.colors.secondary,
+    borderColor: colors.secondary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -394,8 +421,8 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
-    backgroundColor: theme.colors.mahogany,
+    borderBottomColor: colors.secondary,
+    backgroundColor: colors.primary,
     borderTopLeftRadius: 13,
     borderTopRightRadius: 13,
     alignItems: 'center',
@@ -433,7 +460,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 15,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
   },
   content: {
@@ -441,11 +468,11 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   infoSection: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: colors.lightBackground,
     padding: 16,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderColor: colors.accent,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
@@ -457,7 +484,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: theme.colors.navy,
+    color: colors.text,
     lineHeight: 20,
     fontWeight: '600',
   },
@@ -467,7 +494,7 @@ const styles = StyleSheet.create({
   },
   codeLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
     fontWeight: '600',
   },
@@ -477,7 +504,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderColor: colors.accent,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -488,33 +515,33 @@ const styles = StyleSheet.create({
   codeText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     letterSpacing: 6,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     textAlign: 'center',
   },
   copyButton: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: colors.secondary,
   },
   copyButtonText: {
-    color: theme.colors.navy,
+    color: colors.text,
     fontSize: 16,
     fontWeight: '600',
   },
   divider: {
     height: 2,
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: colors.secondary,
     marginVertical: 20,
   },
   shareTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     marginBottom: 15,
   },
   shareOption: {
@@ -524,7 +551,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.warmGold,
+    borderColor: colors.accent,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -542,17 +569,17 @@ const styles = StyleSheet.create({
   shareOptionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     marginBottom: 4,
   },
   shareOptionDescription: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   selectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     marginBottom: 15,
   },
   selectionOption: {
@@ -562,7 +589,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.warmGold,
+    borderColor: colors.accent,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -580,16 +607,16 @@ const styles = StyleSheet.create({
   selectionOptionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: colors.primary,
     marginBottom: 4,
   },
   selectionOptionDescription: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   selectionArrow: {
     fontSize: 20,
-    color: theme.colors.mahogany,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   backButton: {
@@ -597,7 +624,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backButtonText: {
-    color: theme.colors.mahogany,
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
