@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
   useWindowDimensions,
 } from 'react-native';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
@@ -21,13 +22,14 @@ const MedicalProviderActivityDashboardScreen = ({
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('today');
+  const [patientSearch, setPatientSearch] = useState('');
 
   const isCompact = width < 500;
   const cardWidth = isCompact ? '100%' : (width - 56) / 2;
 
   useEffect(() => {
     loadActivitySummary();
-  }, [timeFilter]);
+  }, [timeFilter, patientSearch]);
 
   const loadActivitySummary = async () => {
     try {
@@ -35,6 +37,9 @@ const MedicalProviderActivityDashboardScreen = ({
       console.log('[MedicalActivityDashboard] Loading summary with token:', user?.token ? 'Present' : 'Missing');
       
       const dateFilters = getDateFilters(timeFilter);
+      if (patientSearch.trim()) {
+        dateFilters.patientName = patientSearch.trim();
+      }
       const queryString = new URLSearchParams(dateFilters).toString();
       const url = `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`;
       console.log('[MedicalActivityDashboard] API URL:', url);
@@ -176,6 +181,22 @@ const MedicalProviderActivityDashboardScreen = ({
             </Text>
           </TouchableOpacity>
         ))}
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by patient name..."
+          placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+          value={patientSearch}
+          onChangeText={setPatientSearch}
+        />
+        {patientSearch.length > 0 && (
+          <TouchableOpacity onPress={() => setPatientSearch('')} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>✕</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -390,6 +411,38 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: medicalProviderTheme.colors.clinicalWhite,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: medicalProviderTheme.spacing.lg,
+    paddingVertical: medicalProviderTheme.spacing.md,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.lightGray,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: medicalProviderTheme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    fontSize: 14,
+    color: medicalProviderTheme.colors.charcoal,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.lightGray,
+  },
+  clearButton: {
+    marginLeft: medicalProviderTheme.spacing.sm,
+    padding: medicalProviderTheme.spacing.sm,
+  },
+  clearButtonText: {
+    fontSize: 16,
+    color: medicalProviderTheme.colors.mediumGray,
   },
   scrollView: {
     flex: 1,
