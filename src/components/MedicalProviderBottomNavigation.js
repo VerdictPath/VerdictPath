@@ -7,11 +7,11 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
   
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'medicalprovider-dashboard' },
+    { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-notifications', badge: notificationCount },
     { name: 'Calendar', icon: '📅', screen: 'medicalprovider-calendar' },
     { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
     { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
-    { name: 'User Activity', icon: '📊', screen: 'medicalprovider-activity-dashboard' },
-    { name: 'Negotiations', icon: '🤝', screen: 'medicalprovider-negotiations' },
+    { name: 'Analytics', icon: '📊', screen: 'medicalprovider-notification-analytics' },
     { name: 'Profile', icon: '👤', screen: 'medicalprovider-profile' },
   ];
 

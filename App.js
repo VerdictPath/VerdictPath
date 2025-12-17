@@ -41,8 +41,10 @@ import NotificationOutboxScreen from './src/screens/NotificationOutboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
+import LawFirmNotificationsScreen from './src/screens/LawFirmNotificationsScreen';
 import NotificationAnalyticsScreen from './src/screens/NotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
+import MedicalProviderNotificationsScreen from './src/screens/MedicalProviderNotificationsScreen';
 import IndividualSendNotificationScreen from './src/screens/IndividualSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
@@ -1626,6 +1628,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-notifications' && (
+        <LawFirmNotificationsScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
       {currentScreen === 'lawfirm-event-requests' && (
         <LawFirmEventRequestsScreen
           user={user}
@@ -1909,6 +1918,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'medicalprovider-notifications' && (
+        <MedicalProviderNotificationsScreen
+          user={user}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+        />
+      )}
+
       {currentScreen === 'medicalprovider-event-requests' && (
         <MedicalProviderEventRequestsScreen
           user={user}
@@ -2116,7 +2132,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Law Firm Bottom Navigation */}
         {(() => {
-          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-notifications', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
           console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
@@ -2130,7 +2146,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Medical Provider Bottom Navigation */}
         {(() => {
-          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar', 'medicalprovider-profile'];
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-notifications', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-notification-analytics', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar', 'medicalprovider-profile'];
           const shouldShow = medProviderScreens.includes(currentScreen);
           console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
