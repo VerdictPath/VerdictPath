@@ -2394,3 +2394,322 @@ exports.getMyConnectionsForNotification = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch connections' });
   }
 };
+
+// Get sent notifications (outbox)
+exports.getSentNotifications = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { limit = 50, offset = 0, filter } = req.query;
+
+    let senderType;
+    if (deviceType === 'law_firm') {
+      senderType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      senderType = 'medical_provider';
+    } else {
+      senderType = 'user';
+    }
+
+    let whereClause = 'sender_type = $1 AND sender_id = $2';
+    const params = [senderType, entityId];
+
+    if (filter === 'clicked') {
+      whereClause += ' AND clicked_at IS NOT NULL';
+    } else if (filter === 'read') {
+      whereClause += ' AND read_at IS NOT NULL';
+    } else if (filter === 'unread') {
+      whereClause += ' AND read_at IS NULL';
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM notifications WHERE ${whereClause}`;
+    const countResult = await pool.query(countQuery, params);
+
+    const query = `
+      SELECT 
+        n.id, n.recipient_id, n.recipient_type, n.type, n.notification_type,
+        n.priority, n.is_urgent, n.title, n.body, n.subject,
+        n.created_at, n.sent_at, n.delivered_at, n.read_at, n.clicked_at,
+        n.archived
+      FROM notifications n
+      WHERE ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    const result = await pool.query(query, [...params, parseInt(limit), parseInt(offset)]);
+
+    // Get recipient names
+    const recipientIds = {
+      user: result.rows.filter(n => n.recipient_type === 'user').map(n => n.recipient_id),
+      law_firm: result.rows.filter(n => n.recipient_type === 'law_firm').map(n => n.recipient_id),
+      medical_provider: result.rows.filter(n => n.recipient_type === 'medical_provider').map(n => n.recipient_id)
+    };
+
+    const recipientNames = {};
+
+    if (recipientIds.user.length > 0) {
+      const usersResult = await pool.query(
+        'SELECT id, first_name, last_name FROM users WHERE id = ANY($1)',
+        [recipientIds.user]
+      );
+      usersResult.rows.forEach(u => {
+        recipientNames[`user_${u.id}`] = `${u.first_name} ${u.last_name}`;
+      });
+    }
+
+    if (recipientIds.law_firm.length > 0) {
+      const firmsResult = await pool.query(
+        'SELECT id, firm_name FROM law_firms WHERE id = ANY($1)',
+        [recipientIds.law_firm]
+      );
+      firmsResult.rows.forEach(f => {
+        recipientNames[`law_firm_${f.id}`] = f.firm_name;
+      });
+    }
+
+    if (recipientIds.medical_provider.length > 0) {
+      const providersResult = await pool.query(
+        'SELECT id, provider_name FROM medical_providers WHERE id = ANY($1)',
+        [recipientIds.medical_provider]
+      );
+      providersResult.rows.forEach(p => {
+        recipientNames[`medical_provider_${p.id}`] = p.provider_name;
+      });
+    }
+
+    const notifications = result.rows.map(n => ({
+      id: n.id,
+      recipientId: n.recipient_id,
+      recipientType: n.recipient_type,
+      recipientName: recipientNames[`${n.recipient_type}_${n.recipient_id}`] || 'Unknown',
+      type: n.type || n.notification_type,
+      notificationType: n.notification_type,
+      priority: n.priority,
+      isUrgent: n.is_urgent || n.priority === 'urgent',
+      title: n.title,
+      subject: n.subject || n.title,
+      body: n.body,
+      createdAt: n.created_at,
+      sentAt: n.sent_at || n.created_at,
+      deliveredAt: n.delivered_at,
+      readAt: n.read_at,
+      clickedAt: n.clicked_at,
+      archived: n.archived,
+      status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
+    }));
+
+    res.json({
+      success: true,
+      total: parseInt(countResult.rows[0].total),
+      notifications
+    });
+  } catch (error) {
+    console.error('Error fetching sent notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch sent notifications' });
+  }
+};
+
+// Get email CC preferences
+exports.getEmailCCPreferences = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { entityId, userType } = entityInfo;
+
+    let userTypeValue;
+    if (userType === 'lawfirm') {
+      userTypeValue = 'law_firm';
+    } else if (userType === 'medical_provider') {
+      userTypeValue = 'medical_provider';
+    } else {
+      userTypeValue = 'client';
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM notification_preferences WHERE user_id = $1 AND user_type = $2`,
+      [entityId, userTypeValue]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        email_cc_enabled: false,
+        cc_email_address: null,
+        cc_case_updates: true,
+        cc_appointment_reminders: true,
+        cc_payment_notifications: true,
+        cc_document_requests: true,
+        cc_system_alerts: true
+      });
+    }
+
+    const prefs = result.rows[0];
+    res.json({
+      email_cc_enabled: prefs.email_cc_enabled,
+      cc_email_address: prefs.cc_email_address,
+      cc_case_updates: prefs.cc_case_updates,
+      cc_appointment_reminders: prefs.cc_appointment_reminders,
+      cc_payment_notifications: prefs.cc_payment_notifications,
+      cc_document_requests: prefs.cc_document_requests,
+      cc_system_alerts: prefs.cc_system_alerts
+    });
+  } catch (error) {
+    console.error('Error fetching email CC preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch email CC preferences' });
+  }
+};
+
+// Update email CC preferences
+exports.updateEmailCCPreferences = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { entityId, userType } = entityInfo;
+    const {
+      email_cc_enabled,
+      cc_email_address,
+      cc_case_updates,
+      cc_appointment_reminders,
+      cc_payment_notifications,
+      cc_document_requests,
+      cc_system_alerts
+    } = req.body;
+
+    let userTypeValue;
+    if (userType === 'lawfirm') {
+      userTypeValue = 'law_firm';
+    } else if (userType === 'medical_provider') {
+      userTypeValue = 'medical_provider';
+    } else {
+      userTypeValue = 'client';
+    }
+
+    const existingResult = await pool.query(
+      `SELECT id FROM notification_preferences WHERE user_id = $1 AND user_type = $2`,
+      [entityId, userTypeValue]
+    );
+
+    let result;
+    if (existingResult.rows.length === 0) {
+      result = await pool.query(
+        `INSERT INTO notification_preferences 
+         (user_id, user_type, email_cc_enabled, cc_email_address, cc_case_updates, 
+          cc_appointment_reminders, cc_payment_notifications, cc_document_requests, cc_system_alerts)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [entityId, userTypeValue, email_cc_enabled || false, cc_email_address || null,
+         cc_case_updates !== undefined ? cc_case_updates : true,
+         cc_appointment_reminders !== undefined ? cc_appointment_reminders : true,
+         cc_payment_notifications !== undefined ? cc_payment_notifications : true,
+         cc_document_requests !== undefined ? cc_document_requests : true,
+         cc_system_alerts !== undefined ? cc_system_alerts : true]
+      );
+    } else {
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (email_cc_enabled !== undefined) {
+        updates.push(`email_cc_enabled = $${paramIndex++}`);
+        values.push(email_cc_enabled);
+      }
+      if (cc_email_address !== undefined) {
+        updates.push(`cc_email_address = $${paramIndex++}`);
+        values.push(cc_email_address);
+      }
+      if (cc_case_updates !== undefined) {
+        updates.push(`cc_case_updates = $${paramIndex++}`);
+        values.push(cc_case_updates);
+      }
+      if (cc_appointment_reminders !== undefined) {
+        updates.push(`cc_appointment_reminders = $${paramIndex++}`);
+        values.push(cc_appointment_reminders);
+      }
+      if (cc_payment_notifications !== undefined) {
+        updates.push(`cc_payment_notifications = $${paramIndex++}`);
+        values.push(cc_payment_notifications);
+      }
+      if (cc_document_requests !== undefined) {
+        updates.push(`cc_document_requests = $${paramIndex++}`);
+        values.push(cc_document_requests);
+      }
+      if (cc_system_alerts !== undefined) {
+        updates.push(`cc_system_alerts = $${paramIndex++}`);
+        values.push(cc_system_alerts);
+      }
+
+      updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+      if (updates.length > 1) {
+        result = await pool.query(
+          `UPDATE notification_preferences 
+           SET ${updates.join(', ')}
+           WHERE user_id = $${paramIndex} AND user_type = $${paramIndex + 1}
+           RETURNING *`,
+          [...values, entityId, userTypeValue]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Email CC preferences updated successfully',
+      preferences: result?.rows[0] || {}
+    });
+  } catch (error) {
+    console.error('Error updating email CC preferences:', error);
+    res.status(500).json({ error: 'Failed to update email CC preferences' });
+  }
+};
+
+// Archive notification
+exports.archiveNotification = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { notificationId } = req.params;
+
+    let recipientType;
+    if (deviceType === 'law_firm') {
+      recipientType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      recipientType = 'medical_provider';
+    } else {
+      recipientType = 'user';
+    }
+
+    const result = await pool.query(
+      `UPDATE notifications 
+       SET archived = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND recipient_type = $2 AND recipient_id = $3
+       RETURNING id`,
+      [notificationId, recipientType, entityId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification archived successfully'
+    });
+  } catch (error) {
+    console.error('Error archiving notification:', error);
+    res.status(500).json({ error: 'Failed to archive notification' });
+  }
+};
