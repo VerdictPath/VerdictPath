@@ -2211,3 +2211,186 @@ exports.getNotificationAnalytics = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch notification analytics' });
   }
 };
+
+// Individual user sends notification to connected law firm or medical provider
+exports.sendToConnection = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType || req.user.type;
+
+    if (userType !== 'individual') {
+      return res.status(403).json({ error: 'Only individual users can use this endpoint' });
+    }
+
+    const { recipientType, recipientId, notificationType, message, priority = 'medium' } = req.body;
+
+    if (!recipientType || !recipientId || !notificationType) {
+      return res.status(400).json({ error: 'Recipient type, recipient ID, and notification type are required' });
+    }
+
+    if (!['law_firm', 'medical_provider'].includes(recipientType)) {
+      return res.status(400).json({ error: 'Invalid recipient type. Must be law_firm or medical_provider' });
+    }
+
+    const validNotificationTypes = ['appointment_request', 'status_update_request', 'new_information', 'reschedule_request'];
+    if (!validNotificationTypes.includes(notificationType)) {
+      return res.status(400).json({ error: 'Invalid notification type' });
+    }
+
+    // Get user info for the notification
+    const userResult = await pool.query(
+      'SELECT first_name, last_name, email FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const userName = `${user.first_name} ${user.last_name}`;
+
+    // Verify connection exists
+    let connectionExists = false;
+    let recipientName = '';
+
+    if (recipientType === 'law_firm') {
+      // Check if user is connected to this law firm
+      const connectionResult = await pool.query(
+        `SELECT lf.firm_name FROM law_firms lf
+         INNER JOIN law_firm_clients lfc ON lf.id = lfc.law_firm_id
+         WHERE lfc.client_id = $1 AND lf.id = $2`,
+        [userId, recipientId]
+      );
+      if (connectionResult.rows.length > 0) {
+        connectionExists = true;
+        recipientName = connectionResult.rows[0].firm_name;
+      }
+    } else if (recipientType === 'medical_provider') {
+      // Check if user is connected to this medical provider
+      const connectionResult = await pool.query(
+        `SELECT mp.provider_name FROM medical_providers mp
+         INNER JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
+         WHERE mpp.patient_id = $1 AND mp.id = $2`,
+        [userId, recipientId]
+      );
+      if (connectionResult.rows.length > 0) {
+        connectionExists = true;
+        recipientName = connectionResult.rows[0].provider_name;
+      }
+    }
+
+    if (!connectionExists) {
+      return res.status(403).json({ error: 'You are not connected to this recipient' });
+    }
+
+    // Create notification title and body based on type
+    const notificationTitles = {
+      'appointment_request': 'Appointment Request',
+      'status_update_request': 'Status Update Request',
+      'new_information': 'New Information Submitted',
+      'reschedule_request': 'Reschedule Request'
+    };
+
+    const notificationBodies = {
+      'appointment_request': `${userName} has requested to schedule an appointment.`,
+      'status_update_request': `${userName} has requested an update on their case status.`,
+      'new_information': `${userName} has submitted new information for your review.`,
+      'reschedule_request': `${userName} has requested to reschedule an existing appointment.`
+    };
+
+    const title = notificationTitles[notificationType];
+    const body = message || notificationBodies[notificationType];
+
+    // Insert notification into database
+    const insertResult = await pool.query(
+      `INSERT INTO notifications (
+        recipient_type, recipient_id, sender_type, sender_id,
+        type, title, body, priority, action_type, action_data, created_at
+      ) VALUES ($1, $2, 'user', $3, $4, $5, $6, $7, $8, $9, NOW())
+      RETURNING id`,
+      [
+        recipientType,
+        recipientId,
+        userId,
+        notificationType,
+        title,
+        body,
+        priority,
+        'view_client',
+        JSON.stringify({ clientId: userId, notificationType })
+      ]
+    );
+
+    const notificationId = insertResult.rows[0].id;
+
+    // Sync to Firebase for real-time delivery
+    try {
+      await syncNotificationToFirebase({
+        id: notificationId,
+        recipient_type: recipientType,
+        recipient_id: recipientId,
+        type: notificationType,
+        title,
+        body,
+        priority,
+        sender_type: 'user',
+        sender_id: userId,
+        created_at: new Date().toISOString()
+      });
+    } catch (firebaseError) {
+      console.error('Error syncing notification to Firebase:', firebaseError);
+      // Continue even if Firebase sync fails
+    }
+
+    res.json({
+      success: true,
+      message: `Notification sent to ${recipientName}`,
+      notificationId
+    });
+  } catch (error) {
+    console.error('Error sending notification to connection:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+// Get individual user's connections for sending notifications
+exports.getMyConnectionsForNotification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType || req.user.type;
+
+    if (userType !== 'individual') {
+      return res.status(403).json({ error: 'Only individual users can use this endpoint' });
+    }
+
+    // Get connected law firm
+    const lawFirmResult = await pool.query(
+      `SELECT lf.id, lf.firm_name, lf.email
+       FROM law_firms lf
+       INNER JOIN law_firm_clients lfc ON lf.id = lfc.law_firm_id
+       WHERE lfc.client_id = $1`,
+      [userId]
+    );
+
+    // Get connected medical providers
+    const providersResult = await pool.query(
+      `SELECT mp.id, mp.provider_name, mp.email
+       FROM medical_providers mp
+       INNER JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
+       WHERE mpp.patient_id = $1`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      connections: {
+        lawFirm: lawFirmResult.rows.length > 0 ? lawFirmResult.rows[0] : null,
+        medicalProviders: providersResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching connections for notification:', error);
+    res.status(500).json({ error: 'Failed to fetch connections' });
+  }
+};

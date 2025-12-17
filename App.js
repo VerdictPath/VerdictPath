@@ -41,6 +41,7 @@ import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
+import IndividualSendNotificationScreen from './src/screens/IndividualSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
@@ -1990,6 +1991,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             setCurrentScreen('notifications');
           }}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'individual-send-notification' && (
+        <IndividualSendNotificationScreen
+          user={user}
+          onBack={() => setCurrentScreen('notifications')}
         />
       )}
 

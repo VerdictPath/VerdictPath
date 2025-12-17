@@ -127,9 +127,17 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Mark All as Read Button */}
-      {notifications.filter(n => !n.is_read).length > 0 && (
-        <View style={styles.actionButtonContainer}>
+      {/* Action Buttons */}
+      <View style={styles.actionButtonContainer}>
+        {user?.userType === 'individual' && (
+          <TouchableOpacity
+            style={styles.sendNotificationButton}
+            onPress={() => onNavigate && onNavigate('individual-send-notification')}
+          >
+            <Text style={styles.sendNotificationText}>📨 Send Notification</Text>
+          </TouchableOpacity>
+        )}
+        {notifications.filter(n => !n.is_read).length > 0 && (
           <TouchableOpacity
             style={styles.markAllReadButton}
             onPress={handleMarkAllAsRead}
@@ -139,8 +147,8 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
               {markingAllRead ? '✓ Marking all as read...' : '✓ Mark all as read'}
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
 
       {/* Notification List */}
       {isLoading && notifications.length === 0 ? (
@@ -267,11 +275,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionButtonContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: 'rgba(26, 26, 26, 0.75)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  sendNotificationButton: {
+    backgroundColor: 'rgba(30, 58, 95, 0.9)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.5)',
+    marginRight: 10,
+  },
+  sendNotificationText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   markAllReadButton: {
     backgroundColor: 'rgba(255, 215, 0, 0.2)',

@@ -16,6 +16,8 @@ router.post('/send-to-client', authenticateToken, notificationsController.sendTo
 router.post('/send-to-all-patients', authenticateToken, notificationsController.sendToAllPatients);
 router.post('/send-to-patients', authenticateToken, notificationsController.sendToPatients);
 router.post('/send-to-patient', authenticateToken, notificationsController.sendToPatient);
+router.post('/send-to-connection', authenticateToken, notificationsController.sendToConnection);
+router.get('/my-connections-for-notification', authenticateToken, notificationsController.getMyConnectionsForNotification);
 
 router.get('/my-notifications', authenticateToken, notificationsController.getMyNotifications);
 router.get('/unread-count', authenticateToken, notificationsController.getUnreadCount);
