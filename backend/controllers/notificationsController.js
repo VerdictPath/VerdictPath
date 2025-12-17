@@ -2195,7 +2195,7 @@ exports.getNotificationAnalytics = async (req, res) => {
 
     const whereClause = conditions.join(' AND ');
 
-    // Get analytics data
+    // Get analytics data with average times
     const analyticsQuery = `
       SELECT 
         COUNT(*) as total_sent,
@@ -2206,17 +2206,39 @@ exports.getNotificationAnalytics = async (req, res) => {
         COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_count,
         COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_count,
         COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_count,
+        COUNT(CASE WHEN is_urgent = true THEN 1 END) as is_urgent_count,
+        COUNT(CASE WHEN is_urgent = true AND read_at IS NOT NULL THEN 1 END) as urgent_read_count,
+        COUNT(CASE WHEN is_urgent = true AND clicked_at IS NOT NULL THEN 1 END) as urgent_clicked_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) THEN 1 END) as normal_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) AND read_at IS NOT NULL THEN 1 END) as normal_read_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) AND clicked_at IS NOT NULL THEN 1 END) as normal_clicked_count,
+        AVG(EXTRACT(EPOCH FROM (clicked_at - created_at))) as avg_time_to_click_seconds,
+        AVG(EXTRACT(EPOCH FROM (read_at - created_at))) as avg_time_to_read_seconds,
+        COUNT(CASE WHEN type = 'case_update' THEN 1 END) as case_update_count,
+        COUNT(CASE WHEN type = 'appointment_reminder' THEN 1 END) as appointment_reminder_count,
+        COUNT(CASE WHEN type = 'payment_notification' THEN 1 END) as payment_notification_count,
+        COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
+        COUNT(CASE WHEN type = 'system_alert' THEN 1 END) as system_alert_count,
         COUNT(CASE WHEN type = 'task_assigned' THEN 1 END) as task_assigned_count,
         COUNT(CASE WHEN type = 'task_reminder' THEN 1 END) as task_reminder_count,
-        COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
         COUNT(CASE WHEN type = 'deadline_reminder' THEN 1 END) as deadline_reminder_count,
-        COUNT(CASE WHEN type = 'appointment_reminder' THEN 1 END) as appointment_reminder_count,
         COUNT(CASE WHEN type = 'general' THEN 1 END) as general_count
       FROM notifications
       WHERE ${whereClause}
     `;
 
     const analyticsResult = await pool.query(analyticsQuery, params);
+
+    // Get all-time stats
+    const allTimeQuery = `
+      SELECT 
+        COUNT(*) as total_sent,
+        COUNT(read_at) as total_read,
+        COUNT(clicked_at) as total_clicked
+      FROM notifications
+      WHERE sender_type = $1 AND sender_id = $2
+    `;
+    const allTimeResult = await pool.query(allTimeQuery, [senderType, entityId]);
     const stats = analyticsResult.rows[0];
 
     // Get recent notifications for activity timeline
@@ -2269,13 +2291,59 @@ exports.getNotificationAnalytics = async (req, res) => {
       status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
     }));
 
+    const allTimeStats = allTimeResult.rows[0];
+    const totalSent = parseInt(stats.total_sent) || 0;
+    const totalRead = parseInt(stats.total_read) || 0;
+    const totalClicked = parseInt(stats.total_clicked) || 0;
+    const urgentSent = parseInt(stats.is_urgent_count) || 0;
+    const urgentRead = parseInt(stats.urgent_read_count) || 0;
+    const urgentClicked = parseInt(stats.urgent_clicked_count) || 0;
+    const normalSent = parseInt(stats.normal_count) || 0;
+    const normalRead = parseInt(stats.normal_read_count) || 0;
+    const normalClicked = parseInt(stats.normal_clicked_count) || 0;
+
+    const formatTime = (seconds) => {
+      if (!seconds || seconds <= 0) return null;
+      if (seconds < 60) return `${Math.round(seconds)}s`;
+      if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+      if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
+      return `${Math.round(seconds / 86400)}d`;
+    };
+
     res.json({
       success: true,
       analytics: {
-        totalSent: parseInt(stats.total_sent) || 0,
+        totalSent,
         totalDelivered: parseInt(stats.total_delivered) || 0,
-        totalRead: parseInt(stats.total_read) || 0,
-        totalClicked: parseInt(stats.total_clicked) || 0,
+        totalRead,
+        totalClicked,
+        clickRate: totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0,
+        readRate: totalSent > 0 ? Math.round((totalRead / totalSent) * 100) : 0,
+        avgTimeToClick: formatTime(parseFloat(stats.avg_time_to_click_seconds)),
+        avgTimeToRead: formatTime(parseFloat(stats.avg_time_to_read_seconds)),
+        avgTimeToClickSeconds: parseFloat(stats.avg_time_to_click_seconds) || null,
+        avgTimeToReadSeconds: parseFloat(stats.avg_time_to_read_seconds) || null,
+        allTime: {
+          totalSent: parseInt(allTimeStats.total_sent) || 0,
+          totalRead: parseInt(allTimeStats.total_read) || 0,
+          totalClicked: parseInt(allTimeStats.total_clicked) || 0
+        },
+        urgentVsNormal: {
+          urgent: {
+            sent: urgentSent,
+            read: urgentRead,
+            clicked: urgentClicked,
+            readRate: urgentSent > 0 ? Math.round((urgentRead / urgentSent) * 100) : 0,
+            clickRate: urgentSent > 0 ? Math.round((urgentClicked / urgentSent) * 100) : 0
+          },
+          normal: {
+            sent: normalSent,
+            read: normalRead,
+            clicked: normalClicked,
+            readRate: normalSent > 0 ? Math.round((normalRead / normalSent) * 100) : 0,
+            clickRate: normalSent > 0 ? Math.round((normalClicked / normalSent) * 100) : 0
+          }
+        },
         byPriority: {
           urgent: parseInt(stats.urgent_count) || 0,
           high: parseInt(stats.high_count) || 0,
@@ -2283,11 +2351,14 @@ exports.getNotificationAnalytics = async (req, res) => {
           low: parseInt(stats.low_count) || 0
         },
         byType: {
+          caseUpdate: parseInt(stats.case_update_count) || 0,
+          appointmentReminder: parseInt(stats.appointment_reminder_count) || 0,
+          paymentNotification: parseInt(stats.payment_notification_count) || 0,
+          documentRequest: parseInt(stats.document_request_count) || 0,
+          systemAlert: parseInt(stats.system_alert_count) || 0,
           taskAssigned: parseInt(stats.task_assigned_count) || 0,
           taskReminder: parseInt(stats.task_reminder_count) || 0,
-          documentRequest: parseInt(stats.document_request_count) || 0,
           deadlineReminder: parseInt(stats.deadline_reminder_count) || 0,
-          appointmentReminder: parseInt(stats.appointment_reminder_count) || 0,
           general: parseInt(stats.general_count) || 0
         },
         recentNotifications: recentNotifications

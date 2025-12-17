@@ -40,7 +40,7 @@ const getNotificationTypeIcon = (type) => {
   }
 };
 
-const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress }) => {
+const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onViewAnalytics }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -396,7 +396,12 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress }) => 
           <Text style={styles.backButtonText}>← Inbox</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>📤 Sent ({total})</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity
+          style={styles.analyticsButton}
+          onPress={() => onViewAnalytics && onViewAnalytics()}
+        >
+          <Text style={styles.analyticsButtonText}>📊</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
@@ -588,6 +593,17 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 60,
+  },
+  analyticsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+  },
+  analyticsButtonText: {
+    fontSize: 20,
   },
   searchContainer: {
     flexDirection: 'row',

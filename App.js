@@ -41,6 +41,7 @@ import NotificationOutboxScreen from './src/screens/NotificationOutboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
+import NotificationAnalyticsScreen from './src/screens/NotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
 import IndividualSendNotificationScreen from './src/screens/IndividualSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
@@ -2010,6 +2011,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             setSelectedNotificationId(notificationId);
             setCurrentScreen('notification-detail');
           }}
+          onViewAnalytics={() => setCurrentScreen('notification-analytics')}
+        />
+      )}
+
+      {currentScreen === 'notification-analytics' && (
+        <NotificationAnalyticsScreen
+          user={user}
+          onBack={() => setCurrentScreen('notification-outbox')}
         />
       )}
 
