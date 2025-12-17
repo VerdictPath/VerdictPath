@@ -64,10 +64,96 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     systemNotifications: true,
     marketingNotifications: false
   });
+  const [emailCCPrefs, setEmailCCPrefs] = useState({
+    emailCCEnabled: false,
+    ccEmailAddress: '',
+    ccCaseUpdates: false,
+    ccAppointments: true,
+    ccUrgentOnly: false,
+    ccDocuments: true
+  });
+  const [editingCCEmail, setEditingCCEmail] = useState(false);
+  const [ccEmailInput, setCCEmailInput] = useState('');
 
   useEffect(() => {
     fetchPreferences();
+    fetchEmailCCPreferences();
   }, []);
+
+  const fetchEmailCCPreferences = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/email-preferences`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setEmailCCPrefs({
+          emailCCEnabled: data.email_cc_enabled ?? false,
+          ccEmailAddress: data.cc_email_address ?? '',
+          ccCaseUpdates: data.cc_case_updates ?? false,
+          ccAppointments: data.cc_appointments ?? true,
+          ccUrgentOnly: data.cc_urgent_only ?? false,
+          ccDocuments: data.cc_documents ?? true
+        });
+        setCCEmailInput(data.cc_email_address ?? '');
+      }
+    } catch (error) {
+      console.error('Error fetching email CC preferences:', error);
+    }
+  };
+
+  const updateEmailCCPreferences = async (updates) => {
+    try {
+      setSaving(true);
+      
+      const snakeCaseUpdates = {};
+      Object.keys(updates).forEach(key => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        snakeCaseUpdates[snakeKey] = updates[key];
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/api/notifications/email-preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(snakeCaseUpdates)
+      });
+
+      if (response.ok) {
+        setEmailCCPrefs(prev => ({ ...prev, ...updates }));
+      } else {
+        Alert.alert('Error', 'Failed to update email CC settings');
+      }
+    } catch (error) {
+      console.error('Error updating email CC preferences:', error);
+      Alert.alert('Error', 'Failed to save email CC settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCCToggle = (key, value) => {
+    const newPrefs = { ...emailCCPrefs, [key]: value };
+    setEmailCCPrefs(newPrefs);
+    updateEmailCCPreferences({ [key]: value });
+  };
+
+  const saveCCEmailAddress = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (ccEmailInput && !emailRegex.test(ccEmailInput)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      return;
+    }
+    updateEmailCCPreferences({ ccEmailAddress: ccEmailInput });
+    setEditingCCEmail(false);
+  };
 
   const fetchPreferences = async () => {
     try {
@@ -387,6 +473,127 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           </View>
         </View>
 
+        {/* Email CC Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📧 Email CC / Forwarding</Text>
+          <Text style={styles.sectionDescription}>
+            Receive copies of notifications via email for record-keeping
+          </Text>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Enable Email CC</Text>
+              <Text style={styles.settingDescription}>
+                Send copies of notifications to your email
+              </Text>
+            </View>
+            <Switch
+              value={emailCCPrefs.emailCCEnabled}
+              onValueChange={(value) => handleCCToggle('emailCCEnabled', value)}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
+              thumbColor={emailCCPrefs.emailCCEnabled ? '#fff' : '#f4f3f4'}
+              disabled={saving}
+            />
+          </View>
+
+          {emailCCPrefs.emailCCEnabled && (
+            <>
+              <View style={styles.emailInputContainer}>
+                <Text style={styles.emailInputLabel}>CC Email Address:</Text>
+                {editingCCEmail ? (
+                  <View style={styles.emailEditRow}>
+                    <TextInput
+                      style={styles.ccEmailInput}
+                      value={ccEmailInput}
+                      onChangeText={setCCEmailInput}
+                      placeholder="Enter email address"
+                      placeholderTextColor="#999"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <TouchableOpacity 
+                      style={styles.emailSaveButton}
+                      onPress={saveCCEmailAddress}
+                    >
+                      <Text style={styles.emailSaveButtonText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.emailDisplayRow}
+                    onPress={() => setEditingCCEmail(true)}
+                  >
+                    <Text style={styles.ccEmailDisplay}>
+                      {emailCCPrefs.ccEmailAddress || 'Not set - tap to add'}
+                    </Text>
+                    <Text style={styles.editEmailLink}>Edit</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.ccOptionsContainer}>
+                <Text style={styles.ccOptionsTitle}>CC the following notification types:</Text>
+                
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Case Updates</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccCaseUpdates}
+                    onValueChange={(value) => handleCCToggle('ccCaseUpdates', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccCaseUpdates ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Appointments</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccAppointments}
+                    onValueChange={(value) => handleCCToggle('ccAppointments', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccAppointments ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Documents</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccDocuments}
+                    onValueChange={(value) => handleCCToggle('ccDocuments', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccDocuments ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Urgent Only</Text>
+                    <Text style={styles.settingDescription}>
+                      Only CC urgent notifications
+                    </Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccUrgentOnly}
+                    onValueChange={(value) => handleCCToggle('ccUrgentOnly', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccUrgentOnly ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             🏴‍☠️ Ahoy! These settings help you control when and how you receive notifications on your journey to justice.
@@ -675,6 +882,79 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF'
+  },
+  sectionDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 18
+  },
+  emailInputContainer: {
+    backgroundColor: colors.background,
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  emailInputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8
+  },
+  emailEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  ccEmailInput: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: colors.text
+  },
+  emailSaveButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8
+  },
+  emailSaveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14
+  },
+  emailDisplayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  ccEmailDisplay: {
+    fontSize: 15,
+    color: colors.text,
+    flex: 1
+  },
+  editEmailLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600'
+  },
+  ccOptionsContainer: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: colors.border
+  },
+  ccOptionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10
   }
 });
 
