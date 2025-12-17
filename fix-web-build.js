@@ -24,15 +24,21 @@ if (fs.existsSync(oldJsPath)) {
   console.log('⚠ Could not find AppEntry.js at expected path');
 }
 
-// Fix the index.html reference
+// Fix the index.html reference with cache-busting timestamp
 if (fs.existsSync(indexPath)) {
   let html = fs.readFileSync(indexPath, 'utf8');
+  const cacheBuster = Date.now();
   html = html.replace(
     /src="\/home\/runner\/workspace\/node_modules\/expo\/AppEntry\.js"/,
-    'src="/bundle.js"'
+    `src="/bundle.js?v=${cacheBuster}"`
+  );
+  // Also update any existing bundle.js references to add fresh cache buster
+  html = html.replace(
+    /src="\/bundle\.js(\?v=\d+)?"/,
+    `src="/bundle.js?v=${cacheBuster}"`
   );
   fs.writeFileSync(indexPath, html);
-  console.log('✓ Updated index.html script reference');
+  console.log(`✓ Updated index.html script reference with cache buster v=${cacheBuster}`);
 } else {
   console.log('⚠ Could not find index.html');
 }
