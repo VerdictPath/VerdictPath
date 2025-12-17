@@ -408,7 +408,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                 onPress={() => onNavigate && onNavigate('medicalprovider-activity-dashboard', activeTab)}
               >
                 <Text style={styles.quickActionIcon}>📊</Text>
-                <Text style={styles.quickActionText}>Activity Logs</Text>
+                <Text style={styles.quickActionText}>User Activity</Text>
               </TouchableOpacity>
             </View>
             
