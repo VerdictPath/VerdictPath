@@ -1,0 +1,165 @@
+- id (primary key)
+- user_id
+- user_type (enum: 'client', 'law_firm', 'medical_provider')
+- email_cc_enabled (boolean, default false)
+- cc_email_address (text)
+- cc_case_updates (boolean, default true)
+- cc_appointment_reminders (boolean, default true)
+- cc_payment_notifications (boolean, default true)
+- cc_document_requests (boolean, default true)
+- cc_system_alerts (boolean, default true)
+```
+
+---
+
+### Notification Types & Templates
+
+**1. Case Updates**
+- Template: "Case Update: [Case Name]"
+- Used for: milestone completions, status changes, court dates
+- Default urgency: Normal
+- Email template: Professional case update format
+
+**2. Appointment Reminders**
+- Template: "Upcoming Appointment: [Provider/Date]"
+- Used for: medical appointments, consultations, depositions
+- Default urgency: Normal (can be urgent for same-day)
+- Email template: Calendar-style with date/time/location
+
+**3. Payment Notifications**
+- Template: "Payment: [Action Required/Received]"
+- Used for: invoices, payment confirmations, disbursements
+- Default urgency: Normal
+- Email template: Financial transaction format with amounts
+
+**4. Document Requests**
+- Template: "Document Request: [Document Type]"
+- Used for: medical records, evidence, signatures needed
+- Default urgency: Can be urgent
+- Email template: List of requested documents with deadlines
+
+**5. System Alerts**
+- Template: "System Alert: [Alert Type]"
+- Used for: security, account changes, platform updates
+- Default urgency: Can be urgent
+- Email template: Clear alert format with action items
+
+---
+
+### Analytics Tracking
+
+**Status Flow:**
+1. **Sent** - Notification created and push sent → `sent_at` timestamp
+2. **Clicked** - User taps notification → `clicked_at` timestamp
+3. **Read** - User opens message in inbox → `read_at` timestamp
+
+**Analytics Dashboard (for each portal):**
+- Total notifications sent
+- Delivery rate (sent vs failed)
+- Click-through rate (clicked/sent)
+- Read rate (read/sent)
+- Average time to click
+- Average time to read
+- Urgent vs normal notification performance
+- By notification type breakdown
+
+---
+
+### UI Components (React Native)
+
+**Compose Notification Screen:**
+```
+┌─────────────────────────────────┐
+│ To: [Select Recipient]          │
+│ Type: [Dropdown Menu]            │
+│ ⚠️ URGENT [Toggle Switch]       │
+│ Subject: [Text Input]            │
+│ Message: [Text Area - Unlimited] │
+│                                  │
+│ [Send Button]                    │
+└─────────────────────────────────┘
+```
+
+**Inbox Screen:**
+```
+┌─────────────────────────────────┐
+│ [Filter: All ▼] [Search 🔍]     │
+│                                  │
+│ ⚠️ URGENT - Doc Request          │
+│ From: Smith Law Firm             │
+│ 2 hours ago • Unread             │
+│ ─────────────────────────────────│
+│ Case Update: Settlement Offer    │
+│ From: Johnson & Associates       │
+│ Yesterday • Read                 │
+│ ─────────────────────────────────│
+│ Appointment Reminder             │
+│ From: MRI Center                 │
+│ 2 days ago • Read                │
+└─────────────────────────────────┘
+```
+
+**Outbox Screen:**
+```
+┌─────────────────────────────────┐
+│ [Filter: All ▼] [Search 🔍]     │
+│                                  │
+│ ⚠️ URGENT - Doc Request          │
+│ To: John Smith (Client)          │
+│ Sent 2h ago • Clicked 1h ago     │
+│ • Read 45m ago                   │
+│ ─────────────────────────────────│
+│ Case Update: Deposition          │
+│ To: Jane Doe (Client)            │
+│ Sent yesterday • Not clicked     │
+└─────────────────────────────────┘
+```
+
+**Settings Screen (Notification Section):**
+```
+┌─────────────────────────────────┐
+│ Email Notifications              │
+│                                  │
+│ CC all notifications to email    │
+│ [Toggle ON/OFF]                  │
+│                                  │
+│ Email Address:                   │
+│ [user@example.com]               │
+│                                  │
+│ Notification Categories:         │
+│ ☑ Case Updates                   │
+│ ☑ Appointment Reminders          │
+│ ☑ Payment Notifications          │
+│ ☑ Document Requests              │
+│ ☑ System Alerts                  │
+└─────────────────────────────────┘
+```
+
+**Individual Notification View:**
+```
+┌─────────────────────────────────┐
+│ ⚠️ URGENT                        │
+│ Document Request                 │
+│                                  │
+│ From: Smith Law Firm             │
+│ Sent: Dec 17, 2:30 PM            │
+│ ─────────────────────────────────│
+│                                  │
+│ Subject: Medical Records Needed  │
+│                                  │
+│ Hi John,                         │
+│                                  │
+│ We need the following documents  │
+│ for your case by Dec 20:         │
+│                                  │
+│ - MRI results from Dec 1         │
+│ - Physical therapy notes         │
+│ - Updated pain journal           │
+│                                  │
+│ Please upload these in the       │
+│ Documents section.               │
+│                                  │
+│ Thank you!                       │
+│                                  │
+│ [Reply] [Archive] [Delete]       │
+└─────────────────────────────────┘
