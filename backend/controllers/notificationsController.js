@@ -499,30 +499,32 @@ exports.sendNotification = async (req, res) => {
     // Send Email CC if recipient has email CC enabled
     let emailCCSent = false;
     try {
-      // Get recipient's email CC preferences
+      // Get recipient's email CC preferences from notification_settings table
       let ccPrefsQuery;
+      const userTypeValue = recipientType === 'user' ? 'individual' : recipientType;
+      
       if (recipientType === 'user') {
         ccPrefsQuery = await pool.query(
-          `SELECT necp.*, u.email as user_email
-           FROM notification_email_cc_preferences necp
-           JOIN users u ON u.id = necp.user_id
-           WHERE necp.user_id = $1`,
-          [recipientId]
+          `SELECT ns.*, u.email as user_email
+           FROM notification_settings ns
+           JOIN users u ON u.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = $2`,
+          [recipientId, userTypeValue]
         );
       } else if (recipientType === 'law_firm') {
         ccPrefsQuery = await pool.query(
-          `SELECT necp.*, lf.email as user_email
-           FROM notification_email_cc_preferences necp
-           JOIN law_firms lf ON lf.id = necp.law_firm_id
-           WHERE necp.law_firm_id = $1`,
+          `SELECT ns.*, lf.email as user_email
+           FROM notification_settings ns
+           JOIN law_firms lf ON lf.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = 'law_firm'`,
           [recipientId]
         );
       } else {
         ccPrefsQuery = await pool.query(
-          `SELECT necp.*, mp.email as user_email
-           FROM notification_email_cc_preferences necp
-           JOIN medical_providers mp ON mp.id = necp.medical_provider_id
-           WHERE necp.medical_provider_id = $1`,
+          `SELECT ns.*, mp.email as user_email
+           FROM notification_settings ns
+           JOIN medical_providers mp ON mp.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = 'medical_provider'`,
           [recipientId]
         );
       }
@@ -534,20 +536,17 @@ exports.sendNotification = async (req, res) => {
         
         // Check if email CC is enabled and if this type of notification should be CC'd
         if (ccPrefs.email_cc_enabled && ccEmail) {
-          // Check if urgent-only is enabled
-          if (ccPrefs.cc_urgent_only && !isUrgent) {
-            console.log(`ℹ️  Skipping email CC for non-urgent notification (cc_urgent_only enabled)`);
-          } else {
-            // Check notification type against preferences
+          // Check notification type against preferences
             const shouldSendCC = 
               (type === 'case_update' && ccPrefs.cc_case_updates) ||
-              (type === 'appointment_request' && ccPrefs.cc_appointments) ||
-              (type === 'appointment_reminder' && ccPrefs.cc_appointments) ||
-              (type === 'document_request' && ccPrefs.cc_documents) ||
+              (type === 'appointment_request' && ccPrefs.cc_appointment_reminders) ||
+              (type === 'appointment_reminder' && ccPrefs.cc_appointment_reminders) ||
+              (type === 'document_request' && ccPrefs.cc_document_requests) ||
               (type === 'new_information' && ccPrefs.cc_case_updates) ||
               (type === 'status_update_request' && ccPrefs.cc_case_updates) ||
               (type === 'deadline_reminder' && ccPrefs.cc_case_updates) ||
-              (type === 'payment_notification' && ccPrefs.cc_case_updates) ||
+              (type === 'payment_notification' && ccPrefs.cc_payment_notifications) ||
+              (type === 'system_alert' && ccPrefs.cc_system_alerts) ||
               isUrgent; // Always CC urgent notifications if email CC is enabled
 
             if (shouldSendCC) {
@@ -565,7 +564,6 @@ exports.sendNotification = async (req, res) => {
                 console.log(`📧 Email CC sent to ${ccEmail} for notification ${notification.id}`);
               }
             }
-          }
         }
       }
     } catch (emailCCError) {
@@ -2622,7 +2620,7 @@ exports.getSentNotifications = async (req, res) => {
   }
 };
 
-// Get email CC preferences
+// Get email CC preferences from notification_settings table
 exports.getEmailCCPreferences = async (req, res) => {
   try {
     const entityInfo = getEntityInfo(req);
@@ -2638,28 +2636,30 @@ exports.getEmailCCPreferences = async (req, res) => {
     } else if (userType === 'medical_provider') {
       userTypeValue = 'medical_provider';
     } else {
-      userTypeValue = 'client';
+      userTypeValue = 'individual';
     }
 
     const result = await pool.query(
-      `SELECT * FROM notification_preferences WHERE user_id = $1 AND user_type = $2`,
+      `SELECT * FROM notification_settings WHERE user_id = $1 AND user_type = $2`,
       [entityId, userTypeValue]
     );
 
     if (result.rows.length === 0) {
       return res.json({
+        success: true,
         email_cc_enabled: false,
         cc_email_address: null,
-        cc_case_updates: true,
+        cc_case_updates: false,
         cc_appointment_reminders: true,
-        cc_payment_notifications: true,
+        cc_payment_notifications: false,
         cc_document_requests: true,
-        cc_system_alerts: true
+        cc_system_alerts: false
       });
     }
 
     const prefs = result.rows[0];
     res.json({
+      success: true,
       email_cc_enabled: prefs.email_cc_enabled,
       cc_email_address: prefs.cc_email_address,
       cc_case_updates: prefs.cc_case_updates,
@@ -2674,7 +2674,7 @@ exports.getEmailCCPreferences = async (req, res) => {
   }
 };
 
-// Update email CC preferences
+// Update email CC preferences in notification_settings table
 exports.updateEmailCCPreferences = async (req, res) => {
   try {
     const entityInfo = getEntityInfo(req);
@@ -2699,28 +2699,28 @@ exports.updateEmailCCPreferences = async (req, res) => {
     } else if (userType === 'medical_provider') {
       userTypeValue = 'medical_provider';
     } else {
-      userTypeValue = 'client';
+      userTypeValue = 'individual';
     }
 
     const existingResult = await pool.query(
-      `SELECT id FROM notification_preferences WHERE user_id = $1 AND user_type = $2`,
+      `SELECT id FROM notification_settings WHERE user_id = $1 AND user_type = $2`,
       [entityId, userTypeValue]
     );
 
     let result;
     if (existingResult.rows.length === 0) {
       result = await pool.query(
-        `INSERT INTO notification_preferences 
+        `INSERT INTO notification_settings 
          (user_id, user_type, email_cc_enabled, cc_email_address, cc_case_updates, 
           cc_appointment_reminders, cc_payment_notifications, cc_document_requests, cc_system_alerts)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
         [entityId, userTypeValue, email_cc_enabled || false, cc_email_address || null,
-         cc_case_updates !== undefined ? cc_case_updates : true,
+         cc_case_updates !== undefined ? cc_case_updates : false,
          cc_appointment_reminders !== undefined ? cc_appointment_reminders : true,
-         cc_payment_notifications !== undefined ? cc_payment_notifications : true,
+         cc_payment_notifications !== undefined ? cc_payment_notifications : false,
          cc_document_requests !== undefined ? cc_document_requests : true,
-         cc_system_alerts !== undefined ? cc_system_alerts : true]
+         cc_system_alerts !== undefined ? cc_system_alerts : false]
       );
     } else {
       const updates = [];
@@ -2760,7 +2760,7 @@ exports.updateEmailCCPreferences = async (req, res) => {
 
       if (updates.length > 1) {
         result = await pool.query(
-          `UPDATE notification_preferences 
+          `UPDATE notification_settings 
            SET ${updates.join(', ')}
            WHERE user_id = $${paramIndex} AND user_type = $${paramIndex + 1}
            RETURNING *`,

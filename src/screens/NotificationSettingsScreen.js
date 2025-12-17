@@ -68,9 +68,10 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     emailCCEnabled: false,
     ccEmailAddress: '',
     ccCaseUpdates: false,
-    ccAppointments: true,
-    ccUrgentOnly: false,
-    ccDocuments: true
+    ccAppointmentReminders: true,
+    ccPaymentNotifications: false,
+    ccDocumentRequests: true,
+    ccSystemAlerts: false
   });
   const [editingCCEmail, setEditingCCEmail] = useState(false);
   const [ccEmailInput, setCCEmailInput] = useState('');
@@ -96,9 +97,10 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           emailCCEnabled: data.email_cc_enabled ?? false,
           ccEmailAddress: data.cc_email_address ?? '',
           ccCaseUpdates: data.cc_case_updates ?? false,
-          ccAppointments: data.cc_appointments ?? true,
-          ccUrgentOnly: data.cc_urgent_only ?? false,
-          ccDocuments: data.cc_documents ?? true
+          ccAppointmentReminders: data.cc_appointment_reminders ?? true,
+          ccPaymentNotifications: data.cc_payment_notifications ?? false,
+          ccDocumentRequests: data.cc_document_requests ?? true,
+          ccSystemAlerts: data.cc_system_alerts ?? false
         });
         setCCEmailInput(data.cc_email_address ?? '');
       }
@@ -550,42 +552,52 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
 
                 <View style={styles.settingRow}>
                   <View style={styles.settingInfo}>
-                    <Text style={styles.settingLabel}>Appointments</Text>
+                    <Text style={styles.settingLabel}>Appointment Reminders</Text>
                   </View>
                   <Switch
-                    value={emailCCPrefs.ccAppointments}
-                    onValueChange={(value) => handleCCToggle('ccAppointments', value)}
+                    value={emailCCPrefs.ccAppointmentReminders}
+                    onValueChange={(value) => handleCCToggle('ccAppointmentReminders', value)}
                     trackColor={{ false: '#ccc', true: themeColors.primary }}
-                    thumbColor={emailCCPrefs.ccAppointments ? '#fff' : '#f4f3f4'}
+                    thumbColor={emailCCPrefs.ccAppointmentReminders ? '#fff' : '#f4f3f4'}
                     disabled={saving}
                   />
                 </View>
 
                 <View style={styles.settingRow}>
                   <View style={styles.settingInfo}>
-                    <Text style={styles.settingLabel}>Documents</Text>
+                    <Text style={styles.settingLabel}>Payment Notifications</Text>
                   </View>
                   <Switch
-                    value={emailCCPrefs.ccDocuments}
-                    onValueChange={(value) => handleCCToggle('ccDocuments', value)}
+                    value={emailCCPrefs.ccPaymentNotifications}
+                    onValueChange={(value) => handleCCToggle('ccPaymentNotifications', value)}
                     trackColor={{ false: '#ccc', true: themeColors.primary }}
-                    thumbColor={emailCCPrefs.ccDocuments ? '#fff' : '#f4f3f4'}
+                    thumbColor={emailCCPrefs.ccPaymentNotifications ? '#fff' : '#f4f3f4'}
                     disabled={saving}
                   />
                 </View>
 
                 <View style={styles.settingRow}>
                   <View style={styles.settingInfo}>
-                    <Text style={styles.settingLabel}>Urgent Only</Text>
-                    <Text style={styles.settingDescription}>
-                      Only CC urgent notifications
-                    </Text>
+                    <Text style={styles.settingLabel}>Document Requests</Text>
                   </View>
                   <Switch
-                    value={emailCCPrefs.ccUrgentOnly}
-                    onValueChange={(value) => handleCCToggle('ccUrgentOnly', value)}
+                    value={emailCCPrefs.ccDocumentRequests}
+                    onValueChange={(value) => handleCCToggle('ccDocumentRequests', value)}
                     trackColor={{ false: '#ccc', true: themeColors.primary }}
-                    thumbColor={emailCCPrefs.ccUrgentOnly ? '#fff' : '#f4f3f4'}
+                    thumbColor={emailCCPrefs.ccDocumentRequests ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>System Alerts</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccSystemAlerts}
+                    onValueChange={(value) => handleCCToggle('ccSystemAlerts', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccSystemAlerts ? '#fff' : '#f4f3f4'}
                     disabled={saving}
                   />
                 </View>
