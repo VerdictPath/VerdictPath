@@ -6,14 +6,28 @@
 // API BASE URL CONFIGURATION
 // ============================================================================
 
-// RAILWAY PRODUCTION DEPLOYMENT
-// export const API_BASE_URL = 'https://verdictpath.up.railway.app';
+// Environment-based API URL selection
+// Priority: Environment Variable > Production > Local Development
 
-// LOCAL DEVELOPMENT (uncomment when testing locally)
-// export const API_BASE_URL = 'http://localhost:5000';
+const getApiBaseUrl = () => {
+  // Priority 1: Explicit override via environment variable
+  if (process.env.EXPO_PUBLIC_API_BASE_URL) {
+    return process.env.EXPO_PUBLIC_API_BASE_URL;
+  }
 
-// REPLIT DEVELOPMENT (if using Replit for backend)
-export const API_BASE_URL = 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+  // Priority 2: Production deployment (Railway)
+  // Uncomment this line when deploying to production:
+  // return 'https://verdictpath.up.railway.app';
+
+  // Priority 3: Local development (default)
+  // Backend runs on port 3000 by default (check backend/server.js)
+  return 'http://localhost:3000';
+
+  // REPLIT DEVELOPMENT (if using Replit for backend - currently returning 503)
+  // return 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // ============================================================================
 // API ENDPOINTS

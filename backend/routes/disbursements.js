@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
 const { sendDisbursementProcessedEmail, sendLienPaymentEmail } = require('../services/emailService');
