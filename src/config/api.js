@@ -6,14 +6,21 @@
 // API BASE URL CONFIGURATION
 // ============================================================================
 
+import { Platform } from 'react-native';
+
 // RAILWAY PRODUCTION DEPLOYMENT
 // export const API_BASE_URL = 'https://verdictpath.up.railway.app';
 
-// LOCAL DEVELOPMENT (uncomment when testing locally)
-// export const API_BASE_URL = 'http://localhost:5000';
+// LOCAL DEVELOPMENT - Use local IP for mobile, localhost for web
+// For mobile devices, use your computer's local IP address (find it with: hostname -I or ipconfig)
+// For web, localhost works fine
+const LOCAL_IP = '192.168.18.197'; // Your computer's local IP address
+export const API_BASE_URL = Platform.OS === 'web' 
+  ? 'http://localhost:5000' 
+  : `http://${LOCAL_IP}:5000`;
 
 // REPLIT DEVELOPMENT (if using Replit for backend)
-export const API_BASE_URL = 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+// export const API_BASE_URL = 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
 
 // ============================================================================
 // API ENDPOINTS

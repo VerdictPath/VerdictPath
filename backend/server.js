@@ -1,3 +1,4 @@
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -67,7 +68,11 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:5000',
       'http://localhost:19006', // Expo web dev
+      'http://localhost:8081', // Expo Metro bundler
       'http://localhost:3000',  // Backend dev
+      /^http:\/\/localhost:\d+$/, // Allow any localhost port for development
+      /^http:\/\/192\.168\.\d+\.\d+:\d+$/, // Allow local network IPs for mobile devices
+      /^http:\/\/10\.\d+\.\d+\.\d+:\d+$/, // Allow 10.x.x.x network IPs
       /\.railway\.app$/,
       /\.replit\.dev$/,
       /\.repl\.co$/
