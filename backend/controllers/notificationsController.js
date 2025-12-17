@@ -386,6 +386,10 @@ exports.sendNotification = async (req, res) => {
       const isUrgent = priority === 'urgent';
       const pushTitle = isUrgent ? `[URGENT] ${title}` : title;
       
+      // Get current unread count for badge (add 1 for the new notification)
+      const currentUnreadCount = await getUnreadCountForUser(recipientType, recipientId);
+      const badgeCount = currentUnreadCount + 1;
+      
       const pushPromises = deviceResult.rows.map(device => 
         pushNotificationService.sendPushNotification({
           expoPushToken: device.expo_push_token,
@@ -402,7 +406,8 @@ exports.sendNotification = async (req, res) => {
             ...safeActionData
           },
           priority: isUrgent ? 'high' : 'default',
-          sound: isUrgent ? 'urgent.mp3' : 'default'
+          sound: isUrgent ? 'urgent.mp3' : 'default',
+          badge: badgeCount
         })
       );
 
