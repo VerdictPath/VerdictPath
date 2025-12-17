@@ -36,6 +36,7 @@ const adminPortalRoutes = require('./routes/adminPortal');
 const smsTestRoutes = require('./routes/smsTestRoutes');
 const bankInfoRoutes = require('./routes/bankInfo');
 const { startReminderScheduler } = require('./services/taskReminderService');
+const { startCleanupScheduler } = require('./services/notificationCleanupService');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -497,6 +498,9 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Start task reminder scheduler
   startReminderScheduler();
+  
+  // Start notification cleanup scheduler (runs daily at midnight)
+  startCleanupScheduler();
 });
 
 module.exports = app;
