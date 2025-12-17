@@ -8,28 +8,34 @@ const getThemeForUserType = (isMedicalProvider) => {
   if (isMedicalProvider) {
     return {
       primary: medicalProviderTheme.colors.primary,
+      primaryDark: medicalProviderTheme.colors.primaryDark,
       background: medicalProviderTheme.colors.background,
-      surface: medicalProviderTheme.colors.surface,
-      surfaceAlt: medicalProviderTheme.colors.surfaceAlt,
-      text: medicalProviderTheme.colors.text,
+      surface: '#FFFFFF',
+      surfaceAlt: medicalProviderTheme.colors.background,
+      text: medicalProviderTheme.colors.textPrimary,
       textSecondary: medicalProviderTheme.colors.textSecondary,
-      border: medicalProviderTheme.colors.border,
+      border: '#E2E8F0',
+      accent: medicalProviderTheme.colors.primaryLight,
       headerBg: medicalProviderTheme.colors.primary,
       headerText: '#FFFFFF',
       backButtonText: '#A8A8A8',
+      activeText: '#FFFFFF',
     };
   }
   return {
-    primary: colors.primary,
-    background: colors.background,
-    surface: colors.surface,
-    surfaceAlt: colors.surfaceAlt,
-    text: colors.text,
-    textSecondary: colors.textSecondary,
-    border: colors.border,
-    headerBg: colors.primary,
+    primary: theme.lawFirm.primary,
+    primaryDark: theme.lawFirm.primaryDark,
+    background: theme.lawFirm.background,
+    surface: theme.lawFirm.surface,
+    surfaceAlt: theme.lawFirm.surfaceAlt,
+    text: theme.lawFirm.text,
+    textSecondary: theme.lawFirm.textSecondary,
+    border: theme.lawFirm.border,
+    accent: theme.lawFirm.accent,
+    headerBg: theme.lawFirm.primary,
     headerText: '#FFFFFF',
     backButtonText: '#C0C0C0',
+    activeText: '#FFFFFF',
   };
 };
 
@@ -664,7 +670,7 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   timeRangeTextActive: {
-    color: colors.surface,
+    color: colors.activeText,
   },
   scrollContent: {
     flex: 1,
