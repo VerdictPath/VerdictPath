@@ -743,21 +743,21 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         onPress={() => setActiveTab('book')}
       >
         <Icon name="hospital-building" size={16} color={activeTab === 'book' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Medical</Text>
+        <Text style={[styles.tabText, activeTab === 'book' && styles.activeTabText]}>Select Medical Appt</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'lawfirm' && styles.activeTab]}
         onPress={() => setActiveTab('lawfirm')}
       >
         <Icon name="scale-balance" size={16} color={activeTab === 'lawfirm' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'lawfirm' && styles.activeTabText]}>Law Firm</Text>
+        <Text style={[styles.tabText, activeTab === 'lawfirm' && styles.activeTabText]}>Select Law Firm Appt</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'appointments' && styles.activeTab]}
         onPress={() => setActiveTab('appointments')}
       >
         <Icon name="calendar-star" size={16} color={activeTab === 'appointments' ? '#FFD700' : '#a0aec0'} />
-        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Appts</Text>
+        <Text style={[styles.tabText, activeTab === 'appointments' && styles.activeTabText]}>Scheduled Appts</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.tab, activeTab === 'events' && styles.activeTab]}
