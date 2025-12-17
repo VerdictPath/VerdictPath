@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, Alert
 } from 'react-native';
-import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
 import InviteModal from '../components/InviteModal';
@@ -11,6 +11,9 @@ import SettingsScreen from './SettingsScreen';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient, onNavigate, onLogout }) => {
+  // Create dynamic styles using theme colors
+  const styles = useMemo(() => createStyles(medicalProviderTheme.colors), []);
+  
   const [activeTab, setActiveTab] = useState(initialTab || 'patients');
   const [patients, setPatients] = useState([]);
   const [providerData, setProviderData] = useState(null);
@@ -273,7 +276,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     if (checkingStripeStatus) {
       return (
         <View style={styles.paymentBanner}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={medicalProviderTheme.colors.primary} />
           <Text style={styles.paymentBannerText}>Checking payment account...</Text>
         </View>
       );
@@ -356,7 +359,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
             <TextInput
               style={styles.searchInput}
               placeholder="Search patients by name or email..."
-              placeholderTextColor={theme.colors.mediumGray}
+              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -759,7 +762,7 @@ const renderAnalyticsTab = () => {
                 value={firmCode}
                 onChangeText={setFirmCode}
                 placeholder="Enter firm code (e.g., LAW-BETA01)"
-                placeholderTextColor={theme.colors.textSecondary}
+                placeholderTextColor={medicalProviderTheme.colors.textSecondary}
                 autoCapitalize="characters"
               />
               <TouchableOpacity 
@@ -828,7 +831,7 @@ const renderAnalyticsTab = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" color={medicalProviderTheme.colors.primary} />
         <Text style={styles.loadingText}>Loading the Portal</Text>
       </View>
     );
@@ -919,27 +922,27 @@ const renderAnalyticsTab = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 10,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 16,
   },
   header: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     padding: 20,
     borderBottomWidth: 3,
-    borderBottomColor: theme.colors.primaryDark,
+    borderBottomColor: colors.primaryDark,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -952,7 +955,7 @@ const styles = StyleSheet.create({
   },
   providerCode: {
     fontSize: 14,
-    color: theme.colors.silver,
+    color: colors.silver,
     fontFamily: 'monospace',
   },
   inviteButton: {
@@ -961,18 +964,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   inviteButtonText: {
-    color: theme.colors.primary,
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.silver,
+    borderBottomColor: colors.silver,
   },
   tab: {
     flex: 1,
@@ -982,8 +985,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: theme.colors.primary,
-    backgroundColor: theme.colors.offWhite,
+    borderBottomColor: colors.primary,
+    backgroundColor: colors.offWhite,
   },
   tabIconContainer: {
     position: 'relative',
@@ -1011,11 +1014,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   activeTabText: {
-    color: theme.colors.primary,
+    color: colors.primary,
   },
   content: {
     flex: 1,
@@ -1025,43 +1028,43 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     padding: 20,
     marginBottom: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.silver,
+    borderBottomColor: colors.silver,
   },
   sectionDescription: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
   notificationActionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   notificationActionIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -1084,7 +1087,7 @@ const styles = StyleSheet.create({
   },
   notificationActionArrow: {
     fontSize: 24,
-    color: theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   hipaaActivityCard: {
@@ -1159,10 +1162,10 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 15,
@@ -1174,7 +1177,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     padding: 0,
   },
   clearButton: {
@@ -1183,7 +1186,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 18,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
     fontWeight: 'bold',
   },
   emptyState: {
@@ -1196,23 +1199,23 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 10,
     textAlign: 'center',
     fontWeight: '600',
   },
   emptySubtext: {
     fontSize: 14,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
     textAlign: 'center',
   },
   patientCard: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: colors.primary,
   },
   patientHeader: {
     flexDirection: 'row',
@@ -1223,11 +1226,11 @@ const styles = StyleSheet.create({
   patientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: colors.primary,
     flex: 1,
   },
   patientBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -1237,7 +1240,7 @@ const styles = StyleSheet.create({
   },
   patientEmail: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   patientStats: {
@@ -1247,11 +1250,11 @@ const styles = StyleSheet.create({
   },
   patientStat: {
     fontSize: 13,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
   },
   patientDate: {
     fontSize: 12,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
     marginTop: 4,
   },
   statsGrid: {
@@ -1260,13 +1263,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statCard: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 16,
     borderRadius: 8,
     width: '48%',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: colors.primary,
   },
   statIcon: {
     fontSize: 32,
@@ -1275,12 +1278,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   phaseRow: {
@@ -1295,19 +1298,19 @@ const styles = StyleSheet.create({
   phaseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: colors.primary,
   },
   phaseCount: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   progressBarContainer: {
     height: 12,
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.mediumGray,
+    borderColor: colors.mediumGray,
   },
   progressBar: {
     height: '100%',
@@ -1318,11 +1321,11 @@ const styles = StyleSheet.create({
   },
   activityItem: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 12,
     borderRadius: 6,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: colors.primary,
   },
   activityIcon: {
     fontSize: 24,
@@ -1333,20 +1336,20 @@ const styles = StyleSheet.create({
   },
   activityText: {
     fontSize: 14,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     marginBottom: 2,
   },
   activityTime: {
     fontSize: 12,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
   },
   recordCard: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: colors.primary,
   },
   recordHeader: {
     flexDirection: 'row',
@@ -1357,25 +1360,25 @@ const styles = StyleSheet.create({
   recordTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: colors.primary,
   },
   recordBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
   },
   recordPatient: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   recordDate: {
     fontSize: 12,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
   },
   billingSummary: {
     gap: 12,
@@ -1385,26 +1388,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     borderRadius: 6,
   },
   billingLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
   },
   billingValue: {
     fontSize: 18,
-    color: theme.colors.primary,
+    color: colors.primary,
     fontWeight: 'bold',
   },
   evidenceCard: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primaryLight,
+    borderLeftColor: colors.primaryLight,
   },
   evidenceHeader: {
     flexDirection: 'row',
@@ -1421,29 +1424,29 @@ const styles = StyleSheet.create({
   evidenceTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 2,
   },
   evidencePatient: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   evidenceBadge: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
   },
   evidenceDate: {
     fontSize: 12,
-    color: theme.colors.mediumGray,
+    color: colors.mediumGray,
     marginLeft: 36,
   },
   complianceCard: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 20,
     borderRadius: 8,
     alignItems: 'center',
@@ -1462,7 +1465,7 @@ const styles = StyleSheet.create({
   },
   complianceText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 15,
     lineHeight: 20,
@@ -1473,11 +1476,11 @@ const styles = StyleSheet.create({
   },
   complianceFeature: {
     fontSize: 13,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     paddingVertical: 6,
   },
   logoutButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     padding: 15,
     borderRadius: 8,
     margin: 16,
@@ -1489,26 +1492,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   connectionsButton: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
     padding: 15,
     borderRadius: 8,
     margin: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   connectionsButtonText: {
-    color: theme.colors.primary,
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   comingSoonContainer: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 30,
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     marginBottom: 20,
   },
   comingSoonIcon: {
@@ -1518,22 +1521,22 @@ const styles = StyleSheet.create({
   comingSoonTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 15,
   },
   comingSoonText: {
     fontSize: 15,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     textAlign: 'center',
     marginBottom: 10,
     lineHeight: 22,
   },
   infoBox: {
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     padding: 20,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.primaryLight,
+    borderColor: colors.primaryLight,
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -1544,12 +1547,12 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     lineHeight: 22,
   },
   // Litigation Progress Styles
   litigationSection: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 12,
     borderRadius: 6,
     marginTop: 10,
@@ -1563,48 +1566,48 @@ const styles = StyleSheet.create({
   },
   litigationLabel: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   litigationStage: {
     fontSize: 14,
-    color: theme.colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
   progressBar: {
     height: 16,
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     marginBottom: 5,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
   },
   progressText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     fontWeight: '500',
   },
   hipaaSection: {
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     padding: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   hipaaDescription: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 15,
     lineHeight: 20,
   },
   hipaaButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -1615,7 +1618,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   paymentBanner: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 15,
     borderRadius: 8,
     marginBottom: 15,
@@ -1652,16 +1655,16 @@ const styles = StyleSheet.create({
   paymentBannerTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 5,
   },
   paymentBannerDescription: {
     fontSize: 13,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     lineHeight: 18,
   },
   paymentBannerButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 6,
@@ -1675,7 +1678,7 @@ const styles = StyleSheet.create({
   },
   paymentBannerText: {
     fontSize: 14,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     marginLeft: 10,
   },
   paymentBannerSuccessTitle: {
@@ -1686,16 +1689,16 @@ const styles = StyleSheet.create({
   },
   paymentBannerSuccessDescription: {
     fontSize: 13,
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
   },
   disbursementCTA: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.primary,
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,
     borderRadius: 12,
     borderWidth: 3,
-    borderColor: theme.colors.primaryLight,
+    borderColor: colors.primaryLight,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -1703,8 +1706,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   disbursementCTADisabled: {
-    backgroundColor: theme.colors.mediumGray,
-    borderColor: theme.colors.textSecondary,
+    backgroundColor: colors.mediumGray,
+    borderColor: colors.textSecondary,
     opacity: 0.8,
   },
   disbursementCTAContent: {
@@ -1722,22 +1725,22 @@ const styles = StyleSheet.create({
   disbursementCTATitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.cardBackground,
+    color: colors.cardBackground,
     marginBottom: 4,
   },
   disbursementCTASubtitle: {
     fontSize: 14,
-    color: theme.colors.offWhite,
+    color: colors.offWhite,
     opacity: 0.9,
   },
   disbursementCTAArrow: {
     fontSize: 24,
-    color: theme.colors.primaryLight,
+    color: colors.primaryLight,
     fontWeight: 'bold',
   },
   disbursementSetupText: {
     fontSize: 16,
-    color: theme.colors.primaryLight,
+    color: colors.primaryLight,
     fontWeight: 'bold',
   },
   quickActionsContainer: {
@@ -1746,7 +1749,7 @@ const styles = StyleSheet.create({
   quickActionsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: colors.text,
     marginBottom: 12,
   },
   quickActionsRow: {
@@ -1755,9 +1758,9 @@ const styles = StyleSheet.create({
   },
   quickActionButton: {
     flex: 1,
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     borderWidth: 2,
-    borderColor: theme.colors.primaryLight,
+    borderColor: colors.primaryLight,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -1774,21 +1777,21 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     textAlign: 'center',
   },
   addFirmContainer: {
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     padding: 16,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.primaryLight,
+    borderColor: colors.primaryLight,
     marginBottom: 20,
   },
   addFirmLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 10,
   },
   addFirmInputRow: {
@@ -1797,29 +1800,29 @@ const styles = StyleSheet.create({
   },
   firmCodeInput: {
     flex: 1,
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    color: theme.colors.text,
+    color: colors.text,
   },
   addFirmButton: {
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     justifyContent: 'center',
   },
   addFirmButtonDisabled: {
     opacity: 0.6,
   },
   addFirmButtonText: {
-    color: theme.colors.charcoal,
+    color: colors.charcoal,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1829,14 +1832,14 @@ const styles = StyleSheet.create({
   firmsListTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 15,
   },
   firmCard: {
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: colors.cardBackground,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     padding: 16,
     marginBottom: 12,
   },
@@ -1849,12 +1852,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
   },
   firmCardIconText: {
     fontSize: 24,
@@ -1865,21 +1868,21 @@ const styles = StyleSheet.create({
   firmCardName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 4,
   },
   firmCardCode: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     fontFamily: 'monospace',
     marginBottom: 4,
   },
   firmCardMeta: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
   },
   removeFirmButton: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: colors.background,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
@@ -1895,10 +1898,10 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     padding: 40,
-    backgroundColor: theme.colors.offWhite,
+    backgroundColor: colors.offWhite,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.silver,
+    borderColor: colors.silver,
     marginBottom: 20,
   },
   emptyStateIcon: {
@@ -1908,13 +1911,13 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: colors.primary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
