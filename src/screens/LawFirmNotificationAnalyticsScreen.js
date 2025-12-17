@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, FlatList } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, FlatList, TextInput } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -46,6 +46,18 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [showClientPicker, setShowClientPicker] = useState(false);
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearchQuery.trim()) return clients;
+    const query = clientSearchQuery.toLowerCase().trim();
+    return clients.filter(client => {
+      const displayName = (client.displayName || 
+        `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim()).toLowerCase();
+      const email = (client.email || '').toLowerCase();
+      return displayName.includes(query) || email.includes(query);
+    });
+  }, [clients, clientSearchQuery]);
 
   // Determine if this is a medical provider user
   const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
@@ -171,19 +183,38 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
               activeOpacity={1}
               onPress={() => setShowClientPicker(false)}
             />
-            <ScrollView style={styles.clientPickerDropdown} nestedScrollEnabled>
+            <View style={styles.clientPickerDropdown}>
+              <View style={styles.searchInputContainer}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={isMedicalProvider ? "Search patients..." : "Search clients..."}
+                  placeholderTextColor="#999"
+                  value={clientSearchQuery}
+                  onChangeText={setClientSearchQuery}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {clientSearchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setClientSearchQuery('')} style={styles.clearSearchButton}>
+                    <Text style={styles.clearSearchText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <ScrollView style={styles.clientListScroll} nestedScrollEnabled>
               <TouchableOpacity
                 style={[styles.clientOption, !selectedClientId && styles.clientOptionSelected]}
                 onPress={() => {
                   setSelectedClientId(null);
                   setShowClientPicker(false);
+                  setClientSearchQuery('');
                 }}
               >
                 <Text style={[styles.clientOptionText, !selectedClientId && styles.clientOptionTextSelected]}>
                   {isMedicalProvider ? 'All Patients' : 'All Clients'}
                 </Text>
               </TouchableOpacity>
-              {clients.map(client => {
+              {filteredClients.map(client => {
                 const displayName = client.displayName || 
                   `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.trim();
                 return (
@@ -193,6 +224,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                     onPress={() => {
                       setSelectedClientId(client.id);
                       setShowClientPicker(false);
+                      setClientSearchQuery('');
                     }}
                   >
                     <Text style={[styles.clientOptionText, selectedClientId === client.id && styles.clientOptionTextSelected]}>
@@ -202,7 +234,8 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+              </ScrollView>
+            </View>
           </>
         )}
       </View>
@@ -542,6 +575,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.lawFirm.textSecondary,
     marginTop: 4,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: theme.lawFirm.text,
+    paddingVertical: 6,
+  },
+  clearSearchButton: {
+    padding: 4,
+  },
+  clearSearchText: {
+    fontSize: 16,
+    color: theme.lawFirm.textSecondary,
+  },
+  clientListScroll: {
+    maxHeight: 240,
   },
   timeRangeContainer: {
     flexDirection: 'row',
