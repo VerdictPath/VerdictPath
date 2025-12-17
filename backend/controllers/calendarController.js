@@ -33,7 +33,7 @@ const calendarController = {
             sce.shared_by_id,
             CASE 
               WHEN sce.shared_by_type = 'law_firm' THEN (SELECT firm_name FROM law_firms WHERE id = sce.shared_by_id)
-              WHEN sce.shared_by_type = 'medical_provider' THEN (SELECT practice_name FROM medical_providers WHERE id = sce.shared_by_id)
+              WHEN sce.shared_by_type = 'medical_provider' THEN (SELECT provider_name FROM medical_providers WHERE id = sce.shared_by_id)
               ELSE NULL
             END as shared_by_name,
             true as is_shared
