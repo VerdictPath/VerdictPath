@@ -57,33 +57,51 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
     return date.toLocaleDateString();
   };
 
-  const renderNotificationItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.notificationCard,
-        !item.is_read && styles.unreadCard
-      ]}
-      onPress={() => onNotificationPress && onNotificationPress(item.id)}
-    >
-      <View style={styles.notificationHeader}>
-        <Text style={styles.notificationTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        {!item.is_read && <View style={styles.unreadBadge} />}
-      </View>
-      <Text style={styles.notificationBody} numberOfLines={2}>
-        {item.body}
-      </Text>
-      <View style={styles.notificationFooter}>
-        <Text style={styles.notificationTime}>
-          {formatTimestamp(item.created_at)}
-        </Text>
-        {item.is_clicked && (
-          <Text style={styles.clickedLabel}>✓ Viewed</Text>
+  const renderNotificationItem = ({ item }) => {
+    const isUrgent = item.is_urgent || item.priority === 'urgent';
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.notificationCard,
+          !item.is_read && styles.unreadCard,
+          isUrgent && styles.urgentCard
+        ]}
+        onPress={() => onNotificationPress && onNotificationPress(item.id)}
+      >
+        {isUrgent && (
+          <View style={styles.urgentBanner}>
+            <Text style={styles.urgentBannerText}>⚠️ URGENT</Text>
+          </View>
         )}
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.notificationHeader}>
+          <Text style={[styles.notificationTitle, isUrgent && styles.urgentTitle]} numberOfLines={1}>
+            {item.subject || item.title}
+          </Text>
+          {!item.is_read && <View style={styles.unreadBadge} />}
+        </View>
+        {item.sender_name && (
+          <Text style={styles.senderName}>From: {item.sender_name}</Text>
+        )}
+        <Text style={styles.notificationBody} numberOfLines={2}>
+          {item.body}
+        </Text>
+        <View style={styles.notificationFooter}>
+          <Text style={styles.notificationTime}>
+            {formatTimestamp(item.created_at)}
+          </Text>
+          <View style={styles.statusContainer}>
+            {item.is_clicked && (
+              <Text style={styles.clickedLabel}>✓ Viewed</Text>
+            )}
+            {item.is_read && !item.is_clicked && (
+              <Text style={styles.readLabel}>Read</Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderContent = () => (
     <View style={styles.contentContainer}>
@@ -367,6 +385,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4ade80',
     fontWeight: '600',
+  },
+  readLabel: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  senderName: {
+    fontSize: 13,
+    color: 'rgba(255, 215, 0, 0.8)',
+    marginBottom: 6,
+    fontStyle: 'italic',
+  },
+  urgentCard: {
+    backgroundColor: 'rgba(185, 28, 28, 0.2)',
+    borderColor: '#dc2626',
+    borderWidth: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc2626',
+  },
+  urgentBanner: {
+    backgroundColor: '#dc2626',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+  },
+  urgentBannerText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  urgentTitle: {
+    color: '#fca5a5',
   },
   loadingContainer: {
     flex: 1,

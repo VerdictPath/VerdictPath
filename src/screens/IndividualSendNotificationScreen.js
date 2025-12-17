@@ -1,48 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Switch } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_BASE_URL } from '../config/api';
 
-const NOTIFICATION_TEMPLATES = [
+const NOTIFICATION_TYPES = [
   {
-    id: 'appointment_request',
-    type: 'appointment_request',
-    title: 'Appointment Request',
+    id: 'case_update',
+    type: 'case_update',
+    title: 'Case Update',
+    icon: '📋',
+    defaultSubject: 'Case Update',
+    defaultMessage: 'I have an update regarding my case that I would like to share.',
+    description: 'Milestone completions, status changes'
+  },
+  {
+    id: 'appointment_reminder',
+    type: 'appointment_reminder',
+    title: 'Appointment',
     icon: '📅',
+    defaultSubject: 'Appointment Request',
     defaultMessage: 'I would like to schedule an appointment at your earliest convenience.',
-    description: 'Request a new appointment'
+    description: 'Medical appointments, consultations'
   },
   {
-    id: 'status_update_request',
-    type: 'status_update_request',
-    title: 'Status Update Request',
-    icon: '📊',
-    defaultMessage: 'Could you please provide an update on my case status?',
-    description: 'Ask for a case status update'
+    id: 'payment_notification',
+    type: 'payment_notification',
+    title: 'Payment',
+    icon: '💳',
+    defaultSubject: 'Payment Inquiry',
+    defaultMessage: 'I have a question regarding payments or billing.',
+    description: 'Invoices, payment confirmations'
   },
   {
-    id: 'new_information',
-    type: 'new_information',
-    title: 'New Information',
-    icon: '📝',
-    defaultMessage: 'I have new information to share regarding my case.',
-    description: 'Alert about new information'
+    id: 'document_request',
+    type: 'document_request',
+    title: 'Document',
+    icon: '📄',
+    defaultSubject: 'Document Submission',
+    defaultMessage: 'I have documents to submit or need assistance with document requests.',
+    description: 'Medical records, evidence, signatures'
   },
   {
-    id: 'reschedule_request',
-    type: 'reschedule_request',
-    title: 'Reschedule Request',
-    icon: '🔄',
-    defaultMessage: 'I need to reschedule my upcoming appointment. Please let me know available times.',
-    description: 'Request to reschedule'
+    id: 'system_alert',
+    type: 'system_alert',
+    title: 'General',
+    icon: '📢',
+    defaultSubject: 'General Message',
+    defaultMessage: 'I would like to send a general message.',
+    description: 'General inquiries, other matters'
   },
 ];
 
 const IndividualSendNotificationScreen = ({ user, onBack }) => {
   const [connections, setConnections] = useState({ lawFirm: null, medicalProviders: [] });
   const [selectedRecipient, setSelectedRecipient] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+  const [subject, setSubject] = useState('');
   const [customMessage, setCustomMessage] = useState('');
+  const [isUrgent, setIsUrgent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
@@ -76,9 +91,10 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
     }
   };
 
-  const handleTemplateSelect = (template) => {
-    setSelectedTemplate(template);
-    setCustomMessage(template.defaultMessage);
+  const handleTypeSelect = (type) => {
+    setSelectedType(type);
+    setSubject(type.defaultSubject);
+    setCustomMessage(type.defaultMessage);
   };
 
   const handleRecipientSelect = (recipient, type) => {
@@ -91,8 +107,13 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
       return;
     }
 
-    if (!selectedTemplate) {
+    if (!selectedType) {
       Alert.alert('Select Type', 'Please select a notification type');
+      return;
+    }
+
+    if (!subject.trim()) {
+      Alert.alert('Subject Required', 'Please enter a subject for your notification');
       return;
     }
 
@@ -109,9 +130,11 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
           body: JSON.stringify({
             recipientType: selectedRecipient.recipientType,
             recipientId: selectedRecipient.id,
-            notificationType: selectedTemplate.type,
-            message: customMessage || selectedTemplate.defaultMessage,
-            priority: 'medium'
+            notificationType: selectedType.type,
+            subject: subject.trim(),
+            message: customMessage || selectedType.defaultMessage,
+            priority: isUrgent ? 'urgent' : 'medium',
+            isUrgent: isUrgent
           }),
         }
       );
@@ -121,7 +144,7 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
       if (data.success) {
         Alert.alert(
           'Notification Sent',
-          `Your ${selectedTemplate.title.toLowerCase()} has been sent successfully!`,
+          `Your ${selectedType.title.toLowerCase()} notification has been sent successfully!`,
           [{ text: 'OK', onPress: () => onBack() }]
         );
       } else {
@@ -233,19 +256,19 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
               <Text style={styles.sectionSubtitle}>What would you like to communicate?</Text>
               
               <View style={styles.templatesGrid}>
-                {NOTIFICATION_TEMPLATES.map((template) => (
+                {NOTIFICATION_TYPES.map((type) => (
                   <TouchableOpacity
-                    key={template.id}
+                    key={type.id}
                     style={[
                       styles.templateCard,
-                      selectedTemplate?.id === template.id && styles.templateCardSelected
+                      selectedType?.id === type.id && styles.templateCardSelected
                     ]}
-                    onPress={() => handleTemplateSelect(template)}
+                    onPress={() => handleTypeSelect(type)}
                   >
-                    <Text style={styles.templateIcon}>{template.icon}</Text>
-                    <Text style={styles.templateTitle}>{template.title}</Text>
-                    <Text style={styles.templateDescription}>{template.description}</Text>
-                    {selectedTemplate?.id === template.id && (
+                    <Text style={styles.templateIcon}>{type.icon}</Text>
+                    <Text style={styles.templateTitle}>{type.title}</Text>
+                    <Text style={styles.templateDescription}>{type.description}</Text>
+                    {selectedType?.id === type.id && (
                       <View style={styles.templateCheckmark}>
                         <Text style={styles.templateCheckmarkText}>✓</Text>
                       </View>
@@ -255,37 +278,70 @@ const IndividualSendNotificationScreen = ({ user, onBack }) => {
               </View>
             </View>
 
-            {selectedTemplate && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Step 3: Customize Message (Optional)</Text>
-                <Text style={styles.sectionSubtitle}>Edit the message or keep the default</Text>
-                
-                <TextInput
-                  style={styles.messageInput}
-                  value={customMessage}
-                  onChangeText={setCustomMessage}
-                  placeholder="Enter your message..."
-                  placeholderTextColor="#999"
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-              </View>
+            {selectedType && (
+              <>
+                <View style={styles.urgentSection}>
+                  <View style={styles.urgentRow}>
+                    <Text style={styles.urgentIcon}>⚠️</Text>
+                    <Text style={styles.urgentLabel}>Mark as URGENT</Text>
+                    <Switch
+                      value={isUrgent}
+                      onValueChange={setIsUrgent}
+                      trackColor={{ false: '#444', true: '#dc2626' }}
+                      thumbColor={isUrgent ? '#fff' : '#ccc'}
+                    />
+                  </View>
+                  {isUrgent && (
+                    <Text style={styles.urgentWarning}>
+                      Urgent notifications will be prioritized and may trigger immediate alerts
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Step 3: Subject</Text>
+                  <TextInput
+                    style={styles.subjectInput}
+                    value={subject}
+                    onChangeText={setSubject}
+                    placeholder="Enter subject..."
+                    placeholderTextColor="#999"
+                    maxLength={100}
+                  />
+                </View>
+
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Step 4: Message</Text>
+                  <Text style={styles.sectionSubtitle}>Customize your message (no character limit)</Text>
+                  
+                  <TextInput
+                    style={styles.messageInput}
+                    value={customMessage}
+                    onChangeText={setCustomMessage}
+                    placeholder="Enter your message..."
+                    placeholderTextColor="#999"
+                    multiline
+                    numberOfLines={6}
+                    textAlignVertical="top"
+                  />
+                </View>
+              </>
             )}
 
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                (!selectedRecipient || !selectedTemplate) && styles.sendButtonDisabled
+                (!selectedRecipient || !selectedType || !subject.trim()) && styles.sendButtonDisabled,
+                isUrgent && styles.sendButtonUrgent
               ]}
               onPress={handleSendNotification}
-              disabled={!selectedRecipient || !selectedTemplate || isSending}
+              disabled={!selectedRecipient || !selectedType || !subject.trim() || isSending}
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text style={styles.sendButtonText}>
-                  Send Notification
+                  {isUrgent ? '⚠️ Send Urgent Notification' : 'Send Notification'}
                 </Text>
               )}
             </TouchableOpacity>
@@ -492,10 +548,47 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 15,
     color: theme.colors.text,
-    minHeight: 120,
+    minHeight: 140,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     textAlignVertical: 'top',
+  },
+  subjectInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 15,
+    color: theme.colors.text,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  urgentSection: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#fca5a5',
+  },
+  urgentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  urgentIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  urgentLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
+  urgentWarning: {
+    marginTop: 10,
+    fontSize: 13,
+    color: '#b91c1c',
+    fontStyle: 'italic',
   },
   sendButton: {
     backgroundColor: theme.colors.primary,
@@ -506,6 +599,9 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#CCC',
+  },
+  sendButtonUrgent: {
+    backgroundColor: '#dc2626',
   },
   sendButtonText: {
     color: '#fff',

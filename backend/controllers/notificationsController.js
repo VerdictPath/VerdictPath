@@ -2222,7 +2222,7 @@ exports.sendToConnection = async (req, res) => {
       return res.status(403).json({ error: 'Only individual users can use this endpoint' });
     }
 
-    const { recipientType, recipientId, notificationType, message, priority = 'medium' } = req.body;
+    const { recipientType, recipientId, notificationType, subject, message, priority = 'medium', isUrgent = false } = req.body;
 
     if (!recipientType || !recipientId || !notificationType) {
       return res.status(400).json({ error: 'Recipient type, recipient ID, and notification type are required' });
@@ -2232,10 +2232,12 @@ exports.sendToConnection = async (req, res) => {
       return res.status(400).json({ error: 'Invalid recipient type. Must be law_firm or medical_provider' });
     }
 
-    const validNotificationTypes = ['appointment_request', 'status_update_request', 'new_information', 'reschedule_request'];
+    const validNotificationTypes = ['case_update', 'appointment_reminder', 'payment_notification', 'document_request', 'system_alert', 'appointment_request', 'status_update_request', 'new_information', 'reschedule_request'];
     if (!validNotificationTypes.includes(notificationType)) {
       return res.status(400).json({ error: 'Invalid notification type' });
     }
+
+    const finalPriority = isUrgent ? 'urgent' : priority;
 
     // Get user info for the notification
     const userResult = await pool.query(
@@ -2286,6 +2288,11 @@ exports.sendToConnection = async (req, res) => {
 
     // Create notification title and body based on type
     const notificationTitles = {
+      'case_update': 'Case Update',
+      'appointment_reminder': 'Appointment Request',
+      'payment_notification': 'Payment Inquiry',
+      'document_request': 'Document Submission',
+      'system_alert': 'General Message',
       'appointment_request': 'Appointment Request',
       'status_update_request': 'Status Update Request',
       'new_information': 'New Information Submitted',
@@ -2293,32 +2300,47 @@ exports.sendToConnection = async (req, res) => {
     };
 
     const notificationBodies = {
+      'case_update': `${userName} has submitted a case update.`,
+      'appointment_reminder': `${userName} has requested to schedule an appointment.`,
+      'payment_notification': `${userName} has a question about payments.`,
+      'document_request': `${userName} has submitted documents or has a document-related inquiry.`,
+      'system_alert': `${userName} has sent you a message.`,
       'appointment_request': `${userName} has requested to schedule an appointment.`,
       'status_update_request': `${userName} has requested an update on their case status.`,
       'new_information': `${userName} has submitted new information for your review.`,
       'reschedule_request': `${userName} has requested to reschedule an existing appointment.`
     };
 
-    const title = notificationTitles[notificationType];
+    const title = subject || notificationTitles[notificationType];
     const body = message || notificationBodies[notificationType];
+
+    // Calculate auto_delete_at (30 days from now)
+    const autoDeleteAt = new Date();
+    autoDeleteAt.setDate(autoDeleteAt.getDate() + 30);
 
     // Insert notification into database
     const insertResult = await pool.query(
       `INSERT INTO notifications (
-        recipient_type, recipient_id, sender_type, sender_id,
-        type, title, body, priority, action_type, action_data, created_at
-      ) VALUES ($1, $2, 'user', $3, $4, $5, $6, $7, $8, $9, NOW())
+        recipient_type, recipient_id, sender_type, sender_id, sender_name,
+        type, notification_type, title, subject, body, priority, is_urgent,
+        action_type, action_data, sent_at, auto_delete_at, created_at
+      ) VALUES ($1, $2, 'user', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14, NOW())
       RETURNING id`,
       [
         recipientType,
         recipientId,
         userId,
+        userName,
+        notificationType,
         notificationType,
         title,
+        subject || title,
         body,
-        priority,
+        finalPriority,
+        isUrgent,
         'view_client',
-        JSON.stringify({ clientId: userId, notificationType })
+        JSON.stringify({ clientId: userId, notificationType }),
+        autoDeleteAt
       ]
     );
 
