@@ -1917,6 +1917,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
           <NegotiationsScreen
             user={user}
+            userType="medical_provider"
             onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
           />
         </View>

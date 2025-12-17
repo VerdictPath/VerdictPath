@@ -70,9 +70,9 @@ const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
   }
 };
 
-const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 0 }) => {
-  // Get dynamic theme colors based on user type
-  const themeColors = getThemeColors(user?.userType || user?.type);
+const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottomPadding = 0 }) => {
+  // Get dynamic theme colors based on user type (prop takes priority)
+  const themeColors = getThemeColors(userType || user?.userType || user?.type);
   
   const [loading, setLoading] = useState(true);
   const [negotiations, setNegotiations] = useState([]);
