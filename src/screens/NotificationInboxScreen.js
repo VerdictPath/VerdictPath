@@ -148,12 +148,20 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
       {/* Action Buttons */}
       <View style={styles.actionButtonContainer}>
         {user?.userType === 'individual' && (
-          <TouchableOpacity
-            style={styles.sendNotificationButton}
-            onPress={() => onNavigate && onNavigate('individual-send-notification')}
-          >
-            <Text style={styles.sendNotificationText}>📨 Send Notification</Text>
-          </TouchableOpacity>
+          <>
+            <TouchableOpacity
+              style={styles.sendNotificationButton}
+              onPress={() => onNavigate && onNavigate('individual-send-notification')}
+            >
+              <Text style={styles.sendNotificationText}>📨 Compose</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.outboxButton}
+              onPress={() => onNavigate && onNavigate('notification-outbox')}
+            >
+              <Text style={styles.outboxButtonText}>📤 Sent</Text>
+            </TouchableOpacity>
+          </>
         )}
         {notifications.filter(n => !n.is_read).length > 0 && (
           <TouchableOpacity
@@ -162,7 +170,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
             disabled={markingAllRead}
           >
             <Text style={styles.markAllReadText}>
-              {markingAllRead ? '✓ Marking all as read...' : '✓ Mark all as read'}
+              {markingAllRead ? '✓ Marking...' : '✓ Mark Read'}
             </Text>
           </TouchableOpacity>
         )}
@@ -312,6 +320,21 @@ const styles = StyleSheet.create({
   },
   sendNotificationText: {
     color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  outboxButton: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+    marginRight: 10,
+  },
+  outboxButtonText: {
+    color: '#FFD700',
     fontSize: 14,
     fontWeight: '600',
   },

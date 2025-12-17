@@ -37,6 +37,7 @@ import StripeConnectOnboardingScreen from './src/screens/StripeConnectOnboarding
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
+import NotificationOutboxScreen from './src/screens/NotificationOutboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
@@ -1998,6 +1999,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <IndividualSendNotificationScreen
           user={user}
           onBack={() => setCurrentScreen('notifications')}
+        />
+      )}
+
+      {currentScreen === 'notification-outbox' && (
+        <NotificationOutboxScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onNotificationPress={(notificationId) => {
+            setSelectedNotificationId(notificationId);
+            setCurrentScreen('notification-detail');
+          }}
         />
       )}
 
