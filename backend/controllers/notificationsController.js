@@ -5,6 +5,7 @@ const { calculateQuietHoursEnd, queueNotification } = require('../services/notif
 const { syncNotificationToFirebase, syncStatusUpdateToFirebase, syncUnreadCountToFirebase } = require('../services/firebaseSync');
 const { sendNotificationSMS } = require('../services/smsService');
 const encryptionService = require('../services/encryption');
+const { sendNotificationCCEmail } = require('../services/emailService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -382,18 +383,26 @@ exports.sendNotification = async (req, res) => {
     // Only attempt Expo push notifications if devices are registered
     if (deviceResult.rows.length > 0) {
       const safeActionData = actionData || {};
+      const isUrgent = priority === 'urgent';
+      const pushTitle = isUrgent ? `[URGENT] ${title}` : title;
+      
       const pushPromises = deviceResult.rows.map(device => 
         pushNotificationService.sendPushNotification({
           expoPushToken: device.expo_push_token,
-          title,
+          title: pushTitle,
           body,
           data: {
+            notification_id: notification.id.toString(),
             notificationId: notification.id,
             type,
+            is_urgent: isUrgent,
+            sender_name: senderName,
+            click_action: 'OPEN_NOTIFICATION',
             actionUrl,
             ...safeActionData
           },
-          priority: priority === 'urgent' ? 'high' : 'default'
+          priority: isUrgent ? 'high' : 'default',
+          sound: isUrgent ? 'urgent.mp3' : 'default'
         })
       );
 
@@ -487,6 +496,82 @@ exports.sendNotification = async (req, res) => {
       console.error('SMS notification error (non-fatal):', smsError);
     }
 
+    // Send Email CC if recipient has email CC enabled
+    let emailCCSent = false;
+    try {
+      // Get recipient's email CC preferences
+      let ccPrefsQuery;
+      if (recipientType === 'user') {
+        ccPrefsQuery = await pool.query(
+          `SELECT necp.*, u.email as user_email
+           FROM notification_email_cc_preferences necp
+           JOIN users u ON u.id = necp.user_id
+           WHERE necp.user_id = $1`,
+          [recipientId]
+        );
+      } else if (recipientType === 'law_firm') {
+        ccPrefsQuery = await pool.query(
+          `SELECT necp.*, lf.email as user_email
+           FROM notification_email_cc_preferences necp
+           JOIN law_firms lf ON lf.id = necp.law_firm_id
+           WHERE necp.law_firm_id = $1`,
+          [recipientId]
+        );
+      } else {
+        ccPrefsQuery = await pool.query(
+          `SELECT necp.*, mp.email as user_email
+           FROM notification_email_cc_preferences necp
+           JOIN medical_providers mp ON mp.id = necp.medical_provider_id
+           WHERE necp.medical_provider_id = $1`,
+          [recipientId]
+        );
+      }
+
+      if (ccPrefsQuery.rows.length > 0) {
+        const ccPrefs = ccPrefsQuery.rows[0];
+        const ccEmail = ccPrefs.cc_email_address || ccPrefs.user_email;
+        const isUrgent = priority === 'urgent';
+        
+        // Check if email CC is enabled and if this type of notification should be CC'd
+        if (ccPrefs.email_cc_enabled && ccEmail) {
+          // Check if urgent-only is enabled
+          if (ccPrefs.cc_urgent_only && !isUrgent) {
+            console.log(`ℹ️  Skipping email CC for non-urgent notification (cc_urgent_only enabled)`);
+          } else {
+            // Check notification type against preferences
+            const shouldSendCC = 
+              (type === 'case_update' && ccPrefs.cc_case_updates) ||
+              (type === 'appointment_request' && ccPrefs.cc_appointments) ||
+              (type === 'appointment_reminder' && ccPrefs.cc_appointments) ||
+              (type === 'document_request' && ccPrefs.cc_documents) ||
+              (type === 'new_information' && ccPrefs.cc_case_updates) ||
+              (type === 'status_update_request' && ccPrefs.cc_case_updates) ||
+              (type === 'deadline_reminder' && ccPrefs.cc_case_updates) ||
+              (type === 'payment_notification' && ccPrefs.cc_case_updates) ||
+              isUrgent; // Always CC urgent notifications if email CC is enabled
+
+            if (shouldSendCC) {
+              const emailResult = await sendNotificationCCEmail(ccEmail, {
+                senderName,
+                title,
+                body,
+                type,
+                isUrgent,
+                sentAt: notification.sent_at || new Date()
+              });
+              
+              emailCCSent = emailResult.success;
+              if (emailCCSent) {
+                console.log(`📧 Email CC sent to ${ccEmail} for notification ${notification.id}`);
+              }
+            }
+          }
+        }
+      }
+    } catch (emailCCError) {
+      console.error('Email CC error (non-fatal):', emailCCError);
+    }
+
     syncNewNotificationToFirebase(notification).catch(err => 
       console.error('Firebase sync error (non-fatal):', err)
     );
@@ -504,6 +589,7 @@ exports.sendNotification = async (req, res) => {
       devicesSent,
       pushStatus,
       smsSent,
+      emailCCSent,
       firebaseSynced: true
     });
   } catch (error) {
