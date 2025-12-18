@@ -810,7 +810,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         <View style={styles.dayViewHeader}>
           <Icon name="calendar-star" size={24} color="#C0C0C0" />
           <Text style={styles.dayViewTitle}>
-            {moment(selectedDate).format('dddd, MMMM Do, YYYY')}
+            {moment(selectedDate).format('dddd, MM/DD/YYYY')}
           </Text>
         </View>
 

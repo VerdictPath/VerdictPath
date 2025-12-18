@@ -487,7 +487,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                 <Text style={styles.patientStat}>💰 ${patient.totalBilled || 0} Billed</Text>
               </View>
               <Text style={styles.patientDate}>
-                ⏰ Registered: {new Date(patient.registeredDate).toLocaleDateString()}
+                ⏰ Registered: {new Date(patient.registeredDate).toLocaleDateString('en-US')}
               </Text>
             </TouchableOpacity>
           ))}

@@ -463,7 +463,7 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.sectionHeader}>
             <Icon name="calendar-star" size={20} color="#FFD700" />
             <Text style={styles.selectedDateTitle}>
-              {moment(selectedDate).format('MMMM Do, YYYY')}
+              {moment(selectedDate).format('MM/DD/YYYY')}
             </Text>
           </View>
           {getAppointmentsForDate(selectedDate).length === 0 ? (

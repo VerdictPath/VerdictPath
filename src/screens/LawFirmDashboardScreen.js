@@ -251,7 +251,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 <Text style={styles.clientStat}>💰 ${client.totalBilled || 0} Billed</Text>
               </View>
               <Text style={styles.clientDate}>
-                ⏰ Registered: {new Date(client.registeredDate).toLocaleDateString()}
+                ⏰ Registered: {new Date(client.registeredDate).toLocaleDateString('en-US')}
               </Text>
             </TouchableOpacity>
           ))
