@@ -76,6 +76,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]);
   const [isRecurring, setIsRecurring] = useState(true);
   const [bulkMode, setBulkMode] = useState(true);
+  const [calendarSyncConnections, setCalendarSyncConnections] = useState([]);
+  const [syncLoading, setSyncLoading] = useState(false);
   
   const [newBlockedTime, setNewBlockedTime] = useState({
     startDate: moment().format('YYYY-MM-DD'),
@@ -99,7 +101,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchBlockedTimes(),
         fetchAppointments(),
         fetchSettings(),
-        fetchPatients()
+        fetchPatients(),
+        fetchCalendarSyncStatus()
       ]);
     } catch (error) {
       console.error('Error fetching calendar data:', error);
@@ -184,6 +187,106 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
+    }
+  };
+
+  const fetchCalendarSyncStatus = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/calendar-sync/status/medical_provider/${providerId}`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCalendarSyncConnections(data.connections || []);
+      }
+    } catch (error) {
+      console.error('Error fetching calendar sync status:', error);
+    }
+  };
+
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      setSyncLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/api/calendar-sync/google/auth-url?entityType=medical_provider&entityId=${providerId}`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (Platform.OS === 'web') {
+          window.open(data.authUrl, '_blank');
+        } else {
+          Alert.alert('Connect Google Calendar', 'Please open this URL in a browser to connect your Google Calendar:\n\n' + data.authUrl);
+        }
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to connect Google Calendar');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to connect Google Calendar');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleDisconnectCalendar = async (provider) => {
+    Alert.alert(
+      'Disconnect Calendar',
+      `Are you sure you want to disconnect your ${provider === 'google' ? 'Google' : 'Apple'} Calendar?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/api/calendar-sync/disconnect/medical_provider/${providerId}/${provider}`,
+                {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${user.token}` }
+                }
+              );
+              if (response.ok) {
+                Alert.alert('Success', 'Calendar disconnected successfully');
+                fetchCalendarSyncStatus();
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to disconnect calendar');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSyncNow = async (provider) => {
+    try {
+      setSyncLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/api/calendar-sync/sync/medical_provider/${providerId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ provider })
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert('Success', data.message);
+        fetchCalendarSyncStatus();
+      } else {
+        const data = await response.json();
+        Alert.alert('Error', data.error || 'Failed to sync calendar');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to sync calendar');
+    } finally {
+      setSyncLoading(false);
     }
   };
 
@@ -1355,6 +1458,100 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                 </TouchableOpacity>
               </View>
             </View>
+
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>External Calendar Sync</Text>
+              <Text style={styles.settingsDescription}>
+                Connect your external calendars to sync appointments in real-time.
+              </Text>
+
+              {calendarSyncConnections.find(c => c.provider === 'google' && c.isActive) ? (
+                <View style={styles.calendarSyncCard}>
+                  <View style={styles.calendarSyncHeader}>
+                    <View style={styles.calendarSyncInfo}>
+                      <Text style={styles.calendarSyncIcon}>📅</Text>
+                      <View>
+                        <Text style={styles.calendarSyncTitle}>Google Calendar</Text>
+                        <Text style={styles.calendarSyncStatus}>
+                          Connected • Last sync: {calendarSyncConnections.find(c => c.provider === 'google')?.lastSyncAt 
+                            ? new Date(calendarSyncConnections.find(c => c.provider === 'google').lastSyncAt).toLocaleDateString('en-US')
+                            : 'Never'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.connectedBadge}>
+                      <Text style={styles.connectedBadgeText}>Connected</Text>
+                    </View>
+                  </View>
+                  <View style={styles.calendarSyncActions}>
+                    <TouchableOpacity 
+                      style={styles.syncNowButton}
+                      onPress={() => handleSyncNow('google')}
+                      disabled={syncLoading}
+                    >
+                      <Icon name="sync" size={16} color="#fff" />
+                      <Text style={styles.syncNowButtonText}>Sync Now</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.disconnectButton}
+                      onPress={() => handleDisconnectCalendar('google')}
+                    >
+                      <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.connectCalendarButton}
+                  onPress={handleConnectGoogleCalendar}
+                  disabled={syncLoading}
+                >
+                  <Text style={styles.connectCalendarIcon}>📅</Text>
+                  <View style={styles.connectCalendarInfo}>
+                    <Text style={styles.connectCalendarTitle}>Connect Google Calendar</Text>
+                    <Text style={styles.connectCalendarDesc}>Sync appointments with your Google Calendar</Text>
+                  </View>
+                  <Icon name="chevron-right" size={24} color="#FFD700" />
+                </TouchableOpacity>
+              )}
+
+              {calendarSyncConnections.find(c => c.provider === 'apple' && c.isActive) ? (
+                <View style={[styles.calendarSyncCard, { marginTop: 12 }]}>
+                  <View style={styles.calendarSyncHeader}>
+                    <View style={styles.calendarSyncInfo}>
+                      <Text style={styles.calendarSyncIcon}>🍎</Text>
+                      <View>
+                        <Text style={styles.calendarSyncTitle}>Apple Calendar</Text>
+                        <Text style={styles.calendarSyncStatus}>Connected</Text>
+                      </View>
+                    </View>
+                    <View style={styles.connectedBadge}>
+                      <Text style={styles.connectedBadgeText}>Connected</Text>
+                    </View>
+                  </View>
+                  <View style={styles.calendarSyncActions}>
+                    <TouchableOpacity 
+                      style={styles.disconnectButton}
+                      onPress={() => handleDisconnectCalendar('apple')}
+                    >
+                      <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.connectCalendarButton, { marginTop: 12 }]}
+                  onPress={() => Alert.alert('Apple Calendar', 'Apple Calendar integration requires additional setup. Contact support for assistance.')}
+                >
+                  <Text style={styles.connectCalendarIcon}>🍎</Text>
+                  <View style={styles.connectCalendarInfo}>
+                    <Text style={styles.connectCalendarTitle}>Connect Apple Calendar</Text>
+                    <Text style={styles.connectCalendarDesc}>Sync with iCloud Calendar (coming soon)</Text>
+                  </View>
+                  <Icon name="chevron-right" size={24} color="#666" />
+                </TouchableOpacity>
+              )}
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -2082,6 +2279,110 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 14,
     fontWeight: '500'
+  },
+  calendarSyncCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    marginTop: 12
+  },
+  calendarSyncHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  calendarSyncInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  calendarSyncIcon: {
+    fontSize: 28
+  },
+  calendarSyncTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  calendarSyncStatus: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 2
+  },
+  connectedBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.5)'
+  },
+  connectedBadgeText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '600'
+  },
+  calendarSyncActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16
+  },
+  syncNowButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#1a5490',
+    paddingVertical: 10,
+    borderRadius: 8
+  },
+  syncNowButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  disconnectButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)'
+  },
+  disconnectButtonText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  connectCalendarButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    marginTop: 12
+  },
+  connectCalendarIcon: {
+    fontSize: 28,
+    marginRight: 12
+  },
+  connectCalendarInfo: {
+    flex: 1
+  },
+  connectCalendarTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600'
+  },
+  connectCalendarDesc: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 2
   },
   modalInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
