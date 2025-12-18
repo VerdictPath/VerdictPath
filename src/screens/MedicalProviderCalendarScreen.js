@@ -547,12 +547,12 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     <View style={styles.header}>
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Icon name="sail-boat" size={28} color="#FFD700" />
+          <Text style={styles.headerIconEmoji}>⛵</Text>
         </TouchableOpacity>
-        <Icon name="anchor" size={28} color="#FFD700" />
+        <Text style={styles.headerIconEmoji}>⚓</Text>
         <Text style={styles.headerTitle}>Medical Calendar</Text>
         <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-          <Icon name="minus" size={24} color="#FFD700" />
+          <Text style={styles.headerIconEmoji}>➖</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.headerSubtitle}>Chart Your Course</Text>
@@ -1419,6 +1419,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     padding: 8
+  },
+  headerIconEmoji: {
+    fontSize: 24,
+    color: '#FFD700',
   },
   headerTitle: {
     fontSize: 24,
