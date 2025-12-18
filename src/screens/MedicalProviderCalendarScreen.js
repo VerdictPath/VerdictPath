@@ -73,6 +73,10 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     bufferMinutes: 15
   });
   
+  const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]);
+  const [isRecurring, setIsRecurring] = useState(true);
+  const [bulkMode, setBulkMode] = useState(true);
+  
   const [newBlockedTime, setNewBlockedTime] = useState({
     startDate: moment().format('YYYY-MM-DD'),
     endDate: moment().format('YYYY-MM-DD'),
@@ -241,19 +245,44 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const handleAddAvailability = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/medical-calendar/providers/${providerId}/availability`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${user.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(newAvailability)
+      const daysToAdd = bulkMode ? selectedDays : [newAvailability.dayOfWeek];
+      
+      if (daysToAdd.length === 0) {
+        Alert.alert('Error', 'Please select at least one day');
+        return;
+      }
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const dayOfWeek of daysToAdd) {
+        const availabilityData = {
+          ...newAvailability,
+          dayOfWeek,
+          isRecurring
+        };
+        
+        const response = await fetch(
+          `${API_BASE_URL}/api/medical-calendar/providers/${providerId}/availability`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${user.token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(availabilityData)
+          }
+        );
+        
+        if (response.ok) {
+          successCount++;
+        } else {
+          errorCount++;
         }
-      );
-      if (response.ok) {
-        Alert.alert('Success', 'Availability added successfully!');
+      }
+      
+      if (successCount > 0) {
+        Alert.alert('Success', `Availability set for ${successCount} day(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
         setShowAvailabilityModal(false);
         fetchAvailability();
         setNewAvailability({
@@ -264,8 +293,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           bufferMinutes: 15
         });
       } else {
-        const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to add availability');
+        Alert.alert('Error', 'Failed to add availability for any days');
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to add availability');
@@ -796,32 +824,147 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     </View>
   );
 
+  const toggleDay = (dayIdx) => {
+    if (selectedDays.includes(dayIdx)) {
+      setSelectedDays(selectedDays.filter(d => d !== dayIdx));
+    } else {
+      setSelectedDays([...selectedDays, dayIdx]);
+    }
+  };
+
+  const applyPreset = (preset) => {
+    switch (preset) {
+      case 'weekdays':
+        setSelectedDays([1, 2, 3, 4, 5]);
+        break;
+      case 'weekends':
+        setSelectedDays([0, 6]);
+        break;
+      case 'all':
+        setSelectedDays([0, 1, 2, 3, 4, 5, 6]);
+        break;
+      case 'none':
+        setSelectedDays([]);
+        break;
+    }
+  };
+
+  const handleClearAllAvailability = async () => {
+    Alert.alert(
+      'Clear All Hours',
+      'Are you sure you want to remove all availability? This will stop the recurring schedule.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              for (const avail of availability) {
+                await fetch(
+                  `${API_BASE_URL}/api/medical-calendar/providers/${providerId}/availability/${avail.id}`,
+                  {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                  }
+                );
+              }
+              Alert.alert('Success', 'All availability cleared');
+              fetchAvailability();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to clear availability');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderAvailabilityModal = () => (
     <Modal visible={showAvailabilityModal} animationType="slide" transparent>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Set Availability</Text>
+            <Text style={styles.modalTitle}>Set Weekly Hours</Text>
             <TouchableOpacity onPress={() => setShowAvailabilityModal(false)}>
               <Icon name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalLabel}>Day of Week</Text>
-            <View style={styles.daySelector}>
-              {DAYS_OF_WEEK.map((day, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.dayButton, newAvailability.dayOfWeek === idx && styles.dayButtonActive]}
-                  onPress={() => setNewAvailability({ ...newAvailability, dayOfWeek: idx })}
-                >
-                  <Text style={[styles.dayButtonText, newAvailability.dayOfWeek === idx && styles.dayButtonTextActive]}>
-                    {day.slice(0, 3)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.modeToggleContainer}>
+              <TouchableOpacity 
+                style={[styles.modeToggleButton, bulkMode && styles.modeToggleButtonActive]}
+                onPress={() => setBulkMode(true)}
+              >
+                <Icon name="calendar-week" size={18} color={bulkMode ? '#fff' : '#999'} />
+                <Text style={[styles.modeToggleText, bulkMode && styles.modeToggleTextActive]}>Multiple Days</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modeToggleButton, !bulkMode && styles.modeToggleButtonActive]}
+                onPress={() => setBulkMode(false)}
+              >
+                <Icon name="calendar" size={18} color={!bulkMode ? '#fff' : '#999'} />
+                <Text style={[styles.modeToggleText, !bulkMode && styles.modeToggleTextActive]}>Single Day</Text>
+              </TouchableOpacity>
             </View>
+
+            {bulkMode ? (
+              <>
+                <Text style={styles.modalLabel}>Quick Presets</Text>
+                <View style={styles.presetRow}>
+                  <TouchableOpacity style={styles.presetButton} onPress={() => applyPreset('weekdays')}>
+                    <Text style={styles.presetButtonText}>M-F</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.presetButton} onPress={() => applyPreset('weekends')}>
+                    <Text style={styles.presetButtonText}>Weekends</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.presetButton} onPress={() => applyPreset('all')}>
+                    <Text style={styles.presetButtonText}>All Days</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.presetButton} onPress={() => applyPreset('none')}>
+                    <Text style={styles.presetButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.modalLabel}>Select Days</Text>
+                <View style={styles.daySelector}>
+                  {DAYS_OF_WEEK.map((day, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[styles.dayButton, selectedDays.includes(idx) && styles.dayButtonActive]}
+                      onPress={() => toggleDay(idx)}
+                    >
+                      <Text style={[styles.dayButtonText, selectedDays.includes(idx) && styles.dayButtonTextActive]}>
+                        {day.slice(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.selectedDaysText}>
+                  {selectedDays.length === 0 ? 'No days selected' : 
+                   selectedDays.length === 7 ? 'All days selected' :
+                   `${selectedDays.length} day(s) selected`}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalLabel}>Day of Week</Text>
+                <View style={styles.daySelector}>
+                  {DAYS_OF_WEEK.map((day, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[styles.dayButton, newAvailability.dayOfWeek === idx && styles.dayButtonActive]}
+                      onPress={() => setNewAvailability({ ...newAvailability, dayOfWeek: idx })}
+                    >
+                      <Text style={[styles.dayButtonText, newAvailability.dayOfWeek === idx && styles.dayButtonTextActive]}>
+                        {day.slice(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
 
             <Text style={styles.modalLabel}>Start Time</Text>
             <TextInput
@@ -864,10 +1007,38 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
             </View>
 
+            <View style={styles.recurringContainer}>
+              <TouchableOpacity 
+                style={styles.recurringToggle}
+                onPress={() => setIsRecurring(!isRecurring)}
+              >
+                <Icon 
+                  name={isRecurring ? 'checkbox-marked' : 'checkbox-blank-outline'} 
+                  size={24} 
+                  color={isRecurring ? '#4ade80' : '#666'} 
+                />
+                <View style={styles.recurringTextContainer}>
+                  <Text style={styles.recurringLabel}>Repeat Weekly</Text>
+                  <Text style={styles.recurringDescription}>
+                    {isRecurring ? 'Schedule repeats every week' : 'One-time schedule only'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.saveButton} onPress={handleAddAvailability}>
               <Icon name="content-save" size={20} color="#fff" />
-              <Text style={styles.saveButtonText}>Save Availability</Text>
+              <Text style={styles.saveButtonText}>
+                {bulkMode ? `Save Hours for ${selectedDays.length} Day(s)` : 'Save Availability'}
+              </Text>
             </TouchableOpacity>
+
+            {availability.length > 0 && (
+              <TouchableOpacity style={styles.clearAllButton} onPress={handleClearAllAvailability}>
+                <Icon name="delete-sweep" size={20} color="#ef4444" />
+                <Text style={styles.clearAllButtonText}>Clear All Hours (Stop Repeat)</Text>
+              </TouchableOpacity>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -1809,6 +1980,108 @@ const styles = StyleSheet.create({
   dayButtonTextActive: {
     color: '#FFD700',
     fontWeight: 'bold'
+  },
+  modeToggleContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16
+  },
+  modeToggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  modeToggleButtonActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderColor: '#FFD700'
+  },
+  modeToggleText: {
+    color: '#999',
+    fontSize: 13,
+    fontWeight: '500'
+  },
+  modeToggleTextActive: {
+    color: '#fff',
+    fontWeight: 'bold'
+  },
+  presetRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12
+  },
+  presetButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    alignItems: 'center'
+  },
+  presetButtonText: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  selectedDaysText: {
+    color: '#999',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 8
+  },
+  recurringContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  recurringToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  recurringTextContainer: {
+    flex: 1
+  },
+  recurringLabel: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600'
+  },
+  recurringDescription: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 2
+  },
+  clearAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)'
+  },
+  clearAllButtonText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500'
   },
   modalInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
