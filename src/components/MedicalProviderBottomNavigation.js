@@ -11,7 +11,7 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
     { name: 'Calendar', icon: '📅', screen: 'medicalprovider-calendar' },
     { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
     { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
-    { name: 'Analytics', icon: '📊', screen: 'medicalprovider-notification-analytics' },
+    { name: 'Client Tracking', icon: '📊', screen: 'medicalprovider-notification-analytics' },
     { name: 'Profile', icon: '👤', screen: 'medicalprovider-profile' },
   ];
 
