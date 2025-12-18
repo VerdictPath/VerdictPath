@@ -230,7 +230,13 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
-      onPress={() => setActiveTab(tabName)}
+      onPress={() => {
+        if (tabName === 'notifications') {
+          onNavigate && onNavigate('medicalprovider-notifications', activeTab);
+        } else {
+          setActiveTab(tabName);
+        }
+      }}
     >
       <View style={styles.tabIconContainer}>
         <Text style={styles.tabIcon}>{icon}</Text>

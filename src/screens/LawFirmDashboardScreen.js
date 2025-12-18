@@ -76,7 +76,13 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const renderTabButton = (tabName, label, icon) => (
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
-      onPress={() => setActiveTab(tabName)}
+      onPress={() => {
+        if (tabName === 'notifications') {
+          onNavigate && onNavigate('lawfirm-notifications');
+        } else {
+          setActiveTab(tabName);
+        }
+      }}
     >
       <View style={styles.tabIconContainer}>
         <Text style={styles.tabIcon}>{icon}</Text>
