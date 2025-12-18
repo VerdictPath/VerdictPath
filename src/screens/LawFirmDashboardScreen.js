@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, useWindowDimensions, Modal } from 'react-native';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
@@ -21,6 +21,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [loading, setLoading] = useState(true);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
+  const [clientTrackingModalVisible, setClientTrackingModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Get unread count from NotificationContext (Firebase real-time)
@@ -179,6 +180,16 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               >
                 <Text style={styles.quickActionIcon}>💵</Text>
                 <Text style={styles.quickActionText}>Disbursements</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => setClientTrackingModalVisible(true)}
+              >
+                <Text style={styles.quickActionIcon}>📍</Text>
+                <Text style={styles.quickActionText}>Client Tracking</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -584,6 +595,64 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         onClose={() => setInviteModalVisible(false)}
         user={user}
       />
+
+      <Modal
+        visible={clientTrackingModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setClientTrackingModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setClientTrackingModalVisible(false)}
+        >
+          <View style={styles.clientTrackingModal}>
+            <Text style={styles.clientTrackingModalTitle}>📍 Client Tracking</Text>
+            
+            <TouchableOpacity 
+              style={styles.clientTrackingModalOption}
+              onPress={() => {
+                setClientTrackingModalVisible(false);
+                onNavigate && onNavigate('lawfirm-notification-analytics');
+              }}
+            >
+              <Text style={styles.clientTrackingModalOptionIcon}>📊</Text>
+              <View style={styles.clientTrackingModalOptionContent}>
+                <Text style={styles.clientTrackingModalOptionTitle}>Client Tracking</Text>
+                <Text style={styles.clientTrackingModalOptionDescription}>
+                  Track notification delivery, read, and click rates
+                </Text>
+              </View>
+              <Text style={styles.clientTrackingModalOptionArrow}>→</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.clientTrackingModalOption}
+              onPress={() => {
+                setClientTrackingModalVisible(false);
+                onNavigate && onNavigate('lawfirm-event-requests');
+              }}
+            >
+              <Text style={styles.clientTrackingModalOptionIcon}>📅</Text>
+              <View style={styles.clientTrackingModalOptionContent}>
+                <Text style={styles.clientTrackingModalOptionTitle}>Event Requests</Text>
+                <Text style={styles.clientTrackingModalOptionDescription}>
+                  Request depositions, mediations, and consultations
+                </Text>
+              </View>
+              <Text style={styles.clientTrackingModalOptionArrow}>→</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.clientTrackingModalClose}
+              onPress={() => setClientTrackingModalVisible(false)}
+            >
+              <Text style={styles.clientTrackingModalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -1312,6 +1381,73 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.lawFirm.primary,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clientTrackingModal: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 16,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  clientTrackingModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.lawFirm.primary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  clientTrackingModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  clientTrackingModalOptionIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  clientTrackingModalOptionContent: {
+    flex: 1,
+  },
+  clientTrackingModalOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.lawFirm.primary,
+    marginBottom: 4,
+  },
+  clientTrackingModalOptionDescription: {
+    fontSize: 13,
+    color: theme.lawFirm.textSecondary,
+  },
+  clientTrackingModalOptionArrow: {
+    fontSize: 20,
+    color: theme.lawFirm.primary,
+    fontWeight: 'bold',
+  },
+  clientTrackingModalClose: {
+    marginTop: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  clientTrackingModalCloseText: {
+    fontSize: 16,
+    color: theme.lawFirm.textSecondary,
+    fontWeight: '500',
   },
 });
 
