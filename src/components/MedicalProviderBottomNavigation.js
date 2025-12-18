@@ -9,9 +9,9 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'medicalprovider-dashboard' },
     { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-notifications', badge: notificationCount },
     { name: 'Calendar', icon: '📅', screen: 'medicalprovider-calendar' },
-    { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
     { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
     { name: 'Client Tracking', icon: '📊', screen: 'medicalprovider-notification-analytics' },
+    { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
     { name: 'Profile', icon: '👤', screen: 'medicalprovider-profile' },
   ];
 
