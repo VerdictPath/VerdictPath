@@ -1216,6 +1216,91 @@ async function sendHIPAAAuditAlertEmail(toEmail, providerName, auditData) {
   return sendEmail(toEmail, 'HIPAA Compliance Report Available', html);
 }
 
+// ============================================================================
+// NOTIFICATION CC EMAIL
+// ============================================================================
+
+async function sendNotificationCCEmail(toEmail, notificationData) {
+  const { 
+    senderName,
+    title, 
+    body, 
+    type,
+    isUrgent = false,
+    sentAt
+  } = notificationData;
+
+  const urgentPrefix = isUrgent ? '[URGENT] ' : '';
+  const subject = `${urgentPrefix}${title} - Verdict Path`;
+  
+  const formattedDate = sentAt 
+    ? new Date(sentAt).toLocaleString('en-US', { 
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      })
+    : new Date().toLocaleString('en-US', { 
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+
+  const urgentStyle = isUrgent 
+    ? 'background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; border-radius: 4px;' 
+    : '';
+  
+  const urgentBadge = isUrgent 
+    ? '<span style="background: #dc3545; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 10px;">URGENT</span>' 
+    : '';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><style>${baseStyles}</style></head>
+    <body>
+      <div class="container">
+        <div class="header" ${isUrgent ? 'style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);"' : ''}>
+          <h1>Notification from Verdict Path${urgentBadge}</h1>
+        </div>
+        <div class="content">
+          <div style="border-bottom: 2px solid #ddd; padding-bottom: 15px; margin-bottom: 20px;">
+            <p style="margin: 5px 0;"><strong>From:</strong> ${senderName} via Verdict Path</p>
+            <p style="margin: 5px 0;"><strong>Date:</strong> ${formattedDate}</p>
+          </div>
+          
+          <div style="${urgentStyle || 'background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;'}">
+            <h2 style="color: ${isUrgent ? '#721c24' : '#1e3a5f'}; margin-top: 0;">${title}</h2>
+            <div style="white-space: pre-wrap; line-height: 1.8; color: #333;">
+${body}
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="${getBaseUrl()}" class="button">Open in Verdict Path App</a>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ddd; font-size: 12px; color: #666;">
+            <p>This notification was sent to your email because you enabled email forwarding in your Verdict Path notification settings.</p>
+            <p>To manage your notification preferences, visit <strong>Settings > Notifications</strong> in the app.</p>
+          </div>
+        </div>
+        ${emailFooter}
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(toEmail, subject, html);
+}
+
 module.exports = {
   sendCredentialEmail,
   sendPasswordChangeConfirmation,
@@ -1239,5 +1324,6 @@ module.exports = {
   sendAdminDailySummaryEmail,
   sendAdminNewRegistrationEmail,
   sendAdminSecurityAlertEmail,
-  sendHIPAAAuditAlertEmail
+  sendHIPAAAuditAlertEmail,
+  sendNotificationCCEmail
 };

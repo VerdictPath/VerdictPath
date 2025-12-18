@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
 const MEDICAL_PROVIDER_PRICING = {
@@ -117,8 +117,8 @@ const MEDICAL_PROVIDER_PRICING = {
   ]
 };
 
-const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
-  const [loading, setLoading] = useState(true);
+const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, registrationData, onRegistrationComplete }) => {
+  const [loading, setLoading] = useState(!isNewRegistration);
   const [updating, setUpdating] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [clientCount, setClientCount] = useState('');
@@ -126,8 +126,10 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
   const [planType, setPlanType] = useState('basic');
 
   useEffect(() => {
-    fetchSubscriptionDetails();
-  }, []);
+    if (!isNewRegistration) {
+      fetchSubscriptionDetails();
+    }
+  }, [isNewRegistration]);
 
   const fetchSubscriptionDetails = async () => {
     try {
@@ -224,6 +226,72 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
     }
   };
 
+  const handleNewRegistration = async (selectedTier) => {
+    if (!registrationData) {
+      alert('Registration data is missing. Please go back and try again.');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      
+      const response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
+        method: 'POST',
+        body: JSON.stringify({
+          providerName: registrationData.providerName,
+          email: registrationData.email,
+          password: registrationData.password,
+          firstName: registrationData.firstName,
+          lastName: registrationData.lastName,
+          subscriptionTier: 'free',
+          planType: planType,
+          providerSize: {
+            patientCount: clientCount ? parseInt(clientCount) : null,
+            tierName: selectedTier ? selectedTier.name : 'Solo',
+            billingPeriod: billingPeriod,
+            planType: planType
+          },
+          privacyAccepted: registrationData.privacyAccepted
+        })
+      });
+
+      const userData = {
+        id: response.medicalProvider.id,
+        email: response.medicalProvider.email,
+        type: 'medical_provider',
+        providerName: response.medicalProvider.providerName,
+        providerCode: response.medicalProvider.providerCode,
+        token: response.token,
+        subscription: 'free',
+        planType: planType,
+        coins: 0,
+        streak: 0
+      };
+
+      if (onRegistrationComplete) {
+        onRegistrationComplete(userData);
+      }
+    } catch (error) {
+      console.error('Error registering medical provider:', error);
+      const errorMsg = error.message || 'Failed to create account. Please try again.';
+      if (Platform.OS === 'web') {
+        alert('Registration Error: ' + errorMsg);
+      } else {
+        Alert.alert('Registration Error', errorMsg);
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSelectTier = (selectedTier) => {
+    if (isNewRegistration) {
+      handleNewRegistration(selectedTier);
+    } else {
+      handleUpdateSubscription(selectedTier);
+    }
+  };
+
   const renderCurrentPlan = () => {
     if (!currentSubscription) return null;
 
@@ -296,6 +364,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
         standardDescription="Core features for your practice"
         premiumLabel="Premium"
         premiumDescription="Advanced features"
+        userType="medical_provider"
       />
 
       <View style={styles.calculatorContainer}>
@@ -448,7 +517,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
                   planType === 'premium' && styles.selectButtonPremium,
                   updating && styles.selectButtonDisabled
                 ]}
-                onPress={() => handleUpdateSubscription(currentTier)}
+                onPress={() => handleSelectTier(currentTier)}
                 disabled={updating}
               >
                 {updating ? (
@@ -526,7 +595,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack }) => {
                         styles.pricingTableColumn,
                         currentTier?.name === tier.name && styles.pricingTableColumnActive
                       ]}
-                      onPress={() => handleUpdateSubscription(tier)}
+                      onPress={() => handleSelectTier(tier)}
                       disabled={updating}
                     >
                       <Text style={styles.tableColumnName}>{tier.name}</Text>

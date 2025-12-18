@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const securityHeaders = require('./middleware/securityHeaders');
 
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
@@ -36,7 +37,9 @@ const notificationQueueRoutes = require('./routes/notification-queue');
 const chatRoutes = require('./routes/chat');
 const adminPortalRoutes = require('./routes/adminPortal');
 const smsTestRoutes = require('./routes/smsTestRoutes');
+const bankInfoRoutes = require('./routes/bankInfo');
 const { startReminderScheduler } = require('./services/taskReminderService');
+const { startCleanupScheduler } = require('./services/notificationCleanupService');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -107,6 +110,7 @@ const corsMiddleware = (req, res, next) => {
 };
 
 app.use(corsMiddleware);
+app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Use cookieParser with secret for signed cookies (uses JWT_SECRET if COOKIE_SECRET not set)
@@ -176,6 +180,7 @@ app.use('/api/notification-queue', notificationQueueRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/disbursements', disbursementsRoutes);
+app.use('/api/bank-info', bankInfoRoutes);
 app.use('/api/settlements', settlementsRoutes);
 app.use('/api/stripe-connect', stripeConnectRoutes);
 app.use('/api/calendar', require('./routes/calendar'));
@@ -186,6 +191,8 @@ app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/avatar', avatarRoutes);
 app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/medical-calendar', require('./routes/medicalCalendar'));
+app.use('/api/law-firm-calendar', require('./routes/lawFirmCalendar'));
 
 // Admin Portal routes
 app.use('/portal/admin', adminPortalRoutes);
@@ -494,6 +501,9 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Start task reminder scheduler
   startReminderScheduler();
+  
+  // Start notification cleanup scheduler (runs daily at midnight)
+  startCleanupScheduler();
 });
 
 module.exports = app;

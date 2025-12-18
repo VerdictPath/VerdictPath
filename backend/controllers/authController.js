@@ -495,6 +495,187 @@ exports.registerMedicalProvider = async (req, res) => {
   }
 };
 
+exports.joinMedicalProvider = async (req, res) => {
+  try {
+    const {
+      providerCode,
+      firstName,
+      lastName,
+      email,
+      password,
+      requestedRole
+    } = req.body;
+
+    if (!providerCode || !firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Provider code, first name, last name, email, and password are required' 
+      });
+    }
+
+    const providerResult = await db.query(
+      `SELECT id, provider_name, provider_code, subscription_tier FROM medical_providers WHERE provider_code = $1`,
+      [providerCode.toUpperCase()]
+    );
+
+    if (providerResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Provider code not found. Please check the code and try again.' });
+    }
+
+    const medicalProvider = providerResult.rows[0];
+
+    const existingUser = await db.query(
+      `SELECT id FROM medical_provider_users WHERE email = $1`,
+      [email.toLowerCase()]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'An account with this email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userCountResult = await db.query(
+      `SELECT COUNT(*) as count FROM medical_provider_users WHERE medical_provider_id = $1`,
+      [medicalProvider.id]
+    );
+    const userCount = parseInt(userCountResult.rows[0].count, 10);
+    const userNumber = String(userCount + 1).padStart(4, '0');
+    const userCode = `${medicalProvider.provider_code}-USER-${userNumber}`;
+
+    const role = requestedRole || 'staff';
+    const validRoles = ['physician', 'nurse', 'staff', 'billing'];
+    const finalRole = validRoles.includes(role) ? role : 'staff';
+
+    const rolePermissions = {
+      physician: {
+        canManageUsers: false,
+        canManagePatients: true,
+        canViewAllPatients: true,
+        canAccessPhi: true,
+        canViewMedicalRecords: true,
+        canEditMedicalRecords: true,
+        canManageBilling: false,
+        canViewAnalytics: true,
+        canManageSettings: false,
+        canSendNotifications: true
+      },
+      nurse: {
+        canManageUsers: false,
+        canManagePatients: true,
+        canViewAllPatients: true,
+        canAccessPhi: true,
+        canViewMedicalRecords: true,
+        canEditMedicalRecords: false,
+        canManageBilling: false,
+        canViewAnalytics: false,
+        canManageSettings: false,
+        canSendNotifications: true
+      },
+      staff: {
+        canManageUsers: false,
+        canManagePatients: false,
+        canViewAllPatients: false,
+        canAccessPhi: false,
+        canViewMedicalRecords: false,
+        canEditMedicalRecords: false,
+        canManageBilling: false,
+        canViewAnalytics: false,
+        canManageSettings: false,
+        canSendNotifications: false
+      },
+      billing: {
+        canManageUsers: false,
+        canManagePatients: false,
+        canViewAllPatients: true,
+        canAccessPhi: false,
+        canViewMedicalRecords: false,
+        canEditMedicalRecords: false,
+        canManageBilling: true,
+        canViewAnalytics: true,
+        canManageSettings: false,
+        canSendNotifications: false
+      }
+    };
+
+    const perms = rolePermissions[finalRole];
+
+    const newUserResult = await db.query(
+      `INSERT INTO medical_provider_users (
+        medical_provider_id, first_name, last_name, email, password, user_code, role,
+        can_manage_users, can_manage_patients, can_view_all_patients,
+        can_access_phi, can_view_medical_records, can_edit_medical_records,
+        can_manage_billing, can_view_analytics, can_manage_settings,
+        can_send_notifications, status, hipaa_training_date, hipaa_training_expiry
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      RETURNING id, first_name, last_name, email, user_code, role, status`,
+      [
+        medicalProvider.id,
+        firstName,
+        lastName,
+        email.toLowerCase(),
+        hashedPassword,
+        userCode,
+        finalRole,
+        perms.canManageUsers,
+        perms.canManagePatients,
+        perms.canViewAllPatients,
+        perms.canAccessPhi,
+        perms.canViewMedicalRecords,
+        perms.canEditMedicalRecords,
+        perms.canManageBilling,
+        perms.canViewAnalytics,
+        perms.canManageSettings,
+        perms.canSendNotifications,
+        'active',
+        new Date().toISOString().split('T')[0],
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      ]
+    );
+
+    const newUser = newUserResult.rows[0];
+
+    const token = jwt.sign(
+      { 
+        id: medicalProvider.id,
+        medicalProviderUserId: newUser.id,
+        email: newUser.email, 
+        userType: 'medical_provider',
+        providerCode: medicalProvider.provider_code,
+        medicalProviderUserRole: finalRole,
+        isMedicalProviderUser: true
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    setAuthCookie(res, token);
+
+    sendWelcomeEmail(newUser.email, `${firstName} ${lastName}`, 'medical_provider')
+      .catch(err => console.error('Error sending welcome email:', err));
+
+    res.status(201).json({
+      message: 'Successfully joined medical provider',
+      token,
+      medicalProvider: {
+        id: medicalProvider.id,
+        medicalProviderUserId: newUser.id,
+        providerName: medicalProvider.provider_name,
+        providerCode: medicalProvider.provider_code,
+        email: newUser.email,
+        userCode: newUser.user_code,
+        role: newUser.role,
+        isMedicalProviderUser: true
+      }
+    });
+  } catch (error) {
+    console.error('Error joining medical provider:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ message: 'An account with this email already exists' });
+    }
+    res.status(500).json({ message: 'Error joining medical provider', error: error.message });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password, userType } = req.body;

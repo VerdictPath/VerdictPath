@@ -139,7 +139,7 @@ const MedicalProviderActivityDashboardScreen = ({
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>📊 Activity Dashboard</Text>
+          <Text style={styles.headerTitle}>📊 User Activity</Text>
           <View style={styles.headerPlaceholder} />
         </View>
         <View style={styles.loadingContainer}>
@@ -156,7 +156,7 @@ const MedicalProviderActivityDashboardScreen = ({
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📊 Activity Dashboard</Text>
+        <Text style={styles.headerTitle}>📊 User Activity</Text>
         <TouchableOpacity onPress={onNavigateToHIPAAReport} style={styles.hipaaButton}>
           <Text style={styles.hipaaButtonText}>🔒 HIPAA</Text>
         </TouchableOpacity>

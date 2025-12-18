@@ -42,6 +42,13 @@ Key technical features include:
   - Separate authorization flows for law firms and medical providers with consent verification
   - Comprehensive audit logging in document_access_log table for all access attempts (success/failure)
   - AES-256-GCM encryption for sensitive document metadata
+- **Individual User Disbursements Screen**: Individual users can view settlement disbursements from their law firm and securely manage bank information. Features include:
+  - View all received disbursements with status (pending/completed/failed), amounts, and transaction IDs
+  - Secure bank information storage with AES-256 encryption for bank name, account holder, routing number, and account number
+  - Redacted display showing only last 4 digits of routing and account numbers for security
+  - Add/update bank account functionality with validation (9-digit routing number, 4-17 digit account number)
+  - Accessible via Dashboard quick action button (💰 Disbursements) or through Polly the Navigator
+- **Polly the Navigator (AI Assistant)**: Pirate-themed AI navigation assistant for individual users. Appears as a floating parrot button (🦜) on all individual user screens. Helps users navigate to features via conversational interface with pirate personality ("Ahoy, matey!"). Provides quick navigation buttons to all major sections.
 - **Admin Dashboard (Web Portal)**: Comprehensive admin portal at `/portal/admin` with pirate-themed dark UI. Features include:
   - Separate admin authentication with ADMIN_USERNAME and ADMIN_PASSWORD environment variables
   - Dashboard overview with statistics for all user types (individuals, law firms, medical providers)
@@ -55,7 +62,7 @@ Key technical features include:
 ### Feature Specifications
 - **User Authentication & Types**: Supports Individual, Law Firm, and Medical Provider users across Free, Basic, and Premium tiers. Multi-user accounts with role-based permissions for law firms (admin, attorney, staff) and medical providers (admin, physician, nurse, staff, billing).
 - **Subscription Pricing Structure**: Tiered pricing for law firms (8 tiers), individuals (3 tiers), and medical providers (4 tiers).
-- **Interactive Pirate Map**: A 9-stage litigation journey with progress tracking, detailed substages, modal descriptions, and interactive audio.
+- **Interactive Pirate Map**: A 9-stage litigation journey with progress tracking, detailed substages, modal descriptions, and interactive audio. Includes file upload functionality in Pre-Litigation phase substages with support for camera (mobile only), gallery, and document uploads. Uploaded evidence is automatically visible to connected law firms in the Evidence Locker.
 - **Video Library**: Integrated educational tutorials.
 - **Medical Hub**: HIPAA-compliant document storage placeholder.
 - **Law Firm/Medical Provider Portals**: Web and mobile access for managing clients/patients.

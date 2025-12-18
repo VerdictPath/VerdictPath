@@ -1,16 +1,18 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react-native';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 
 const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
   console.log('[MedicalProviderBottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'medicalprovider-dashboard' },
-    { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-send-notification', badge: notificationCount },
-    { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
+    { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'medicalprovider-dashboard' },
+    { name: 'Notifications', icon: '🔔', screen: 'medicalprovider-notifications', badge: notificationCount },
+    { name: 'Calendar', icon: '📅', screen: 'medicalprovider-calendar' },
     { name: 'HIPAA', icon: '🔒', screen: 'medicalprovider-hipaa-dashboard' },
-    { name: 'Activity', icon: '📊', screen: 'medicalprovider-activity-dashboard' },
-    { name: 'Billing', icon: '💰', screen: 'medicalprovider-billing' },
+    { name: 'Client Tracking', icon: '📊', screen: 'medicalprovider-notification-analytics' },
+    { name: 'Users', icon: '👥', screen: 'medicalprovider-user-management' },
+    { name: 'Profile', icon: '👤', screen: 'medicalprovider-profile' },
   ];
 
   return (
@@ -27,7 +29,15 @@ const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificati
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
-              <Text style={styles.icon}>{tab.icon}</Text>
+              {tab.imageSource ? (
+                <Image 
+                  source={tab.imageSource} 
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.icon}>{tab.icon}</Text>
+              )}
               {tab.badge !== undefined && (
                 <View style={[styles.badge, !showBadge && styles.hiddenBadge]}>
                   <Text style={styles.badgeText}>
@@ -54,15 +64,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#0d4d4d',
-    borderTopWidth: 2,
-    borderTopColor: '#d4af37',
+    backgroundColor: '#000000',
+    borderTopWidth: 1,
+    borderTopColor: '#333333',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     paddingTop: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
     elevation: 10,
     zIndex: 1000,
   },
@@ -81,18 +91,23 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   activeIconContainer: {
-    backgroundColor: '#d4af37',
+    // No background - only line indicator above icon
   },
   icon: {
     fontSize: 22,
   },
+  iconImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
   label: {
     fontSize: 10,
-    color: '#a0aec0',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   activeLabel: {
-    color: '#d4af37',
+    color: medicalProviderTheme.colors.clinicalTeal,
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -100,14 +115,14 @@ const styles = StyleSheet.create({
     top: 0,
     width: 30,
     height: 3,
-    backgroundColor: '#d4af37',
+    backgroundColor: medicalProviderTheme.colors.clinicalTeal,
     borderRadius: 2,
   },
   badge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#e74c3c',
+    backgroundColor: medicalProviderTheme.colors.critical,
     borderRadius: 10,
     minWidth: 20,
     height: 20,

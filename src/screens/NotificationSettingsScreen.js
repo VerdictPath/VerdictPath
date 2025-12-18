@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,40 @@ import {
   TextInput
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
 
+const getThemeForUserType = (isMedicalProvider) => {
+  if (isMedicalProvider) {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      headerBg: medicalProviderTheme.colors.primary,
+      headerText: '#FFFFFF',
+      backButtonText: '#A8A8A8',
+      background: medicalProviderTheme.colors.background,
+      surface: medicalProviderTheme.colors.surface,
+      text: medicalProviderTheme.colors.text,
+      textSecondary: medicalProviderTheme.colors.textSecondary,
+      border: medicalProviderTheme.colors.border,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    headerBg: '#1E3A5F',
+    headerText: '#FFFFFF',
+    backButtonText: '#C0C0C0',
+    background: '#F5F7FA',
+    surface: '#FFFFFF',
+    text: '#1E3A5F',
+    textSecondary: '#64748B',
+    border: '#E2E8F0',
+  };
+};
+
 const NotificationSettingsScreen = ({ user, onBack }) => {
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  const themeColors = useMemo(() => getThemeForUserType(isMedicalProvider), [isMedicalProvider]);
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(null);
@@ -33,10 +64,98 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     systemNotifications: true,
     marketingNotifications: false
   });
+  const [emailCCPrefs, setEmailCCPrefs] = useState({
+    emailCCEnabled: false,
+    ccEmailAddress: '',
+    ccCaseUpdates: false,
+    ccAppointmentReminders: true,
+    ccPaymentNotifications: false,
+    ccDocumentRequests: true,
+    ccSystemAlerts: false
+  });
+  const [editingCCEmail, setEditingCCEmail] = useState(false);
+  const [ccEmailInput, setCCEmailInput] = useState('');
 
   useEffect(() => {
     fetchPreferences();
+    fetchEmailCCPreferences();
   }, []);
+
+  const fetchEmailCCPreferences = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/email-preferences`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setEmailCCPrefs({
+          emailCCEnabled: data.email_cc_enabled ?? false,
+          ccEmailAddress: data.cc_email_address ?? '',
+          ccCaseUpdates: data.cc_case_updates ?? false,
+          ccAppointmentReminders: data.cc_appointment_reminders ?? true,
+          ccPaymentNotifications: data.cc_payment_notifications ?? false,
+          ccDocumentRequests: data.cc_document_requests ?? true,
+          ccSystemAlerts: data.cc_system_alerts ?? false
+        });
+        setCCEmailInput(data.cc_email_address ?? '');
+      }
+    } catch (error) {
+      console.error('Error fetching email CC preferences:', error);
+    }
+  };
+
+  const updateEmailCCPreferences = async (updates) => {
+    try {
+      setSaving(true);
+      
+      const snakeCaseUpdates = {};
+      Object.keys(updates).forEach(key => {
+        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        snakeCaseUpdates[snakeKey] = updates[key];
+      });
+      
+      const response = await fetch(`${API_BASE_URL}/api/notifications/email-preferences`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(snakeCaseUpdates)
+      });
+
+      if (response.ok) {
+        setEmailCCPrefs(prev => ({ ...prev, ...updates }));
+      } else {
+        Alert.alert('Error', 'Failed to update email CC settings');
+      }
+    } catch (error) {
+      console.error('Error updating email CC preferences:', error);
+      Alert.alert('Error', 'Failed to save email CC settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCCToggle = (key, value) => {
+    const newPrefs = { ...emailCCPrefs, [key]: value };
+    setEmailCCPrefs(newPrefs);
+    updateEmailCCPreferences({ [key]: value });
+  };
+
+  const saveCCEmailAddress = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (ccEmailInput && !emailRegex.test(ccEmailInput)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      return;
+    }
+    updateEmailCCPreferences({ ccEmailAddress: ccEmailInput });
+    setEditingCCEmail(false);
+  };
 
   const fetchPreferences = async () => {
     try {
@@ -167,7 +286,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           <Text style={styles.headerTitle}>Notification Settings</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
         </View>
       </View>
     );
@@ -197,7 +316,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.pushNotificationsEnabled}
               onValueChange={(value) => handleToggle('pushNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.pushNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -213,7 +332,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.emailNotificationsEnabled}
               onValueChange={(value) => handleToggle('emailNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.emailNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -229,7 +348,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.smsNotificationsEnabled}
               onValueChange={(value) => handleToggle('smsNotificationsEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.smsNotificationsEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -250,7 +369,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.quietHoursEnabled}
               onValueChange={(value) => handleToggle('quietHoursEnabled', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.quietHoursEnabled ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -301,7 +420,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.urgentNotifications}
               onValueChange={(value) => handleToggle('urgentNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.urgentNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -317,7 +436,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.taskNotifications}
               onValueChange={(value) => handleToggle('taskNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.taskNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -333,7 +452,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.systemNotifications}
               onValueChange={(value) => handleToggle('systemNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.systemNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
@@ -349,11 +468,142 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             <Switch
               value={preferences.marketingNotifications}
               onValueChange={(value) => handleToggle('marketingNotifications', value)}
-              trackColor={{ false: '#ccc', true: theme.colors.primary }}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
               thumbColor={preferences.marketingNotifications ? '#fff' : '#f4f3f4'}
               disabled={saving}
             />
           </View>
+        </View>
+
+        {/* Email CC Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📧 Email CC / Forwarding</Text>
+          <Text style={styles.sectionDescription}>
+            Receive copies of notifications via email for record-keeping
+          </Text>
+          
+          <View style={styles.settingRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Enable Email CC</Text>
+              <Text style={styles.settingDescription}>
+                Send copies of notifications to your email
+              </Text>
+            </View>
+            <Switch
+              value={emailCCPrefs.emailCCEnabled}
+              onValueChange={(value) => handleCCToggle('emailCCEnabled', value)}
+              trackColor={{ false: '#ccc', true: themeColors.primary }}
+              thumbColor={emailCCPrefs.emailCCEnabled ? '#fff' : '#f4f3f4'}
+              disabled={saving}
+            />
+          </View>
+
+          {emailCCPrefs.emailCCEnabled && (
+            <>
+              <View style={styles.emailInputContainer}>
+                <Text style={styles.emailInputLabel}>CC Email Address:</Text>
+                {editingCCEmail ? (
+                  <View style={styles.emailEditRow}>
+                    <TextInput
+                      style={styles.ccEmailInput}
+                      value={ccEmailInput}
+                      onChangeText={setCCEmailInput}
+                      placeholder="Enter email address"
+                      placeholderTextColor="#999"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <TouchableOpacity 
+                      style={styles.emailSaveButton}
+                      onPress={saveCCEmailAddress}
+                    >
+                      <Text style={styles.emailSaveButtonText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.emailDisplayRow}
+                    onPress={() => setEditingCCEmail(true)}
+                  >
+                    <Text style={styles.ccEmailDisplay}>
+                      {emailCCPrefs.ccEmailAddress || 'Not set - tap to add'}
+                    </Text>
+                    <Text style={styles.editEmailLink}>Edit</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={styles.ccOptionsContainer}>
+                <Text style={styles.ccOptionsTitle}>CC the following notification types:</Text>
+                
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Case Updates</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccCaseUpdates}
+                    onValueChange={(value) => handleCCToggle('ccCaseUpdates', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccCaseUpdates ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Appointment Reminders</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccAppointmentReminders}
+                    onValueChange={(value) => handleCCToggle('ccAppointmentReminders', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccAppointmentReminders ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Payment Notifications</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccPaymentNotifications}
+                    onValueChange={(value) => handleCCToggle('ccPaymentNotifications', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccPaymentNotifications ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Document Requests</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccDocumentRequests}
+                    onValueChange={(value) => handleCCToggle('ccDocumentRequests', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccDocumentRequests ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>System Alerts</Text>
+                  </View>
+                  <Switch
+                    value={emailCCPrefs.ccSystemAlerts}
+                    onValueChange={(value) => handleCCToggle('ccSystemAlerts', value)}
+                    trackColor={{ false: '#ccc', true: themeColors.primary }}
+                    thumbColor={emailCCPrefs.ccSystemAlerts ? '#fff' : '#f4f3f4'}
+                    disabled={saving}
+                  />
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.footer}>
@@ -422,13 +672,13 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: colors.background
   },
   header: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: colors.headerBg,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
     paddingHorizontal: 15,
@@ -451,14 +701,14 @@ const styles = StyleSheet.create({
     paddingRight: 15
   },
   backButtonText: {
-    color: '#fff',
+    color: colors.backButtonText,
     fontSize: 16,
     fontWeight: '600'
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: colors.headerText,
     flex: 1
   },
   loadingContainer: {
@@ -470,18 +720,18 @@ const styles = StyleSheet.create({
     flex: 1
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     marginTop: 20,
     paddingHorizontal: 15,
     paddingVertical: 15,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: colors.border
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
     marginBottom: 15
   },
   settingRow: {
@@ -490,7 +740,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: colors.background
   },
   settingInfo: {
     flex: 1,
@@ -499,44 +749,44 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
     marginBottom: 4
   },
   settingDescription: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
     lineHeight: 18
   },
   quietHoursConfig: {
     marginTop: 15,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
+    borderTopColor: colors.border
   },
   timeSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.background,
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: colors.border
   },
   timeSelectorLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333'
+    color: colors.text
   },
   timeSelectorValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: colors.text
   },
   quietHoursNote: {
     fontSize: 12,
-    color: '#e67e22',
+    color: '#F59E0B',
     marginTop: 10,
     lineHeight: 16,
     fontStyle: 'italic'
@@ -547,7 +797,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20
   },
@@ -557,7 +807,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: `${colors.primary}B3`,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -569,21 +819,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: `${colors.primary}80`,
     justifyContent: 'center',
     alignItems: 'center'
   },
   timePickerModal: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     width: '85%',
     maxWidth: 400,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 8
       },
       android: {
@@ -594,26 +844,26 @@ const styles = StyleSheet.create({
   timePickerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center'
   },
   timePickerSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 20,
     textAlign: 'center'
   },
   timeInput: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     borderRadius: 8,
     padding: 15,
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#333',
+    color: colors.text,
     marginBottom: 20
   },
   timePickerButtons: {
@@ -628,22 +878,95 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#ddd'
+    borderColor: colors.border
   },
   confirmButton: {
-    backgroundColor: theme.colors.primary
+    backgroundColor: colors.primary
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666'
+    color: colors.textSecondary
   },
   confirmButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff'
+    color: '#FFFFFF'
+  },
+  sectionDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 18
+  },
+  emailInputContainer: {
+    backgroundColor: colors.background,
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  emailInputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8
+  },
+  emailEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  ccEmailInput: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: colors.text
+  },
+  emailSaveButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8
+  },
+  emailSaveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14
+  },
+  emailDisplayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  ccEmailDisplay: {
+    fontSize: 15,
+    color: colors.text,
+    flex: 1
+  },
+  editEmailLink: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600'
+  },
+  ccOptionsContainer: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: colors.border
+  },
+  ccOptionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 10
   }
 });
 

@@ -5,7 +5,17 @@ const eventRequestController = {
   async createEventRequest(req, res) {
     try {
       const providerId = req.user.id;
-      const userType = req.user.type;
+      const rawUserType = req.user.type || req.user.userType;
+      
+      // Normalize user type (handle both 'lawfirm' and 'law_firm' formats)
+      let userType;
+      if (rawUserType === 'lawfirm' || rawUserType === 'law_firm') {
+        userType = 'law_firm';
+      } else if (rawUserType === 'medicalprovider' || rawUserType === 'medical_provider') {
+        userType = 'medical_provider';
+      } else {
+        userType = rawUserType;
+      }
 
       if (userType !== 'law_firm' && userType !== 'medical_provider') {
         return res.status(403).json({ error: 'Only law firms and medical providers can create event requests' });
@@ -23,8 +33,12 @@ const eventRequestController = {
         location,
         durationMinutes,
         duration_minutes,
-        notes
+        notes,
+        proposedDates,
+        proposed_dates
       } = req.body;
+      
+      const finalProposedDates = proposedDates || proposed_dates || [];
 
       const finalRecipientId = clientId || client_id || patientId || patient_id;
       const finalEventType = eventType || event_type;
@@ -79,14 +93,43 @@ const eventRequestController = {
       const result = await pool.query(insertQuery, insertParams);
       const eventRequest = result.rows[0];
 
+      // If law firm provided proposed dates, insert them
+      let insertedProposedDates = [];
+      if (finalProposedDates.length > 0) {
+        for (const date of finalProposedDates) {
+          const startTime = date.startTime || date.start_time;
+          const endTime = date.endTime || date.end_time;
+          
+          if (startTime && endTime) {
+            const dateResult = await pool.query(
+              `INSERT INTO event_request_proposed_dates (
+                event_request_id, proposed_start_time, proposed_end_time, proposed_by
+              ) VALUES ($1, $2, $3, 'provider')
+              RETURNING *`,
+              [eventRequest.id, startTime, endTime]
+            );
+            insertedProposedDates.push(dateResult.rows[0]);
+          }
+        }
+        
+        // Update status to show dates are available for selection
+        if (insertedProposedDates.length > 0) {
+          await pool.query(
+            `UPDATE event_requests SET status = 'dates_offered' WHERE id = $1`,
+            [eventRequest.id]
+          );
+          eventRequest.status = 'dates_offered';
+        }
+      }
+
       // Send notification to recipient
       try {
         const notificationTitle = userType === 'law_firm' 
           ? 'Event Request from Your Law Firm'
           : 'Appointment Request from Your Medical Provider';
-        const notificationBody = userType === 'law_firm'
-          ? `Your law firm is requesting to schedule a ${finalEventType}. Please select 3 available dates.`
-          : `Your medical provider is requesting to schedule a ${finalEventType}. Please select 3 available dates.`;
+        const notificationBody = insertedProposedDates.length > 0
+          ? `Your ${userType === 'law_firm' ? 'law firm' : 'medical provider'} is requesting to schedule a ${finalEventType}. Please select one of the ${insertedProposedDates.length} available time slots.`
+          : `Your ${userType === 'law_firm' ? 'law firm' : 'medical provider'} is requesting to schedule a ${finalEventType}. Please select 3 available dates.`;
 
         await pool.query(
           `INSERT INTO notifications (
@@ -98,7 +141,7 @@ const eventRequestController = {
             providerId,
             notificationTitle,
             notificationBody,
-            JSON.stringify({ screen: 'event-requests' })
+            JSON.stringify({ screen: 'event-requests', requestId: eventRequest.id })
           ]
         );
       } catch (notifError) {
@@ -120,7 +163,12 @@ const eventRequestController = {
           durationMinutes: eventRequest.duration_minutes,
           status: eventRequest.status,
           createdAt: eventRequest.created_at,
-          notes: eventRequest.notes
+          notes: eventRequest.notes,
+          proposedDates: insertedProposedDates.map(d => ({
+            id: d.id,
+            startTime: d.proposed_start_time,
+            endTime: d.proposed_end_time
+          }))
         }
       });
     } catch (error) {
@@ -129,11 +177,18 @@ const eventRequestController = {
     }
   },
 
+  // Helper function to normalize user type
+  normalizeUserType(rawType) {
+    if (rawType === 'lawfirm' || rawType === 'law_firm') return 'law_firm';
+    if (rawType === 'medicalprovider' || rawType === 'medical_provider') return 'medical_provider';
+    return rawType;
+  },
+
   // Get all event requests for a user (law firm, medical provider, or individual)
   async getEventRequests(req, res) {
     try {
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = eventRequestController.normalizeUserType(req.user.type || req.user.userType);
       const { status } = req.query;
 
       let query;
@@ -227,7 +282,7 @@ const eventRequestController = {
     try {
       const { requestId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = eventRequestController.normalizeUserType(req.user.type || req.user.userType);
 
       const eventRequestResult = await pool.query(
         `SELECT er.*, 
@@ -394,12 +449,12 @@ const eventRequestController = {
     }
   },
 
-  // Law firm confirms one of the proposed dates
+  // Law firm confirms one of the proposed dates (when client submitted dates)
   async confirmProposedDate(req, res) {
     try {
       const { requestId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = eventRequestController.normalizeUserType(req.user.type || req.user.userType);
       const { proposedDateId, proposed_date_id } = req.body;
 
       const finalProposedDateId = proposedDateId || proposed_date_id;
@@ -514,12 +569,177 @@ const eventRequestController = {
     }
   },
 
+  // Individual selects one of the provider's offered dates
+  async selectOfferedDate(req, res) {
+    try {
+      const { requestId } = req.params;
+      const userId = req.user.id;
+      const userType = eventRequestController.normalizeUserType(req.user.type || req.user.userType);
+      const { proposedDateId, proposed_date_id } = req.body;
+
+      const finalProposedDateId = proposedDateId || proposed_date_id;
+
+      if (userType !== 'individual') {
+        return res.status(403).json({ error: 'Only clients can select dates' });
+      }
+
+      if (!finalProposedDateId) {
+        return res.status(400).json({ error: 'Proposed date ID is required' });
+      }
+
+      // Verify this is the client's request
+      const eventRequestResult = await pool.query(
+        `SELECT * FROM event_requests WHERE id = $1 AND (client_id = $2 OR patient_id = $2)`,
+        [requestId, userId]
+      );
+
+      if (eventRequestResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Event request not found or access denied' });
+      }
+
+      const eventRequest = eventRequestResult.rows[0];
+
+      if (eventRequest.status !== 'dates_offered') {
+        return res.status(400).json({ error: 'This event request does not have dates to select' });
+      }
+
+      // Get the proposed date
+      const proposedDateResult = await pool.query(
+        `SELECT * FROM event_request_proposed_dates WHERE id = $1 AND event_request_id = $2`,
+        [finalProposedDateId, requestId]
+      );
+
+      if (proposedDateResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Proposed date not found' });
+      }
+
+      const proposedDate = proposedDateResult.rows[0];
+
+      await pool.query('BEGIN');
+
+      try {
+        const providerId = eventRequest.law_firm_id || eventRequest.medical_provider_id;
+        const isLawFirm = !!eventRequest.law_firm_id;
+
+        // Create calendar event for the provider (law firm or medical provider)
+        let calendarEventResult;
+        if (isLawFirm) {
+          calendarEventResult = await pool.query(
+            `INSERT INTO calendar_events (
+              law_firm_id, event_type, title, description, location,
+              start_time, end_time, all_day, reminder_enabled, 
+              reminder_minutes_before, case_related
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 60, true)
+            RETURNING id`,
+            [
+              providerId,
+              eventRequest.event_type,
+              eventRequest.title,
+              eventRequest.description,
+              eventRequest.location,
+              proposedDate.proposed_start_time,
+              proposedDate.proposed_end_time
+            ]
+          );
+        } else {
+          calendarEventResult = await pool.query(
+            `INSERT INTO calendar_events (
+              medical_provider_id, event_type, title, description, location,
+              start_time, end_time, all_day, reminder_enabled, 
+              reminder_minutes_before, case_related
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 60, true)
+            RETURNING id`,
+            [
+              providerId,
+              eventRequest.event_type,
+              eventRequest.title,
+              eventRequest.description,
+              eventRequest.location,
+              proposedDate.proposed_start_time,
+              proposedDate.proposed_end_time
+            ]
+          );
+        }
+
+        const calendarEventId = calendarEventResult.rows[0].id;
+
+        // Share event with the individual user
+        await pool.query(
+          `INSERT INTO shared_calendar_events (
+            calendar_event_id, shared_with_user_id, can_edit
+          ) VALUES ($1, $2, false)`,
+          [calendarEventId, userId]
+        );
+
+        // Also create a personal calendar event for the individual
+        await pool.query(
+          `INSERT INTO user_calendar_events (
+            user_id, event_type, title, description, location,
+            start_time, end_time, all_day, reminder_enabled
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true)`,
+          [
+            userId,
+            eventRequest.event_type,
+            eventRequest.title,
+            eventRequest.description || '',
+            eventRequest.location || '',
+            proposedDate.proposed_start_time,
+            proposedDate.proposed_end_time
+          ]
+        );
+
+        // Mark the proposed date as selected
+        await pool.query(
+          `UPDATE event_request_proposed_dates SET is_selected = true WHERE id = $1`,
+          [finalProposedDateId]
+        );
+
+        // Update event request with confirmed event
+        await pool.query(
+          `UPDATE event_requests 
+           SET status = 'confirmed', confirmed_event_id = $1, responded_at = CURRENT_TIMESTAMP
+           WHERE id = $2`,
+          [calendarEventId, requestId]
+        );
+
+        // Send notification to provider
+        await pool.query(
+          `INSERT INTO notifications (
+            user_id, sender_id, notification_type, title, body, 
+            action_type, action_data, is_read
+          ) VALUES ($1, $2, 'event_confirmed', $3, $4, 'navigate', $5, false)`,
+          [
+            providerId,
+            userId,
+            'Event Date Selected',
+            `Your client has selected a date for ${eventRequest.title}: ${new Date(proposedDate.proposed_start_time).toLocaleString()}.`,
+            JSON.stringify({ screen: 'calendar' })
+          ]
+        );
+
+        await pool.query('COMMIT');
+
+        res.json({
+          success: true,
+          message: 'Date selected and event added to both calendars',
+          calendarEventId
+        });
+      } catch (error) {
+        await pool.query('ROLLBACK');
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error selecting offered date:', error);
+      res.status(500).json({ error: 'Failed to select date' });
+    }
+  },
+
   // Cancel an event request
   async cancelEventRequest(req, res) {
     try {
       const { requestId } = req.params;
       const userId = req.user.id;
-      const userType = req.user.type;
+      const userType = eventRequestController.normalizeUserType(req.user.type || req.user.userType);
 
       const eventRequestResult = await pool.query(
         `SELECT * FROM event_requests WHERE id = $1`,
@@ -536,7 +756,7 @@ const eventRequestController = {
       if (userType === 'law_firm' && eventRequest.law_firm_id !== userId) {
         return res.status(403).json({ error: 'Access denied' });
       }
-      if (userType === 'individual' && eventRequest.client_id !== userId) {
+      if (userType === 'individual' && eventRequest.client_id !== userId && eventRequest.patient_id !== userId) {
         return res.status(403).json({ error: 'Access denied' });
       }
 

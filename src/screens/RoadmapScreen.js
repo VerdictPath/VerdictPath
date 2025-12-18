@@ -7,6 +7,8 @@ import { API_BASE_URL } from '../config/api';
 import alert from '../utils/alert';
 import { getCurrentPhase, checkPhaseTransition, getPhaseCelebrationMessage, formatPhaseDisplay, getPhaseProgress } from '../utils/analyticsTracker';
 import { AVATARS } from '../constants/avatars';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -96,6 +98,46 @@ const RoadmapScreen = ({
   const [showCelebration, setShowCelebration] = useState(false);
   const [completedMilestone, setCompletedMilestone] = useState('');
   const [celebrationCoins, setCelebrationCoins] = useState(100);
+  const [uploadingSubstage, setUploadingSubstage] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
+
+  useEffect(() => {
+    if (authToken && !readOnly) {
+      fetchUploadedEvidence();
+    }
+  }, [authToken, readOnly]);
+
+  const fetchUploadedEvidence = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/my-evidence`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const filesMap = {};
+        data.evidence.forEach(doc => {
+          const substageId = doc.evidence_type;
+          if (!filesMap[substageId]) {
+            filesMap[substageId] = [];
+          }
+          filesMap[substageId].push({
+            id: doc.id,
+            fileName: doc.file_name,
+            title: doc.title,
+            uploadedAt: doc.uploaded_at,
+            mimeType: doc.mime_type
+          });
+        });
+        setUploadedFiles(filesMap);
+      }
+    } catch (error) {
+      console.error('Error fetching uploaded evidence:', error);
+    }
+  };
 
   // Dynamic styles that depend on window dimensions
   const dynamicStyles = {
@@ -122,63 +164,204 @@ const RoadmapScreen = ({
   };
 
   const handleFileUpload = (subStageId) => {
-    alert(
-      '🏴‍☠️ Ahoy There, Matey!',
-      'Arrr! File uploads be under construction by our crew! This feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon! ⚓'
-    );
+    setUploadingSubstage(subStageId);
   };
 
   const handleUploadModalTakePhoto = async (subStage) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+    await pickImageFromCamera(selectedStage?.id, subStage.id, subStage.name);
   };
 
   const handleUploadModalChooseFile = async (subStage) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+    await pickDocumentFromDevice(selectedStage?.id, subStage.id, subStage.name);
   };
 
   const handlePlayAudio = (subStage) => {
-    // TODO: Play audio file when uploaded
-    // For now, show a message that audio is coming soon
     if (subStage.audioFile) {
-      // Future: Play the audio file
       alert('🎧 Playing Audio', `Audio description for "${subStage.name}" would play here.`);
     } else {
       alert('🎧 Audio Description', `Audio description for "${subStage.name}" is coming soon!\n\nThis feature will help you understand each step with detailed audio explanations.`);
     }
   };
 
-  const pickImageFromCamera = async (stageId, subStageId) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const pickImageFromGallery = async (stageId, subStageId, substageName) => {
+    try {
+      if (Platform.OS === 'web') {
+        pickFileFromWeb(stageId, subStageId, substageName, 'image/*');
+        return;
+      }
+      
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert('Permission Required', 'Please grant permission to access your photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await uploadEvidenceFile(asset, stageId, subStageId, substageName);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
+  
+  const pickFileFromWeb = (stageId, subStageId, substageName, acceptTypes) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = acceptTypes;
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const webFile = {
+          uri: URL.createObjectURL(file),
+          name: file.name,
+          fileName: file.name,
+          type: file.type,
+          mimeType: file.type,
+          file: file,
+        };
+        await uploadEvidenceFile(webFile, stageId, subStageId, substageName);
+      }
+    };
+    input.click();
   };
 
-  const pickDocumentFromDevice = async (stageId, subStageId) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const pickImageFromCamera = async (stageId, subStageId, substageName) => {
+    try {
+      if (Platform.OS === 'web') {
+        alert('Camera Not Available', 'Camera is not available on web. Please use the gallery or document picker.');
+        return;
+      }
+
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert('Permission Required', 'Please grant camera permission to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await uploadEvidenceFile(asset, stageId, subStageId, substageName);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      alert('Error', 'Failed to take photo. Please try again.');
+    }
   };
 
-  const uploadEvidenceFile = async (file, stageId, subStageId) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const pickDocumentFromDevice = async (stageId, subStageId, substageName) => {
+    try {
+      if (Platform.OS === 'web') {
+        pickFileFromWeb(stageId, subStageId, substageName, '.pdf,.doc,.docx,image/*');
+        return;
+      }
+      
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await uploadEvidenceFile(asset, stageId, subStageId, substageName);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error', 'Failed to pick document. Please try again.');
+    }
   };
 
-  const simulateUpload = (stageId, subStageId, uploadType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'File uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const uploadEvidenceFile = async (file, stageId, subStageId, substageName) => {
+    if (!authToken) {
+      alert('Error', 'You must be logged in to upload files.');
+      return;
+    }
+
+    setUploadingSubstage(subStageId);
+    setUploadProgress(prev => ({ ...prev, [subStageId]: 0 }));
+
+    try {
+      const formData = new FormData();
+      
+      const fileUri = file.uri;
+      const fileName = file.fileName || file.name || `evidence_${Date.now()}.jpg`;
+      const fileType = file.mimeType || file.type || 'application/octet-stream';
+      
+      if (Platform.OS === 'web') {
+        if (file.file) {
+          formData.append('file', file.file, fileName);
+        } else {
+          const response = await fetch(fileUri);
+          const blob = await response.blob();
+          formData.append('file', blob, fileName);
+        }
+      } else {
+        formData.append('file', {
+          uri: fileUri,
+          name: fileName,
+          type: fileType,
+        });
+      }
+      
+      formData.append('title', substageName || 'Evidence Upload');
+      formData.append('evidenceType', subStageId);
+      formData.append('description', `Uploaded for: ${substageName}`);
+
+      setUploadProgress(prev => ({ ...prev, [subStageId]: 30 }));
+
+      const uploadResponse = await fetch(`${API_BASE_URL}/api/uploads/evidence`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      setUploadProgress(prev => ({ ...prev, [subStageId]: 80 }));
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const uploadData = await uploadResponse.json();
+      
+      setUploadProgress(prev => ({ ...prev, [subStageId]: 100 }));
+
+      setUploadedFiles(prev => ({
+        ...prev,
+        [subStageId]: [...(prev[subStageId] || []), {
+          id: uploadData.id,
+          fileName: fileName,
+          uploadedAt: new Date().toISOString(),
+        }]
+      }));
+
+      alert('🏴‍☠️ Upload Successful!', `Your evidence "${fileName}" has been uploaded and will be available to your connected law firm.`);
+
+      if (uploadData.substageCompleted) {
+        onCompleteSubStage(stageId, subStageId, uploadData.coinsEarned || 0);
+      }
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Upload Failed', error.message || 'Failed to upload file. Please try again.');
+    } finally {
+      setUploadingSubstage(null);
+      setUploadProgress(prev => ({ ...prev, [subStageId]: 0 }));
+    }
   };
 
   const viewUploadedFiles = (subStage) => {
@@ -680,9 +863,57 @@ const RoadmapScreen = ({
                         </View>
                       ) : subStage.acceptedFormats ? (
                         <View style={styles.uploadSection}>
-                          <View style={styles.comingSoonBanner}>
-                            <Text style={styles.comingSoonText}>🏴‍☠️ File upload coming soon!</Text>
-                          </View>
+                          {readOnly ? (
+                            <View style={styles.readOnlyUploadBanner}>
+                              <Text style={styles.readOnlyUploadText}>📁 Upload section (view only)</Text>
+                            </View>
+                          ) : (
+                            <>
+                              <Text style={styles.uploadLabel}>📤 Upload Evidence</Text>
+                              <View style={styles.uploadButtonsRow}>
+                                {Platform.OS !== 'web' && (
+                                  <TouchableOpacity 
+                                    style={[styles.uploadButton, uploadingSubstage === subStage.id && styles.uploadButtonDisabled]}
+                                    onPress={() => pickImageFromCamera(selectedStage?.id, subStage.id, subStage.name)}
+                                    disabled={uploadingSubstage === subStage.id}
+                                  >
+                                    <Text style={styles.uploadButtonIcon}>📷</Text>
+                                    <Text style={styles.uploadButtonText}>Camera</Text>
+                                  </TouchableOpacity>
+                                )}
+                                <TouchableOpacity 
+                                  style={[styles.uploadButton, uploadingSubstage === subStage.id && styles.uploadButtonDisabled]}
+                                  onPress={() => pickImageFromGallery(selectedStage?.id, subStage.id, subStage.name)}
+                                  disabled={uploadingSubstage === subStage.id}
+                                >
+                                  <Text style={styles.uploadButtonIcon}>🖼️</Text>
+                                  <Text style={styles.uploadButtonText}>Gallery</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                  style={[styles.uploadButton, uploadingSubstage === subStage.id && styles.uploadButtonDisabled]}
+                                  onPress={() => pickDocumentFromDevice(selectedStage?.id, subStage.id, subStage.name)}
+                                  disabled={uploadingSubstage === subStage.id}
+                                >
+                                  <Text style={styles.uploadButtonIcon}>📄</Text>
+                                  <Text style={styles.uploadButtonText}>Document</Text>
+                                </TouchableOpacity>
+                              </View>
+                              {uploadingSubstage === subStage.id && (
+                                <View style={styles.uploadProgressContainer}>
+                                  <ActivityIndicator size="small" color="#8B4513" />
+                                  <Text style={styles.uploadProgressText}>Uploading...</Text>
+                                </View>
+                              )}
+                              {uploadedFiles[subStage.id] && uploadedFiles[subStage.id].length > 0 && (
+                                <View style={styles.uploadedFilesList}>
+                                  <Text style={styles.uploadedFilesLabel}>✅ Uploaded Files:</Text>
+                                  {uploadedFiles[subStage.id].map((file, index) => (
+                                    <Text key={index} style={styles.uploadedFileName}>• {file.fileName}</Text>
+                                  ))}
+                                </View>
+                              )}
+                            </>
+                          )}
                         </View>
                       ) : null}
 
@@ -1357,9 +1588,83 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   uploadSection: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     marginBottom: 10,
     gap: 8,
+  },
+  uploadLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  uploadButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  uploadButton: {
+    flex: 1,
+    flexDirection: 'column',
+    backgroundColor: '#8B4513',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 70,
+  },
+  uploadButtonDisabled: {
+    opacity: 0.5,
+  },
+  uploadButtonIcon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  uploadProgressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    gap: 8,
+  },
+  uploadProgressText: {
+    fontSize: 13,
+    color: '#8B4513',
+    fontWeight: '500',
+  },
+  uploadedFilesList: {
+    backgroundColor: '#e8f5e9',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  uploadedFilesLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2e7d32',
+    marginBottom: 5,
+  },
+  uploadedFileName: {
+    fontSize: 12,
+    color: '#333',
+    marginLeft: 5,
+  },
+  readOnlyUploadBanner: {
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  readOnlyUploadText: {
+    color: '#666',
+    fontSize: 13,
   },
   comingSoonBanner: {
     backgroundColor: '#fff3cd',
@@ -1377,24 +1682,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  uploadButton: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#3498db',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   uploadIcon: {
     fontSize: 16,
     marginRight: 6,
-  },
-  uploadButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
   },
   viewFilesButton: {
     backgroundColor: '#ecf0f1',

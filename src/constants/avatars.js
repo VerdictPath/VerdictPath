@@ -39,6 +39,16 @@ export const AVATARS = {
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
   },
+  POLLY: {
+    id: 'polly',
+    name: 'Polly the Parrot',
+    description: 'The Eternal Optimist. Always on your side',
+    calmVideo: require('../../assets/avatars/polly/polly-calm.mp4'),
+    actionVideo: require('../../assets/avatars/polly/polly-action.mp4'),
+    thumbnail: require('../../assets/avatars/polly/polly-thumbnail.png'),
+    primaryColor: '#22C55E',
+    accentColor: '#86EFAC',
+  },
 };
 
 export const ACTION_TRIGGERS = {

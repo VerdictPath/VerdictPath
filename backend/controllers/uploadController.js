@@ -712,10 +712,12 @@ const downloadFile = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (!document.s3_key) {
-      const filePath = path.resolve(__dirname, '..', 'uploads', document.document_url);
+    if (!document.s3_key || document.storage_type === 'local') {
+      const fileKey = document.s3_key || document.document_url?.replace('/uploads/', '');
+      const filePath = path.resolve(__dirname, '..', 'uploads', fileKey);
       
       if (!fs.existsSync(filePath)) {
+        console.error(`[Download] File not found: ${filePath}`);
         return res.status(404).json({ error: 'File not found on server' });
       }
 
@@ -743,9 +745,18 @@ const downloadFile = async (req, res) => {
         })
       ]);
 
-      res.setHeader('Content-Type', document.mime_type);
-      res.setHeader('Content-Disposition', `inline; filename="${document.file_name}"`);
-      return res.sendFile(filePath);
+      const localUrl = `/api/uploads/stream/${fileKey}`;
+      
+      return res.json({
+        success: true,
+        presignedUrl: localUrl,
+        fileName: document.file_name,
+        mimeType: document.mime_type,
+        fileSize: document.file_size,
+        expiresIn: null,
+        expiresAt: null,
+        storageType: 'local'
+      });
     }
 
     const presignedUrlData = await storageService.generateDownloadUrl(

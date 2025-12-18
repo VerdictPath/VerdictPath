@@ -249,32 +249,20 @@ const INDIVIDUAL_PRICING = {
     monthly: 0,
     annual: 0,
     features: [
-      "Access to roadmap",
-      "Basic notifications",
-      "Document storage (500MB)",
+      "⚓ Interactive Litigation Roadmap",
+      "📹 Full Video Library Access",
+      "🪙 Gamification & Coin Rewards",
+      "🏴‍☠️ Pirate-Themed Experience",
+      "📱 Mobile & Web Access",
+      "📚 Premium Educational Content",
+      "📅 Calendar Integration",
+      "🔔 Priority Notifications",
+      "🏥 Medical Hub Access (HIPAA-Compliant)",
+      "📊 Advanced Analytics Dashboard",
+      "💰 Settlement Disbursement Receiving",
+      "🏆 Premium Badge & Recognition",
     ],
-  },
-  basic: {
-    name: "Basic",
-    monthly: 9.99,
-    annual: 99.99,
-    features: [
-      "Everything in Free",
-      "Unlimited storage",
-      "Priority support",
-      "No ads",
-    ],
-  },
-  premium: {
-    name: "Premium",
-    monthly: 19.99,
-    annual: 199.99,
-    features: [
-      "Everything in Basic",
-      "AI document analysis",
-      "Video consultations",
-      "Premium content",
-    ],
+    description: "Complete case management suite - 100% FREE",
   },
 };
 
@@ -1260,6 +1248,8 @@ const SubscriptionSelectionScreen = ({
   };
 
   const renderIndividualPricing = () => {
+    const plan = INDIVIDUAL_PRICING.free;
+
     return (
       <View style={styles.individualContainer}>
         <TouchableOpacity
@@ -1271,100 +1261,45 @@ const SubscriptionSelectionScreen = ({
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Choose Your Plan</Text>
+        <Text style={styles.title}>Your Free Plan</Text>
         <Text style={styles.subtitle}>
-          Navigate your legal journey with confidence
+          Navigate your legal journey with confidence - 100% FREE
         </Text>
 
-        <View style={styles.billingToggle}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              billingPeriod === "monthly" && styles.toggleActive,
-            ]}
-            onPress={() => setBillingPeriod("monthly")}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                billingPeriod === "monthly" && styles.toggleTextActive,
-              ]}
-            >
-              Monthly
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.toggleButton,
-              billingPeriod === "annual" && styles.toggleActive,
-            ]}
-            onPress={() => setBillingPeriod("annual")}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                billingPeriod === "annual" && styles.toggleTextActive,
-              ]}
-            >
-              Annual
-            </Text>
-            <View style={styles.savingsBadge}>
-              <Text style={styles.savingsText}>Save 17%</Text>
-            </View>
-          </TouchableOpacity>
+        <View style={styles.freePlanBanner}>
+          <Text style={styles.freePlanBannerText}>ALL FEATURES INCLUDED - NO COST</Text>
         </View>
 
-        {Object.keys(INDIVIDUAL_PRICING).map((planKey) => {
-          const plan = INDIVIDUAL_PRICING[planKey];
-          const price =
-            billingPeriod === "monthly" ? plan.monthly : plan.annual;
+        <TouchableOpacity
+          style={[styles.planCard, styles.planCardPremium]}
+          onPress={() => handleSelectPlan("free")}
+        >
+          <View style={styles.premiumBadgeTop}>
+            <Text style={styles.premiumBadgeTopText}>100% FREE</Text>
+          </View>
 
-          return (
-            <TouchableOpacity
-              key={planKey}
-              style={[
-                styles.planCard,
-                planKey === "premium" && styles.planCardPremium,
-              ]}
-              onPress={() => handleSelectPlan(planKey)}
-            >
-              {planKey === "premium" && (
-                <View style={styles.premiumBadgeTop}>
-                  <Text style={styles.premiumBadgeTopText}>⭐ BEST VALUE</Text>
-                </View>
-              )}
+          <Text style={styles.planName}>{plan.name}</Text>
+          <Text style={styles.planDescription}>{plan.description}</Text>
+          <View style={styles.planPrice}>
+            <Text style={styles.planPriceAmount}>$0</Text>
+            <Text style={styles.planPricePeriod}>/forever</Text>
+          </View>
 
-              <Text style={styles.planName}>{plan.name}</Text>
-              <View style={styles.planPrice}>
-                <Text style={styles.planPriceAmount}>${price}</Text>
-                <Text style={styles.planPricePeriod}>
-                  /{billingPeriod === "monthly" ? "month" : "year"}
-                </Text>
+          <View style={styles.planFeatures}>
+            {plan.features.map((feature, index) => (
+              <View key={index} style={styles.featureRow}>
+                <Text style={styles.featureCheck}>✓</Text>
+                <Text style={styles.featureText}>{feature}</Text>
               </View>
+            ))}
+          </View>
 
-              <View style={styles.planFeatures}>
-                {plan.features.map((feature, index) => (
-                  <View key={index} style={styles.featureRow}>
-                    <Text style={styles.featureCheck}>✓</Text>
-                    <Text style={styles.featureText}>{feature}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.selectButtonContainer}>
-                <Text
-                  style={[
-                    styles.selectButtonText,
-                    planKey === "premium" && styles.selectButtonTextPremium,
-                  ]}
-                >
-                  Select {plan.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+          <View style={styles.selectButtonContainer}>
+            <Text style={[styles.selectButtonText, styles.selectButtonTextPremium]}>
+              Get Started Free
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -1930,6 +1865,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     color: "#333",
+  },
+  freePlanBanner: {
+    backgroundColor: "#28A745",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  freePlanBannerText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  planDescription: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 10,
+    textAlign: "center",
   },
   planName: {
     fontSize: 24,

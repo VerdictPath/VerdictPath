@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,40 @@ import {
   Platform
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { 
   initializeFirebase, 
   subscribeToNegotiations, 
   authenticateWithBackend 
 } from '../services/firebaseService';
+
+// Get theme colors based on user type
+const getThemeColors = (userType) => {
+  const normalizedType = (userType || '').toLowerCase().replace(/_/g, '');
+  if (normalizedType === 'medicalprovider') {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      primaryDark: medicalProviderTheme.colors.primaryDark,
+      background: medicalProviderTheme.colors.offWhite,
+      cardBackground: medicalProviderTheme.colors.clinicalWhite,
+      textPrimary: medicalProviderTheme.colors.charcoal,
+      textSecondary: medicalProviderTheme.colors.darkGray,
+      accent: medicalProviderTheme.colors.clinicalTeal,
+      border: medicalProviderTheme.colors.lightGray,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    primaryDark: '#152942',
+    background: '#F5F7FA',
+    cardBackground: '#FFFFFF',
+    textPrimary: '#1E3A5F',
+    textSecondary: '#64748B',
+    accent: '#C0C0C0',
+    border: '#E2E8F0',
+  };
+};
 
 // Cross-platform alert that works on both mobile and web
 const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
@@ -42,7 +70,16 @@ const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
   }
 };
 
-const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 0 }) => {
+const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottomPadding = 0 }) => {
+  // Determine the effective user type (prop takes priority)
+  const effectiveUserType = userType || user?.userType || user?.type;
+  
+  // Get dynamic theme colors based on user type
+  const themeColors = useMemo(() => getThemeColors(effectiveUserType), [effectiveUserType]);
+  
+  // Create dynamic styles based on theme colors
+  const styles = useMemo(() => createStyles(themeColors), [themeColors]);
+  
   const [loading, setLoading] = useState(true);
   const [negotiations, setNegotiations] = useState([]);
   const [selectedNegotiation, setSelectedNegotiation] = useState(null);
@@ -652,7 +689,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
     return (
       <TouchableOpacity
         key={negotiation.id}
-        style={styles.negotiationCard}
+        style={[styles.negotiationCard, { borderLeftColor: themeColors.primary }]}
         onPress={() => setSelectedNegotiation(negotiation)}
       >
         <View style={styles.cardHeader}>
@@ -728,7 +765,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
         onRequestClose={() => setSelectedNegotiation(null)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
             <Text style={styles.modalTitle}>Negotiation Details</Text>
             <TouchableOpacity onPress={() => setSelectedNegotiation(null)}>
               <Text style={styles.closeButton}>✕</Text>
@@ -757,7 +794,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
               </View>
               <View style={styles.amountDetailCol}>
                 <Text style={styles.amountDetailLabel}>Current Offer</Text>
-                <Text style={[styles.amountDetailValue, { color: theme.colors.primary }]}>
+                <Text style={[styles.amountDetailValue, { color: themeColors.primary }]}>
                   ${(selectedNegotiation.currentOffer || 0).toFixed(2)}
                 </Text>
               </View>
@@ -914,7 +951,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowNewNegotiationModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>New Negotiation</Text>
           <TouchableOpacity onPress={() => setShowNewNegotiationModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1007,9 +1044,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
             keyboardType="decimal-pad"
           />
 
-          <Text style={styles.inputLabel}>
-            {isLawFirm ? 'Initial Offer ($) *' : 'Minimum Acceptable Amount ($) *'}
-          </Text>
+          <Text style={styles.inputLabel}>Offer ($) *</Text>
           <TextInput
             style={styles.input}
             value={initialOffer}
@@ -1029,7 +1064,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleInitiateNegotiation}
             disabled={loading}
           >
@@ -1051,7 +1086,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowCounterOfferModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>Counter Offer</Text>
           <TouchableOpacity onPress={() => setShowCounterOfferModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1086,7 +1121,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleSendCounterOffer}
             disabled={loading}
           >
@@ -1108,7 +1143,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
       onRequestClose={() => setShowCallRequestModal(false)}
     >
       <View style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
+        <View style={[styles.modalHeader, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.modalTitle}>Request Call</Text>
           <TouchableOpacity onPress={() => setShowCallRequestModal(false)}>
             <Text style={styles.closeButton}>✕</Text>
@@ -1140,7 +1175,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           />
 
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
             onPress={handleRequestCall}
             disabled={loading}
           >
@@ -1157,9 +1192,9 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
 
   if (loading && negotiations.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
         {!hideHeader && (
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
             <TouchableOpacity onPress={onBack} style={styles.backButton}>
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -1167,16 +1202,16 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {!hideHeader && (
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
@@ -1186,7 +1221,7 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
 
       <View style={styles.content}>
         <TouchableOpacity
-          style={styles.newNegotiationButton}
+          style={[styles.newNegotiationButton, { backgroundColor: themeColors.primary }]}
           onPress={() => setShowNewNegotiationModal(true)}
         >
           <Text style={styles.newNegotiationButtonText}>+ Start New Negotiation</Text>
@@ -1217,29 +1252,30 @@ const NegotiationsScreen = ({ user, onBack, hideHeader = false, bottomPadding = 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (themeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: themeColors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: theme.colors.primary,
+    paddingTop: 50,
+    backgroundColor: themeColors.primary,
   },
   backButton: {
     marginRight: 15,
   },
   backButtonText: {
-    color: '#fff',
+    color: themeColors.accent,
     fontSize: 16,
     fontWeight: '600',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
@@ -1251,14 +1287,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newNegotiationButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginBottom: 20,
   },
   newNegotiationButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1266,13 +1302,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   negotiationCard: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.cardBackground,
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: themeColors.border,
+    borderLeftWidth: 4,
+    borderLeftColor: themeColors.primary,
+    shadowColor: 'rgba(30, 58, 95, 0.1)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 3,
   },
@@ -1285,7 +1325,7 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
     flex: 1,
   },
   statusBadge: {
@@ -1300,7 +1340,7 @@ const styles = StyleSheet.create({
   },
   billDescription: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     marginBottom: 10,
   },
   amountRow: {
@@ -1313,13 +1353,13 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     marginBottom: 5,
   },
   amountValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
   },
   yourTurnBadge: {
     backgroundColor: '#FFF3CD',
@@ -1335,7 +1375,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#94A3B8',
     marginTop: 5,
   },
   emptyState: {
@@ -1344,28 +1384,29 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
+    color: themeColors.textSecondary,
     textAlign: 'center',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: themeColors.background,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: theme.colors.primary,
+    paddingTop: 50,
+    backgroundColor: themeColors.primary,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   closeButton: {
     fontSize: 24,
-    color: '#fff',
+    color: themeColors.accent,
     fontWeight: 'bold',
   },
   modalContent: {
@@ -1378,17 +1419,17 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
     marginBottom: 10,
   },
   detailText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: themeColors.textSecondary,
   },
   amountSection: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#EDF1F7',
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
@@ -1398,13 +1439,13 @@ const styles = StyleSheet.create({
   },
   amountDetailLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     marginBottom: 5,
   },
   amountDetailValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
   },
   statusBadgeLarge: {
     paddingHorizontal: 15,
@@ -1418,43 +1459,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   historyEntry: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#EDF1F7',
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: themeColors.primary,
   },
   historyDate: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     marginBottom: 5,
   },
   historyAction: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
     marginBottom: 3,
   },
   historyAmount: {
     fontSize: 14,
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
     marginBottom: 3,
   },
   historyNotes: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     fontStyle: 'italic',
   },
   historyPhone: {
     fontSize: 13,
-    color: '#2E7D32',
+    color: '#10B981',
     fontWeight: '600',
     marginTop: 4,
   },
   historyActionBy: {
     fontSize: 11,
-    color: theme.colors.textSecondary,
+    color: '#94A3B8',
     marginTop: 4,
   },
   callActionPrompt: {
@@ -1493,7 +1534,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   waitingSection: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#E0F2FE',
     padding: 20,
     borderRadius: 10,
     marginTop: 20,
@@ -1501,12 +1542,12 @@ const styles = StyleSheet.create({
   },
   waitingText: {
     fontSize: 16,
-    color: '#1565C0',
+    color: themeColors.textPrimary,
     fontWeight: '500',
     textAlign: 'center',
   },
   acceptButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#10B981',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -1518,7 +1559,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   counterButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -1530,7 +1571,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   callButton: {
-    backgroundColor: '#6c757d',
+    backgroundColor: '#64748B',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -1542,7 +1583,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   downloadButton: {
-    backgroundColor: '#17a2b8',
+    backgroundColor: '#3B82F6',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -1556,55 +1597,57 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
     marginBottom: 8,
     marginTop: 10,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.cardBackground,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: themeColors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 15,
+    color: themeColors.textPrimary,
   },
   textArea: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.cardBackground,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: themeColors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     marginBottom: 15,
     minHeight: 100,
     textAlignVertical: 'top',
+    color: themeColors.textPrimary,
   },
   pickerContainer: {
     marginBottom: 15,
   },
   clientOption: {
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.cardBackground,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: themeColors.border,
     borderRadius: 8,
     padding: 15,
     marginBottom: 10,
   },
   clientOptionSelected: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: themeColors.primary,
+    borderColor: themeColors.primary,
   },
   clientOptionText: {
     fontSize: 16,
-    color: '#000000',
+    color: themeColors.textPrimary,
   },
   clientOptionTextSelected: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -1612,12 +1655,12 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   submitButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   infoBox: {
-    backgroundColor: '#e7f3ff',
+    backgroundColor: '#E0F2FE',
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
@@ -1628,26 +1671,26 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: themeColors.textPrimary,
   },
   infoValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: themeColors.textPrimary,
   },
   infoText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     marginBottom: 20,
     lineHeight: 20,
   },
   warningBox: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: '#FFF3CD',
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
+    borderLeftColor: '#F59E0B',
   },
   warningText: {
     fontSize: 14,

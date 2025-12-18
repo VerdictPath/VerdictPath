@@ -18,6 +18,9 @@ router.get('/:requestId', eventRequestController.getEventRequestById);
 // Submit proposed dates (client only)
 router.post('/:requestId/propose-dates', eventRequestController.submitProposedDates);
 
+// Select one of the provider's offered dates (client only)
+router.post('/:requestId/select-date', eventRequestController.selectOfferedDate);
+
 // Confirm one of the proposed dates (law firm only)
 router.post('/:requestId/confirm', eventRequestController.confirmProposedDate);
 

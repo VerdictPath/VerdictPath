@@ -1,0 +1,161 @@
+-- Medical Calendar System Database Schema for Verdict Path
+-- PostgreSQL Schema
+
+-- Provider Availability Patterns
+CREATE TABLE provider_availability (
+    id SERIAL PRIMARY KEY,
+    provider_id INTEGER NOT NULL REFERENCES medical_providers(id) ON DELETE CASCADE,
+    day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0=Sunday, 6=Saturday
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_recurring BOOLEAN DEFAULT true,
+    effective_date DATE, -- For one-time availability overrides
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_time_range CHECK (end_time > start_time)
+);
+
+-- Time blocks when providers are NOT available
+CREATE TABLE provider_blocked_times (
+    id SERIAL PRIMARY KEY,
+    provider_id INTEGER NOT NULL REFERENCES medical_providers(id) ON DELETE CASCADE,
+    start_datetime TIMESTAMP NOT NULL,
+    end_datetime TIMESTAMP NOT NULL,
+    reason VARCHAR(255), -- "Vacation", "Conference", "Personal", etc.
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_blocked_time CHECK (end_datetime > start_datetime)
+);
+
+-- Medical Appointments
+CREATE TABLE medical_appointments (
+    id SERIAL PRIMARY KEY,
+    appointment_uuid UUID DEFAULT gen_random_uuid() UNIQUE,
+    patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    provider_id INTEGER NOT NULL REFERENCES medical_providers(id) ON DELETE CASCADE,
+    law_firm_id INTEGER REFERENCES law_firms(id) ON DELETE SET NULL, -- Connected law firm
+    case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
+    
+    -- Appointment Details
+    appointment_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    duration_minutes INTEGER NOT NULL DEFAULT 30,
+    
+    -- Status tracking
+    status VARCHAR(50) NOT NULL DEFAULT 'pending', 
+    -- Status options: 'pending', 'confirmed', 'cancelled', 'completed', 'no_show', 'rescheduled'
+    
+    -- Appointment type and notes
+    appointment_type VARCHAR(100), -- "Initial Consultation", "Follow-up", "Treatment", "Evaluation"
+    notes TEXT,
+    cancellation_reason TEXT,
+    
+    -- Notification tracking
+    patient_email_sent BOOLEAN DEFAULT false,
+    patient_sms_sent BOOLEAN DEFAULT false,
+    provider_email_sent BOOLEAN DEFAULT false,
+    provider_sms_sent BOOLEAN DEFAULT false,
+    lawfirm_email_sent BOOLEAN DEFAULT false,
+    
+    -- Confirmation tracking
+    patient_confirmed_at TIMESTAMP,
+    provider_confirmed_at TIMESTAMP,
+    
+    -- Reminder tracking
+    reminder_24h_sent BOOLEAN DEFAULT false,
+    reminder_1h_sent BOOLEAN DEFAULT false,
+    
+    -- Metadata
+    created_by INTEGER, -- User ID who created the appointment
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TIMESTAMP,
+    cancelled_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    
+    CONSTRAINT valid_appointment_time CHECK (end_time > start_time)
+);
+
+-- Calendar Import Settings
+CREATE TABLE calendar_sync_settings (
+    id SERIAL PRIMARY KEY,
+    provider_id INTEGER NOT NULL REFERENCES medical_providers(id) ON DELETE CASCADE,
+    
+    -- Import settings
+    last_import_date TIMESTAMP,
+    import_source VARCHAR(50), -- "google", "outlook", "apple", "ics_file"
+    auto_sync_enabled BOOLEAN DEFAULT false,
+    sync_frequency VARCHAR(20), -- "hourly", "daily", "weekly"
+    
+    -- Notification preferences
+    email_notifications BOOLEAN DEFAULT true,
+    sms_notifications BOOLEAN DEFAULT true,
+    notification_lead_time INTEGER DEFAULT 24, -- Hours before appointment
+    
+    -- Calendar display preferences
+    default_appointment_duration INTEGER DEFAULT 30, -- Minutes
+    buffer_time_minutes INTEGER DEFAULT 0, -- Time between appointments
+    timezone VARCHAR(50) DEFAULT 'America/New_York',
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Calendar Import History (for tracking ICS uploads)
+CREATE TABLE calendar_import_history (
+    id SERIAL PRIMARY KEY,
+    provider_id INTEGER NOT NULL REFERENCES medical_providers(id) ON DELETE CASCADE,
+    import_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    import_source VARCHAR(50),
+    file_name VARCHAR(255),
+    events_imported INTEGER DEFAULT 0,
+    events_failed INTEGER DEFAULT 0,
+    import_status VARCHAR(50), -- "success", "partial", "failed"
+    error_log TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Appointment Reschedule History
+CREATE TABLE appointment_reschedule_history (
+    id SERIAL PRIMARY KEY,
+    appointment_id INTEGER NOT NULL REFERENCES medical_appointments(id) ON DELETE CASCADE,
+    original_date DATE NOT NULL,
+    original_start_time TIME NOT NULL,
+    original_end_time TIME NOT NULL,
+    new_date DATE NOT NULL,
+    new_start_time TIME NOT NULL,
+    new_end_time TIME NOT NULL,
+    rescheduled_by INTEGER, -- User ID
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for performance
+CREATE INDEX idx_provider_availability_provider ON provider_availability(provider_id);
+CREATE INDEX idx_provider_availability_day ON provider_availability(day_of_week);
+CREATE INDEX idx_blocked_times_provider ON provider_blocked_times(provider_id);
+CREATE INDEX idx_blocked_times_dates ON provider_blocked_times(start_datetime, end_datetime);
+CREATE INDEX idx_appointments_patient ON medical_appointments(patient_id);
+CREATE INDEX idx_appointments_provider ON medical_appointments(provider_id);
+CREATE INDEX idx_appointments_lawfirm ON medical_appointments(law_firm_id);
+CREATE INDEX idx_appointments_date ON medical_appointments(appointment_date);
+CREATE INDEX idx_appointments_status ON medical_appointments(status);
+CREATE INDEX idx_appointments_case ON medical_appointments(case_id);
+
+-- Triggers for updated_at timestamps
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_provider_availability_updated_at BEFORE UPDATE ON provider_availability
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_medical_appointments_updated_at BEFORE UPDATE ON medical_appointments
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_calendar_sync_settings_updated_at BEFORE UPDATE ON calendar_sync_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

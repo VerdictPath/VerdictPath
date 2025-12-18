@@ -5,6 +5,7 @@ const { calculateQuietHoursEnd, queueNotification } = require('../services/notif
 const { syncNotificationToFirebase, syncStatusUpdateToFirebase, syncUnreadCountToFirebase } = require('../services/firebaseSync');
 const { sendNotificationSMS } = require('../services/smsService');
 const encryptionService = require('../services/encryption');
+const { sendNotificationCCEmail } = require('../services/emailService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -382,18 +383,31 @@ exports.sendNotification = async (req, res) => {
     // Only attempt Expo push notifications if devices are registered
     if (deviceResult.rows.length > 0) {
       const safeActionData = actionData || {};
+      const isUrgent = priority === 'urgent';
+      const pushTitle = isUrgent ? `[URGENT] ${title}` : title;
+      
+      // Get current unread count for badge (add 1 for the new notification)
+      const currentUnreadCount = await getUnreadCountForUser(recipientType, recipientId);
+      const badgeCount = currentUnreadCount + 1;
+      
       const pushPromises = deviceResult.rows.map(device => 
         pushNotificationService.sendPushNotification({
           expoPushToken: device.expo_push_token,
-          title,
+          title: pushTitle,
           body,
           data: {
+            notification_id: notification.id.toString(),
             notificationId: notification.id,
             type,
+            is_urgent: isUrgent,
+            sender_name: senderName,
+            click_action: 'OPEN_NOTIFICATION',
             actionUrl,
             ...safeActionData
           },
-          priority: priority === 'urgent' ? 'high' : 'default'
+          priority: isUrgent ? 'high' : 'default',
+          sound: isUrgent ? 'urgent.mp3' : 'default',
+          badge: badgeCount
         })
       );
 
@@ -487,6 +501,80 @@ exports.sendNotification = async (req, res) => {
       console.error('SMS notification error (non-fatal):', smsError);
     }
 
+    // Send Email CC if recipient has email CC enabled
+    let emailCCSent = false;
+    try {
+      // Get recipient's email CC preferences from notification_settings table
+      let ccPrefsQuery;
+      const userTypeValue = recipientType === 'user' ? 'individual' : recipientType;
+      
+      if (recipientType === 'user') {
+        ccPrefsQuery = await pool.query(
+          `SELECT ns.*, u.email as user_email
+           FROM notification_settings ns
+           JOIN users u ON u.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = $2`,
+          [recipientId, userTypeValue]
+        );
+      } else if (recipientType === 'law_firm') {
+        ccPrefsQuery = await pool.query(
+          `SELECT ns.*, lf.email as user_email
+           FROM notification_settings ns
+           JOIN law_firms lf ON lf.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = 'law_firm'`,
+          [recipientId]
+        );
+      } else {
+        ccPrefsQuery = await pool.query(
+          `SELECT ns.*, mp.email as user_email
+           FROM notification_settings ns
+           JOIN medical_providers mp ON mp.id = ns.user_id
+           WHERE ns.user_id = $1 AND ns.user_type = 'medical_provider'`,
+          [recipientId]
+        );
+      }
+
+      if (ccPrefsQuery.rows.length > 0) {
+        const ccPrefs = ccPrefsQuery.rows[0];
+        const ccEmail = ccPrefs.cc_email_address || ccPrefs.user_email;
+        const isUrgent = priority === 'urgent';
+        
+        // Check if email CC is enabled and if this type of notification should be CC'd
+        if (ccPrefs.email_cc_enabled && ccEmail) {
+          // Check notification type against preferences
+            const shouldSendCC = 
+              (type === 'case_update' && ccPrefs.cc_case_updates) ||
+              (type === 'appointment_request' && ccPrefs.cc_appointment_reminders) ||
+              (type === 'appointment_reminder' && ccPrefs.cc_appointment_reminders) ||
+              (type === 'document_request' && ccPrefs.cc_document_requests) ||
+              (type === 'new_information' && ccPrefs.cc_case_updates) ||
+              (type === 'status_update_request' && ccPrefs.cc_case_updates) ||
+              (type === 'deadline_reminder' && ccPrefs.cc_case_updates) ||
+              (type === 'payment_notification' && ccPrefs.cc_payment_notifications) ||
+              (type === 'system_alert' && ccPrefs.cc_system_alerts) ||
+              isUrgent; // Always CC urgent notifications if email CC is enabled
+
+            if (shouldSendCC) {
+              const emailResult = await sendNotificationCCEmail(ccEmail, {
+                senderName,
+                title,
+                body,
+                type,
+                isUrgent,
+                sentAt: notification.sent_at || new Date()
+              });
+              
+              emailCCSent = emailResult.success;
+              if (emailCCSent) {
+                console.log(`📧 Email CC sent to ${ccEmail} for notification ${notification.id}`);
+              }
+            }
+        }
+      }
+    } catch (emailCCError) {
+      console.error('Email CC error (non-fatal):', emailCCError);
+    }
+
     syncNewNotificationToFirebase(notification).catch(err => 
       console.error('Firebase sync error (non-fatal):', err)
     );
@@ -504,6 +592,7 @@ exports.sendNotification = async (req, res) => {
       devicesSent,
       pushStatus,
       smsSent,
+      emailCCSent,
       firebaseSynced: true
     });
   } catch (error) {
@@ -2106,7 +2195,7 @@ exports.getNotificationAnalytics = async (req, res) => {
 
     const whereClause = conditions.join(' AND ');
 
-    // Get analytics data
+    // Get analytics data with average times
     const analyticsQuery = `
       SELECT 
         COUNT(*) as total_sent,
@@ -2117,17 +2206,39 @@ exports.getNotificationAnalytics = async (req, res) => {
         COUNT(CASE WHEN priority = 'high' THEN 1 END) as high_count,
         COUNT(CASE WHEN priority = 'medium' THEN 1 END) as medium_count,
         COUNT(CASE WHEN priority = 'low' THEN 1 END) as low_count,
+        COUNT(CASE WHEN is_urgent = true THEN 1 END) as is_urgent_count,
+        COUNT(CASE WHEN is_urgent = true AND read_at IS NOT NULL THEN 1 END) as urgent_read_count,
+        COUNT(CASE WHEN is_urgent = true AND clicked_at IS NOT NULL THEN 1 END) as urgent_clicked_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) THEN 1 END) as normal_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) AND read_at IS NOT NULL THEN 1 END) as normal_read_count,
+        COUNT(CASE WHEN (is_urgent = false OR is_urgent IS NULL) AND clicked_at IS NOT NULL THEN 1 END) as normal_clicked_count,
+        AVG(EXTRACT(EPOCH FROM (clicked_at - created_at))) as avg_time_to_click_seconds,
+        AVG(EXTRACT(EPOCH FROM (read_at - created_at))) as avg_time_to_read_seconds,
+        COUNT(CASE WHEN type = 'case_update' THEN 1 END) as case_update_count,
+        COUNT(CASE WHEN type = 'appointment_reminder' THEN 1 END) as appointment_reminder_count,
+        COUNT(CASE WHEN type = 'payment_notification' THEN 1 END) as payment_notification_count,
+        COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
+        COUNT(CASE WHEN type = 'system_alert' THEN 1 END) as system_alert_count,
         COUNT(CASE WHEN type = 'task_assigned' THEN 1 END) as task_assigned_count,
         COUNT(CASE WHEN type = 'task_reminder' THEN 1 END) as task_reminder_count,
-        COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
         COUNT(CASE WHEN type = 'deadline_reminder' THEN 1 END) as deadline_reminder_count,
-        COUNT(CASE WHEN type = 'appointment_reminder' THEN 1 END) as appointment_reminder_count,
         COUNT(CASE WHEN type = 'general' THEN 1 END) as general_count
       FROM notifications
       WHERE ${whereClause}
     `;
 
     const analyticsResult = await pool.query(analyticsQuery, params);
+
+    // Get all-time stats
+    const allTimeQuery = `
+      SELECT 
+        COUNT(*) as total_sent,
+        COUNT(read_at) as total_read,
+        COUNT(clicked_at) as total_clicked
+      FROM notifications
+      WHERE sender_type = $1 AND sender_id = $2
+    `;
+    const allTimeResult = await pool.query(allTimeQuery, [senderType, entityId]);
     const stats = analyticsResult.rows[0];
 
     // Get recent notifications for activity timeline
@@ -2145,7 +2256,7 @@ exports.getNotificationAnalytics = async (req, res) => {
       FROM notifications
       WHERE ${whereClause}
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT 50
     `;
 
     const recentResult = await pool.query(recentQuery, params);
@@ -2180,13 +2291,59 @@ exports.getNotificationAnalytics = async (req, res) => {
       status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
     }));
 
+    const allTimeStats = allTimeResult.rows[0];
+    const totalSent = parseInt(stats.total_sent) || 0;
+    const totalRead = parseInt(stats.total_read) || 0;
+    const totalClicked = parseInt(stats.total_clicked) || 0;
+    const urgentSent = parseInt(stats.is_urgent_count) || 0;
+    const urgentRead = parseInt(stats.urgent_read_count) || 0;
+    const urgentClicked = parseInt(stats.urgent_clicked_count) || 0;
+    const normalSent = parseInt(stats.normal_count) || 0;
+    const normalRead = parseInt(stats.normal_read_count) || 0;
+    const normalClicked = parseInt(stats.normal_clicked_count) || 0;
+
+    const formatTime = (seconds) => {
+      if (!seconds || seconds <= 0) return null;
+      if (seconds < 60) return `${Math.round(seconds)}s`;
+      if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+      if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
+      return `${Math.round(seconds / 86400)}d`;
+    };
+
     res.json({
       success: true,
       analytics: {
-        totalSent: parseInt(stats.total_sent) || 0,
+        totalSent,
         totalDelivered: parseInt(stats.total_delivered) || 0,
-        totalRead: parseInt(stats.total_read) || 0,
-        totalClicked: parseInt(stats.total_clicked) || 0,
+        totalRead,
+        totalClicked,
+        clickRate: totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0,
+        readRate: totalSent > 0 ? Math.round((totalRead / totalSent) * 100) : 0,
+        avgTimeToClick: formatTime(parseFloat(stats.avg_time_to_click_seconds)),
+        avgTimeToRead: formatTime(parseFloat(stats.avg_time_to_read_seconds)),
+        avgTimeToClickSeconds: parseFloat(stats.avg_time_to_click_seconds) || null,
+        avgTimeToReadSeconds: parseFloat(stats.avg_time_to_read_seconds) || null,
+        allTime: {
+          totalSent: parseInt(allTimeStats.total_sent) || 0,
+          totalRead: parseInt(allTimeStats.total_read) || 0,
+          totalClicked: parseInt(allTimeStats.total_clicked) || 0
+        },
+        urgentVsNormal: {
+          urgent: {
+            sent: urgentSent,
+            read: urgentRead,
+            clicked: urgentClicked,
+            readRate: urgentSent > 0 ? Math.round((urgentRead / urgentSent) * 100) : 0,
+            clickRate: urgentSent > 0 ? Math.round((urgentClicked / urgentSent) * 100) : 0
+          },
+          normal: {
+            sent: normalSent,
+            read: normalRead,
+            clicked: normalClicked,
+            readRate: normalSent > 0 ? Math.round((normalRead / normalSent) * 100) : 0,
+            clickRate: normalSent > 0 ? Math.round((normalClicked / normalSent) * 100) : 0
+          }
+        },
         byPriority: {
           urgent: parseInt(stats.urgent_count) || 0,
           high: parseInt(stats.high_count) || 0,
@@ -2194,11 +2351,14 @@ exports.getNotificationAnalytics = async (req, res) => {
           low: parseInt(stats.low_count) || 0
         },
         byType: {
+          caseUpdate: parseInt(stats.case_update_count) || 0,
+          appointmentReminder: parseInt(stats.appointment_reminder_count) || 0,
+          paymentNotification: parseInt(stats.payment_notification_count) || 0,
+          documentRequest: parseInt(stats.document_request_count) || 0,
+          systemAlert: parseInt(stats.system_alert_count) || 0,
           taskAssigned: parseInt(stats.task_assigned_count) || 0,
           taskReminder: parseInt(stats.task_reminder_count) || 0,
-          documentRequest: parseInt(stats.document_request_count) || 0,
           deadlineReminder: parseInt(stats.deadline_reminder_count) || 0,
-          appointmentReminder: parseInt(stats.appointment_reminder_count) || 0,
           general: parseInt(stats.general_count) || 0
         },
         recentNotifications: recentNotifications
@@ -2209,5 +2369,531 @@ exports.getNotificationAnalytics = async (req, res) => {
   } catch (error) {
     console.error('Error fetching notification analytics:', error);
     res.status(500).json({ error: 'Failed to fetch notification analytics' });
+  }
+};
+
+// Individual user sends notification to connected law firm or medical provider
+exports.sendToConnection = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType || req.user.type;
+
+    if (userType !== 'individual') {
+      return res.status(403).json({ error: 'Only individual users can use this endpoint' });
+    }
+
+    const { recipientType, recipientId, notificationType, subject, message, priority = 'medium', isUrgent = false } = req.body;
+
+    if (!recipientType || !recipientId || !notificationType) {
+      return res.status(400).json({ error: 'Recipient type, recipient ID, and notification type are required' });
+    }
+
+    if (!['law_firm', 'medical_provider'].includes(recipientType)) {
+      return res.status(400).json({ error: 'Invalid recipient type. Must be law_firm or medical_provider' });
+    }
+
+    const validNotificationTypes = ['case_update', 'appointment_reminder', 'payment_notification', 'document_request', 'system_alert', 'appointment_request', 'status_update_request', 'new_information', 'reschedule_request'];
+    if (!validNotificationTypes.includes(notificationType)) {
+      return res.status(400).json({ error: 'Invalid notification type' });
+    }
+
+    const finalPriority = isUrgent ? 'urgent' : priority;
+
+    // Get user info for the notification
+    const userResult = await pool.query(
+      'SELECT first_name, last_name, email FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const userName = `${user.first_name} ${user.last_name}`;
+
+    // Verify connection exists
+    let connectionExists = false;
+    let recipientName = '';
+
+    if (recipientType === 'law_firm') {
+      // Check if user is connected to this law firm
+      const connectionResult = await pool.query(
+        `SELECT lf.firm_name FROM law_firms lf
+         INNER JOIN law_firm_clients lfc ON lf.id = lfc.law_firm_id
+         WHERE lfc.client_id = $1 AND lf.id = $2`,
+        [userId, recipientId]
+      );
+      if (connectionResult.rows.length > 0) {
+        connectionExists = true;
+        recipientName = connectionResult.rows[0].firm_name;
+      }
+    } else if (recipientType === 'medical_provider') {
+      // Check if user is connected to this medical provider
+      const connectionResult = await pool.query(
+        `SELECT mp.provider_name FROM medical_providers mp
+         INNER JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
+         WHERE mpp.patient_id = $1 AND mp.id = $2`,
+        [userId, recipientId]
+      );
+      if (connectionResult.rows.length > 0) {
+        connectionExists = true;
+        recipientName = connectionResult.rows[0].provider_name;
+      }
+    }
+
+    if (!connectionExists) {
+      return res.status(403).json({ error: 'You are not connected to this recipient' });
+    }
+
+    // Create notification title and body based on type
+    const notificationTitles = {
+      'case_update': 'Case Update',
+      'appointment_reminder': 'Appointment Request',
+      'payment_notification': 'Payment Inquiry',
+      'document_request': 'Document Submission',
+      'system_alert': 'General Message',
+      'appointment_request': 'Appointment Request',
+      'status_update_request': 'Status Update Request',
+      'new_information': 'New Information Submitted',
+      'reschedule_request': 'Reschedule Request'
+    };
+
+    const notificationBodies = {
+      'case_update': `${userName} has submitted a case update.`,
+      'appointment_reminder': `${userName} has requested to schedule an appointment.`,
+      'payment_notification': `${userName} has a question about payments.`,
+      'document_request': `${userName} has submitted documents or has a document-related inquiry.`,
+      'system_alert': `${userName} has sent you a message.`,
+      'appointment_request': `${userName} has requested to schedule an appointment.`,
+      'status_update_request': `${userName} has requested an update on their case status.`,
+      'new_information': `${userName} has submitted new information for your review.`,
+      'reschedule_request': `${userName} has requested to reschedule an existing appointment.`
+    };
+
+    const title = subject || notificationTitles[notificationType];
+    const body = message || notificationBodies[notificationType];
+
+    // Calculate auto_delete_at (30 days from now)
+    const autoDeleteAt = new Date();
+    autoDeleteAt.setDate(autoDeleteAt.getDate() + 30);
+
+    // Insert notification into database
+    const insertResult = await pool.query(
+      `INSERT INTO notifications (
+        recipient_type, recipient_id, sender_type, sender_id, sender_name,
+        type, notification_type, title, subject, body, priority, is_urgent,
+        action_type, action_data, sent_at, auto_delete_at, created_at
+      ) VALUES ($1, $2, 'user', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14, NOW())
+      RETURNING id`,
+      [
+        recipientType,
+        recipientId,
+        userId,
+        userName,
+        notificationType,
+        notificationType,
+        title,
+        subject || title,
+        body,
+        finalPriority,
+        isUrgent,
+        'view_client',
+        JSON.stringify({ clientId: userId, notificationType }),
+        autoDeleteAt
+      ]
+    );
+
+    const notificationId = insertResult.rows[0].id;
+
+    // Sync to Firebase for real-time delivery
+    try {
+      await syncNotificationToFirebase({
+        id: notificationId,
+        recipient_type: recipientType,
+        recipient_id: recipientId,
+        type: notificationType,
+        title,
+        body,
+        priority,
+        sender_type: 'user',
+        sender_id: userId,
+        created_at: new Date().toISOString()
+      });
+    } catch (firebaseError) {
+      console.error('Error syncing notification to Firebase:', firebaseError);
+      // Continue even if Firebase sync fails
+    }
+
+    res.json({
+      success: true,
+      message: `Notification sent to ${recipientName}`,
+      notificationId
+    });
+  } catch (error) {
+    console.error('Error sending notification to connection:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+// Get individual user's connections for sending notifications
+exports.getMyConnectionsForNotification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType || req.user.type;
+
+    if (userType !== 'individual') {
+      return res.status(403).json({ error: 'Only individual users can use this endpoint' });
+    }
+
+    // Get connected law firm
+    const lawFirmResult = await pool.query(
+      `SELECT lf.id, lf.firm_name, lf.email
+       FROM law_firms lf
+       INNER JOIN law_firm_clients lfc ON lf.id = lfc.law_firm_id
+       WHERE lfc.client_id = $1`,
+      [userId]
+    );
+
+    // Get connected medical providers
+    const providersResult = await pool.query(
+      `SELECT mp.id, mp.provider_name, mp.email
+       FROM medical_providers mp
+       INNER JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
+       WHERE mpp.patient_id = $1`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      connections: {
+        lawFirm: lawFirmResult.rows.length > 0 ? lawFirmResult.rows[0] : null,
+        medicalProviders: providersResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching connections for notification:', error);
+    res.status(500).json({ error: 'Failed to fetch connections' });
+  }
+};
+
+// Get sent notifications (outbox)
+exports.getSentNotifications = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { limit = 50, offset = 0, filter } = req.query;
+
+    let senderType;
+    if (deviceType === 'law_firm') {
+      senderType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      senderType = 'medical_provider';
+    } else {
+      senderType = 'user';
+    }
+
+    let whereClause = 'sender_type = $1 AND sender_id = $2';
+    const params = [senderType, entityId];
+
+    if (filter === 'clicked') {
+      whereClause += ' AND clicked_at IS NOT NULL';
+    } else if (filter === 'read') {
+      whereClause += ' AND read_at IS NOT NULL';
+    } else if (filter === 'unread') {
+      whereClause += ' AND read_at IS NULL';
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM notifications WHERE ${whereClause}`;
+    const countResult = await pool.query(countQuery, params);
+
+    const query = `
+      SELECT 
+        n.id, n.recipient_id, n.recipient_type, n.type, n.notification_type,
+        n.priority, n.is_urgent, n.title, n.body, n.subject,
+        n.created_at, n.sent_at, n.delivered_at, n.read_at, n.clicked_at,
+        n.archived
+      FROM notifications n
+      WHERE ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
+    `;
+
+    const result = await pool.query(query, [...params, parseInt(limit), parseInt(offset)]);
+
+    // Get recipient names
+    const recipientIds = {
+      user: result.rows.filter(n => n.recipient_type === 'user').map(n => n.recipient_id),
+      law_firm: result.rows.filter(n => n.recipient_type === 'law_firm').map(n => n.recipient_id),
+      medical_provider: result.rows.filter(n => n.recipient_type === 'medical_provider').map(n => n.recipient_id)
+    };
+
+    const recipientNames = {};
+
+    if (recipientIds.user.length > 0) {
+      const usersResult = await pool.query(
+        'SELECT id, first_name, last_name FROM users WHERE id = ANY($1)',
+        [recipientIds.user]
+      );
+      usersResult.rows.forEach(u => {
+        recipientNames[`user_${u.id}`] = `${u.first_name} ${u.last_name}`;
+      });
+    }
+
+    if (recipientIds.law_firm.length > 0) {
+      const firmsResult = await pool.query(
+        'SELECT id, firm_name FROM law_firms WHERE id = ANY($1)',
+        [recipientIds.law_firm]
+      );
+      firmsResult.rows.forEach(f => {
+        recipientNames[`law_firm_${f.id}`] = f.firm_name;
+      });
+    }
+
+    if (recipientIds.medical_provider.length > 0) {
+      const providersResult = await pool.query(
+        'SELECT id, provider_name FROM medical_providers WHERE id = ANY($1)',
+        [recipientIds.medical_provider]
+      );
+      providersResult.rows.forEach(p => {
+        recipientNames[`medical_provider_${p.id}`] = p.provider_name;
+      });
+    }
+
+    const notifications = result.rows.map(n => ({
+      id: n.id,
+      recipientId: n.recipient_id,
+      recipientType: n.recipient_type,
+      recipientName: recipientNames[`${n.recipient_type}_${n.recipient_id}`] || 'Unknown',
+      type: n.type || n.notification_type,
+      notificationType: n.notification_type,
+      priority: n.priority,
+      isUrgent: n.is_urgent || n.priority === 'urgent',
+      title: n.title,
+      subject: n.subject || n.title,
+      body: n.body,
+      createdAt: n.created_at,
+      sentAt: n.sent_at || n.created_at,
+      deliveredAt: n.delivered_at,
+      readAt: n.read_at,
+      clickedAt: n.clicked_at,
+      archived: n.archived,
+      status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
+    }));
+
+    res.json({
+      success: true,
+      total: parseInt(countResult.rows[0].total),
+      notifications
+    });
+  } catch (error) {
+    console.error('Error fetching sent notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch sent notifications' });
+  }
+};
+
+// Get email CC preferences from notification_settings table
+exports.getEmailCCPreferences = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { entityId, userType } = entityInfo;
+
+    let userTypeValue;
+    if (userType === 'lawfirm') {
+      userTypeValue = 'law_firm';
+    } else if (userType === 'medical_provider') {
+      userTypeValue = 'medical_provider';
+    } else {
+      userTypeValue = 'individual';
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM notification_settings WHERE user_id = $1 AND user_type = $2`,
+      [entityId, userTypeValue]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        email_cc_enabled: false,
+        cc_email_address: null,
+        cc_case_updates: false,
+        cc_appointment_reminders: true,
+        cc_payment_notifications: false,
+        cc_document_requests: true,
+        cc_system_alerts: false
+      });
+    }
+
+    const prefs = result.rows[0];
+    res.json({
+      success: true,
+      email_cc_enabled: prefs.email_cc_enabled,
+      cc_email_address: prefs.cc_email_address,
+      cc_case_updates: prefs.cc_case_updates,
+      cc_appointment_reminders: prefs.cc_appointment_reminders,
+      cc_payment_notifications: prefs.cc_payment_notifications,
+      cc_document_requests: prefs.cc_document_requests,
+      cc_system_alerts: prefs.cc_system_alerts
+    });
+  } catch (error) {
+    console.error('Error fetching email CC preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch email CC preferences' });
+  }
+};
+
+// Update email CC preferences in notification_settings table
+exports.updateEmailCCPreferences = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { entityId, userType } = entityInfo;
+    const {
+      email_cc_enabled,
+      cc_email_address,
+      cc_case_updates,
+      cc_appointment_reminders,
+      cc_payment_notifications,
+      cc_document_requests,
+      cc_system_alerts
+    } = req.body;
+
+    let userTypeValue;
+    if (userType === 'lawfirm') {
+      userTypeValue = 'law_firm';
+    } else if (userType === 'medical_provider') {
+      userTypeValue = 'medical_provider';
+    } else {
+      userTypeValue = 'individual';
+    }
+
+    const existingResult = await pool.query(
+      `SELECT id FROM notification_settings WHERE user_id = $1 AND user_type = $2`,
+      [entityId, userTypeValue]
+    );
+
+    let result;
+    if (existingResult.rows.length === 0) {
+      result = await pool.query(
+        `INSERT INTO notification_settings 
+         (user_id, user_type, email_cc_enabled, cc_email_address, cc_case_updates, 
+          cc_appointment_reminders, cc_payment_notifications, cc_document_requests, cc_system_alerts)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [entityId, userTypeValue, email_cc_enabled || false, cc_email_address || null,
+         cc_case_updates !== undefined ? cc_case_updates : false,
+         cc_appointment_reminders !== undefined ? cc_appointment_reminders : true,
+         cc_payment_notifications !== undefined ? cc_payment_notifications : false,
+         cc_document_requests !== undefined ? cc_document_requests : true,
+         cc_system_alerts !== undefined ? cc_system_alerts : false]
+      );
+    } else {
+      const updates = [];
+      const values = [];
+      let paramIndex = 1;
+
+      if (email_cc_enabled !== undefined) {
+        updates.push(`email_cc_enabled = $${paramIndex++}`);
+        values.push(email_cc_enabled);
+      }
+      if (cc_email_address !== undefined) {
+        updates.push(`cc_email_address = $${paramIndex++}`);
+        values.push(cc_email_address);
+      }
+      if (cc_case_updates !== undefined) {
+        updates.push(`cc_case_updates = $${paramIndex++}`);
+        values.push(cc_case_updates);
+      }
+      if (cc_appointment_reminders !== undefined) {
+        updates.push(`cc_appointment_reminders = $${paramIndex++}`);
+        values.push(cc_appointment_reminders);
+      }
+      if (cc_payment_notifications !== undefined) {
+        updates.push(`cc_payment_notifications = $${paramIndex++}`);
+        values.push(cc_payment_notifications);
+      }
+      if (cc_document_requests !== undefined) {
+        updates.push(`cc_document_requests = $${paramIndex++}`);
+        values.push(cc_document_requests);
+      }
+      if (cc_system_alerts !== undefined) {
+        updates.push(`cc_system_alerts = $${paramIndex++}`);
+        values.push(cc_system_alerts);
+      }
+
+      updates.push(`updated_at = CURRENT_TIMESTAMP`);
+
+      if (updates.length > 1) {
+        result = await pool.query(
+          `UPDATE notification_settings 
+           SET ${updates.join(', ')}
+           WHERE user_id = $${paramIndex} AND user_type = $${paramIndex + 1}
+           RETURNING *`,
+          [...values, entityId, userTypeValue]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Email CC preferences updated successfully',
+      preferences: result?.rows[0] || {}
+    });
+  } catch (error) {
+    console.error('Error updating email CC preferences:', error);
+    res.status(500).json({ error: 'Failed to update email CC preferences' });
+  }
+};
+
+// Archive notification
+exports.archiveNotification = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { notificationId } = req.params;
+
+    let recipientType;
+    if (deviceType === 'law_firm') {
+      recipientType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      recipientType = 'medical_provider';
+    } else {
+      recipientType = 'user';
+    }
+
+    const result = await pool.query(
+      `UPDATE notifications 
+       SET archived = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND recipient_type = $2 AND recipient_id = $3
+       RETURNING id`,
+      [notificationId, recipientType, entityId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification archived successfully'
+    });
+  } catch (error) {
+    console.error('Error archiving notification:', error);
+    res.status(500).json({ error: 'Failed to archive notification' });
   }
 };

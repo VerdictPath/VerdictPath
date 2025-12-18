@@ -1,0 +1,62 @@
+Starting Container
+Web portal available at http://localhost:5000/portal
+🔔 Task Reminder Service: Checking for upcoming tasks...
+✅ Task Reminder Scheduler started (runs hourly)
+❌ Task Reminder Service error: error: relation "law_firm_tasks" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async _sendTaskRemindersInternal (/app/services/taskReminderService.js:65:20)
+npm warn config production Use `--omit=dev` instead.
+> verdict-path-backend@1.0.0 start
+> node server.js
+[Storage Service] AWS S3 not configured, using local file storage
+[Storage Service] Created directory: /app/uploads/medical-records
+[Storage Service] Created directory: /app/uploads/medical-bills
+[Storage Service] Created directory: /app/uploads/evidence
+[Storage Service] Created directory: /app/uploads/documents
+⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not configured - Firebase features disabled
+✅ Stripe configured successfully
+WARNING: ADMIN_USERNAME and ADMIN_PASSWORD should be set for admin portal access
+VerdictPath Backend Server running on port 5000
+API endpoints available at http://localhost:5000/api
+    at async sendTaskReminders (/app/services/taskReminderService.js:24:12) {
+    at async initializeReminderTable (/app/services/taskReminderService.js:153:5) {
+  length: 114,
+  severity: 'ERROR',
+  length: 112,
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  severity: 'ERROR',
+  position: '282',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  code: '42P01',
+  where: undefined,
+  schema: undefined,
+  detail: undefined,
+  table: undefined,
+  column: undefined,
+  hint: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+Error initializing task_reminders table: error: relation "law_firm_tasks" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'namespace.c',
+  line: '636',
+  routine: 'RangeVarGetRelidExtended'
+}

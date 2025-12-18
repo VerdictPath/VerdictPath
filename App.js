@@ -1,6 +1,6 @@
 // APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, Alert, Platform, View } from 'react-native';
+import { SafeAreaView, StatusBar, Alert, Platform, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
@@ -13,11 +13,12 @@ if (Platform.OS !== 'web') {
 }
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
-import { apiRequest, API_ENDPOINTS } from './src/config/api';
+import { apiRequest, API_ENDPOINTS, API_BASE_URL } from './src/config/api';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import NotificationService from './src/services/NotificationService';
 import ActionVideoModal from './src/components/ActionVideoModal';
 import { AVATARS } from './src/constants/avatars';
+import useSessionTimeout from './src/hooks/useSessionTimeout';
 
 import LandingScreen from './src/screens/LandingScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -36,10 +37,15 @@ import StripeConnectOnboardingScreen from './src/screens/StripeConnectOnboarding
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
 import MedicalProviderPatientDetailsScreen from './src/screens/MedicalProviderPatientDetailsScreen';
 import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
+import NotificationOutboxScreen from './src/screens/NotificationOutboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
+import LawFirmNotificationsScreen from './src/screens/LawFirmNotificationsScreen';
+import NotificationAnalyticsScreen from './src/screens/NotificationAnalyticsScreen';
 import MedicalProviderSendNotificationScreen from './src/screens/MedicalProviderSendNotificationScreen';
+import MedicalProviderNotificationsScreen from './src/screens/MedicalProviderNotificationsScreen';
+import IndividualSendNotificationScreen from './src/screens/IndividualSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
@@ -71,9 +77,17 @@ import ChatListScreen from './src/screens/ChatListScreen';
 import ChatConversationScreen from './src/screens/ChatConversationScreen';
 import NewChatScreen from './src/screens/NewChatScreen';
 import TaskDetailScreen from './src/screens/TaskDetailScreen';
+import IndividualDisbursementsScreen from './src/screens/IndividualDisbursementsScreen';
+import LawFirmRegistrationScreen from './src/screens/LawFirmRegistrationScreen';
+import MedicalProviderRegistrationScreen from './src/screens/MedicalProviderRegistrationScreen';
+import MedicalProviderCalendarScreen from './src/screens/MedicalProviderCalendarScreen';
+import PatientAppointmentBookingScreen from './src/screens/PatientAppointmentBookingScreen';
+import LawFirmClientAppointmentsScreen from './src/screens/LawFirmClientAppointmentsScreen';
+import LawFirmCalendarScreen from './src/screens/LawFirmCalendarScreen';
 import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
+import FloatingParrotButton from './src/components/FloatingParrotButton';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
@@ -130,6 +144,23 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     message: '',
     coinsEarned: 0,
   });
+
+  const handleSessionLogout = async () => {
+    console.log('[SessionTimeout] Logging out user due to inactivity');
+    try {
+      if (user?.token && user?.id) {
+        await NotificationService.unregisterDeviceFromBackend(user.token, user.id);
+      }
+      await notificationContext.logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+    setIsLoggedIn(false);
+    setUser(null);
+    setCurrentScreen('landing');
+  };
+
+  const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
 
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
@@ -599,7 +630,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         );
       } catch (error) {
         console.error('Paid Registration Error:', error);
-        Alert.alert('Registration Error', error.message || 'Failed to create account. Please try again.');
+        const errorMessage = error.response?.message || error.message || 'Failed to create account. Please try again.';
+        Alert.alert('Registration Error', errorMessage);
       }
     }
   };
@@ -1081,7 +1113,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     );
   };
 
-  const handleDataEntry = (stageId, subStageId, data) => {
+  const handleDataEntry = async (stageId, subStageId, data) => {
     setLitigationStages(prevStages =>
       prevStages.map(stage => {
         if (stage.id === stageId) {
@@ -1099,6 +1131,42 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         return stage;
       })
     );
+
+    if (authToken) {
+      try {
+        // Use LITIGATION_STAGES constant to avoid stale state issues
+        const stage = LITIGATION_STAGES.find(s => s.id === stageId);
+        const subStage = stage?.subStages?.find(s => s.id === subStageId);
+        
+        console.log('[App] Saving data entry to backend:', { stageId, subStageId, data, stageName: stage?.name, substageName: subStage?.name });
+        
+        const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            stageId,
+            stageName: stage?.name || 'Unknown Stage',
+            substageId: subStageId,
+            substageName: subStage?.name || 'Unknown Substage',
+            substageType: 'data_entry',
+            dataValue: data,
+            coinsEarned: subStage?.coins || 0
+          }),
+        });
+        
+        const responseData = await response.json();
+        console.log('[App] Data entry backend response:', response.status, responseData);
+        
+        if (!response.ok) {
+          console.error('[App] Data entry save failed:', responseData);
+        }
+      } catch (error) {
+        console.error('[App] Error saving data entry to backend:', error.message || error);
+      }
+    }
   };
 
   const handleMedicalHubUpload = (documentType, fileName) => {
@@ -1114,20 +1182,22 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return JSON.parse(JSON.stringify(LITIGATION_STAGES));
     }
 
-    // Create a Set of completed backend IDs (format: 'pre-1', 'cf-1', etc.)
-    const completedIds = new Set(
-      completedSubstagesData.completedSubstages.map(sub => sub.substage_id)
+    // Create a map of completed backend data (format: 'pre-1' => { data_value, completed_at, etc })
+    const completedMap = new Map(
+      completedSubstagesData.completedSubstages.map(sub => [sub.substage_id, sub])
     );
 
     // Deep clone LITIGATION_STAGES to avoid state contamination
     return JSON.parse(JSON.stringify(LITIGATION_STAGES)).map(stage => {
-      // Map substages with completion status
+      // Map substages with completion status and data values
       const mappedSubStages = stage.subStages?.map((subStage) => {
         // Backend uses IDs like 'pre-1', 'pre-2', 'cf-1', 'cf-2'
         // Match using the substage's own ID field
+        const backendData = completedMap.get(subStage.id);
         return {
           ...subStage,
-          completed: completedIds.has(subStage.id)
+          completed: !!backendData,
+          enteredData: backendData?.data_value || subStage.enteredData || ''
         };
       }) || [];
       
@@ -1230,6 +1300,109 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           privacyAccepted={privacyAccepted}
           setPrivacyAccepted={setPrivacyAccepted}
           onRegister={handleRegister}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-registration' && (
+        <LawFirmRegistrationScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          firmName={firmName}
+          setFirmName={setFirmName}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          onSelectSubscription={handleSelectSubscription}
+          onNavigate={handleNavigateInternal}
+          privacyAccepted={privacyAccepted}
+          setPrivacyAccepted={setPrivacyAccepted}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-subscription-selection' && (
+        <LawFirmSubscriptionScreen
+          user={null}
+          isNewRegistration={true}
+          registrationData={{
+            firmName: firmName,
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            privacyAccepted: privacyAccepted
+          }}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('lawfirm-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour law firm account has been created successfully!\n\nYour unique Law Firm Code: ' + userData.firmCode + '\n\nShare this code with your clients so they can connect to your firm.');
+          }}
+          onBack={() => setCurrentScreen('lawfirm-registration')}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-registration' && (
+        <MedicalProviderRegistrationScreen
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          providerName={providerName}
+          setProviderName={setProviderName}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          onSelectSubscription={handleSelectSubscription}
+          onNavigate={handleNavigateInternal}
+          privacyAccepted={privacyAccepted}
+          setPrivacyAccepted={setPrivacyAccepted}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('medicalprovider-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour medical provider account has been created successfully!\n\nYour unique Provider Code: ' + userData.providerCode + '\n\nShare this code with your patients so they can connect to your practice.\n\n100% FREE - No monthly fees ever!');
+          }}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-subscription-selection' && (
+        <MedicalProviderSubscriptionScreen
+          user={null}
+          isNewRegistration={true}
+          registrationData={{
+            providerName: providerName,
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            privacyAccepted: privacyAccepted
+          }}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('medicalprovider-dashboard');
+            alert('Welcome to Verdict Path!\n\nYour medical provider account has been created successfully!\n\nYour unique Provider Code: ' + userData.providerCode + '\n\nShare this code with your patients so they can connect to your practice.');
+          }}
+          onBack={() => setCurrentScreen('medicalprovider-registration')}
           onNavigate={handleNavigateInternal}
         />
       )}
@@ -1383,6 +1556,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'disbursements' && (
+        <IndividualDisbursementsScreen 
+          user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+
       {currentScreen === 'calendar' && (
         <CalendarScreen 
           user={user}
@@ -1448,6 +1628,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-notifications' && (
+        <LawFirmNotificationsScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+        />
+      )}
+
       {currentScreen === 'lawfirm-event-requests' && (
         <LawFirmEventRequestsScreen
           user={user}
@@ -1483,6 +1670,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'lawfirm-settings' && (
         <SettingsScreen
+          user={user}
+          onBack={() => setCurrentScreen('lawfirm-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-profile' && (
+        <NotificationSettingsScreen 
           user={user}
           onBack={() => setCurrentScreen('lawfirm-dashboard')}
         />
@@ -1548,6 +1742,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
       {currentScreen === 'medicalprovider-settings' && (
         <SettingsScreen
+          user={user}
+          onBack={() => setCurrentScreen('medicalprovider-dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-profile' && (
+        <NotificationSettingsScreen 
           user={user}
           onBack={() => setCurrentScreen('medicalprovider-dashboard')}
         />
@@ -1637,6 +1838,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'medicalprovider-disbursements' && (
+        <ReceivedDisbursementsScreen
+          user={user}
+          userType="medical_provider"
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+        />
+      )}
+
       {currentScreen === 'StripeConnectOnboarding' && (
         <StripeConnectOnboardingScreen
           user={user}
@@ -1689,6 +1898,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           patientId={selectedPatientId}
           onBack={() => {
             setSelectedPatientId(null);
+            setMedicalProviderReturnTab('patients');
             setCurrentScreen('medicalprovider-dashboard');
           }}
         />
@@ -1708,6 +1918,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'medicalprovider-notifications' && (
+        <MedicalProviderNotificationsScreen
+          user={user}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+        />
+      )}
+
       {currentScreen === 'medicalprovider-event-requests' && (
         <MedicalProviderEventRequestsScreen
           user={user}
@@ -1719,6 +1936,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
           <NegotiationsScreen
             user={user}
+            userType="medical_provider"
             onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
           />
         </View>
@@ -1734,6 +1952,38 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'individual-payment-setup' && (
         <StripeConnectOnboardingScreen
           user={user}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+
+      {currentScreen === 'medicalprovider-calendar' && (
+        <MedicalProviderCalendarScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onBack={() => handleBackToMedicalProviderDashboard(medicalProviderReturnTab)}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-client-appointments' && (
+        <LawFirmClientAppointmentsScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onBack={() => handleBackToLawFirmDashboard(lawFirmReturnTab)}
+        />
+      )}
+
+      {currentScreen === 'lawfirm-calendar' && (
+        <LawFirmCalendarScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onBack={() => handleBackToLawFirmDashboard(lawFirmReturnTab)}
+        />
+      )}
+
+      {currentScreen === 'appointments' && (
+        <PatientAppointmentBookingScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
           onBack={() => setCurrentScreen('dashboard')}
         />
       )}
@@ -1759,6 +2009,32 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             setCurrentScreen('notifications');
           }}
           onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'individual-send-notification' && (
+        <IndividualSendNotificationScreen
+          user={user}
+          onBack={() => setCurrentScreen('notifications')}
+        />
+      )}
+
+      {currentScreen === 'notification-outbox' && (
+        <NotificationOutboxScreen
+          user={user}
+          onNavigate={handleNavigateInternal}
+          onNotificationPress={(notificationId) => {
+            setSelectedNotificationId(notificationId);
+            setCurrentScreen('notification-detail');
+          }}
+          onViewAnalytics={() => setCurrentScreen('notification-analytics')}
+        />
+      )}
+
+      {currentScreen === 'notification-analytics' && (
+        <NotificationAnalyticsScreen
+          user={user}
+          onBack={() => setCurrentScreen('notification-outbox')}
         />
       )}
 
@@ -1831,7 +2107,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
-      {currentScreen === 'avatar-selection' && user?.userType === 'individual' && (
+      {currentScreen === 'avatar-selection' && (user?.userType === 'individual' || user?.type === 'individual') && (
         <AvatarSelectionScreen
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
@@ -1839,8 +2115,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
       
-        {/* Bottom Navigation - only show for individual user screens */}
-        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile'].includes(currentScreen) && (
+        {/* Polly the Navigator - Floating Parrot Button for Individual Users */}
+      {user && (user.type === 'individual' || user.userType === 'individual') && 
+        ['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
+        <FloatingParrotButton onNavigate={handleNavigateInternal} />
+      )}
+
+      {/* Bottom Navigation - only show for individual user screens */}
+        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
           <BottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
@@ -1850,7 +2132,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Law Firm Bottom Navigation */}
         {(() => {
-          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard'];
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-notifications', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
           console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
@@ -1864,7 +2146,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Medical Provider Bottom Navigation */}
         {(() => {
-          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-billing'];
+          const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-notifications', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-notification-analytics', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar', 'medicalprovider-profile'];
           const shouldShow = medProviderScreens.includes(currentScreen);
           console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
@@ -1875,6 +2157,56 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             notificationCount={0}
           />
         )}
+
+      {/* Session Timeout Warning Modal */}
+      {showSessionWarning && (
+        <View style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}>
+          <View style={{
+            backgroundColor: '#fff',
+            borderRadius: 12,
+            padding: 24,
+            margin: 20,
+            maxWidth: 400,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 10,
+          }}>
+            <Text style={{ fontSize: 24, marginBottom: 12 }}>⏰</Text>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8, textAlign: 'center' }}>
+              Session About to Expire
+            </Text>
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 16, textAlign: 'center' }}>
+              You will be logged out in {timeRemaining} seconds due to inactivity.
+            </Text>
+            <TouchableOpacity
+              onPress={extendSession}
+              style={{
+                backgroundColor: '#1E3A5F',
+                paddingVertical: 12,
+                paddingHorizontal: 32,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+                Stay Logged In
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Global Action Video Modal - Individual Users Only */}
       {user && user.userType === 'individual' && user.avatarType && (

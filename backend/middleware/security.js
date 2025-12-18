@@ -61,41 +61,31 @@ const handleFailedLogin = async (userId, userType) => {
     const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
     const lockoutMinutes = parseInt(process.env.LOCKOUT_DURATION_MINUTES) || 30;
     
-    // Get current security record
+    // Use upsert to handle both insert and update atomically
+    // First, try to get current record
     const current = await db.query(
-      'SELECT login_attempts FROM account_security WHERE user_id = $1 AND user_type = $2',
-      [userId, userType]
+      'SELECT login_attempts FROM account_security WHERE user_id = $1',
+      [userId]
     );
     
-    if (current.rows.length === 0) {
-      // Create security record with first failed attempt
-      await db.query(
-        `INSERT INTO account_security (user_id, user_type, login_attempts) 
-         VALUES ($1, $2, 1)`,
-        [userId, userType]
-      );
-    } else {
-      const attempts = current.rows[0].login_attempts + 1;
-      
-      if (attempts >= maxAttempts) {
-        // Lock the account
-        const lockUntil = new Date(Date.now() + lockoutMinutes * 60 * 1000);
-        await db.query(
-          `UPDATE account_security 
-           SET login_attempts = $1, lock_until = $2 
-           WHERE user_id = $3 AND user_type = $4`,
-          [attempts, lockUntil, userId, userType]
-        );
-      } else {
-        // Increment attempts
-        await db.query(
-          `UPDATE account_security 
-           SET login_attempts = $1 
-           WHERE user_id = $2 AND user_type = $3`,
-          [attempts, userId, userType]
-        );
-      }
-    }
+    const currentAttempts = current.rows.length > 0 ? current.rows[0].login_attempts : 0;
+    const newAttempts = currentAttempts + 1;
+    
+    // Determine if we need to lock the account
+    const shouldLock = newAttempts >= maxAttempts;
+    const lockUntil = shouldLock ? new Date(Date.now() + lockoutMinutes * 60 * 1000) : null;
+    
+    // Upsert the security record
+    await db.query(
+      `INSERT INTO account_security (user_id, user_type, login_attempts, lock_until) 
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) 
+       DO UPDATE SET 
+         login_attempts = $3,
+         lock_until = COALESCE($4, account_security.lock_until),
+         user_type = $2`,
+      [userId, userType, newAttempts, lockUntil]
+    );
   } catch (error) {
     console.error('Failed to handle login attempt:', error);
   }

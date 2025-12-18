@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-const VALID_AVATARS = ['captain', 'navigator', 'strategist', 'advocate'];
+const VALID_AVATARS = ['captain', 'navigator', 'strategist', 'advocate', 'polly'];
 
 const selectAvatar = async (req, res) => {
   const { avatarType } = req.body;
@@ -16,7 +16,7 @@ const selectAvatar = async (req, res) => {
 
     if (!avatarType || !VALID_AVATARS.includes(avatarType.toLowerCase())) {
       return res.status(400).json({ 
-        error: 'Invalid avatar type. Must be one of: captain, navigator, strategist, advocate' 
+        error: 'Invalid avatar type. Must be one of: captain, navigator, strategist, advocate, polly' 
       });
     }
 

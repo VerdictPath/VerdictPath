@@ -204,9 +204,9 @@ const DashboardScreen = ({
           />
           <QuickActionButton
             icon="📅"
-            title="Calendar"
+            title="Appointments"
             color={selectedAvatar.accentColor}
-            onPress={() => onNavigate('calendar')}
+            onPress={() => onNavigate('appointments')}
           />
           <QuickActionButton
             icon="🏆"
@@ -225,6 +225,12 @@ const DashboardScreen = ({
             title="Connections"
             color={selectedAvatar.accentColor}
             onPress={() => setConnectionsModalVisible(true)}
+          />
+          <QuickActionButton
+            icon="💰"
+            title="Disbursements"
+            color={selectedAvatar.accentColor}
+            onPress={() => onNavigate('disbursements')}
           />
         </View>
 

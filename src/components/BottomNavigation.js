@@ -4,13 +4,14 @@ import { useNotifications } from '../contexts/NotificationContext';
 
 const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) => {
   const { unreadCount } = useNotifications();
+  console.log('[BottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
-    { name: 'Dashboard', icon: '🏠', screen: 'dashboard' },
+    { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'dashboard' },
     { name: 'Roadmap', imageSource: require('../../attached_assets/MAP_1763356928680.png'), screen: 'roadmap' },
     { name: 'Medical Hub', icon: '⚕️', screen: 'medical', iconColor: '#e74c3c' },
+    { name: 'Appointments', icon: '📅', screen: 'appointments' },
     { name: 'Notifications', icon: '🔔', screen: 'notifications', badge: unreadCount },
-    { name: 'Tasks', icon: '⚓', screen: 'actions' },
     { name: 'Profile', icon: '👤', screen: 'profile' },
   ];
 
@@ -27,7 +28,7 @@ const BottomNavigation = ({ currentScreen, onNavigate, chatUnreadCount = 0 }) =>
             onPress={() => onNavigate(tab.screen)}
             activeOpacity={0.7}
           >
-            <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+            <View style={styles.iconContainer}>
               {tab.imageSource ? (
                 <Image 
                   source={tab.imageSource} 
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: '#2c3e50',
+    backgroundColor: '#000',
     borderTopWidth: 2,
     borderTopColor: '#d4a574',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
@@ -95,8 +96,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
   },
   iconImage: {
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
   },
   label: {
     fontSize: 9,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 2,
-    borderColor: '#2c3e50',
+    borderColor: '#000',
   },
   hiddenBadge: {
     opacity: 0,

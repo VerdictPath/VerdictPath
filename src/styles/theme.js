@@ -45,5 +45,28 @@ export const theme = {
     border: '#C9A961',
     accent: '#D4AF37',
     error: '#8C3B2A',
+  },
+  
+  // Law Firm Portal - Navy & Silver Theme
+  lawFirm: {
+    primary: '#1E3A5F',        // Deep navy blue
+    primaryDark: '#152A45',    // Darker navy
+    primaryLight: '#2E4A6F',   // Lighter navy
+    accent: '#C0C0C0',         // Silver
+    accentLight: '#D4D4D4',    // Light silver
+    accentDark: '#A0A0A0',     // Dark silver
+    background: '#F5F7FA',     // Soft gray background
+    surface: '#FFFFFF',        // Clean white cards
+    surfaceAlt: '#EDF1F7',     // Alternate surface
+    text: '#1E3A5F',           // Navy text
+    textSecondary: '#64748B',  // Slate gray secondary text
+    textLight: '#94A3B8',      // Light gray text
+    border: '#E2E8F0',         // Light border
+    borderAccent: '#C0C0C0',   // Silver border accent
+    success: '#10B981',        // Emerald green
+    error: '#EF4444',          // Red
+    warning: '#F59E0B',        // Amber
+    info: '#3B82F6',           // Blue
+    cardShadow: 'rgba(30, 58, 95, 0.1)',
   }
 };

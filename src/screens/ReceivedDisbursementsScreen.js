@@ -9,9 +9,40 @@ import {
   RefreshControl
 } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
+// Get theme colors based on user type
+const getThemeColors = (userType) => {
+  const normalizedType = (userType || '').toLowerCase().replace(/_/g, '');
+  if (normalizedType === 'medicalprovider') {
+    return {
+      primary: medicalProviderTheme.colors.primary,
+      primaryDark: medicalProviderTheme.colors.primaryDark,
+      background: medicalProviderTheme.colors.offWhite,
+      cardBackground: medicalProviderTheme.colors.clinicalWhite,
+      textPrimary: medicalProviderTheme.colors.charcoal,
+      textSecondary: medicalProviderTheme.colors.darkGray,
+      accent: medicalProviderTheme.colors.clinicalTeal,
+      border: medicalProviderTheme.colors.lightGray,
+    };
+  }
+  return {
+    primary: '#1E3A5F',
+    primaryDark: '#152942',
+    background: '#F5F7FA',
+    cardBackground: '#FFFFFF',
+    textPrimary: '#1E3A5F',
+    textSecondary: '#64748B',
+    accent: '#C0C0C0',
+    border: '#E2E8F0',
+  };
+};
+
 const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = false, bottomPadding = 0 }) => {
+  // Get dynamic theme colors based on user type
+  const themeColors = getThemeColors(userType || user?.userType || user?.type);
+  
   const [disbursements, setDisbursements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,15 +111,15 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   };
 
   const renderDisbursementCard = (disbursement) => {
-    const isMedicalProvider = userType === 'medical_provider';
+    const isMedicalProvider = (userType || '').toLowerCase().includes('medical');
 
     return (
-      <View key={disbursement.id} style={styles.disbursementCard}>
+      <View key={disbursement.id} style={[styles.disbursementCard, { borderLeftColor: themeColors.primary }]}>
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.cardIcon}>💰</Text>
             <View>
-              <Text style={styles.cardTitle}>
+              <Text style={[styles.cardTitle, { color: themeColors.textPrimary }]}>
                 {isMedicalProvider ? 'Medical Services Payment' : 'Settlement Disbursement'}
               </Text>
               <Text style={styles.cardSubtitle}>
@@ -105,16 +136,16 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
         <View style={styles.cardBody}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Amount:</Text>
-            <Text style={styles.infoValue}>{formatCurrency(disbursement.amount)}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatCurrency(disbursement.amount)}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Date:</Text>
-            <Text style={styles.infoValue}>{formatDate(disbursement.createdAt)}</Text>
+            <Text style={[styles.infoValue, { color: themeColors.textPrimary }]}>{formatDate(disbursement.createdAt)}</Text>
           </View>
           {disbursement.stripeTransferId && (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Transaction ID:</Text>
-              <Text style={styles.infoValueSmall} numberOfLines={1} ellipsizeMode="middle">
+              <Text style={[styles.infoValueSmall, { color: themeColors.textPrimary }]} numberOfLines={1} ellipsizeMode="middle">
                 {disbursement.stripeTransferId}
               </Text>
             </View>
@@ -125,12 +156,12 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   };
 
   const renderEmptyState = () => {
-    const isMedicalProvider = userType === 'medical_provider';
+    const isMedicalProvider = (userType || '').toLowerCase().includes('medical');
 
     return (
       <View style={styles.emptyState}>
         <Text style={styles.emptyIcon}>📭</Text>
-        <Text style={styles.emptyTitle}>No Disbursements Yet</Text>
+        <Text style={[styles.emptyTitle, { color: themeColors.textPrimary }]}>No Disbursements Yet</Text>
         <Text style={styles.emptyText}>
           {isMedicalProvider
             ? 'When law firms send you payments for medical services, they will appear here.'
@@ -142,9 +173,9 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: themeColors.background }]}>
         {!hideHeader && (
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
@@ -153,7 +184,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           </View>
         )}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.mahogany} />
+          <ActivityIndicator size="large" color={themeColors.primary} />
           <Text style={styles.loadingText}>Loading disbursements...</Text>
         </View>
       </View>
@@ -161,9 +192,9 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       {!hideHeader && (
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
@@ -182,7 +213,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, { backgroundColor: themeColors.primary }]}>
           <Text style={styles.summaryIcon}>📊</Text>
           <View style={styles.summaryContent}>
             <Text style={styles.summaryLabel}>Total Disbursements</Text>
@@ -194,7 +225,7 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
           renderEmptyState()
         ) : (
           <View style={styles.disbursementsList}>
-            <Text style={styles.listTitle}>Payment History</Text>
+            <Text style={[styles.listTitle, { color: themeColors.textPrimary }]}>Payment History</Text>
             {disbursements.map(renderDisbursementCard)}
           </View>
         )}
@@ -206,13 +237,12 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#F5F7FA',
   },
   header: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#1E3A5F',
     padding: 20,
-    borderBottomWidth: 3,
-    borderBottomColor: theme.colors.secondary,
+    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -222,13 +252,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: theme.colors.mahogany,
+    color: '#C0C0C0',
     fontWeight: '600',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#FFFFFF',
   },
   placeholder: {
     width: 60,
@@ -240,24 +270,22 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     fontSize: 16,
   },
   content: {
     flex: 1,
   },
   summaryCard: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: '#1E3A5F',
     margin: 16,
     padding: 20,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.warmGold,
-    shadowColor: '#000',
+    shadowColor: 'rgba(30, 58, 95, 0.2)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 4,
   },
@@ -270,13 +298,13 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
-    color: theme.colors.lightCream,
+    color: '#C0C0C0',
     marginBottom: 4,
   },
   summaryValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.colors.cream,
+    color: '#FFFFFF',
   },
   disbursementsList: {
     padding: 16,
@@ -285,16 +313,18 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 12,
   },
   disbursementCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E3A5F',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -314,12 +344,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 2,
   },
   cardSubtitle: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -332,7 +362,7 @@ const styles = StyleSheet.create({
   },
   cardDivider: {
     height: 1,
-    backgroundColor: theme.colors.warmGray + '40',
+    backgroundColor: '#E2E8F0',
     marginBottom: 12,
   },
   cardBody: {
@@ -345,17 +375,17 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     fontWeight: '500',
   },
   infoValue: {
     fontSize: 14,
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     fontWeight: '600',
   },
   infoValueSmall: {
     fontSize: 12,
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     fontWeight: '500',
     maxWidth: 200,
   },
@@ -370,12 +400,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 12,
   },
   emptyText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
@@ -9,6 +9,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [litigationProgress, setLitigationProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [viewingDocument, setViewingDocument] = useState(null);
+  const [documentLoading, setDocumentLoading] = useState(false);
   
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
@@ -23,10 +25,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     try {
       console.log('[ClientDetails] Fetching client details for clientId:', clientId);
       console.log('[ClientDetails] Token:', user?.token ? 'Present' : 'Missing');
-      console.log('[ClientDetails] API URL:', `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`);
+      console.log('[ClientDetails] API URL:', API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId));
       
       const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId)}`,
+        API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId),
         {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -76,6 +78,81 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       }
     } catch (error) {
       console.error('[ClientDetails] Error fetching client litigation progress:', error);
+    }
+  };
+
+  const isImageFile = (mimeType) => {
+    return mimeType && mimeType.startsWith('image/');
+  };
+
+  const viewDocument = async (doc) => {
+    setDocumentLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (isImageFile(doc.mime_type)) {
+          setViewingDocument({
+            ...doc,
+            presignedUrl: data.presignedUrl
+          });
+        } else {
+          if (Platform.OS === 'web') {
+            window.open(data.presignedUrl, '_blank');
+          } else {
+            Linking.openURL(data.presignedUrl);
+          }
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
+        alert('Failed to load document. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert('Failed to load document. Please try again.');
+    } finally {
+      setDocumentLoading(false);
+    }
+  };
+
+  const downloadDocument = async (doc) => {
+    setDocumentLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (Platform.OS === 'web') {
+          window.open(data.presignedUrl, '_blank');
+        } else {
+          Linking.openURL(data.presignedUrl);
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
+        alert('Failed to download document. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document. Please try again.');
+    } finally {
+      setDocumentLoading(false);
     }
   };
 
@@ -270,32 +347,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     const { client, medicalRecords, medicalBilling } = clientData;
 
     return (
-      <ImageBackground
-        source={require('../../attached_assets/Medical Ward_1764038075699.png')}
-        style={styles.medicalHubBackground}
-        resizeMode="cover"
-      >
-        <View style={styles.medicalHubOverlay}>
-          <View style={[
-            styles.medicalHubContent,
-            { 
-              paddingHorizontal: isDesktop ? 40 : isTablet ? 30 : 15,
-              paddingTop: isDesktop ? 30 : 20,
-            }
-          ]}>
-            <View style={[
-              styles.section,
-              styles.medicalHubSection
-            ]}>
+      <View style={styles.tabContent}>
+        <View style={[
+          styles.medicalHubContent,
+          { 
+            paddingHorizontal: isDesktop ? 40 : isTablet ? 30 : 15,
+            paddingTop: isDesktop ? 30 : 20,
+          }
+        ]}>
+            <View style={styles.section}>
               <Text style={[
                 styles.sectionTitle,
-                styles.medicalHubSectionTitle,
                 { fontSize: isDesktop ? 24 : 20 }
               ]}>📋 Medical Records</Text>
               {medicalRecords.records.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📋</Text>
-                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical records uploaded yet</Text>
+                  <Text style={styles.emptyText}>No medical records uploaded yet</Text>
                 </View>
               ) : (
                 <>
@@ -325,19 +393,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               )}
             </View>
 
-            <View style={[
-              styles.section,
-              styles.medicalHubSection
-            ]}>
+            <View style={styles.section}>
               <Text style={[
                 styles.sectionTitle,
-                styles.medicalHubSectionTitle,
                 { fontSize: isDesktop ? 24 : 20 }
               ]}>💰 Medical Billing</Text>
               {medicalBilling.bills.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>💰</Text>
-                  <Text style={[styles.emptyText, { color: '#2c3e50' }]}>No medical bills uploaded yet</Text>
+                  <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
                 </View>
               ) : (
                 <>
@@ -376,15 +440,14 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               )}
             </View>
 
-            <View style={[styles.infoSection, styles.medicalHubInfoSection]}>
+            <View style={styles.infoSection}>
               <Text style={styles.infoIcon}>ℹ️</Text>
-              <Text style={[styles.infoText, { color: '#FFFFFF' }]}>
+              <Text style={styles.infoText}>
                 All medical records and billing can be accessed by {client.displayName} with proper consent.
               </Text>
             </View>
           </View>
-        </View>
-      </ImageBackground>
+      </View>
     );
   };
 
@@ -409,7 +472,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
             evidenceDocuments.documents.map((doc) => (
               <View key={doc.id} style={styles.documentCard}>
                 <View style={styles.documentHeader}>
-                  <Text style={styles.documentTitle}>📎 {doc.title}</Text>
+                  <Text style={styles.documentTitle}>
+                    {isImageFile(doc.mime_type) ? '🖼️' : '📎'} {doc.title}
+                  </Text>
                   <Text style={styles.documentBadge}>{doc.file_name}</Text>
                 </View>
                 {doc.evidence_type && (
@@ -431,6 +496,17 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 <Text style={styles.documentDate}>
                   Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
                 </Text>
+                <View style={styles.documentActions}>
+                  <TouchableOpacity 
+                    style={styles.viewButton}
+                    onPress={() => viewDocument(doc)}
+                    disabled={documentLoading}
+                  >
+                    <Text style={styles.viewButtonText}>
+                      {isImageFile(doc.mime_type) ? '👁️ View Image' : '📥 Download'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           )}
@@ -449,7 +525,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.mahogany} />
+        <ActivityIndicator size="large" color="#C0C0C0" />
         <Text style={styles.loadingText}>Loading client data...</Text>
       </View>
     );
@@ -494,7 +570,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'roadmap' && styles.activeTab]}
           onPress={() => setActiveTab('roadmap')}
         >
-          <Text style={styles.tabIcon}>🗺️</Text>
+          <Image 
+            source={require('../../attached_assets/MAP_1763356928680.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'roadmap' && styles.activeTabText]}>
             Roadmap
           </Text>
@@ -503,7 +582,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'medicalHub' && styles.activeTab]}
           onPress={() => setActiveTab('medicalHub')}
         >
-          <Text style={styles.tabIcon}>🏥</Text>
+          <Image 
+            source={require('../../attached_assets/Medical Symbol Latin_1764039151974.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'medicalHub' && styles.activeTabText]}>
             Medical Hub
           </Text>
@@ -512,7 +594,10 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           style={[styles.tab, activeTab === 'evidence' && styles.activeTab]}
           onPress={() => setActiveTab('evidence')}
         >
-          <Text style={styles.tabIcon}>🗃️</Text>
+          <Image 
+            source={require('../../attached_assets/Evidence Vault_1764037430801.png')}
+            style={styles.tabIconImage}
+          />
           <Text style={[styles.tabText, activeTab === 'evidence' && styles.activeTabText]}>
             Evidence Locker
           </Text>
@@ -529,6 +614,61 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={viewingDocument !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setViewingDocument(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.imageModalContent}>
+            <View style={styles.imageModalHeader}>
+              <Text style={styles.imageModalTitle}>
+                {viewingDocument?.title || 'Evidence Image'}
+              </Text>
+              <TouchableOpacity 
+                style={styles.imageModalCloseBtn}
+                onPress={() => setViewingDocument(null)}
+              >
+                <Text style={styles.imageModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            {viewingDocument?.presignedUrl && (
+              <Image 
+                source={{ uri: viewingDocument.presignedUrl }}
+                style={styles.evidenceImage}
+                resizeMode="contain"
+              />
+            )}
+            <View style={styles.imageModalActions}>
+              <TouchableOpacity 
+                style={styles.downloadButton}
+                onPress={() => {
+                  if (viewingDocument) {
+                    downloadDocument(viewingDocument);
+                  }
+                }}
+              >
+                <Text style={styles.downloadButtonText}>📥 Download Original</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.closeModalButton}
+                onPress={() => setViewingDocument(null)}
+              >
+                <Text style={styles.closeModalButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {documentLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#C0C0C0" />
+          <Text style={styles.loadingOverlayText}>Loading document...</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -536,48 +676,48 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#1E3A5F',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#1E3A5F',
   },
   loadingText: {
     marginTop: 10,
-    color: theme.colors.textSecondary,
+    color: '#C0C0C0',
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#1E3A5F',
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: theme.colors.deepMaroon,
+    color: '#ff6b6b',
     marginBottom: 20,
   },
   backButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: '#C0C0C0',
     padding: 15,
     borderRadius: 8,
   },
   backButtonText: {
-    color: 'white',
+    color: '#1E3A5F',
     fontSize: 16,
     fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#152d4a',
     padding: 15,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: '#C0C0C0',
   },
   headerBackButton: {
     padding: 8,
@@ -585,7 +725,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 24,
-    color: theme.colors.mahogany,
+    color: '#C0C0C0',
     fontWeight: 'bold',
   },
   headerContent: {
@@ -594,82 +734,94 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#C0C0C0',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#a0a0a0',
     marginTop: 2,
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#152d4a',
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: '#C0C0C0',
   },
   tab: {
     flex: 1,
     padding: 12,
     alignItems: 'center',
     borderRightWidth: 1,
-    borderRightColor: theme.colors.secondary,
+    borderRightColor: 'rgba(192, 192, 192, 0.3)',
   },
   activeTab: {
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#1E3A5F',
     borderBottomWidth: 3,
-    borderBottomColor: theme.colors.mahogany,
+    borderBottomColor: '#C0C0C0',
   },
   tabIcon: {
     fontSize: 20,
     marginBottom: 4,
   },
+  tabIconImage: {
+    width: 24,
+    height: 24,
+    marginBottom: 4,
+    resizeMode: 'contain',
+  },
   tabText: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#a0a0a0',
     textAlign: 'center',
   },
   activeTabText: {
-    color: theme.colors.mahogany,
+    color: '#C0C0C0',
     fontWeight: 'bold',
   },
   content: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   tabContent: {
     padding: 15,
   },
   section: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#FFFFFF',
     padding: 20,
     marginBottom: 15,
     borderRadius: 10,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 58, 95, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     marginBottom: 15,
     paddingBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(30, 58, 95, 0.2)',
   },
   infoRow: {
     flexDirection: 'row',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.lightCream,
+    borderBottomColor: 'rgba(30, 58, 95, 0.1)',
   },
   infoLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     width: 120,
   },
   infoValue: {
     fontSize: 14,
-    color: theme.colors.navy,
+    color: '#333',
     flex: 1,
   },
   statsGrid: {
@@ -678,22 +830,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   statCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#F5F7FA',
     padding: 15,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.secondary,
+    borderLeftColor: '#1E3A5F',
     width: '48%',
     margin: '1%',
   },
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
   },
   statLabel: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: '#666',
     marginTop: 3,
   },
   emptyState: {
@@ -706,22 +858,22 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#666',
     textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#888',
     textAlign: 'center',
     marginTop: 5,
   },
   documentCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#F5F7FA',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.secondary,
+    borderLeftColor: '#1E3A5F',
   },
   documentHeader: {
     flexDirection: 'row',
@@ -732,25 +884,25 @@ const styles = StyleSheet.create({
   documentTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#1E3A5F',
     flex: 1,
   },
   documentBadge: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
-    backgroundColor: theme.colors.sand,
+    color: '#666',
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   documentDetail: {
     fontSize: 14,
-    color: theme.colors.navy,
+    color: '#333',
     marginBottom: 4,
   },
   documentDate: {
     fontSize: 12,
-    color: theme.colors.warmGray,
+    color: '#888',
     marginTop: 4,
   },
   billingSummaryContainer: {
@@ -759,20 +911,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: 'rgba(30, 58, 95, 0.2)',
   },
   billingSummary: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#1E3A5F',
   },
   infoSection: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#F5F7FA',
     padding: 15,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: '#1E3A5F',
     marginTop: 10,
   },
   infoIcon: {
@@ -782,30 +934,28 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#666',
     lineHeight: 20,
   },
   backButtonBottom: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: '#1E3A5F',
     padding: 15,
     margin: 15,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
     alignItems: 'center',
   },
   backButtonBottomText: {
-    color: theme.colors.mahogany,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
   progressSummary: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: '#F5F7FA',
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
-    borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 58, 95, 0.2)',
   },
   progressSummaryRow: {
     flexDirection: 'row',
@@ -816,26 +966,26 @@ const styles = StyleSheet.create({
   progressCurrentStage: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     flex: 1,
   },
   progressPercentage: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.navy,
+    color: '#1E3A5F',
   },
   progressBarBackground: {
     height: 20,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#E0E0E0',
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.secondary,
+    borderColor: 'rgba(30, 58, 95, 0.2)',
     marginBottom: 10,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: '#1E3A5F',
   },
   progressStatsRow: {
     flexDirection: 'row',
@@ -844,11 +994,11 @@ const styles = StyleSheet.create({
   },
   progressStat: {
     fontSize: 14,
-    color: theme.colors.textSecondary,
+    color: '#666',
     fontWeight: '500',
   },
   viewRoadmapButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: '#1E3A5F',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -873,29 +1023,29 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: '#E0E0E0',
     borderWidth: 2,
-    borderColor: theme.colors.textSecondary,
+    borderColor: '#ccc',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   roadmapStageBadgeCompleted: {
-    backgroundColor: theme.colors.warmGold,
-    borderColor: theme.colors.mahogany,
+    backgroundColor: '#1E3A5F',
+    borderColor: '#1E3A5F',
   },
   roadmapStageBadgeCurrent: {
-    backgroundColor: theme.colors.cream,
-    borderColor: theme.colors.navy,
+    backgroundColor: '#C0C0C0',
+    borderColor: '#1E3A5F',
     borderWidth: 3,
   },
   roadmapStageBadgeText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.textSecondary,
+    color: '#888',
   },
   roadmapStageBadgeTextCompleted: {
-    color: theme.colors.white,
+    color: '#FFFFFF',
   },
   roadmapStageInfo: {
     flex: 1,
@@ -904,26 +1054,26 @@ const styles = StyleSheet.create({
   roadmapStageName: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.navy,
+    color: '#333',
     marginBottom: 3,
   },
   roadmapStageNameCurrent: {
-    color: theme.colors.mahogany,
+    color: '#1E3A5F',
     fontWeight: 'bold',
   },
   roadmapStageProgress: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: '#666',
   },
   roadmapStageDate: {
     fontSize: 12,
-    color: theme.colors.warmGreen,
+    color: '#4ade80',
     marginTop: 2,
   },
   roadmapConnector: {
     width: 2,
     height: 15,
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: 'rgba(30, 58, 95, 0.2)',
     marginLeft: 19,
     marginVertical: 2,
   },
@@ -957,6 +1107,119 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderColor: '#FFD700',
     borderWidth: 1,
+  },
+  documentActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  viewButton: {
+    backgroundColor: '#1E3A5F',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#C0C0C0',
+  },
+  viewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  imageModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    maxWidth: 800,
+    width: '100%',
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  imageModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#1E3A5F',
+    borderBottomWidth: 2,
+    borderBottomColor: '#C0C0C0',
+  },
+  imageModalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  imageModalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalCloseBtnText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  evidenceImage: {
+    width: '100%',
+    height: 400,
+    backgroundColor: '#f0f0f0',
+  },
+  imageModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 15,
+    gap: 15,
+    backgroundColor: '#f5f5f5',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+  },
+  downloadButton: {
+    backgroundColor: '#1E3A5F',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  downloadButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  closeModalButton: {
+    backgroundColor: '#C0C0C0',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  closeModalButtonText: {
+    color: '#1E3A5F',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingOverlayText: {
+    color: '#FFFFFF',
+    marginTop: 10,
+    fontSize: 16,
   },
 });
 

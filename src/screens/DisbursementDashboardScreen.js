@@ -13,6 +13,31 @@ import {
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
+// Launch promotion: All subscribers get premium features during launch
+const IS_LAUNCH_PROMO = true;
+
+// Helper to sanitize currency input - removes commas, $, and other non-numeric characters
+const sanitizeCurrencyInput = (value) => {
+  if (!value) return '';
+  // Remove $ signs, commas, and spaces, keep only digits and decimal point
+  let sanitized = value.replace(/[$,\s]/g, '');
+  // Only allow one decimal point
+  const parts = sanitized.split('.');
+  if (parts.length > 2) {
+    sanitized = parts[0] + '.' + parts.slice(1).join('');
+  }
+  // Only allow digits and one decimal point
+  sanitized = sanitized.replace(/[^0-9.]/g, '');
+  return sanitized;
+};
+
+// Helper to parse currency safely
+const parseCurrency = (value) => {
+  const sanitized = sanitizeCurrencyInput(value);
+  const parsed = parseFloat(sanitized);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +161,10 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const checkPremiumAccess = () => {
+    // During launch promotion, all subscribers get premium features
+    if (IS_LAUNCH_PROMO) {
+      return true;
+    }
     // Check if subscription is loaded and has premium plan
     if (!subscription || subscription.planType !== 'premium') {
       setShowUpgradeModal(true);
@@ -189,7 +218,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const calculateTotalDisbursement = () => {
-    const clientAmount = parseFloat(disbursementAmount) || 0;
+    const clientAmount = parseCurrency(disbursementAmount);
     const medicalTotal = totalMedicalPayments;
     const platformFee = calculatePlatformFee();
     
@@ -197,7 +226,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const validateDisbursement = () => {
-    const clientAmount = parseFloat(disbursementAmount);
+    const clientAmount = parseCurrency(disbursementAmount);
     
     if (!clientAmount || clientAmount <= 0) {
       Alert.alert('Error', 'Please enter a valid client disbursement amount');
@@ -207,8 +236,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     // Validate medical provider payments
     for (let payment of medicalProviderPayments) {
       if (payment.amount && payment.amount.trim() !== '') {
-        const amt = parseFloat(payment.amount);
-        if (isNaN(amt) || amt <= 0) {
+        const amt = parseCurrency(payment.amount);
+        if (amt <= 0) {
           Alert.alert('Error', `Invalid amount for ${payment.providerName}`);
           return false;
         }
@@ -223,7 +252,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       return;
     }
 
-    const clientAmount = parseFloat(disbursementAmount);
+    const clientAmount = parseCurrency(disbursementAmount);
     const totalAmount = calculateTotalDisbursement();
 
     Alert.alert(
@@ -249,11 +278,11 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     try {
       // Filter out medical payments with no amount
       const validMedicalPayments = medicalProviderPayments
-        .filter(p => p.amount && parseFloat(p.amount) > 0)
+        .filter(p => p.amount && parseCurrency(p.amount) > 0)
         .map(p => ({
           providerId: p.providerId,
           providerName: p.providerName,
-          amount: parseFloat(p.amount),
+          amount: parseCurrency(p.amount),
           email: p.email
         }));
 
@@ -264,7 +293,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         },
         body: JSON.stringify({
           clientId: selectedClient.id,
-          clientAmount: parseFloat(disbursementAmount),
+          clientAmount: parseCurrency(disbursementAmount),
           medicalPayments: validMedicalPayments,
           platformFee: calculatePlatformFee()
         })
@@ -326,7 +355,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
               placeholder="0.00"
               keyboardType="decimal-pad"
               value={disbursementAmount}
-              onChangeText={setDisbursementAmount}
+              onChangeText={(text) => setDisbursementAmount(sanitizeCurrencyInput(text))}
             />
           </View>
 
@@ -353,7 +382,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                     placeholder="0.00"
                     keyboardType="decimal-pad"
                     value={payment.amount}
-                    onChangeText={(text) => updateMedicalPayment(index, text)}
+                    onChangeText={(text) => updateMedicalPayment(index, sanitizeCurrencyInput(text))}
                   />
                 </View>
               ))
@@ -367,7 +396,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Client Payment:</Text>
               <Text style={styles.summaryValue}>
-                ${(parseFloat(disbursementAmount) || 0).toFixed(2)}
+                ${parseCurrency(disbursementAmount).toFixed(2)}
               </Text>
             </View>
 
@@ -453,8 +482,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       );
     }
 
-    // Show upgrade invitation for standard plan users
-    if (subscription && subscription.planType !== 'premium') {
+    // Show upgrade invitation for standard plan users (skip during launch promo)
+    if (!IS_LAUNCH_PROMO && subscription && subscription.planType !== 'premium') {
       return (
         <View style={styles.tabContent}>
           <View style={styles.upgradeInvitationCard}>
@@ -858,10 +887,10 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#F5F7FA'
   },
   header: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#1E3A5F',
     padding: 16,
     paddingTop: 50,
     paddingBottom: 16
@@ -875,20 +904,20 @@ const styles = StyleSheet.create({
     marginRight: 12
   },
   backButtonText: {
-    color: '#fff',
+    color: '#C0C0C0',
     fontSize: 22,
     fontWeight: '600'
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff'
+    color: '#FFFFFF'
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0'
+    borderBottomColor: '#E2E8F0'
   },
   tab: {
     flex: 1,
@@ -898,14 +927,14 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent'
   },
   activeTab: {
-    borderBottomColor: theme.colors.primary
+    borderBottomColor: '#1E3A5F'
   },
   tabText: {
     fontSize: 16,
-    color: '#666'
+    color: '#64748B'
   },
   activeTabText: {
-    color: theme.colors.primary,
+    color: '#1E3A5F',
     fontWeight: '600'
   },
   tabContent: {
@@ -914,34 +943,34 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748B',
     marginBottom: 20
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: 'rgba(30, 58, 95, 0.1)',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 1,
     shadowRadius: 2,
     elevation: 2,
     borderWidth: 1,
-    borderColor: '#e0e0e0'
+    borderColor: '#E2E8F0'
   },
   searchIcon: {
     fontSize: 18,
     marginRight: 10,
-    color: '#999'
+    color: '#94A3B8'
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#1E3A5F',
     padding: 0
   },
   clearButton: {
@@ -950,7 +979,7 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     fontSize: 20,
-    color: '#999',
+    color: '#94A3B8',
     fontWeight: '300'
   },
   loader: {
@@ -958,7 +987,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
+    color: '#64748B',
     textAlign: 'center',
     marginTop: 16
   },
@@ -971,28 +1000,32 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 8
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748B',
     textAlign: 'center'
   },
   clientList: {
     flex: 1
   },
   clientCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E3A5F',
+    shadowColor: 'rgba(30, 58, 95, 0.1)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 3
   },
@@ -1002,79 +1035,81 @@ const styles = StyleSheet.create({
   clientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 4
   },
   clientEmail: {
     fontSize: 14,
-    color: '#666'
+    color: '#64748B'
   },
   disbursementBadge: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#1E3A5F',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20
   },
   disbursementBadgeText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '600'
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: '#F5F7FA'
   },
   modalScroll: {
     flex: 1
   },
   modalHeader: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#1E3A5F',
     padding: 20,
     paddingTop: 60
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFFFFF',
     marginBottom: 4
   },
   modalSubtitle: {
     fontSize: 16,
-    color: '#fff',
+    color: '#C0C0C0',
     opacity: 0.9
   },
   section: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0'
+    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF'
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 12
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#64748B',
     marginBottom: 8
   },
   amountInput: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F7FA',
     borderRadius: 8,
     padding: 15,
     fontSize: 18,
     borderWidth: 1,
-    borderColor: '#ddd'
+    borderColor: '#E2E8F0',
+    color: '#1E3A5F'
   },
   helperText: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748B',
     marginBottom: 16
   },
   noProvidersText: {
     fontSize: 14,
-    color: '#999',
+    color: '#94A3B8',
     fontStyle: 'italic',
     textAlign: 'center',
     paddingVertical: 20
@@ -1086,7 +1121,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#F5F7FA'
   },
   providerInfo: {
     flex: 1,
@@ -1095,31 +1130,32 @@ const styles = StyleSheet.create({
   providerName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 2
   },
   providerEmail: {
     fontSize: 12,
-    color: '#666'
+    color: '#64748B'
   },
   providerAmountInput: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F7FA',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     width: 120,
     textAlign: 'right',
     borderWidth: 1,
-    borderColor: '#ddd'
+    borderColor: '#E2E8F0',
+    color: '#1E3A5F'
   },
   summarySection: {
     padding: 20,
-    backgroundColor: '#f9f9f9'
+    backgroundColor: '#EDF1F7'
   },
   summaryTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#1E3A5F',
     marginBottom: 16
   },
   summaryRow: {
@@ -1129,49 +1165,52 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 16,
-    color: '#666'
+    color: '#64748B'
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333'
+    color: '#1E3A5F'
   },
   totalRow: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 2,
-    borderTopColor: '#ddd'
+    borderTopColor: '#C0C0C0'
   },
   totalLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333'
+    color: '#1E3A5F'
   },
   totalValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: '#1E3A5F'
   },
   modalActions: {
     flexDirection: 'row',
     padding: 20,
-    gap: 12
+    gap: 12,
+    backgroundColor: '#FFFFFF'
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F5F7FA',
     borderRadius: 8,
     padding: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0'
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666'
+    color: '#64748B'
   },
   processButton: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#1E3A5F',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center'
@@ -1182,19 +1221,23 @@ const styles = StyleSheet.create({
   processButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff'
+    color: '#FFFFFF'
   },
   historyList: {
     flex: 1
   },
   historyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderLeftWidth: 4,
+    borderLeftColor: '#1E3A5F',
+    shadowColor: 'rgba(30, 58, 95, 0.1)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 3
   },
@@ -1205,16 +1248,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#F5F7FA'
   },
   historyClientName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333'
+    color: '#1E3A5F'
   },
   historyDate: {
     fontSize: 14,
-    color: '#666'
+    color: '#94A3B8'
   },
   historyDetails: {
     marginBottom: 12
@@ -1226,28 +1269,28 @@ const styles = StyleSheet.create({
   },
   historyLabel: {
     fontSize: 14,
-    color: '#666'
+    color: '#64748B'
   },
   historyAmount: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333'
+    color: '#1E3A5F'
   },
   historyTotalRow: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
+    borderTopColor: '#E2E8F0'
   },
   historyTotalLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333'
+    color: '#1E3A5F'
   },
   historyTotalAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.primary
+    color: '#1E3A5F'
   },
   historyFooter: {
     flexDirection: 'row',
@@ -1255,25 +1298,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
+    borderTopColor: '#F5F7FA'
   },
   transactionId: {
     fontSize: 12,
-    color: '#999'
+    color: '#94A3B8'
   },
   statusBadge: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#E2E8F0',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12
   },
   statusSuccess: {
-    backgroundColor: '#4CAF50'
+    backgroundColor: '#10B981'
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff'
+    color: '#FFFFFF'
   },
   stripeConnectBanner: {
     backgroundColor: '#f5f5f5',

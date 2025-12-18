@@ -31,6 +31,20 @@ async function _sendTaskRemindersInternal() {
   console.log('🔔 Task Reminder Service: Checking for upcoming tasks...');
   
   try {
+    // First check if the law_firm_tasks table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'law_firm_tasks'
+      )
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('📋 Task Reminder Service: law_firm_tasks table not found, skipping reminders');
+      return { success: true, tasksProcessed: 0, smsSent: 0, notificationsSent: 0, skipped: true };
+    }
+    
     // Find tasks due in the next 24 hours that haven't been completed
     const tomorrow = DateTime.now().plus({ hours: 24 }).toISO();
     const now = DateTime.now().toISO();
@@ -150,6 +164,20 @@ async function _sendTaskRemindersInternal() {
 // Create task_reminders table if it doesn't exist
 async function initializeReminderTable() {
   try {
+    // First check if the law_firm_tasks table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'law_firm_tasks'
+      )
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      console.log('⚠️ Task reminders: law_firm_tasks table not found, skipping initialization');
+      return;
+    }
+    
     await pool.query(`
       CREATE TABLE IF NOT EXISTS task_reminders (
         id SERIAL PRIMARY KEY,

@@ -16,18 +16,33 @@ router.post('/send-to-client', authenticateToken, notificationsController.sendTo
 router.post('/send-to-all-patients', authenticateToken, notificationsController.sendToAllPatients);
 router.post('/send-to-patients', authenticateToken, notificationsController.sendToPatients);
 router.post('/send-to-patient', authenticateToken, notificationsController.sendToPatient);
+router.post('/send-to-connection', authenticateToken, notificationsController.sendToConnection);
+router.get('/my-connections-for-notification', authenticateToken, notificationsController.getMyConnectionsForNotification);
 
+router.get('/inbox', authenticateToken, notificationsController.getMyNotifications);
+router.get('/outbox', authenticateToken, notificationsController.getSentNotifications);
 router.get('/my-notifications', authenticateToken, notificationsController.getMyNotifications);
+router.get('/sent-notifications', authenticateToken, notificationsController.getSentNotifications);
 router.get('/unread-count', authenticateToken, notificationsController.getUnreadCount);
 router.get('/stats', authenticateToken, notificationsController.getMyNotificationStats);
 router.get('/history', authenticateToken, notificationsController.getNotificationHistory);
 router.get('/preferences', authenticateToken, notificationsController.getPreferences);
+router.get('/settings', authenticateToken, notificationsController.getEmailCCPreferences);
+router.get('/email-preferences', authenticateToken, notificationsController.getEmailCCPreferences);
 router.get('/analytics', authenticateToken, notificationsController.getNotificationAnalytics);
 router.get('/:notificationId', authenticateToken, notificationsController.getNotificationById);
 
 router.put('/mark-all-read', authenticateToken, notificationsController.markAllAsRead);
 router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
+router.put('/settings', authenticateToken, notificationsController.updateEmailCCPreferences);
+router.put('/email-preferences', authenticateToken, notificationsController.updateEmailCCPreferences);
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.put('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
+router.put('/:notificationId/archive', authenticateToken, notificationsController.archiveNotification);
+
+router.patch('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
+router.patch('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
+
+router.delete('/:notificationId', authenticateToken, notificationsController.archiveNotification);
 
 module.exports = router;

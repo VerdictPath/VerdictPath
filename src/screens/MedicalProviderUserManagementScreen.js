@@ -39,6 +39,7 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('active');
+  const [permissionError, setPermissionError] = useState(null);
 
   useEffect(() => {
     loadUsers();
@@ -47,6 +48,7 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
   const loadUsers = async () => {
     try {
       setLoading(true);
+      setPermissionError(null);
       const response = await apiRequest(`${API_ENDPOINTS.MEDICAL_PROVIDER_USERS.GET_ALL}?status=${filterStatus}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${user.token}` },
@@ -55,7 +57,11 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
       setUsers(response.users || []);
     } catch (error) {
       console.error('[UserManagement] Load error:', error);
-      showAlert('Error', 'Failed to load users');
+      if (error.status === 403) {
+        setPermissionError('You do not have permission to manage users. Only administrators can access this feature.');
+      } else {
+        showAlert('Error', 'Failed to load users');
+      }
     } finally {
       setLoading(false);
     }
@@ -178,22 +184,33 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {users.map((u) => (
-          <UserCard
-            key={u.id}
-            user={u}
-            onDeactivate={() => handleDeactivateUser(u.id, `${u.firstName} ${u.lastName}`)}
-            onReactivate={() => reactivateUser(u.id)}
-            onViewActivity={() => {}}
-          />
-        ))}
-
-        {users.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              {filterStatus === 'active' ? 'No active users' : 'No deactivated users'}
-            </Text>
+        {permissionError ? (
+          <View style={styles.permissionErrorCard}>
+            <Text style={styles.permissionErrorIcon}>🔒</Text>
+            <Text style={styles.permissionErrorTitle}>Access Restricted</Text>
+            <Text style={styles.permissionErrorText}>{permissionError}</Text>
+            <Text style={styles.permissionErrorHint}>Contact your administrator to request access.</Text>
           </View>
+        ) : (
+          <>
+            {users.map((u) => (
+              <UserCard
+                key={u.id}
+                user={u}
+                onDeactivate={() => handleDeactivateUser(u.id, `${u.firstName} ${u.lastName}`)}
+                onReactivate={() => reactivateUser(u.id)}
+                onViewActivity={() => {}}
+              />
+            ))}
+
+            {users.length === 0 && (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyText}>
+                  {filterStatus === 'active' ? 'No active users' : 'No deactivated users'}
+                </Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -658,6 +675,42 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  permissionErrorCard: {
+    padding: 40,
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 30, 48, 0.85)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    marginHorizontal: 10,
+  },
+  permissionErrorIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  permissionErrorTitle: {
+    color: '#ef4444',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  permissionErrorText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+  },
+  permissionErrorHint: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   modalContainer: {
     flex: 1,

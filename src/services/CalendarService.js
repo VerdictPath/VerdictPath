@@ -7,7 +7,15 @@ class CalendarService {
     this.defaultCalendarId = null;
   }
 
+  isWebPlatform() {
+    return Platform.OS === 'web';
+  }
+
   async requestPermissions() {
+    if (this.isWebPlatform()) {
+      return false;
+    }
+    
     try {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       

@@ -3,7 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { theme } from '../styles/theme';
+import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
 import alert from '../utils/alert';
@@ -24,17 +24,22 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const fetchPatientDetails = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}${API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
+      const url = API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId);
+      console.log('[PatientDetails] Fetching patient details for patientId:', patientId);
+      console.log('[PatientDetails] API URL:', url);
+      console.log('[PatientDetails] Token:', user?.token ? 'Present' : 'Missing');
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
         }
-      );
+      });
+
+      console.log('[PatientDetails] Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[PatientDetails] Data received:', data);
         setPatient(data.patient);
         setLitigationProgress(data.litigationProgress);
         
@@ -43,7 +48,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         setMedicalBilling(data.medicalBilling || []);
         setEvidence(data.evidence || []);
       } else {
-        console.error('Failed to fetch patient details');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[PatientDetails] Failed response:', response.status, errorData);
       }
     } catch (error) {
       console.error('Error fetching patient details:', error);
@@ -591,7 +597,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.mahogany} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Loading Patient Details...</Text>
       </View>
     );
@@ -676,13 +682,13 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: theme.colors.background,
   },
   loadingText: {
     marginTop: 10,
@@ -693,7 +699,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.sand,
+    backgroundColor: theme.colors.background,
     padding: 20,
   },
   errorText: {
@@ -703,10 +709,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   header: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.cardBackground,
     padding: 20,
     borderBottomWidth: 3,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: theme.colors.silver,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -715,7 +721,7 @@ const styles = StyleSheet.create({
   },
   backArrow: {
     fontSize: 24,
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
   },
   headerContent: {
     flex: 1,
@@ -723,7 +729,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
   },
   headerSubtitle: {
     fontSize: 13,
@@ -732,9 +738,9 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.cardBackground,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: theme.colors.silver,
   },
   tab: {
     flex: 1,
@@ -744,8 +750,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: theme.colors.warmGold,
-    backgroundColor: theme.colors.lightCream,
+    borderBottomColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.offWhite,
   },
   tabIcon: {
     fontSize: 20,
@@ -757,7 +763,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeTabText: {
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
   },
   content: {
     flex: 1,
@@ -766,21 +772,21 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   section: {
-    backgroundColor: theme.colors.cream,
+    backgroundColor: theme.colors.cardBackground,
     padding: 20,
     marginBottom: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: theme.colors.silver,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: theme.colors.silver,
   },
   sectionDescription: {
     fontSize: 14,
@@ -789,15 +795,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   uploadButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: theme.colors.primary,
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: theme.colors.silver,
   },
   uploadButtonText: {
-    color: theme.colors.cream,
+    color: theme.colors.cardBackground,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -808,39 +814,39 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingBottom: 10,
     borderBottomWidth: 2,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: theme.colors.silver,
   },
   uploadButtonSmall: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: theme.colors.silver,
   },
   uploadButtonSmallText: {
-    color: theme.colors.cream,
+    color: theme.colors.cardBackground,
     fontSize: 12,
     fontWeight: '600',
   },
   comingSoonBadge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
     fontSize: 11,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     borderWidth: 1,
-    borderColor: theme.colors.secondary,
+    borderColor: theme.colors.silver,
   },
   documentCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: theme.colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.warmGold,
+    borderLeftColor: theme.colors.primaryLight,
   },
   documentHeader: {
     flexDirection: 'row',
@@ -851,11 +857,11 @@ const styles = StyleSheet.create({
   documentTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     flex: 1,
   },
   documentBadge: {
-    backgroundColor: theme.colors.warmGold,
+    backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -888,12 +894,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   billingSummary: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: theme.colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.warmGold,
+    borderColor: theme.colors.primaryLight,
   },
   billingRow: {
     flexDirection: 'row',
@@ -908,15 +914,15 @@ const styles = StyleSheet.create({
   },
   billingValue: {
     fontSize: 16,
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     fontWeight: 'bold',
   },
   infoSection: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: theme.colors.offWhite,
     padding: 16,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: theme.colors.secondary,
+    borderColor: theme.colors.silver,
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -935,7 +941,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.secondary,
+    borderBottomColor: theme.colors.silver,
   },
   infoLabel: {
     fontSize: 14,
@@ -953,12 +959,12 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: theme.colors.offWhite,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.warmGold,
+    borderColor: theme.colors.primaryLight,
   },
   statIcon: {
     fontSize: 32,
@@ -967,7 +973,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     marginBottom: 4,
   },
   statLabel: {
@@ -986,7 +992,7 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     height: 20,
-    backgroundColor: theme.colors.sand,
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 8,
@@ -998,7 +1004,7 @@ const styles = StyleSheet.create({
   },
   progressPercentage: {
     fontSize: 16,
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -1023,7 +1029,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   stageDetailCard: {
-    backgroundColor: theme.colors.lightCream,
+    backgroundColor: theme.colors.offWhite,
     padding: 15,
     borderRadius: 6,
     marginBottom: 12,
@@ -1042,7 +1048,7 @@ const styles = StyleSheet.create({
   stageDetailName: {
     fontSize: 18,
     fontWeight: '600',
-    color: theme.colors.mahogany,
+    color: theme.colors.primary,
   },
   stageDetailProgress: {
     fontSize: 13,
@@ -1058,7 +1064,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   backButton: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: theme.colors.primary,
     padding: 15,
     borderRadius: 8,
     marginTop: 20,
@@ -1070,7 +1076,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   backButtonBottom: {
-    backgroundColor: theme.colors.mahogany,
+    backgroundColor: theme.colors.primary,
     padding: 15,
     borderRadius: 8,
     margin: 16,

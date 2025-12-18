@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import alert from '../utils/alert';
+import { API_URL } from '../config/api';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
   const { width, height } = useWindowDimensions();
@@ -10,10 +11,120 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const isTablet = width >= 768 && width < 1024;
   const isDesktop = width >= 1024;
 
+  const [showProviderModal, setShowProviderModal] = useState(false);
+  const [providerCode, setProviderCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [connectedProviders, setConnectedProviders] = useState([]);
+  const [fetchingProviders, setFetchingProviders] = useState(true);
+
+  useEffect(() => {
+    fetchConnectedProviders();
+  }, []);
+
+  const fetchConnectedProviders = async () => {
+    try {
+      setFetchingProviders(true);
+      const response = await fetch(`${API_URL}/api/connections/my-connections`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setConnectedProviders(data.medicalProviders || []);
+      }
+    } catch (error) {
+      console.error('Error fetching connected providers:', error);
+    } finally {
+      setFetchingProviders(false);
+    }
+  };
+
   const handleAddProvider = () => {
+    setProviderCode('');
+    setShowProviderModal(true);
+  };
+
+  const handleConnectProvider = async () => {
+    if (!providerCode.trim()) {
+      alert('Missing Code', 'Please enter a medical provider code to connect.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/connections/add-medical-provider`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ medicalProviderCode: providerCode.trim() })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setShowProviderModal(false);
+        setProviderCode('');
+        await fetchConnectedProviders();
+        alert(
+          '🏴‍☠️ Ahoy, Success!',
+          `Ye be now connected to ${data.medicalProvider?.provider_name || 'yer medical provider'}! Yer crew be growin\' stronger! ⚓`
+        );
+      } else {
+        alert(
+          '🏴‍☠️ Blimey!',
+          data.error || 'Failed to connect with the medical provider. Check yer code and try again, matey!'
+        );
+      }
+    } catch (error) {
+      console.error('Error connecting to medical provider:', error);
+      alert(
+        '🏴‍☠️ Stormy Seas!',
+        'The connection be lost in a storm! Please check yer internet and try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveProvider = async (providerId, providerName) => {
     alert(
-      '🏴‍☠️ Aye, Not Quite Ready!',
-      'Arrr! Our navigators be still plottin\' the course to add medical providers to yer crew! This feature be comin\' soon, so hold fast and keep yer compass handy! ⚓'
+      '🏴‍☠️ Remove Provider?',
+      `Are ye sure ye want to disconnect from ${providerName}? This will remove them from yer crew!`,
+      [
+        { text: 'Nay, Keep Em\'', style: 'cancel' },
+        { 
+          text: 'Aye, Remove', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_URL}/api/connections/remove-medical-provider`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ providerId: providerId })
+              });
+
+              if (response.ok) {
+                await fetchConnectedProviders();
+                alert('🏴‍☠️ Success!', `${providerName} has been removed from yer crew.`);
+              } else {
+                const data = await response.json();
+                alert('🏴‍☠️ Error!', data.error || 'Failed to remove provider.');
+              }
+            } catch (error) {
+              console.error('Error removing provider:', error);
+              alert('🏴‍☠️ Error!', 'Failed to remove provider. Please try again.');
+            }
+          }
+        }
+      ]
     );
   };
 
@@ -127,7 +238,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                     styles.addProviderButton,
                     { 
                       paddingVertical: isDesktop ? 18 : 15,
-                      marginBottom: isDesktop ? 35 : 30,
+                      marginBottom: isDesktop ? 20 : 15,
                     }
                   ]}
                   onPress={handleAddProvider}
@@ -137,6 +248,51 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                     { fontSize: isDesktop ? 18 : 16 }
                   ]}>➕ Add Medical Provider</Text>
                 </TouchableOpacity>
+
+                {fetchingProviders ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#FFD700" />
+                    <Text style={styles.loadingText}>Loading connected providers...</Text>
+                  </View>
+                ) : connectedProviders.length > 0 && (
+                  <View style={[
+                    styles.documentSection,
+                    { padding: isDesktop ? 25 : 20, marginBottom: isDesktop ? 35 : 30 }
+                  ]}>
+                    <Text style={[
+                      styles.sectionTitle,
+                      { fontSize: isDesktop ? 24 : 20, marginBottom: 15 }
+                    ]}>🏥 Connected Providers</Text>
+                    {connectedProviders.map((provider) => (
+                      <View key={provider.id} style={styles.providerCard}>
+                        <View style={styles.providerInfo}>
+                          <Text style={[
+                            styles.providerName,
+                            { fontSize: isDesktop ? 18 : 16 }
+                          ]}>{provider.provider_name}</Text>
+                          <Text style={[
+                            styles.providerCode,
+                            { fontSize: isDesktop ? 14 : 12 }
+                          ]}>Code: {provider.provider_code}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.removeButton}
+                          onPress={() => handleRemoveProvider(provider.id, provider.provider_name)}
+                        >
+                          <Text style={styles.removeButtonText}>✕</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {!fetchingProviders && connectedProviders.length === 0 && (
+                  <View style={[styles.noProvidersContainer, { marginBottom: isDesktop ? 35 : 30 }]}>
+                    <Text style={styles.noProvidersText}>
+                      🏴‍☠️ No medical providers in yer crew yet! Tap the button above to add one.
+                    </Text>
+                  </View>
+                )}
 
                 <View style={[
                   styles.documentSection,
@@ -170,6 +326,57 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           </ScrollView>
         </View>
       </ImageBackground>
+
+      <Modal
+        visible={showProviderModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowProviderModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[
+            styles.modalContent,
+            { width: isDesktop ? 450 : isTablet ? 400 : width * 0.9 }
+          ]}>
+            <Text style={styles.modalTitle}>🏥 Add Medical Provider</Text>
+            <Text style={styles.modalDescription}>
+              Enter the provider code given to ye by yer medical provider to join their crew!
+            </Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter Provider Code (e.g., MP-XXXXX)"
+              placeholderTextColor="#8B7355"
+              value={providerCode}
+              onChangeText={setProviderCode}
+              autoCapitalize="characters"
+              autoCorrect={false}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowProviderModal(false)}
+                disabled={isLoading}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.connectButton]}
+                onPress={handleConnectProvider}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.connectButtonText}>Connect</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -324,6 +531,134 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    marginBottom: 20,
+  },
+  loadingText: {
+    color: '#FFD700',
+    marginLeft: 10,
+    fontSize: 14,
+  },
+  providerCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  providerInfo: {
+    flex: 1,
+  },
+  providerName: {
+    color: '#FFD700',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  providerCode: {
+    color: '#B8A080',
+  },
+  removeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(180, 60, 60, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  removeButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  noProvidersContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  noProvidersText: {
+    color: '#B8A080',
+    textAlign: 'center',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#2A2520',
+    borderRadius: 20,
+    padding: 25,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.5)',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: '#B8A080',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    backgroundColor: '#1A1815',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    color: '#FFD700',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: 'rgba(80, 70, 60, 0.9)',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(150, 140, 130, 0.5)',
+  },
+  cancelButtonText: {
+    color: '#B8A080',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  connectButton: {
+    backgroundColor: 'rgba(40, 120, 80, 0.9)',
+    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(80, 200, 120, 0.5)',
+  },
+  connectButtonText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
 

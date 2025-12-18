@@ -1,6 +1,6 @@
-// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend [v2.1.0]
+// UPDATED API CONFIGURATION - Connect Frontend to Replit Backend [v2.2.0]
 // Replace your existing /src/config/api.js with this file
-// CACHE BUST: Notification endpoints fixed - November 22, 2025
+// CACHE BUST: Fixed client/patient singular endpoints - December 15, 2025
 
 // ============================================================================
 // API BASE URL CONFIGURATION
@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
     REGISTER_CLIENT: `${API_BASE_URL}/api/auth/register/client`,
     REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register/lawfirm`,
     REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register/medicalprovider`,
+    JOIN_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/join/medicalprovider`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     LOGIN_LAWFIRM_USER: `${API_BASE_URL}/api/auth/login/lawfirm-user`,
     LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,
@@ -67,15 +68,15 @@ export const API_ENDPOINTS = {
     DASHBOARD: `${API_BASE_URL}/api/lawfirm/dashboard`,
     CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
     GET_CLIENTS: `${API_BASE_URL}/api/lawfirm/clients`,
-    CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}`,
-    CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/clients/${clientId}/progress`,
+    CLIENT_DETAILS: (clientId) => `${API_BASE_URL}/api/lawfirm/client/${clientId}`,
+    CLIENT_PROGRESS: (clientId) => `${API_BASE_URL}/api/lawfirm/client/${clientId}/progress`,
   },
 
   // Medical Provider
   MEDICALPROVIDER: {
     DASHBOARD: `${API_BASE_URL}/api/medicalprovider/dashboard`,
     PATIENTS: `${API_BASE_URL}/api/medicalprovider/patients`,
-    PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patients/${patientId}`,
+    PATIENT_DETAILS: (patientId) => `${API_BASE_URL}/api/medicalprovider/patient/${patientId}`,
     LAW_FIRMS: `${API_BASE_URL}/api/connections/law-firms`,
     ADD_LAW_FIRM: `${API_BASE_URL}/api/connections/add-law-firm`,
     REMOVE_LAW_FIRM: `${API_BASE_URL}/api/connections/remove-law-firm`,
@@ -217,6 +218,13 @@ export const API_ENDPOINTS = {
     GET_CLIENT_PROVIDERS: `${API_BASE_URL}/api/disbursements/client-providers`,
     GET_RECEIVED: `${API_BASE_URL}/api/disbursements/received`,
     GET_DETAILS: (disbursementId) => `${API_BASE_URL}/api/disbursements/${disbursementId}`,
+  },
+
+  // Bank Information (Individual Users)
+  BANK_INFO: {
+    GET: `${API_BASE_URL}/api/bank-info`,
+    SAVE: `${API_BASE_URL}/api/bank-info`,
+    DELETE: `${API_BASE_URL}/api/bank-info`,
   },
 
   // Stripe Connect (Payment Setup)

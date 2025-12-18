@@ -41,7 +41,7 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
       };
       
       const response = await apiRequest(
-        `/api/medicalprovider/hipaa-report?days=${daysMap[timeFilter]}`,
+        `/api/medicalprovider/activity/hipaa-report?days=${daysMap[timeFilter]}`,
         {
           method: 'GET',
         }

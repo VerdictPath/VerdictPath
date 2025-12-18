@@ -1,9 +1,8 @@
-// Medical Glass Card - Reusable frosted glass card component
+// Medical Glass Card - Reusable card component with Deep Teal & Silver theme
 
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 
 const MedicalGlassCard = ({ 
@@ -16,20 +15,24 @@ const MedicalGlassCard = ({
 }) => {
   const variants = {
     white: {
-      colors: ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.85)'],
-      borderColor: 'rgba(0, 188, 212, 0.15)',
+      colors: ['#FFFFFF', '#FAFAFA'],
+      borderColor: 'rgba(17, 94, 89, 0.15)',
     },
     glass: {
-      colors: ['rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0.5)'],
-      borderColor: 'rgba(0, 188, 212, 0.2)',
-    },
-    mint: {
-      colors: ['rgba(178, 235, 242, 0.3)', 'rgba(178, 235, 242, 0.2)'],
-      borderColor: medicalProviderTheme.colors.accentTeal + '40',
+      colors: ['rgba(255, 255, 255, 0.95)', 'rgba(245, 247, 250, 0.9)'],
+      borderColor: 'rgba(17, 94, 89, 0.2)',
     },
     teal: {
-      colors: ['rgba(0, 188, 212, 0.15)', 'rgba(0, 168, 200, 0.1)'],
-      borderColor: medicalProviderTheme.colors.accentTeal + '60',
+      colors: ['rgba(17, 94, 89, 0.08)', 'rgba(17, 94, 89, 0.04)'],
+      borderColor: 'rgba(17, 94, 89, 0.25)',
+    },
+    silver: {
+      colors: ['rgba(168, 168, 168, 0.1)', 'rgba(192, 192, 192, 0.05)'],
+      borderColor: 'rgba(168, 168, 168, 0.3)',
+    },
+    mint: {
+      colors: ['rgba(94, 234, 212, 0.1)', 'rgba(94, 234, 212, 0.05)'],
+      borderColor: 'rgba(94, 234, 212, 0.3)',
     },
   };
 

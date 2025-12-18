@@ -1,0 +1,714 @@
+// src/screens/MedicalProviderRegistrationScreen.js
+// Medical Provider Registration with PROMOTIONAL PRICING (FREE)
+
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_URL = 'https://your-railway-url.up.railway.app'; // UPDATE THIS
+
+export default function MedicalProviderRegistrationScreen() {
+    const navigation = useNavigation();
+    const [mode, setMode] = useState(null); // 'create' or 'join'
+    
+    // Create new provider fields
+    const [providerName, setProviderName] = useState('');
+    const [adminFirstName, setAdminFirstName] = useState('');
+    const [adminLastName, setAdminLastName] = useState('');
+    const [providerType, setProviderType] = useState('hospital'); // hospital, clinic, individual
+    
+    // Join existing provider fields
+    const [providerCode, setProviderCode] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [requestedRole, setRequestedRole] = useState('staff');
+    
+    const [loading, setLoading] = useState(false);
+
+    const handleCreateNewProvider = async () => {
+        if (!providerName.trim() || !adminFirstName.trim() || !adminLastName.trim()) {
+            Alert.alert('Missing Information', 'Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = await AsyncStorage.getItem('token');
+            
+            const response = await fetch(`${API_URL}/api/medicalprovider/register-new-provider`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    provider_name: providerName,
+                    admin_first_name: adminFirstName,
+                    admin_last_name: adminLastName,
+                    provider_type: providerType
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Alert.alert(
+                    '🏥 Provider Registered!',
+                    `${data.provider.provider_name}\n\nYour Provider Code: ${data.provider.provider_code}\n\nShare this code with your team members so they can join!\n\n🎉 SPECIAL OFFER: Completely FREE - no monthly fees!`,
+                    [
+                        {
+                            text: 'Continue to Dashboard',
+                            onPress: () => navigation.replace('MedicalProviderDashboard')
+                        }
+                    ]
+                );
+            } else {
+                Alert.alert('Error', data.error || 'Failed to register provider');
+            }
+        } catch (error) {
+            console.error('Error creating provider:', error);
+            Alert.alert('Error', 'Failed to register provider. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleJoinExistingProvider = async () => {
+        if (!providerCode.trim() || !firstName.trim() || !lastName.trim()) {
+            Alert.alert('Missing Information', 'Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = await AsyncStorage.getItem('token');
+            
+            const response = await fetch(`${API_URL}/api/medicalprovider/join-existing-provider`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    provider_code: providerCode.toUpperCase(),
+                    first_name: firstName,
+                    last_name: lastName,
+                    requested_role: requestedRole
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Alert.alert(
+                    '⏳ Request Sent!',
+                    `Your request to join ${data.provider_name} has been sent to the administrators.\n\nYou'll be notified when an admin approves your request.`,
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => navigation.replace('PendingApprovalScreen')
+                        }
+                    ]
+                );
+            } else {
+                Alert.alert('Error', data.error || 'Failed to join provider');
+            }
+        } catch (error) {
+            console.error('Error joining provider:', error);
+            Alert.alert('Error', 'Failed to join provider. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const renderPricingCard = () => (
+        <View style={styles.pricingSection}>
+            <View style={styles.pricingHeader}>
+                <Text style={styles.pricingBadge}>🎉 LIMITED TIME OFFER</Text>
+            </View>
+            
+            <Text style={styles.pricingTitle}>Medical Provider Portal Pricing</Text>
+            
+            {/* Tier Breakdown with Crossed Out Prices */}
+            <View style={styles.tierContainer}>
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Solo Practitioners</Text>
+                    <Text style={styles.tierRange}>1-5 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$39/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Small Practices</Text>
+                    <Text style={styles.tierRange}>6-20 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$79/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Medium Practices</Text>
+                    <Text style={styles.tierRange}>21-50 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$149/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Large Clinics</Text>
+                    <Text style={styles.tierRange}>51-100 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$299/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Multi-Location</Text>
+                    <Text style={styles.tierRange}>101-250 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$499/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={styles.tierCard}>
+                    <Text style={styles.tierName}>Hospital Networks</Text>
+                    <Text style={styles.tierRange}>251-500 Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$799/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.tierCard, styles.tierCardHighlight]}>
+                    <Text style={styles.tierName}>Healthcare Systems</Text>
+                    <Text style={styles.tierRange}>501+ Patients</Text>
+                    <View style={styles.priceRow}>
+                        <Text style={styles.originalPrice}>$1,299/mo</Text>
+                        <Text style={styles.salePrice}>FREE</Text>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.savingsBox}>
+                <Text style={styles.savingsText}>💰 SAVE UP TO $1,299/MONTH!</Text>
+                <Text style={styles.savingsSubtext}>100% Free • Unlimited users • All features included</Text>
+            </View>
+
+            <View style={styles.featuresList}>
+                <Text style={styles.featuresTitle}>✨ What's Included:</Text>
+                <Text style={styles.featureItem}>✓ Unlimited staff members</Text>
+                <Text style={styles.featureItem}>✓ Patient management dashboard</Text>
+                <Text style={styles.featureItem}>✓ Billing & payment tracking</Text>
+                <Text style={styles.featureItem}>✓ HIPAA-compliant document storage</Text>
+                <Text style={styles.featureItem}>✓ Admin user controls</Text>
+                <Text style={styles.featureItem}>✓ Activity logging & reporting</Text>
+                <Text style={styles.featureItem}>✓ Secure consent management</Text>
+            </View>
+
+            <View style={styles.urgencyBox}>
+                <Text style={styles.urgencyText}>⏰ Launch Special - 100% FREE!</Text>
+                <Text style={styles.urgencySubtext}>Get started today at no cost</Text>
+            </View>
+        </View>
+    );
+
+    if (!mode) {
+        return (
+            <View style={styles.container}>
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <Text style={styles.title}>🏥 Medical Provider Setup</Text>
+                    <Text style={styles.subtitle}>
+                        Are you registering a new provider or joining an existing one?
+                    </Text>
+
+                    {renderPricingCard()}
+
+                    <TouchableOpacity 
+                        style={styles.optionCard}
+                        onPress={() => setMode('create')}
+                    >
+                        <Text style={styles.optionTitle}>🏥 Register New Provider</Text>
+                        <Text style={styles.optionDescription}>
+                            Register your practice and become the administrator
+                        </Text>
+                        <Text style={styles.optionPrice}>100% FREE • Unlimited users</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.optionCard}
+                        onPress={() => setMode('join')}
+                    >
+                        <Text style={styles.optionTitle}>⛵ Join Existing Provider</Text>
+                        <Text style={styles.optionDescription}>
+                            Use a provider code to join your team
+                        </Text>
+                        <Text style={styles.optionPrice}>Free for team members</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+        );
+    }
+
+    if (mode === 'create') {
+        return (
+            <View style={styles.container}>
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <TouchableOpacity 
+                        style={styles.backButton}
+                        onPress={() => setMode(null)}
+                    >
+                        <Text style={styles.backButtonText}>← Back</Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.title}>🏥 Register New Provider</Text>
+                    <Text style={styles.subtitle}>
+                        You'll become the first administrator
+                    </Text>
+
+                    <View style={styles.priceCallout}>
+                        <Text style={styles.priceCalloutText}>
+                            🎉 100% FREE - No monthly fees ever!
+                        </Text>
+                    </View>
+
+                    <View style={styles.form}>
+                        <Text style={styles.label}>Provider Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="e.g., Atlanta Medical Center"
+                            value={providerName}
+                            onChangeText={setProviderName}
+                            autoCapitalize="words"
+                        />
+
+                        <Text style={styles.label}>Provider Type</Text>
+                        <View style={styles.roleButtons}>
+                            {[
+                                { value: 'hospital', label: 'Hospital' },
+                                { value: 'clinic', label: 'Clinic' },
+                                { value: 'individual', label: 'Individual' }
+                            ].map((type) => (
+                                <TouchableOpacity
+                                    key={type.value}
+                                    style={[
+                                        styles.roleButton,
+                                        providerType === type.value && styles.roleButtonActive
+                                    ]}
+                                    onPress={() => setProviderType(type.value)}
+                                >
+                                    <Text style={[
+                                        styles.roleButtonText,
+                                        providerType === type.value && styles.roleButtonTextActive
+                                    ]}>
+                                        {type.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <Text style={styles.label}>Your First Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="First Name"
+                            value={adminFirstName}
+                            onChangeText={setAdminFirstName}
+                            autoCapitalize="words"
+                        />
+
+                        <Text style={styles.label}>Your Last Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Last Name"
+                            value={adminLastName}
+                            onChangeText={setAdminLastName}
+                            autoCapitalize="words"
+                        />
+
+                        <TouchableOpacity
+                            style={[styles.button, loading && styles.buttonDisabled]}
+                            onPress={handleCreateNewProvider}
+                            disabled={loading}
+                        >
+                            <Text style={styles.buttonText}>
+                                {loading ? 'Registering Provider...' : 'Register Provider & Get Code'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </View>
+        );
+    }
+
+    // mode === 'join'
+    return (
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => setMode(null)}
+                >
+                    <Text style={styles.backButtonText}>← Back</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.title}>⛵ Join Existing Provider</Text>
+                <Text style={styles.subtitle}>
+                    Enter the provider code from your administrator
+                </Text>
+
+                <View style={styles.form}>
+                    <Text style={styles.label}>Provider Code</Text>
+                    <TextInput
+                        style={[styles.input, styles.codeInput]}
+                        placeholder="VPM-XXXX"
+                        value={providerCode}
+                        onChangeText={(text) => setProviderCode(text.toUpperCase())}
+                        autoCapitalize="characters"
+                        maxLength={8}
+                    />
+
+                    <Text style={styles.label}>Your First Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="First Name"
+                        value={firstName}
+                        onChangeText={setFirstName}
+                        autoCapitalize="words"
+                    />
+
+                    <Text style={styles.label}>Your Last Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChangeText={setLastName}
+                        autoCapitalize="words"
+                    />
+
+                    <Text style={styles.label}>Your Role</Text>
+                    <View style={styles.roleButtons}>
+                        {['doctor', 'nurse', 'staff'].map((role) => (
+                            <TouchableOpacity
+                                key={role}
+                                style={[
+                                    styles.roleButton,
+                                    requestedRole === role && styles.roleButtonActive
+                                ]}
+                                onPress={() => setRequestedRole(role)}
+                            >
+                                <Text style={[
+                                    styles.roleButtonText,
+                                    requestedRole === role && styles.roleButtonTextActive
+                                ]}>
+                                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.button, loading && styles.buttonDisabled]}
+                        onPress={handleJoinExistingProvider}
+                        disabled={loading}
+                    >
+                        <Text style={styles.buttonText}>
+                            {loading ? 'Sending Request...' : 'Request to Join Provider'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={styles.note}>
+                        💡 An administrator will review and approve your request
+                    </Text>
+                </View>
+            </ScrollView>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F5E6D3',
+    },
+    scrollContent: {
+        padding: 20,
+        paddingTop: 60,
+        paddingBottom: 40,
+    },
+    backButton: {
+        marginBottom: 20,
+    },
+    backButtonText: {
+        color: '#8B4513',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#2C1810',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#666',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    
+    // PRICING SECTION STYLES
+    pricingSection: {
+        backgroundColor: '#FFF',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 25,
+        borderWidth: 3,
+        borderColor: '#00D084',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    pricingHeader: {
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    pricingBadge: {
+        backgroundColor: '#FF6B6B',
+        color: '#FFF',
+        fontSize: 14,
+        fontWeight: 'bold',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        overflow: 'hidden',
+    },
+    pricingTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#2C1810',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    tierContainer: {
+        marginBottom: 20,
+    },
+    tierCard: {
+        backgroundColor: '#F5E6D3',
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#D4A574',
+    },
+    tierCardHighlight: {
+        backgroundColor: '#E6FFF5',
+        borderWidth: 2,
+        borderColor: '#00D084',
+    },
+    tierName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2C1810',
+        marginBottom: 4,
+    },
+    tierRange: {
+        fontSize: 13,
+        color: '#666',
+        marginBottom: 8,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    originalPrice: {
+        fontSize: 16,
+        color: '#999',
+        textDecorationLine: 'line-through',
+        textDecorationStyle: 'solid',
+    },
+    salePrice: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#00D084',
+    },
+    savingsBox: {
+        backgroundColor: '#00D084',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 15,
+        alignItems: 'center',
+    },
+    savingsText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#FFF',
+        marginBottom: 5,
+    },
+    savingsSubtext: {
+        fontSize: 13,
+        color: '#FFF',
+        textAlign: 'center',
+    },
+    featuresList: {
+        backgroundColor: '#F5E6D3',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 15,
+    },
+    featuresTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2C1810',
+        marginBottom: 10,
+    },
+    featureItem: {
+        fontSize: 14,
+        color: '#2C1810',
+        marginBottom: 6,
+        paddingLeft: 10,
+    },
+    urgencyBox: {
+        backgroundColor: '#E6FFF5',
+        borderRadius: 10,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#00D084',
+        alignItems: 'center',
+    },
+    urgencyText: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#008D5A',
+        marginBottom: 4,
+    },
+    urgencySubtext: {
+        fontSize: 12,
+        color: '#666',
+    },
+
+    // OPTION CARDS
+    optionCard: {
+        backgroundColor: '#FFF',
+        borderRadius: 12,
+        padding: 20,
+        marginBottom: 15,
+        borderWidth: 2,
+        borderColor: '#D4A574',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    optionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#2C1810',
+        marginBottom: 8,
+    },
+    optionDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 8,
+    },
+    optionPrice: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#00D084',
+    },
+    
+    // FORM STYLES
+    priceCallout: {
+        backgroundColor: '#00D084',
+        borderRadius: 10,
+        padding: 15,
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    priceCalloutText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    form: {
+        width: '100%',
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#2C1810',
+        marginBottom: 8,
+        marginTop: 15,
+    },
+    input: {
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        padding: 15,
+        fontSize: 16,
+        borderWidth: 1,
+        borderColor: '#D4A574',
+    },
+    codeInput: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        letterSpacing: 2,
+    },
+    roleButtons: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 10,
+    },
+    roleButton: {
+        flex: 1,
+        backgroundColor: '#FFF',
+        borderRadius: 8,
+        padding: 12,
+        borderWidth: 2,
+        borderColor: '#D4A574',
+        alignItems: 'center',
+    },
+    roleButtonActive: {
+        backgroundColor: '#8B4513',
+        borderColor: '#8B4513',
+    },
+    roleButtonText: {
+        color: '#2C1810',
+        fontWeight: '600',
+    },
+    roleButtonTextActive: {
+        color: '#FFF',
+    },
+    button: {
+        backgroundColor: '#8B4513',
+        borderRadius: 8,
+        padding: 16,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    buttonDisabled: {
+        backgroundColor: '#CCC',
+    },
+    buttonText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    note: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginTop: 15,
+        fontStyle: 'italic',
+    },
+});

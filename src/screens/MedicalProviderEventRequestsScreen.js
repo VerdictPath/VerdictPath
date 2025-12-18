@@ -191,7 +191,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
           <Text style={styles.headerTitle}>Event Requests</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B4513" />
+          <ActivityIndicator size="large" color="#115E59" />
         </View>
       </View>
     );
@@ -440,10 +440,10 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5E6D3',
+    backgroundColor: '#F5F7FA',
   },
   header: {
-    backgroundColor: '#8B4513',
+    backgroundColor: '#115E59',
     padding: 20,
     paddingTop: 40,
     flexDirection: 'row',
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#8B4513',
+    color: '#115E59',
     marginBottom: 8,
   },
   emptySubtext: {
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#8B4513',
+    borderColor: '#115E59',
   },
   requestHeader: {
     flexDirection: 'row',
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   requestTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#115E59',
     flex: 1,
   },
   statusBadge: {
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#115E59',
     marginBottom: 16,
   },
   formScroll: {
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8B4513',
+    color: '#115E59',
     marginTop: 12,
     marginBottom: 6,
   },
@@ -600,7 +600,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   patientChipSelected: {
-    backgroundColor: '#8B4513',
+    backgroundColor: '#115E59',
     borderColor: '#D4AF37',
   },
   patientChipText: {
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   typeButtonSelected: {
-    backgroundColor: '#8B4513',
+    backgroundColor: '#115E59',
     borderColor: '#D4AF37',
   },
   typeButtonText: {
@@ -648,11 +648,11 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#8B4513',
+    borderColor: '#115E59',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#8B4513',
+    color: '#115E59',
     fontWeight: '600',
     fontSize: 16,
   },
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 14,
     borderRadius: 8,
-    backgroundColor: '#8B4513',
+    backgroundColor: '#115E59',
     alignItems: 'center',
   },
   submitButtonText: {
@@ -685,22 +685,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#115E59',
     marginTop: 20,
     marginBottom: 12,
   },
   proposedDateCard: {
-    backgroundColor: '#F5E6D3',
+    backgroundColor: '#F5F7FA',
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#8B4513',
+    borderColor: '#115E59',
   },
   proposedDateLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8B4513',
+    color: '#115E59',
     marginBottom: 4,
   },
   proposedDateTime: {
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   closeButton: {
-    backgroundColor: '#8B4513',
+    backgroundColor: '#115E59',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',

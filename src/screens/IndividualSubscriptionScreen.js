@@ -11,40 +11,19 @@ const INDIVIDUAL_PRICING = {
     annual: 0,
     features: [
       '⚓ Interactive Litigation Roadmap',
-      '📹 Basic Video Library Access',
+      '📹 Full Video Library Access',
       '🪙 Gamification & Coin Rewards',
       '🏴‍☠️ Pirate-Themed Experience',
-      '📱 Mobile & Web Access'
-    ],
-    description: 'Perfect for getting started'
-  },
-  basic: {
-    name: 'Basic',
-    monthly: 9.99,
-    annual: 99.99,
-    features: [
-      '✅ Everything in Free',
+      '📱 Mobile & Web Access',
       '📚 Premium Educational Content',
       '📅 Calendar Integration',
       '🔔 Priority Notifications',
-      '⭐ Enhanced Support'
-    ],
-    description: 'For active case management',
-    savings: '17% savings with annual'
-  },
-  premium: {
-    name: 'Premium',
-    monthly: 19.99,
-    annual: 199.99,
-    features: [
-      '✅ Everything in Basic',
       '🏥 Medical Hub Access (HIPAA-Compliant)',
       '📊 Advanced Analytics Dashboard',
       '💰 Settlement Disbursement Receiving',
       '🏆 Premium Badge & Recognition'
     ],
-    description: 'Complete case management suite',
-    savings: '17% savings with annual'
+    description: 'Complete case management suite - 100% FREE'
   }
 };
 
@@ -258,49 +237,16 @@ const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged 
         </Text>
       </View>
 
-      <View style={styles.billingToggle}>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            billingCycle === 'monthly' && styles.activeToggle
-          ]}
-          onPress={() => setBillingCycle('monthly')}
-        >
-          <Text style={[
-            styles.toggleText,
-            billingCycle === 'monthly' && styles.activeToggleText
-          ]}>
-            Monthly
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            billingCycle === 'annual' && styles.activeToggle
-          ]}
-          onPress={() => setBillingCycle('annual')}
-        >
-          <Text style={[
-            styles.toggleText,
-            billingCycle === 'annual' && styles.activeToggleText
-          ]}>
-            Annual
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.tiersContainer}>
         {renderTierCard('free')}
-        {renderTierCard('basic')}
-        {renderTierCard('premium')}
       </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerNote}>
-          💡 Premium features include HIPAA-compliant medical document storage and the ability to receive settlement disbursements directly.
+          💡 All features are included for FREE - HIPAA-compliant medical document storage, settlement disbursement receiving, and more!
         </Text>
         <Text style={styles.footerNote}>
-          📱 All plans include mobile and web access.
+          📱 Includes full mobile and web access.
         </Text>
       </View>
     </ScrollView>

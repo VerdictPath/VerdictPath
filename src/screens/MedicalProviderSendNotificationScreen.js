@@ -214,7 +214,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={medicalProviderTheme.colors.primary} />
           <Text style={styles.loadingText}>Loading patients...</Text>
         </View>
       </View>
