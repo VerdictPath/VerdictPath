@@ -17,6 +17,17 @@ const getMedicalProviderStyles = () => ({
   },
 });
 
+const getLawFirmStyles = () => ({
+  container: {
+    flex: 1,
+    backgroundColor: theme.lawFirm?.background || '#1a1a2e',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+});
+
 const NOTIFICATION_TYPES = [
   { key: 'all', label: 'All', icon: '📬' },
   { key: 'case_update', label: 'Case Updates', icon: '📋' },
@@ -55,7 +66,9 @@ const getNotificationTypeIcon = (type) => {
 const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedded = false }) => {
   const { notifications, isLoading, refreshNotifications, markAllAsRead, unreadCount } = useNotifications();
   const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  const isLawFirm = user?.userType === 'law_firm' || user?.type === 'lawfirm';
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
+  const lfStyles = isLawFirm ? getLawFirmStyles() : null;
   const [activeTab, setActiveTab] = useState('inbox');
   const [readFilter, setReadFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -381,6 +394,16 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
     return (
       <View style={mpStyles.container}>
         <View style={mpStyles.overlay}>
+          {renderContent()}
+        </View>
+      </View>
+    );
+  }
+
+  if (isLawFirm) {
+    return (
+      <View style={lfStyles.container}>
+        <View style={lfStyles.overlay}>
           {renderContent()}
         </View>
       </View>
