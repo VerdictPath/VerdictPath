@@ -111,6 +111,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [showClientDropdownAvailability, setShowClientDropdownAvailability] = useState(false);
+  const [showClientPickerEvent, setShowClientPickerEvent] = useState(false);
+  const [clientSearchEvent, setClientSearchEvent] = useState('');
 
   const sortedClients = useMemo(() => {
     return [...clients].sort((a, b) => {
@@ -136,6 +138,19 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
              fullName.includes(search) || reverseName.includes(search);
     });
   }, [sortedClients, clientSearch]);
+
+  const filteredClientsEvent = useMemo(() => {
+    if (!clientSearchEvent.trim()) return sortedClients;
+    const search = clientSearchEvent.toLowerCase().trim();
+    return sortedClients.filter((client) => {
+      const firstName = (client.first_name || client.firstName || '').toLowerCase();
+      const lastName = (client.last_name || client.lastName || '').toLowerCase();
+      const email = (client.email || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`;
+      return firstName.includes(search) || lastName.includes(search) || 
+             fullName.includes(search) || email.includes(search);
+    });
+  }, [sortedClients, clientSearchEvent]);
 
   const getClientDisplayName = (client) => {
     const firstName = client.first_name || client.firstName || '';
@@ -1815,35 +1830,115 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.settingsDescription}>
                 Select a client to automatically add this event to their calendar
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clientScrollView}>
-                <TouchableOpacity
-                  style={[
-                    styles.clientChip,
-                    !newEvent.selectedClientId && styles.clientChipSelected
-                  ]}
-                  onPress={() => setNewEvent({ ...newEvent, selectedClientId: '' })}
-                >
-                  <Icon name="account-off" size={16} color={!newEvent.selectedClientId ? '#C0C0C0' : '#999'} />
-                  <Text style={[styles.clientChipText, !newEvent.selectedClientId && styles.clientChipTextSelected]}>
-                    Don't Share
+              <TouchableOpacity
+                style={styles.clientPickerButton}
+                onPress={() => setShowClientPickerEvent(!showClientPickerEvent)}
+              >
+                <View style={styles.clientPickerContent}>
+                  <Icon 
+                    name={newEvent.selectedClientId ? 'account' : 'account-off'} 
+                    size={20} 
+                    color={newEvent.selectedClientId ? '#C0C0C0' : '#999'} 
+                  />
+                  <Text style={[
+                    styles.clientPickerText,
+                    newEvent.selectedClientId && styles.clientPickerTextSelected
+                  ]}>
+                    {newEvent.selectedClientId 
+                      ? (() => {
+                          const selected = clients.find(c => c.id === newEvent.selectedClientId);
+                          return selected ? `${selected.first_name || selected.firstName} ${selected.last_name || selected.lastName}` : 'Select Client';
+                        })()
+                      : "Don't Share"
+                    }
                   </Text>
-                </TouchableOpacity>
-                {clients.map((client) => (
-                  <TouchableOpacity
-                    key={client.id}
-                    style={[
-                      styles.clientChip,
-                      newEvent.selectedClientId === client.id && styles.clientChipSelected
-                    ]}
-                    onPress={() => setNewEvent({ ...newEvent, selectedClientId: client.id })}
-                  >
-                    <Icon name="account" size={16} color={newEvent.selectedClientId === client.id ? '#C0C0C0' : '#999'} />
-                    <Text style={[styles.clientChipText, newEvent.selectedClientId === client.id && styles.clientChipTextSelected]}>
-                      {client.first_name} {client.last_name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                </View>
+                <Text style={styles.dropdownIconClient}>{showClientPickerEvent ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+
+              {showClientPickerEvent && (
+                <View style={styles.clientDropdown}>
+                  <View style={styles.clientSearchContainer}>
+                    <Icon name="magnify" size={20} color="#999" />
+                    <TextInput
+                      style={styles.clientSearchInputDropdown}
+                      placeholder="Search clients..."
+                      placeholderTextColor="#999"
+                      value={clientSearchEvent}
+                      onChangeText={setClientSearchEvent}
+                      autoCapitalize="none"
+                    />
+                    {clientSearchEvent.length > 0 && (
+                      <TouchableOpacity onPress={() => setClientSearchEvent('')}>
+                        <Icon name="close-circle" size={18} color="#999" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  
+                  <ScrollView style={styles.clientDropdownList} nestedScrollEnabled={true}>
+                    <TouchableOpacity
+                      style={[
+                        styles.clientDropdownItem,
+                        !newEvent.selectedClientId && styles.clientDropdownItemSelected
+                      ]}
+                      onPress={() => {
+                        setNewEvent({ ...newEvent, selectedClientId: '' });
+                        setShowClientPickerEvent(false);
+                        setClientSearchEvent('');
+                      }}
+                    >
+                      <Icon name="account-off" size={20} color={!newEvent.selectedClientId ? '#C0C0C0' : '#999'} />
+                      <Text style={[
+                        styles.clientDropdownItemText,
+                        !newEvent.selectedClientId && styles.clientDropdownItemTextSelected
+                      ]}>
+                        Don't Share
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {filteredClientsEvent.length === 0 && clientSearchEvent ? (
+                      <View style={styles.noResultsContainer}>
+                        <Text style={styles.noResultsText}>No clients found matching "{clientSearchEvent}"</Text>
+                      </View>
+                    ) : (
+                      filteredClientsEvent.map((client) => (
+                        <TouchableOpacity
+                          key={client.id}
+                          style={[
+                            styles.clientDropdownItem,
+                            newEvent.selectedClientId === client.id && styles.clientDropdownItemSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, selectedClientId: client.id });
+                            setShowClientPickerEvent(false);
+                            setClientSearchEvent('');
+                          }}
+                        >
+                          <Icon 
+                            name="account" 
+                            size={20} 
+                            color={newEvent.selectedClientId === client.id ? '#C0C0C0' : '#999'} 
+                          />
+                          <View style={styles.clientDropdownItemInfo}>
+                            <Text style={[
+                              styles.clientDropdownItemText,
+                              newEvent.selectedClientId === client.id && styles.clientDropdownItemTextSelected
+                            ]}>
+                              {client.first_name || client.firstName} {client.last_name || client.lastName}
+                            </Text>
+                            {client.email && (
+                              <Text style={styles.clientDropdownItemEmail}>{client.email}</Text>
+                            )}
+                          </View>
+                          {newEvent.selectedClientId === client.id && (
+                            <Icon name="check" size={20} color="#C0C0C0" />
+                          )}
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -2412,6 +2507,99 @@ const styles = StyleSheet.create({
   clientChipTextSelected: {
     color: '#C0C0C0',
     fontWeight: '600'
+  },
+  clientPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8
+  },
+  clientPickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  clientPickerText: {
+    color: '#999',
+    fontSize: 15
+  },
+  clientPickerTextSelected: {
+    color: '#C0C0C0',
+    fontWeight: '600'
+  },
+  dropdownIconClient: {
+    color: '#C0C0C0',
+    fontSize: 14
+  },
+  clientDropdown: {
+    marginTop: 8,
+    backgroundColor: 'rgba(30, 30, 30, 0.98)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    maxHeight: 250,
+    overflow: 'hidden'
+  },
+  clientSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(192, 192, 192, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8
+  },
+  clientSearchInputDropdown: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    paddingVertical: 4
+  },
+  clientDropdownList: {
+    maxHeight: 200
+  },
+  clientDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+  },
+  clientDropdownItemSelected: {
+    backgroundColor: 'rgba(192, 192, 192, 0.15)'
+  },
+  clientDropdownItemInfo: {
+    flex: 1
+  },
+  clientDropdownItemText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  clientDropdownItemTextSelected: {
+    color: '#C0C0C0'
+  },
+  clientDropdownItemEmail: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 2
+  },
+  noResultsContainer: {
+    padding: 20,
+    alignItems: 'center'
+  },
+  noResultsText: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center'
   },
   daySelector: {
     flexDirection: 'row',
