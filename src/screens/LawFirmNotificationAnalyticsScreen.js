@@ -175,7 +175,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Client Tracking</Text>
+          <Text style={styles.headerTitle}>{isMedicalProvider ? 'Patient Tracking' : 'Client Tracking'}</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
@@ -193,7 +193,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📊 Client Tracking</Text>
+        <Text style={styles.headerTitle}>📊 {isMedicalProvider ? 'Patient Tracking' : 'Client Tracking'}</Text>
         <View style={styles.placeholder} />
       </View>
 
