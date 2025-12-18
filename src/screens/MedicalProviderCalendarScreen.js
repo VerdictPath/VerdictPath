@@ -85,7 +85,18 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     isAllDay: true
   });
 
+  const [showPatientPicker, setShowPatientPicker] = useState(false);
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+
   const providerId = user?.medicalProviderId || user?.id;
+
+  const filteredPatients = patients.filter(patient => {
+    if (!patientSearchQuery) return true;
+    const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.toLowerCase();
+    const email = (patient.email || '').toLowerCase();
+    const query = patientSearchQuery.toLowerCase();
+    return fullName.includes(query) || email.includes(query);
+  });
 
   useEffect(() => {
     fetchAllData();
@@ -1418,35 +1429,115 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.settingsDescription}>
                 Select a patient to automatically add this event to their calendar
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.patientScrollView}>
-                <TouchableOpacity
-                  style={[
-                    styles.patientChip,
-                    !newEvent.selectedPatientId && styles.patientChipSelected
-                  ]}
-                  onPress={() => setNewEvent({ ...newEvent, selectedPatientId: '' })}
-                >
-                  <Icon name="account-off" size={16} color={!newEvent.selectedPatientId ? '#FFD700' : '#999'} />
-                  <Text style={[styles.patientChipText, !newEvent.selectedPatientId && styles.patientChipTextSelected]}>
-                    Don't Share
+              <TouchableOpacity
+                style={styles.patientPickerButton}
+                onPress={() => setShowPatientPicker(!showPatientPicker)}
+              >
+                <View style={styles.patientPickerContent}>
+                  <Icon 
+                    name={newEvent.selectedPatientId ? 'account' : 'account-off'} 
+                    size={20} 
+                    color={newEvent.selectedPatientId ? '#FFD700' : '#999'} 
+                  />
+                  <Text style={[
+                    styles.patientPickerText,
+                    newEvent.selectedPatientId && styles.patientPickerTextSelected
+                  ]}>
+                    {newEvent.selectedPatientId 
+                      ? (() => {
+                          const selected = patients.find(p => p.id === newEvent.selectedPatientId);
+                          return selected ? `${selected.first_name} ${selected.last_name}` : 'Select Patient';
+                        })()
+                      : "Don't Share"
+                    }
                   </Text>
-                </TouchableOpacity>
-                {patients.map((patient) => (
-                  <TouchableOpacity
-                    key={patient.id}
-                    style={[
-                      styles.patientChip,
-                      newEvent.selectedPatientId === patient.id && styles.patientChipSelected
-                    ]}
-                    onPress={() => setNewEvent({ ...newEvent, selectedPatientId: patient.id })}
-                  >
-                    <Icon name="account" size={16} color={newEvent.selectedPatientId === patient.id ? '#FFD700' : '#999'} />
-                    <Text style={[styles.patientChipText, newEvent.selectedPatientId === patient.id && styles.patientChipTextSelected]}>
-                      {patient.first_name} {patient.last_name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                </View>
+                <Text style={styles.dropdownIcon}>{showPatientPicker ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
+
+              {showPatientPicker && (
+                <View style={styles.patientDropdown}>
+                  <View style={styles.patientSearchContainer}>
+                    <Icon name="magnify" size={20} color="#999" />
+                    <TextInput
+                      style={styles.patientSearchInput}
+                      placeholder="Search patients..."
+                      placeholderTextColor="#999"
+                      value={patientSearchQuery}
+                      onChangeText={setPatientSearchQuery}
+                      autoCapitalize="none"
+                    />
+                    {patientSearchQuery.length > 0 && (
+                      <TouchableOpacity onPress={() => setPatientSearchQuery('')}>
+                        <Icon name="close-circle" size={18} color="#999" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  
+                  <ScrollView style={styles.patientDropdownList} nestedScrollEnabled={true}>
+                    <TouchableOpacity
+                      style={[
+                        styles.patientDropdownItem,
+                        !newEvent.selectedPatientId && styles.patientDropdownItemSelected
+                      ]}
+                      onPress={() => {
+                        setNewEvent({ ...newEvent, selectedPatientId: '' });
+                        setShowPatientPicker(false);
+                        setPatientSearchQuery('');
+                      }}
+                    >
+                      <Icon name="account-off" size={20} color={!newEvent.selectedPatientId ? '#FFD700' : '#999'} />
+                      <Text style={[
+                        styles.patientDropdownItemText,
+                        !newEvent.selectedPatientId && styles.patientDropdownItemTextSelected
+                      ]}>
+                        Don't Share
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {filteredPatients.length === 0 && patientSearchQuery ? (
+                      <View style={styles.noResultsContainer}>
+                        <Text style={styles.noResultsText}>No patients found matching "{patientSearchQuery}"</Text>
+                      </View>
+                    ) : (
+                      filteredPatients.map((patient) => (
+                        <TouchableOpacity
+                          key={patient.id}
+                          style={[
+                            styles.patientDropdownItem,
+                            newEvent.selectedPatientId === patient.id && styles.patientDropdownItemSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, selectedPatientId: patient.id });
+                            setShowPatientPicker(false);
+                            setPatientSearchQuery('');
+                          }}
+                        >
+                          <Icon 
+                            name="account" 
+                            size={20} 
+                            color={newEvent.selectedPatientId === patient.id ? '#FFD700' : '#999'} 
+                          />
+                          <View style={styles.patientDropdownItemInfo}>
+                            <Text style={[
+                              styles.patientDropdownItemText,
+                              newEvent.selectedPatientId === patient.id && styles.patientDropdownItemTextSelected
+                            ]}>
+                              {patient.first_name} {patient.last_name}
+                            </Text>
+                            {patient.email && (
+                              <Text style={styles.patientDropdownItemEmail}>{patient.email}</Text>
+                            )}
+                          </View>
+                          {newEvent.selectedPatientId === patient.id && (
+                            <Icon name="check" size={20} color="#FFD700" />
+                          )}
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             <View style={styles.inputGroup}>
@@ -1954,6 +2045,99 @@ const styles = StyleSheet.create({
   patientChipTextSelected: {
     color: '#FFD700',
     fontWeight: '600'
+  },
+  patientPickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8
+  },
+  patientPickerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  patientPickerText: {
+    color: '#999',
+    fontSize: 15
+  },
+  patientPickerTextSelected: {
+    color: '#FFD700',
+    fontWeight: '600'
+  },
+  dropdownIcon: {
+    color: '#FFD700',
+    fontSize: 14
+  },
+  patientDropdown: {
+    marginTop: 8,
+    backgroundColor: 'rgba(30, 30, 30, 0.98)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    maxHeight: 250,
+    overflow: 'hidden'
+  },
+  patientSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 215, 0, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8
+  },
+  patientSearchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    paddingVertical: 4
+  },
+  patientDropdownList: {
+    maxHeight: 200
+  },
+  patientDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+  },
+  patientDropdownItemSelected: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)'
+  },
+  patientDropdownItemInfo: {
+    flex: 1
+  },
+  patientDropdownItemText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  patientDropdownItemTextSelected: {
+    color: '#FFD700'
+  },
+  patientDropdownItemEmail: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 2
+  },
+  noResultsContainer: {
+    padding: 20,
+    alignItems: 'center'
+  },
+  noResultsText: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center'
   },
   daySelector: {
     flexDirection: 'row',
