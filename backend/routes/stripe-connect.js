@@ -4,9 +4,14 @@
 
 const express = require('express');
 const router = express.Router();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const { authenticateToken } = require('../middleware/auth');
 const db = require('../config/db');
+
+// Warn if Stripe is not configured
+if (!stripe) {
+  console.warn('⚠️  STRIPE_SECRET_KEY not found - Stripe Connect routes will be disabled');
+}
 
 // Get base URL for redirects
 const getBaseUrl = () => {

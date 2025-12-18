@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,52 +6,168 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  useWindowDimensions,
+  Platform,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
 const LandingScreen = ({ onNavigate }) => {
-  const videoRef = useRef(null);
-  const { width, height } = useWindowDimensions();
+  // Video source - memoized to prevent recreation
+  const videoSource = useMemo(() => 
+    require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4"),
+    []
+  );
 
-  // Always use CONTAIN mode to prevent cropping and show full video
-  // Video will scale down smoothly when screen size changes
-  const resizeMode = ResizeMode.CONTAIN;
+  // Enable video with performance optimizations
+  const [enableVideo, setEnableVideo] = useState(true);
 
-  // Use full screen dimensions - CONTAIN mode will ensure full video is visible
-  // without cropping, maintaining aspect ratio
-  const videoWidth = width;
-  const videoHeight = height;
+  // Create video player only if video is enabled
+  const player = useVideoPlayer(enableVideo ? videoSource : null);
 
+  // Configure player once on mount with aggressive performance optimizations
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playAsync();
-    }
-  }, []);
+    if (!player || !enableVideo) return;
+
+    // Set all player properties for maximum performance
+    player.loop = true;
+    player.muted = true;
+    // Slightly reduce playback rate to reduce lag (0.95 = 95% speed)
+    player.playbackRate = 0.95;
+    
+    // Longer delay to let UI fully render and settle before starting video
+    // Mobile may need more time
+    const delay = Platform.OS === 'web' ? 800 : 1000;
+    
+    const waitForVideoLoad = () => {
+      // Check if video is loaded (duration > 0 means video metadata is loaded)
+      if (player && player.duration > 0) {
+        return true;
+      }
+      return false;
+    };
+
+    const startPlayback = async () => {
+      try {
+        // Wait for video to load on mobile - check multiple times
+        let attempts = 0;
+        const maxAttempts = Platform.OS === 'web' ? 5 : 20; // More attempts on mobile
+        const checkInterval = 100; // Check every 100ms
+
+        while (attempts < maxAttempts && !waitForVideoLoad()) {
+          await new Promise(resolve => setTimeout(resolve, checkInterval));
+          attempts++;
+        }
+
+        if (!waitForVideoLoad()) {
+          console.warn('[LandingScreen] Video did not load after waiting, attempting to play anyway');
+        }
+
+        if (player && !player.playing) {
+          // Start playback with reduced rate for smoother playback
+          player.playbackRate = 0.95;
+          
+          // Try to play
+          await player.play();
+          
+          // On Android, play() may resolve but not actually start playing
+          // Wait a moment and check if it's actually playing
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // If still not playing, try again (Android sometimes needs this)
+          if (!player.playing && Platform.OS !== 'web') {
+            console.log('[LandingScreen] Play did not start, retrying...');
+            await player.play();
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          
+          console.log('[LandingScreen] Video playback started on', Platform.OS);
+          console.log('[LandingScreen] Player state:', {
+            playing: player.playing,
+            currentTime: player.currentTime,
+            duration: player.duration,
+          });
+          
+          // If still not playing after retry, try once more with a delay
+          if (!player.playing && Platform.OS !== 'web') {
+            console.log('[LandingScreen] Still not playing, final retry...');
+            setTimeout(async () => {
+              try {
+                await player.play();
+                console.log('[LandingScreen] Final retry - playing:', player.playing);
+              } catch (e) {
+                console.error('[LandingScreen] Final retry error:', e);
+              }
+            }, 500);
+          }
+        }
+      } catch (error) {
+        console.error('[LandingScreen] Play error:', error);
+        // Retry once on mobile if it fails
+        if (Platform.OS !== 'web') {
+          setTimeout(async () => {
+            try {
+              // Wait a bit more for video to load
+              await new Promise(resolve => setTimeout(resolve, 500));
+              if (player && !player.playing && waitForVideoLoad()) {
+                await player.play();
+                console.log('[LandingScreen] Video playback retry successful');
+              } else {
+                console.warn('[LandingScreen] Video still not loaded on retry');
+              }
+            } catch (retryError) {
+              console.error('[LandingScreen] Retry failed:', retryError);
+              setEnableVideo(false);
+            }
+          }, 1000);
+        } else {
+          setEnableVideo(false);
+        }
+      }
+    };
+    
+    const startTimer = setTimeout(startPlayback, delay);
+    
+    return () => {
+      clearTimeout(startTimer);
+    };
+  }, [player, enableVideo]);
+
 
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer}>
-        <Video
-          ref={videoRef}
-          source={require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4")}
-          style={[
-            styles.backgroundVideo,
-            { width: videoWidth, height: videoHeight },
-          ]}
-          resizeMode={resizeMode}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+        {enableVideo && player ? (
+          <VideoView
+            player={player}
+            style={[
+              styles.backgroundVideo,
+              Platform.OS !== 'web' && styles.backgroundVideoMobile
+            ]}
+            contentFit="cover"
+            nativeControls={false}
+            allowsFullscreen={false}
+            allowsPictureInPicture={false}
+            requiresLinearPlayback={false}
+            pointerEvents="none"
+            // Performance optimizations
+            allowsExternalPlayback={false}
+            // Ensure video fills on mobile
+            {...(Platform.OS !== 'web' && { 
+              entersFullscreenWhenPlayerEntersFullscreen: false,
+            })}
+          />
+        ) : (
+          <View style={[styles.backgroundVideo, styles.staticBackground]} />
+        )}
       </View>
 
       <ScrollView
         style={styles.overlay}
         contentContainerStyle={styles.overlayContent}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        scrollEventThrottle={16}
       >
         {/* Verdict Path Logo */}
         <View style={styles.logoContainer}>
@@ -151,13 +267,24 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "100%",
     height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: "#000",
     overflow: "hidden",
   },
   backgroundVideo: {
-    alignSelf: "center",
+    width: "100%",
+    height: "100%",
+    minWidth: "100%",
+    minHeight: "100%",
+  },
+  backgroundVideoMobile: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  staticBackground: {
+    backgroundColor: "#0a0a1a",
   },
   overlay: {
     flex: 1,

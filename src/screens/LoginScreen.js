@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
+  Platform,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 
@@ -24,7 +25,6 @@ const LoginScreen = ({
   firmCode,
   setFirmCode,
 }) => {
-  const videoRef = useRef(null);
   const { width, height } = useWindowDimensions();
 
   // Select video source based on screen width (matching your settings)
@@ -40,63 +40,157 @@ const LoginScreen = ({
     }
   }, [width]);
 
-  // Use CONTAIN mode to show full video centered (no cropping)
-  const resizeMode = ResizeMode.CONTAIN;
+  // Enable video with performance optimizations
+  const [enableVideo, setEnableVideo] = useState(true);
 
+  // Create video player only if video is enabled
+  const player = useVideoPlayer(enableVideo ? videoSource : null);
+
+  // Configure player settings with aggressive performance optimizations
   useEffect(() => {
-    const loadVideo = async () => {
-      if (videoRef.current) {
-        try {
-          // Unload current video
-          try {
-            await videoRef.current.unloadAsync();
-          } catch (unloadError) {
-            // Ignore unload errors (video might not be loaded yet)
+    if (!player || !enableVideo) return;
+
+    // Configure player for maximum performance
+    player.loop = true;
+    player.muted = true;
+    // Slightly reduce playback rate to reduce lag (0.95 = 95% speed)
+    player.playbackRate = 0.95;
+    
+    // Longer delay to let UI fully render and settle before starting video
+    // Mobile may need more time
+    const delay = Platform.OS === 'web' ? 800 : 1000;
+    
+    const waitForVideoLoad = () => {
+      // Check if video is loaded (duration > 0 means video metadata is loaded)
+      if (player && player.duration > 0) {
+        return true;
+      }
+      return false;
+    };
+
+    const startPlayback = async () => {
+      try {
+        // Wait for video to load on mobile - check multiple times
+        let attempts = 0;
+        const maxAttempts = Platform.OS === 'web' ? 5 : 20; // More attempts on mobile
+        const checkInterval = 100; // Check every 100ms
+
+        while (attempts < maxAttempts && !waitForVideoLoad()) {
+          await new Promise(resolve => setTimeout(resolve, checkInterval));
+          attempts++;
+        }
+
+        if (!waitForVideoLoad()) {
+          console.warn('[LoginScreen] Video did not load after waiting, attempting to play anyway');
+        }
+
+        if (player && !player.playing) {
+          // Start playback with reduced rate for smoother playback
+          player.playbackRate = 0.95;
+          
+          // Try to play
+          await player.play();
+          
+          // On Android, play() may resolve but not actually start playing
+          // Wait a moment and check if it's actually playing
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // If still not playing, try again (Android sometimes needs this)
+          if (!player.playing && Platform.OS !== 'web') {
+            console.log('[LoginScreen] Play did not start, retrying...');
+            await player.play();
+            await new Promise(resolve => setTimeout(resolve, 200));
           }
-
-          // Small delay to ensure unload completes
-          await new Promise((resolve) => setTimeout(resolve, 100));
-
-          // Load new video
-          await videoRef.current.loadAsync(videoSource, {
-            shouldPlay: true,
-            isLooping: true,
-            isMuted: true,
+          
+          console.log('[LoginScreen] Video playback started on', Platform.OS);
+          console.log('[LoginScreen] Player state:', {
+            playing: player.playing,
+            currentTime: player.currentTime,
+            duration: player.duration,
           });
-        } catch (error) {
-          console.error("[LoginScreen] Video load error:", error);
-          // Fallback - try to play whatever is loaded
-          if (videoRef.current) {
-            try {
-              await videoRef.current.playAsync();
-            } catch (playError) {
-              console.error("[LoginScreen] Play error:", playError);
-            }
+          
+          // If still not playing after retry, try once more with a delay
+          if (!player.playing && Platform.OS !== 'web') {
+            console.log('[LoginScreen] Still not playing, final retry...');
+            setTimeout(async () => {
+              try {
+                await player.play();
+                console.log('[LoginScreen] Final retry - playing:', player.playing);
+              } catch (e) {
+                console.error('[LoginScreen] Final retry error:', e);
+              }
+            }, 500);
           }
+        }
+      } catch (error) {
+        console.error("[LoginScreen] Play error:", error);
+        // Retry once on mobile if it fails
+        if (Platform.OS !== 'web') {
+          setTimeout(async () => {
+            try {
+              // Wait a bit more for video to load
+              await new Promise(resolve => setTimeout(resolve, 500));
+              if (player && !player.playing && waitForVideoLoad()) {
+                await player.play();
+                console.log('[LoginScreen] Video playback retry successful');
+              } else {
+                console.warn('[LoginScreen] Video still not loaded on retry');
+              }
+            } catch (retryError) {
+              console.error("[LoginScreen] Retry failed:", retryError);
+              setEnableVideo(false);
+            }
+          }, 1000);
+        } else {
+          setEnableVideo(false);
         }
       }
     };
-    loadVideo();
-  }, [width, videoSource]); // Reload video when screen width changes
+    
+    const startTimer = setTimeout(startPlayback, delay);
+    
+    return () => {
+      clearTimeout(startTimer);
+    };
+  }, [player, videoSource, enableVideo]);
 
   return (
     <View style={commonStyles.container}>
-      <View style={styles.videoContainer} pointerEvents="none">
-        <Video
-          key={`video-${width}`}
-          ref={videoRef}
-          source={videoSource}
-          style={styles.backgroundVideo}
-          resizeMode={resizeMode}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+      <View 
+        style={[
+          styles.videoContainer,
+          Platform.OS !== 'web' && { width, height }
+        ]} 
+        pointerEvents="none"
+      >
+        {enableVideo && player ? (
+          <VideoView
+            player={player}
+            style={[
+              styles.backgroundVideo,
+              Platform.OS !== 'web' && styles.backgroundVideoMobile
+            ]}
+            contentFit="cover"
+            nativeControls={false}
+            allowsFullscreen={false}
+            allowsPictureInPicture={false}
+            requiresLinearPlayback={false}
+            pointerEvents="none"
+            // Performance optimizations
+            allowsExternalPlayback={false}
+            // Ensure video fills on mobile
+            {...(Platform.OS !== 'web' && { 
+              entersFullscreenWhenPlayerEntersFullscreen: false,
+            })}
+          />
+        ) : (
+          <View style={[styles.backgroundVideo, styles.staticBackground]} />
+        )}
         <View style={styles.videoOverlay} />
       </View>
 
       <ScrollView
-        style={styles.scrollContainer}
+        style={[styles.scrollContainer, { backgroundColor: 'transparent' }]}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.formContainer}>
@@ -204,16 +298,27 @@ const styles = StyleSheet.create({
     right: 0,
     width: "100%",
     height: "100%",
-    zIndex: -1,
-    justifyContent: "center",
-    alignItems: "center",
+    zIndex: Platform.OS === 'web' ? -1 : 0,
     backgroundColor: "#000",
     overflow: "hidden",
   },
   backgroundVideo: {
     width: "100%",
     height: "100%",
-    alignSelf: "center",
+    minWidth: "100%",
+    minHeight: "100%",
+    backgroundColor: "#000",
+  },
+  backgroundVideoMobile: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#000",
+  },
+  staticBackground: {
+    backgroundColor: "#0a0a1a",
   },
   videoOverlay: {
     position: "absolute",
