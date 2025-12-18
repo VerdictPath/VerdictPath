@@ -23,7 +23,7 @@ Key technical features include:
 - **Premium Access Control for Settlement Disbursements**: Gating of settlement disbursement features for premium law firm subscribers.
 - **Real-time Firebase Notification System**: Production-ready notification system using Firebase Realtime Database as a sync layer with PostgreSQL as source of truth. Features include custom token authentication, tenant-scoped security rules, dual-write pattern for all notification operations, automatic REST polling fallback when Firebase unavailable, 22 notification templates, deep linking, real-time badge count synchronization, and analytics.
 - **Attorney-Assigned Task System**: Law firms create tasks for clients with priorities, due dates, and coin rewards.
-- **Calendar Integration**: Full device calendar sync via Expo Calendar API, plus external calendar sync with Google Calendar (and Apple Calendar infrastructure) for law firms and medical providers. Features include OAuth2 authentication with HMAC-signed state parameters, encrypted token storage (AES-256-GCM), bidirectional appointment sync, and comprehensive sync logging. External sync accessible via Calendar Settings modal.
+- **Calendar Integration**: Full device calendar sync via Expo Calendar API.
 - **Enhanced Gamification**: 16 achievements, 8 pirate-themed badges with rarity, progress tracking, and a leaderboard system.
 - **Stripe Payment Integration**: Full Stripe payment processing for subscriptions and one-time payments, including Apple Pay and Google Pay.
 - **Settlement Disbursement System**: Law firm portal feature for tracking settlement disbursements, including Stripe Connect.

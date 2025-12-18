@@ -190,7 +190,6 @@ app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/medical-calendar', require('./routes/medicalCalendar'));
 app.use('/api/law-firm-calendar', require('./routes/lawFirmCalendar'));
-app.use('/api/calendar-sync', require('./routes/calendarSync'));
 
 // Admin Portal routes
 app.use('/portal/admin', adminPortalRoutes);
