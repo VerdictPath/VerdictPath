@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ImageBackground, Platform, TextInput } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const pirateShipBackground = require('../../assets/images/pirate-notification-ship.png');
+
+const getMedicalProviderStyles = () => ({
+  container: {
+    flex: 1,
+    backgroundColor: medicalProviderTheme.colors.background,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+});
 
 const NOTIFICATION_TYPES = [
   { key: 'all', label: 'All', icon: '📬' },
@@ -40,8 +52,10 @@ const getNotificationTypeIcon = (type) => {
   }
 };
 
-const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
+const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedded = false }) => {
   const { notifications, isLoading, refreshNotifications, markAllAsRead, unreadCount } = useNotifications();
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const [activeTab, setActiveTab] = useState('inbox');
   const [readFilter, setReadFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -362,6 +376,16 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress }) => {
       </View>
     </View>
   );
+
+  if (isMedicalProvider) {
+    return (
+      <View style={mpStyles.container}>
+        <View style={mpStyles.overlay}>
+          {renderContent()}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ImageBackground

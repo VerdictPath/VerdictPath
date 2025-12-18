@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, ImageBackground, Platform, TextInput, Modal, ScrollView } from 'react-native';
 import { theme } from '../styles/theme';
+import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
 
 const pirateShipBackground = require('../../assets/images/pirate-notification-ship.png');
+
+const getMedicalProviderStyles = () => ({
+  container: {
+    flex: 1,
+    backgroundColor: medicalProviderTheme.colors.background,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+});
 
 const NOTIFICATION_TYPES = [
   { key: 'all', label: 'All', icon: '📬' },
@@ -40,7 +52,9 @@ const getNotificationTypeIcon = (type) => {
   }
 };
 
-const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onViewAnalytics }) => {
+const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onViewAnalytics, embedded = false }) => {
+  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
+  const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -531,6 +545,17 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
       </View>
     </View>
   );
+
+  if (isMedicalProvider) {
+    return (
+      <View style={mpStyles.container}>
+        <View style={mpStyles.overlay}>
+          {renderContent()}
+          {renderDetailModal()}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ImageBackground
