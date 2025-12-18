@@ -113,6 +113,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [showClientDropdownAvailability, setShowClientDropdownAvailability] = useState(false);
+  const [showClientDropdownAddEvent, setShowClientDropdownAddEvent] = useState(false);
 
   const sortedClients = useMemo(() => {
     return [...clients].sort((a, b) => {
@@ -2012,35 +2013,72 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.settingsDescription}>
                 Select a client to automatically add this event to their calendar
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.clientScrollView}>
-                <TouchableOpacity
-                  style={[
-                    styles.clientChip,
-                    !newEvent.selectedClientId && styles.clientChipSelected
-                  ]}
-                  onPress={() => setNewEvent({ ...newEvent, selectedClientId: '' })}
+              <View style={styles.clientSelectorContainer}>
+                <View style={styles.clientSearchContainer}>
+                  <Icon name="magnify" size={20} color="#999" style={styles.searchIcon} />
+                  <TextInput
+                    style={styles.clientSearchInput}
+                    value={clientSearch}
+                    onChangeText={setClientSearch}
+                    placeholder="Search clients..."
+                    placeholderTextColor="#999"
+                  />
+                  {clientSearch.length > 0 && (
+                    <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
+                      <Icon name="close-circle" size={18} color="#999" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity 
+                  style={styles.clientDropdownButton}
+                  onPress={() => setShowClientDropdownAddEvent(!showClientDropdownAddEvent)}
                 >
-                  <Icon name="account-off" size={16} color={!newEvent.selectedClientId ? '#C0C0C0' : '#999'} />
-                  <Text style={[styles.clientChipText, !newEvent.selectedClientId && styles.clientChipTextSelected]}>
-                    Don't Share
+                  <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
+                    {newEvent.selectedClientId 
+                      ? getSelectedClientName(newEvent.selectedClientId)
+                      : "Don't Share (No Client)"}
                   </Text>
+                  <Icon name={showClientDropdownAddEvent ? "chevron-up" : "chevron-down"} size={20} color="#C0C0C0" />
                 </TouchableOpacity>
-                {clients.map((client) => (
-                  <TouchableOpacity
-                    key={client.id}
-                    style={[
-                      styles.clientChip,
-                      newEvent.selectedClientId === client.id && styles.clientChipSelected
-                    ]}
-                    onPress={() => setNewEvent({ ...newEvent, selectedClientId: client.id })}
-                  >
-                    <Icon name="account" size={16} color={newEvent.selectedClientId === client.id ? '#C0C0C0' : '#999'} />
-                    <Text style={[styles.clientChipText, newEvent.selectedClientId === client.id && styles.clientChipTextSelected]}>
-                      {client.first_name} {client.last_name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                {showClientDropdownAddEvent && (
+                  <View style={styles.clientDropdownList}>
+                    <FlatList
+                      data={[{ id: '', first_name: "Don't", last_name: 'Share', isNoClient: true }, ...filteredClients]}
+                      keyExtractor={(item) => item.id?.toString() || 'no-client'}
+                      style={styles.clientFlatList}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={[
+                            styles.clientDropdownItem,
+                            (item.isNoClient ? !newEvent.selectedClientId : newEvent.selectedClientId === item.id) && styles.clientDropdownItemActive
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, selectedClientId: item.isNoClient ? '' : item.id });
+                            setShowClientDropdownAddEvent(false);
+                            setClientSearch('');
+                          }}
+                        >
+                          <Icon 
+                            name={item.isNoClient ? "account-off" : "account"} 
+                            size={18} 
+                            color={(item.isNoClient ? !newEvent.selectedClientId : newEvent.selectedClientId === item.id) ? '#C0C0C0' : '#999'} 
+                            style={{ marginRight: 8 }}
+                          />
+                          <Text style={[
+                            styles.clientDropdownItemText,
+                            (item.isNoClient ? !newEvent.selectedClientId : newEvent.selectedClientId === item.id) && styles.clientDropdownItemTextActive
+                          ]}>
+                            {item.isNoClient ? "Don't Share (No Client)" : getClientDisplayName(item)}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      ListEmptyComponent={
+                        <Text style={styles.noClientsText}>No clients found</Text>
+                      }
+                    />
+                  </View>
+                )}
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
