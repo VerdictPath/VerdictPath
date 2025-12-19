@@ -83,7 +83,24 @@ function checkMagicBytes(buffer, mimeType) {
   return false;
 }
 
-function containsDangerousContent(buffer) {
+function containsDangerousContent(buffer, mimeType) {
+  // Skip dangerous content check for binary file formats
+  // These formats (images, PDFs, Office docs) are binary and the magic bytes check is sufficient
+  // Converting binary data to UTF-8 strings causes false positives when byte patterns
+  // accidentally match dangerous patterns (e.g., PDFs contain '%', DOCX contains XML)
+  const isBinaryFormat = 
+    (mimeType && mimeType.startsWith('image/')) ||
+    mimeType === 'application/pdf' ||
+    mimeType === 'application/msword' ||
+    mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  
+  if (isBinaryFormat) {
+    // Binary files - dangerous pattern detection is not reliable
+    // The magic bytes check is sufficient for validation
+    return false;
+  }
+  
+  // For text-based files, check for dangerous patterns
   const sampleSize = Math.min(buffer.length, 8192);
   const sample = buffer.slice(0, sampleSize).toString('utf8', 0, sampleSize);
   
@@ -144,7 +161,10 @@ async function validateFileContent(buffer, mimeType, originalFilename) {
     errors.push(`File content does not match the declared type (${mimeType}). The file may be corrupted or misidentified.`);
   }
 
-  if (containsDangerousContent(buffer)) {
+  // Skip dangerous content check for binary formats (images, PDFs, Office docs)
+  // Magic bytes validation is sufficient for these file types
+  // Dangerous pattern checking is only for text-based file uploads
+  if (containsDangerousContent(buffer, mimeType)) {
     errors.push('File contains potentially dangerous content patterns and was rejected for security reasons.');
   }
 

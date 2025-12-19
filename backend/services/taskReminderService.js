@@ -56,10 +56,10 @@ async function _sendTaskRemindersInternal() {
         lft.due_date,
         lft.priority,
         lft.client_id,
-        u.phone_encrypted,
+        NULL as phone_encrypted,
         u.email as user_email,
         lf.firm_name,
-        np.sms_notifications_enabled,
+        COALESCE(np.sms_notifications_enabled, false) as sms_notifications_enabled,
         np.task_notifications
       FROM law_firm_tasks lft
       JOIN users u ON u.id = lft.client_id

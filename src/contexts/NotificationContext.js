@@ -331,18 +331,23 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
         }
 
         console.log('✅ Step 1/4: Registering for push notifications...');
-        const pushToken = await NotificationService.registerForPushNotifications();
-        if (pushToken) {
-          const deviceRegistered = await AsyncStorage.getItem(`deviceRegistered_${user.id}`);
-          
-          if (!deviceRegistered || deviceRegistered !== 'true') {
-            console.log('✅ Step 2/4: Registering device with backend...');
-            await NotificationService.registerDeviceWithBackend(token, user.id);
+        try {
+          const pushToken = await NotificationService.registerForPushNotifications();
+          if (pushToken) {
+            const deviceRegistered = await AsyncStorage.getItem(`deviceRegistered_${user.id}`);
+            
+            if (!deviceRegistered || deviceRegistered !== 'true') {
+              console.log('✅ Step 2/4: Registering device with backend...');
+              await NotificationService.registerDeviceWithBackend(token, user.id);
+            } else {
+              console.log('✅ Step 2/4: Device already registered');
+            }
           } else {
-            console.log('✅ Step 2/4: Device already registered');
+            console.log('⚠️ Step 2/4: No push token available (non-blocking)');
           }
-        } else {
-          console.log('⚠️ Step 2/4: No push token available');
+        } catch (pushError) {
+          // Don't block app - push notifications are optional
+          console.warn('⚠️ Push notification registration failed (non-blocking):', pushError.message || pushError);
         }
 
         console.log('✅ Step 3/4: Setting up Firebase real-time listeners...');

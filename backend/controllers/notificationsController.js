@@ -447,7 +447,7 @@ exports.sendNotification = async (req, res) => {
       if (recipientType === 'user') {
         // Get user phone number and SMS preferences
         const userQuery = await pool.query(
-          `SELECT u.phone_encrypted, np.sms_notifications_enabled 
+          `SELECT NULL as phone_encrypted, COALESCE(np.sms_notifications_enabled, false) as sms_notifications_enabled 
            FROM users u
            LEFT JOIN notification_preferences np ON np.user_id = u.id
            WHERE u.id = $1`,

@@ -182,17 +182,20 @@ const uploadMedicalRecord = async (req, res) => {
     const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
     if (!validation.valid) {
       await auditLogger.log({
-        userId,
+        actorId: userId,
+        actorType: req.user?.userType || 'client',
         action: 'UPLOAD_REJECTED',
-        resourceType: 'medical_record',
-        details: {
+        entityType: 'medical_record',
+        status: 'FAILURE',
+        metadata: {
           fileName: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
           rejectionReasons: validation.errors,
           fileHash: validation.fileHash
         },
-        ipAddress: req.ip
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
       });
       return res.status(400).json({ 
         error: 'File validation failed',
@@ -236,18 +239,20 @@ const uploadMedicalRecord = async (req, res) => {
     );
 
     await auditLogger.log({
-      userId,
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
       action: 'UPLOAD_MEDICAL_RECORD',
-      resourceType: 'medical_record',
-      resourceId: result.rows[0].id,
-      details: {
+      entityType: 'medical_record',
+      entityId: result.rows[0].id,
+      metadata: {
         fileName: file.originalname,
         fileSize: uploadResult.fileSize,
         recordType: recordType || 'Medical Record',
         storageKey: uploadResult.key,
         storageType: uploadResult.storageType
       },
-      ipAddress: req.ip
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
     });
 
     const lawFirmQuery = await pool.query(
@@ -317,17 +322,20 @@ const uploadMedicalBill = async (req, res) => {
     const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
     if (!validation.valid) {
       await auditLogger.log({
-        userId,
+        actorId: userId,
+        actorType: req.user?.userType || 'client',
         action: 'UPLOAD_REJECTED',
-        resourceType: 'medical_billing',
-        details: {
+        entityType: 'medical_billing',
+        status: 'FAILURE',
+        metadata: {
           fileName: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
           rejectionReasons: validation.errors,
           fileHash: validation.fileHash
         },
-        ipAddress: req.ip
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
       });
       return res.status(400).json({ 
         error: 'File validation failed',
@@ -382,18 +390,20 @@ const uploadMedicalBill = async (req, res) => {
     );
 
     await auditLogger.log({
-      userId,
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
       action: 'UPLOAD_MEDICAL_BILL',
-      resourceType: 'medical_billing',
-      resourceId: result.rows[0].id,
-      details: {
+      entityType: 'medical_billing',
+      entityId: result.rows[0].id,
+      metadata: {
         fileName: file.originalname,
         fileSize: uploadResult.fileSize,
         billingType: billingType || 'Medical Bill',
         storageKey: uploadResult.key,
         storageType: uploadResult.storageType
       },
-      ipAddress: req.ip
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
     });
 
     const lawFirmQuery = await pool.query(
@@ -431,27 +441,50 @@ const uploadMedicalBill = async (req, res) => {
 // Upload evidence document
 const uploadEvidence = async (req, res) => {
   try {
+    console.log('[Upload Evidence] Request received');
+    console.log('[Upload Evidence] Headers:', {
+      'content-type': req.get('content-type'),
+      'authorization': req.get('authorization') ? 'present' : 'missing'
+    });
+    console.log('[Upload Evidence] Body keys:', Object.keys(req.body));
+    
     const userId = req.user.id;
     const file = req.file;
 
     if (!file) {
+      console.error('[Upload Evidence] No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    console.log('[Upload Evidence] File received:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      bufferLength: file.buffer?.length
+    });
+
     const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    console.log('[Upload Evidence] Validation result:', {
+      valid: validation.valid,
+      errors: validation.errors
+    });
+    
     if (!validation.valid) {
       await auditLogger.log({
-        userId,
+        actorId: userId,
+        actorType: req.user?.userType || 'client',
         action: 'UPLOAD_REJECTED',
-        resourceType: 'evidence',
-        details: {
+        entityType: 'evidence',
+        status: 'FAILURE',
+        metadata: {
           fileName: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
           rejectionReasons: validation.errors,
           fileHash: validation.fileHash
         },
-        ipAddress: req.ip
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
       });
       return res.status(400).json({ 
         error: 'File validation failed',
@@ -510,18 +543,20 @@ const uploadEvidence = async (req, res) => {
     );
 
     await auditLogger.log({
-      userId,
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
       action: 'UPLOAD_EVIDENCE',
-      resourceType: 'evidence',
-      resourceId: result.rows[0].id,
-      details: {
+      entityType: 'evidence',
+      entityId: result.rows[0].id,
+      metadata: {
         fileName: file.originalname,
         fileSize: uploadResult.fileSize,
         evidenceType: evidenceType || 'Document',
         storageKey: uploadResult.key,
         storageType: uploadResult.storageType
       },
-      ipAddress: req.ip
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
     });
 
     const lawFirmQuery = await pool.query(

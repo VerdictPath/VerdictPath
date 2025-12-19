@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform, Alert } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
@@ -11,6 +11,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [viewingDocument, setViewingDocument] = useState(null);
   const [documentLoading, setDocumentLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
@@ -86,7 +87,29 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   };
 
   const viewDocument = async (doc) => {
+    // Check if evidence is expired (30+ days old)
+    const expired = isEvidenceExpired(doc.uploaded_at);
+    
+    if (expired) {
+      Alert.alert(
+        '⚠️ Evidence Expired',
+        'This evidence is 30+ days old and has expired. Expired evidence cannot be viewed.',
+        [
+          {
+            text: 'OK',
+            style: 'default'
+          }
+        ]
+      );
+      return;
+    }
+    
+    proceedWithViewDocument(doc);
+  };
+
+  const proceedWithViewDocument = async (doc) => {
     setDocumentLoading(true);
+    setImageLoading(true); // Reset image loading state when opening new document
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
@@ -99,11 +122,79 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[View Document] Response data:', data);
+        
+        // Make sure presignedUrl is absolute
+        let imageUrl = data.presignedUrl;
+        if (imageUrl && imageUrl.startsWith('/')) {
+          // Relative URL - make it absolute
+          imageUrl = `${API_BASE_URL}${imageUrl}`;
+        }
+        
+        console.log('[View Document] Final image URL:', imageUrl);
+        console.log('[View Document] Storage type:', data.storageType);
+        
         if (isImageFile(doc.mime_type)) {
-          setViewingDocument({
-            ...doc,
-            presignedUrl: data.presignedUrl
-          });
+          // For S3 presigned URLs, use them directly (they're already authenticated)
+          // For local storage URLs, we need to handle authentication
+          if (data.storageType === 's3' || imageUrl.includes('amazonaws.com') || imageUrl.includes('s3.')) {
+            // S3 presigned URL - use directly, no token needed
+            console.log('[View Document] Using S3 presigned URL directly');
+            setViewingDocument({
+              ...doc,
+              presignedUrl: imageUrl
+            });
+          } else {
+            // Local storage - need to fetch with auth or add token
+            try {
+              const imageResponse = await fetch(imageUrl, {
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                }
+              });
+              
+              if (imageResponse.ok) {
+                // Convert to blob and create data URI for React Native Image
+                const blob = await imageResponse.blob();
+                const reader = new FileReader();
+                
+                reader.onloadend = () => {
+                  const base64data = reader.result;
+                  setViewingDocument({
+                    ...doc,
+                    presignedUrl: base64data // Use data URI instead of URL
+                  });
+                };
+                
+                reader.onerror = (error) => {
+                  console.error('[View Document] Error reading blob:', error);
+                  // Fallback to original URL with token in query
+                  const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+                  setViewingDocument({
+                    ...doc,
+                    presignedUrl: urlWithToken
+                  });
+                };
+                
+                reader.readAsDataURL(blob);
+              } else {
+                // If fetch fails, try with token in URL
+                const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+                setViewingDocument({
+                  ...doc,
+                  presignedUrl: urlWithToken
+                });
+              }
+            } catch (fetchError) {
+              console.error('[View Document] Error fetching image:', fetchError);
+              // Fallback: add token to URL
+              const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+              setViewingDocument({
+                ...doc,
+                presignedUrl: urlWithToken
+              });
+            }
+          }
         } else {
           if (Platform.OS === 'web') {
             window.open(data.presignedUrl, '_blank');
@@ -125,6 +216,27 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   };
 
   const downloadDocument = async (doc) => {
+    // Check if evidence is expired
+    const expired = isEvidenceExpired(doc.uploaded_at);
+    
+    if (expired) {
+      Alert.alert(
+        '⚠️ Evidence Expired',
+        'This evidence is 30+ days old and has expired. Expired evidence cannot be downloaded.',
+        [
+          {
+            text: 'OK',
+            style: 'default'
+          }
+        ]
+      );
+      return;
+    }
+    
+    proceedWithDownloadDocument(doc);
+  };
+
+  const proceedWithDownloadDocument = async (doc) => {
     setDocumentLoading(true);
     try {
       const response = await fetch(
@@ -146,11 +258,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       } else {
         const errorData = await response.json();
         console.error('Error fetching document URL:', errorData);
-        alert('Failed to download document. Please try again.');
+        Alert.alert('Error', 'Failed to download document. Please try again.');
       }
     } catch (error) {
       console.error('Error downloading document:', error);
-      alert('Failed to download document. Please try again.');
+      Alert.alert('Error', 'Failed to download document. Please try again.');
     } finally {
       setDocumentLoading(false);
     }
@@ -451,6 +563,16 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     );
   };
 
+  // Check if evidence is expired (1 minute old for testing - change back to 30 days for production)
+  const isEvidenceExpired = (uploadedAt) => {
+    if (!uploadedAt) return false;
+    const uploadDate = new Date(uploadedAt);
+    const today = new Date();
+    // 30 days = 30 * 24 * 60 * 60 * 1000 milliseconds
+    const daysDiff = Math.floor((today - uploadDate) / (1000 * 60 * 60 * 24));
+    return daysDiff >= 30;
+  };
+
   const renderEvidenceTab = () => {
     if (!clientData) return null;
     const { client, evidenceDocuments } = clientData;
@@ -469,8 +591,16 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               </Text>
             </View>
           ) : (
-            evidenceDocuments.documents.map((doc) => (
-              <View key={doc.id} style={styles.documentCard}>
+            evidenceDocuments.documents.map((doc) => {
+              const expired = isEvidenceExpired(doc.uploaded_at);
+              
+              return (
+              <View key={doc.id} style={[styles.documentCard, expired && styles.expiredDocumentCard]}>
+                {expired && (
+                  <View style={styles.expiredBanner}>
+                    <Text style={styles.expiredBannerText}>⚠️ Evidence Expired (30+ days old)</Text>
+                  </View>
+                )}
                 <View style={styles.documentHeader}>
                   <Text style={styles.documentTitle}>
                     {isImageFile(doc.mime_type) ? '🖼️' : '📎'} {doc.title}
@@ -495,20 +625,27 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 )}
                 <Text style={styles.documentDate}>
                   Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+                  {expired && (
+                    <Text style={styles.expiredText}> • Expired</Text>
+                  )}
                 </Text>
                 <View style={styles.documentActions}>
                   <TouchableOpacity 
-                    style={styles.viewButton}
+                    style={[styles.viewButton, expired && styles.viewButtonExpired]}
                     onPress={() => viewDocument(doc)}
-                    disabled={documentLoading}
+                    disabled={documentLoading || expired}
                   >
-                    <Text style={styles.viewButtonText}>
-                      {isImageFile(doc.mime_type) ? '👁️ View Image' : '📥 Download'}
+                    <Text style={[styles.viewButtonText, expired && styles.viewButtonTextDisabled]}>
+                      {expired 
+                        ? '🔒 Expired - Access Denied' 
+                        : (isImageFile(doc.mime_type) ? '👁️ View Image' : '📥 Download')
+                      }
                     </Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            ))
+              );
+            })
           )}
         </View>
 
@@ -634,12 +771,34 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 <Text style={styles.imageModalCloseBtnText}>✕</Text>
               </TouchableOpacity>
             </View>
-            {viewingDocument?.presignedUrl && (
-              <Image 
-                source={{ uri: viewingDocument.presignedUrl }}
-                style={styles.evidenceImage}
-                resizeMode="contain"
-              />
+            {viewingDocument?.presignedUrl ? (
+              <View style={styles.imageContainer}>
+                {imageLoading && (
+                  <View style={styles.imageLoaderContainer}>
+                    <ActivityIndicator size="large" color="#1E3A5F" />
+                    <Text style={styles.imageLoaderText}>Loading image...</Text>
+                  </View>
+                )}
+                <Image 
+                  source={{ uri: viewingDocument.presignedUrl }}
+                  style={[styles.evidenceImage, imageLoading && styles.imageHidden]}
+                  resizeMode="contain"
+                  onError={(error) => {
+                    console.error('[View Document] Image load error:', error);
+                    console.error('[View Document] Failed URL:', viewingDocument.presignedUrl);
+                    setImageLoading(false);
+                  }}
+                  onLoad={() => {
+                    console.log('[View Document] Image loaded successfully');
+                    setImageLoading(false);
+                  }}
+                />
+              </View>
+            ) : (
+              <View style={[styles.evidenceImage, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#1E3A5F" />
+                <Text style={{ textAlign: 'center', padding: 20, color: '#666', marginTop: 10 }}>Loading image...</Text>
+              </View>
             )}
             <View style={styles.imageModalActions}>
               <TouchableOpacity 
@@ -874,6 +1033,37 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderLeftWidth: 4,
     borderLeftColor: '#1E3A5F',
+  },
+  expiredDocumentCard: {
+    backgroundColor: '#FFF5F5',
+    borderLeftColor: '#DC2626',
+    opacity: 0.85,
+  },
+  expiredBanner: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#DC2626',
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 10,
+  },
+  expiredBannerText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  expiredText: {
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  viewButtonExpired: {
+    backgroundColor: '#9CA3AF',
+    opacity: 0.6,
+  },
+  viewButtonTextDisabled: {
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
   documentHeader: {
     flexDirection: 'row',
@@ -1169,10 +1359,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 400,
+    backgroundColor: '#f0f0f0',
+  },
   evidenceImage: {
     width: '100%',
     height: 400,
     backgroundColor: '#f0f0f0',
+  },
+  imageHidden: {
+    opacity: 0,
+  },
+  imageLoaderContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    zIndex: 1,
+  },
+  imageLoaderText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
   },
   imageModalActions: {
     flexDirection: 'row',

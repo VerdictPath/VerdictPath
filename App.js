@@ -209,25 +209,34 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   }, [user?.token, user?.id]);
 
 
-  // Initialize push notifications
+  // Initialize push notifications (non-blocking)
   useEffect(() => {
     const initializeNotifications = async () => {
       try {
-        // Register for push notifications
-        const token = await NotificationService.registerForPushNotifications();
-        if (token) {
-          console.log('Push token obtained:', token);
+        // Register for push notifications (non-blocking - errors won't stop app)
+        try {
+          const token = await NotificationService.registerForPushNotifications();
+          if (token) {
+            console.log('Push token obtained:', token);
+          }
+        } catch (pushError) {
+          // Push notifications are optional - don't block app
+          console.warn('⚠️ Push notification setup failed (non-blocking):', pushError.message || pushError);
         }
 
         // If user is logged in, register device with backend
         if (user?.token && user?.id) {
-          const registered = await NotificationService.registerDeviceWithBackend(user.token, user.id);
-          if (registered) {
-            console.log('Device registered with backend successfully');
-            
-            // Update badge count from server
-            const unreadCount = await NotificationService.fetchUnreadCount(user.token);
-            await NotificationService.setBadgeCount(unreadCount);
+          try {
+            const registered = await NotificationService.registerDeviceWithBackend(user.token, user.id);
+            if (registered) {
+              console.log('Device registered with backend successfully');
+              
+              // Update badge count from server
+              const unreadCount = await NotificationService.fetchUnreadCount(user.token);
+              await NotificationService.setBadgeCount(unreadCount);
+            }
+          } catch (deviceError) {
+            console.warn('⚠️ Device registration failed (non-blocking):', deviceError.message || deviceError);
           }
         }
 
