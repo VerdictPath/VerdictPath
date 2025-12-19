@@ -13,6 +13,68 @@ const {
   burstProtectionLimiter 
 } = require('../middleware/uploadRateLimiter');
 
+// Stream route needs to handle auth via query param (for React Native Image component)
+// So we'll handle auth manually in the route
+router.get('/stream/*', async (req, res) => {
+  try {
+    // Allow token in query parameter for React Native Image component
+    // which doesn't send Authorization headers
+    const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
+    
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+        jwt.verify(token, JWT_SECRET);
+        // Token is valid, proceed
+      } catch (tokenError) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+    } else {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const localKey = req.params[0];
+    
+    if (!localKey || localKey.includes('..')) {
+      return res.status(400).json({ error: 'Invalid file path' });
+    }
+
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const filePath = path.join(uploadsDir, localKey);
+
+    if (!fs.existsSync(filePath)) {
+      console.error(`[Stream] File not found: ${filePath}`);
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.heic': 'image/heic',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp'
+    };
+
+    const mimeType = mimeTypes[ext] || 'application/octet-stream';
+    const fileName = path.basename(filePath);
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Error streaming local file:', error);
+    res.status(500).json({ error: 'Failed to stream file' });
+  }
+});
+
+// All other routes require authentication
 router.use(authenticateToken);
 
 router.post('/medical-record', 
@@ -99,48 +161,6 @@ router.get('/download/*', async (req, res) => {
   } catch (error) {
     console.error('Error serving local file:', error);
     res.status(500).json({ error: 'Failed to serve file' });
-  }
-});
-
-router.get('/stream/*', async (req, res) => {
-  try {
-    const localKey = req.params[0];
-    
-    if (!localKey || localKey.includes('..')) {
-      return res.status(400).json({ error: 'Invalid file path' });
-    }
-
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
-    const filePath = path.join(uploadsDir, localKey);
-
-    if (!fs.existsSync(filePath)) {
-      console.error(`[Stream] File not found: ${filePath}`);
-      return res.status(404).json({ error: 'File not found' });
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.heic': 'image/heic',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp'
-    };
-
-    const mimeType = mimeTypes[ext] || 'application/octet-stream';
-    const fileName = path.basename(filePath);
-
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.sendFile(filePath);
-  } catch (error) {
-    console.error('Error streaming local file:', error);
-    res.status(500).json({ error: 'Failed to stream file' });
   }
 });
 

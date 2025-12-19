@@ -326,7 +326,7 @@ exports.sendMessage = async (req, res) => {
     try {
       // Get recipient info for all other participants
       const participants = await pool.query(`
-        SELECT cp.participant_type, cp.participant_id, u.phone_encrypted, np.sms_notifications_enabled
+        SELECT cp.participant_type, cp.participant_id, NULL as phone_encrypted, COALESCE(np.sms_notifications_enabled, false) as sms_notifications_enabled
         FROM conversation_participants cp
         LEFT JOIN users u ON u.id = cp.participant_id AND cp.participant_type = 'user'
         LEFT JOIN notification_preferences np ON np.user_id = u.id

@@ -80,6 +80,11 @@ class NotificationService {
 
       const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
       
+      if (!projectId) {
+        console.warn('⚠️ No Expo project ID found - push notifications disabled');
+        return null;
+      }
+      
       const token = await Notifications.getExpoPushTokenAsync({
         projectId,
       });
@@ -89,7 +94,12 @@ class NotificationService {
 
       return this.expoPushToken;
     } catch (error) {
-      console.error('Error getting push token:', error);
+      // Don't block app initialization - just log and continue
+      if (error.message?.includes('EXPERIENCE_NOT_FOUND')) {
+        console.warn('⚠️ Expo project not found - push notifications disabled. This is OK for local development.');
+      } else {
+        console.warn('⚠️ Error getting push token (non-blocking):', error.message || error);
+      }
       return null;
     }
   }

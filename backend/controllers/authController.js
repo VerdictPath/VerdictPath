@@ -159,10 +159,29 @@ exports.registerClient = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('[Register Client] Error:', error);
+    console.error('[Register Client] Error stack:', error.stack);
+    console.error('[Register Client] Error code:', error.code);
+    
     if (error.code === '23505') {
       return res.status(400).json({ message: 'Email already exists' });
     }
-    res.status(500).json({ message: 'Error registering user', error: error.message });
+    
+    // Log detailed error for debugging
+    console.error('[Register Client] Full error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      table: error.table,
+      column: error.column
+    });
+    
+    res.status(500).json({ 
+      message: 'Error registering user', 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

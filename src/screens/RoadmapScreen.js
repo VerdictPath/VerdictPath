@@ -321,19 +321,30 @@ const RoadmapScreen = ({
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 30 }));
 
+      console.log('[Upload] Sending request to:', `${API_BASE_URL}/api/uploads/evidence`);
+      console.log('[Upload] File details:', { fileName, fileType, fileUri: fileUri?.substring(0, 50) });
+      
       const uploadResponse = await fetch(`${API_BASE_URL}/api/uploads/evidence`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
+          // Don't set Content-Type for FormData - browser sets it automatically with boundary
         },
+        credentials: 'include', // Include cookies for authentication
         body: formData,
       });
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 80 }));
 
+      console.log('[Upload] Response status:', uploadResponse.status);
+      
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Upload failed');
+        console.error('[Upload] Error response:', errorData);
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${Array.isArray(errorData.details) ? errorData.details.join(', ') : errorData.details}`
+          : (errorData.error || 'Upload failed');
+        throw new Error(errorMessage);
       }
 
       const uploadData = await uploadResponse.json();
