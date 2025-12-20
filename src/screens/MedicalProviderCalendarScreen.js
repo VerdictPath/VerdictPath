@@ -122,7 +122,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const fetchPatients = async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/medical-providers/${providerId}/patients`,
+        `${API_BASE_URL}/api/medicalprovider/patients`,
         { headers: { 'Authorization': `Bearer ${user.token}` } }
       );
       if (response.ok) {
