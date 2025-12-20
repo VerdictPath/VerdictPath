@@ -1571,15 +1571,15 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                         }}
                         minDate={moment().format('YYYY-MM-DD')}
                         theme={{
-                          backgroundColor: '#1E3A5F',
-                          calendarBackground: '#1E3A5F',
-                          textSectionTitleColor: '#C0C0C0',
-                          dayTextColor: '#fff',
-                          todayTextColor: '#FFD700',
+                          backgroundColor: '#FFFFFF',
+                          calendarBackground: '#FFFFFF',
+                          textSectionTitleColor: '#666',
+                          dayTextColor: '#333',
+                          todayTextColor: '#1E3A5F',
                           selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1a5490',
-                          monthTextColor: '#fff',
-                          arrowColor: '#C0C0C0'
+                          selectedDayBackgroundColor: '#1E3A5F',
+                          monthTextColor: '#1E3A5F',
+                          arrowColor: '#1E3A5F'
                         }}
                       />
                     </View>
@@ -1641,15 +1641,15 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                         }}
                         minDate={moment().format('YYYY-MM-DD')}
                         theme={{
-                          backgroundColor: '#1E3A5F',
-                          calendarBackground: '#1E3A5F',
-                          textSectionTitleColor: '#C0C0C0',
-                          dayTextColor: '#fff',
-                          todayTextColor: '#FFD700',
+                          backgroundColor: '#FFFFFF',
+                          calendarBackground: '#FFFFFF',
+                          textSectionTitleColor: '#666',
+                          dayTextColor: '#333',
+                          todayTextColor: '#1E3A5F',
                           selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1a5490',
-                          monthTextColor: '#fff',
-                          arrowColor: '#C0C0C0'
+                          selectedDayBackgroundColor: '#1E3A5F',
+                          monthTextColor: '#1E3A5F',
+                          arrowColor: '#1E3A5F'
                         }}
                       />
                     </View>
@@ -1711,15 +1711,15 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                         }}
                         minDate={moment().format('YYYY-MM-DD')}
                         theme={{
-                          backgroundColor: '#1E3A5F',
-                          calendarBackground: '#1E3A5F',
-                          textSectionTitleColor: '#C0C0C0',
-                          dayTextColor: '#fff',
-                          todayTextColor: '#FFD700',
+                          backgroundColor: '#FFFFFF',
+                          calendarBackground: '#FFFFFF',
+                          textSectionTitleColor: '#666',
+                          dayTextColor: '#333',
+                          todayTextColor: '#1E3A5F',
                           selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1a5490',
-                          monthTextColor: '#fff',
-                          arrowColor: '#C0C0C0'
+                          selectedDayBackgroundColor: '#1E3A5F',
+                          monthTextColor: '#1E3A5F',
+                          arrowColor: '#1E3A5F'
                         }}
                       />
                     </View>
@@ -3348,7 +3348,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)'
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    overflow: 'visible',
+    zIndex: 1
   },
   optionLabel: {
     color: '#C0C0C0',
