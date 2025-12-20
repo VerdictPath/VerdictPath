@@ -108,12 +108,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.lawFirm.background,
   },
   header: {
-    backgroundColor: theme.lawFirm.headerBackground || '#1a1a2e',
+    backgroundColor: theme.lawFirm.primary,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: theme.lawFirm.primaryDark,
   },
   headerTitle: {
     fontSize: 24,
@@ -123,11 +123,11 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: theme.lawFirm.cardBackground || '#252540',
+    backgroundColor: theme.lawFirm.surface,
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: theme.lawFirm.border,
   },
   tab: {
     flex: 1,
@@ -135,23 +135,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     marginHorizontal: 5,
+    backgroundColor: theme.lawFirm.surfaceAlt,
   },
   activeTab: {
-    backgroundColor: theme.lawFirm.accent || '#4a90d9',
+    backgroundColor: theme.lawFirm.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
+    color: theme.lawFirm.textSecondary,
   },
   activeTabText: {
     color: '#FFFFFF',
   },
   composeTab: {
-    backgroundColor: 'rgba(74, 144, 217, 0.2)',
+    backgroundColor: theme.lawFirm.info + '20',
   },
   composeTabText: {
-    color: theme.lawFirm.accent || '#4a90d9',
+    color: theme.lawFirm.info,
   },
   content: {
     flex: 1,
