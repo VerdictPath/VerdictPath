@@ -409,11 +409,11 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                     )}
                     {record.date_of_service && (
                       <Text style={styles.documentDetail}>
-                        📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
+                        📅 Service: {new Date(record.date_of_service).toLocaleDateString('en-US')}
                       </Text>
                     )}
                     <Text style={styles.documentDate}>
-                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
+                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US')}
                     </Text>
                   </View>
                 ))
@@ -465,11 +465,11 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                       )}
                       {bill.date_of_service && (
                         <Text style={styles.documentDetail}>
-                          📅 Service: {new Date(bill.date_of_service).toLocaleDateString()}
+                          📅 Service: {new Date(bill.date_of_service).toLocaleDateString('en-US')}
                         </Text>
                       )}
                       <Text style={styles.documentDate}>
-                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
+                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US')}
                       </Text>
                     </View>
                   ))}
@@ -520,11 +520,11 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
               )}
               {item.date_of_incident && (
                 <Text style={styles.documentDetail}>
-                  📅 Incident: {new Date(item.date_of_incident).toLocaleDateString()}
+                  📅 Incident: {new Date(item.date_of_incident).toLocaleDateString('en-US')}
                 </Text>
               )}
               <Text style={styles.documentDate}>
-                Uploaded: {new Date(item.uploaded_at).toLocaleDateString()}
+                Uploaded: {new Date(item.uploaded_at).toLocaleDateString('en-US')}
               </Text>
             </View>
           ))

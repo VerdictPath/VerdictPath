@@ -811,7 +811,7 @@ const renderAnalyticsTab = () => {
                       <Text style={styles.firmCardName}>{firm.firm_name || firm.email}</Text>
                       <Text style={styles.firmCardCode}>Code: {firm.firm_code}</Text>
                       <Text style={styles.firmCardMeta}>
-                        {firm.client_count || 0} clients • Connected {new Date(firm.connected_date).toLocaleDateString()}
+                        {firm.client_count || 0} clients • Connected {new Date(firm.connected_date).toLocaleDateString('en-US')}
                       </Text>
                     </View>
                   </View>

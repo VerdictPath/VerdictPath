@@ -236,7 +236,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
               <Text style={styles.patientName}>Patient: {request.patientName}</Text>
               <Text style={styles.eventType}>{request.eventType.replace('_', ' ').toUpperCase()}</Text>
               <Text style={styles.requestDate}>
-                Created: {new Date(request.createdAt).toLocaleDateString()}
+                Created: {new Date(request.createdAt).toLocaleDateString('en-US')}
               </Text>
             </TouchableOpacity>
           ))
@@ -392,10 +392,10 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
                         <View key={date.id} style={styles.proposedDateCard}>
                           <Text style={styles.proposedDateLabel}>Option {index + 1}</Text>
                           <Text style={styles.proposedDateTime}>
-                            {new Date(date.proposedStartTime).toLocaleString()}
+                            {new Date(date.proposedStartTime).toLocaleString('en-US')}
                           </Text>
                           <Text style={styles.proposedDateDuration}>
-                            to {new Date(date.proposedEndTime).toLocaleTimeString()}
+                            to {new Date(date.proposedEndTime).toLocaleTimeString('en-US')}
                           </Text>
                           {selectedRequest.eventRequest.status === 'dates_submitted' && !date.isSelected && (
                             <TouchableOpacity

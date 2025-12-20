@@ -286,7 +286,7 @@ const UserCard = ({ user, onDeactivate, onReactivate, onViewActivity }) => {
 
       {user.lastLogin && (
         <Text style={styles.lastLogin}>
-          Last login: {new Date(user.lastLogin).toLocaleString()}
+          Last login: {new Date(user.lastLogin).toLocaleString('en-US')}
         </Text>
       )}
     </View>
