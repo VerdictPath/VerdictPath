@@ -92,10 +92,11 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const filteredPatients = patients.filter(patient => {
     if (!patientSearchQuery) return true;
-    const fullName = `${patient.first_name || ''} ${patient.last_name || ''}`.toLowerCase();
+    const fullName = `${patient.firstName || patient.first_name || ''} ${patient.lastName || patient.last_name || ''}`.toLowerCase();
+    const displayName = (patient.displayName || '').toLowerCase();
     const email = (patient.email || '').toLowerCase();
     const query = patientSearchQuery.toLowerCase();
-    return fullName.includes(query) || email.includes(query);
+    return fullName.includes(query) || displayName.includes(query) || email.includes(query);
   });
 
   useEffect(() => {
@@ -1438,7 +1439,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                     {newEvent.selectedPatientId 
                       ? (() => {
                           const selected = patients.find(p => p.id === newEvent.selectedPatientId);
-                          return selected ? `${selected.first_name} ${selected.last_name}` : 'Select Patient';
+                          return selected ? (selected.displayName || `${selected.firstName || selected.first_name || ''} ${selected.lastName || selected.last_name || ''}`) : 'Select Patient';
                         })()
                       : "Don't Share"
                     }
@@ -1511,7 +1512,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                               styles.patientDropdownItemText,
                               newEvent.selectedPatientId === patient.id && styles.patientDropdownItemTextSelected
                             ]}>
-                              {patient.first_name} {patient.last_name}
+                              {patient.displayName || `${patient.firstName || patient.first_name || ''} ${patient.lastName || patient.last_name || ''}`}
                             </Text>
                             {patient.email && (
                               <Text style={styles.patientDropdownItemEmail}>{patient.email}</Text>
