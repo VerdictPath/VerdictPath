@@ -50,11 +50,11 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   });
 
   const EVENT_TYPES = [
-    { value: 'appointment', label: 'Appointment', icon: 'calendar-check' },
-    { value: 'surgery', label: 'Surgery', icon: 'hospital-box' },
-    { value: 'consultation', label: 'Consultation', icon: 'account-group' },
-    { value: 'follow_up', label: 'Follow-up', icon: 'refresh' },
-    { value: 'reminder', label: 'Reminder', icon: 'bell' }
+    { value: 'appointment', label: 'Appointment', emoji: '📅' },
+    { value: 'surgery', label: 'Surgery', emoji: '🏥' },
+    { value: 'consultation', label: 'Consultation', emoji: '👥' },
+    { value: 'follow_up', label: 'Follow-up', emoji: '🔄' },
+    { value: 'reminder', label: 'Reminder', emoji: '🔔' }
   ];
 
   const EVENT_TYPE_COLORS = {
@@ -1379,7 +1379,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Event</Text>
             <TouchableOpacity onPress={() => setShowAddEventModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={{ fontSize: 20, color: '#fff' }}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1408,11 +1408,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                     ]}
                     onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
                   >
-                    <Icon 
-                      name={type.icon} 
-                      size={20} 
-                      color={newEvent.eventType === type.value ? EVENT_TYPE_COLORS[type.value] : '#999'} 
-                    />
+                    <Text style={{ fontSize: 18 }}>{type.emoji}</Text>
                     <Text style={[
                       styles.eventTypeLabel,
                       newEvent.eventType === type.value && { color: EVENT_TYPE_COLORS[type.value] }
@@ -1434,11 +1430,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                 onPress={() => setShowPatientPicker(!showPatientPicker)}
               >
                 <View style={styles.patientPickerContent}>
-                  <Icon 
-                    name={newEvent.selectedPatientId ? 'account' : 'account-off'} 
-                    size={20} 
-                    color={newEvent.selectedPatientId ? '#FFD700' : '#999'} 
-                  />
+                  <Text style={{ fontSize: 18 }}>{newEvent.selectedPatientId ? '👤' : '🚫'}</Text>
                   <Text style={[
                     styles.patientPickerText,
                     newEvent.selectedPatientId && styles.patientPickerTextSelected
@@ -1458,7 +1450,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               {showPatientPicker && (
                 <View style={styles.patientDropdown}>
                   <View style={styles.patientSearchContainer}>
-                    <Icon name="magnify" size={20} color="#999" />
+                    <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
                     <TextInput
                       style={styles.patientSearchInput}
                       placeholder="Search patients..."
@@ -1469,7 +1461,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                     />
                     {patientSearchQuery.length > 0 && (
                       <TouchableOpacity onPress={() => setPatientSearchQuery('')}>
-                        <Icon name="close-circle" size={18} color="#999" />
+                        <Text style={{ fontSize: 16 }}>✕</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1486,7 +1478,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                         setPatientSearchQuery('');
                       }}
                     >
-                      <Icon name="account-off" size={20} color={!newEvent.selectedPatientId ? '#FFD700' : '#999'} />
+                      <Text style={{ fontSize: 16 }}>🚫</Text>
                       <Text style={[
                         styles.patientDropdownItemText,
                         !newEvent.selectedPatientId && styles.patientDropdownItemTextSelected
@@ -1513,11 +1505,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                             setPatientSearchQuery('');
                           }}
                         >
-                          <Icon 
-                            name="account" 
-                            size={20} 
-                            color={newEvent.selectedPatientId === patient.id ? '#FFD700' : '#999'} 
-                          />
+                          <Text style={{ fontSize: 16 }}>👤</Text>
                           <View style={styles.patientDropdownItemInfo}>
                             <Text style={[
                               styles.patientDropdownItemText,
@@ -1530,7 +1518,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                             )}
                           </View>
                           {newEvent.selectedPatientId === patient.id && (
-                            <Icon name="check" size={20} color="#FFD700" />
+                            <Text style={{ fontSize: 16 }}>✓</Text>
                           )}
                         </TouchableOpacity>
                       ))
@@ -1587,7 +1575,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
             <View style={styles.toggleRow}>
               <View style={styles.toggleInfo}>
-                <Icon name="bell-outline" size={24} color="#FFD700" />
+                <Text style={{ fontSize: 20, marginRight: 8 }}>🔔</Text>
                 <Text style={styles.toggleLabel}>Enable Reminder</Text>
               </View>
               <TouchableOpacity
@@ -1599,7 +1587,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <TouchableOpacity style={styles.submitButton} onPress={handleAddEvent}>
-              <Icon name="calendar-check" size={20} color="#fff" />
+              <Text style={{ fontSize: 18, marginRight: 8 }}>📅</Text>
               <Text style={styles.submitButtonText}>Create Event</Text>
             </TouchableOpacity>
           </ScrollView>
