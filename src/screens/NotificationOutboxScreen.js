@@ -1282,7 +1282,7 @@ const styles = StyleSheet.create({
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: 'rgba(26, 26, 26, 0.6)',
+    backgroundColor: '#1A1A1A',
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 0, 0.2)',
@@ -1307,7 +1307,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   notificationCard: {
-    backgroundColor: 'rgba(26, 26, 26, 0.88)',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -1315,7 +1315,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   urgentCard: {
-    backgroundColor: 'rgba(185, 28, 28, 0.2)',
+    backgroundColor: '#2D1A1A',
     borderColor: '#dc2626',
     borderWidth: 2,
   },
@@ -1445,7 +1445,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   autoRefreshIndicator: {
-    backgroundColor: 'rgba(26, 26, 26, 0.85)',
+    backgroundColor: '#1A1A1A',
     paddingVertical: 8,
     alignItems: 'center',
     borderTopWidth: 1,

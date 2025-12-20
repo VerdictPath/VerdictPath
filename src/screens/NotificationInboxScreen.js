@@ -1613,7 +1613,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   autoRefreshIndicator: {
-    backgroundColor: 'rgba(26, 26, 26, 0.85)',
+    backgroundColor: '#1A1A1A',
     paddingVertical: 8,
     alignItems: 'center',
     borderTopWidth: 1,
