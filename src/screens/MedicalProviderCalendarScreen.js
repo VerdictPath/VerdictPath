@@ -43,11 +43,22 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'appointment',
-    startTime: '',
-    endTime: '',
+    startDate: moment().format('MM/DD/YYYY'),
+    startTimeValue: '09:00',
+    duration: 60,
     reminderEnabled: true,
     selectedPatientId: ''
   });
+
+  const DURATION_OPTIONS = [
+    { label: '15 min', value: 15 },
+    { label: '30 min', value: 30 },
+    { label: '45 min', value: 45 },
+    { label: '1 hr', value: 60 },
+    { label: '2 hr', value: 120 },
+    { label: '3 hr', value: 180 },
+    { label: '4 hr', value: 240 }
+  ];
 
   const EVENT_TYPES = [
     { value: 'appointment', label: 'Appointment', emoji: '📅' },
@@ -413,30 +424,21 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startTime) {
-      Alert.alert('Error', 'Please enter a title and start time');
+    if (!newEvent.title || !newEvent.startDate || !newEvent.startTimeValue) {
+      Alert.alert('Error', 'Please enter a title, date, and time');
       return;
     }
 
-    // Parse MM/DD/YYYY HH:MM format
-    const parsedStartMoment = moment(newEvent.startTime, 'MM/DD/YYYY HH:mm');
+    // Parse MM/DD/YYYY date and HH:mm time separately
+    const parsedStartMoment = moment(`${newEvent.startDate} ${newEvent.startTimeValue}`, 'MM/DD/YYYY HH:mm');
     if (!parsedStartMoment.isValid()) {
-      Alert.alert('Error', 'Invalid start time format. Use MM/DD/YYYY HH:MM');
+      Alert.alert('Error', 'Invalid date or time format');
       return;
     }
     const parsedStartTime = parsedStartMoment.toDate();
 
-    let parsedEndTime = parsedStartTime;
-    if (newEvent.endTime) {
-      const parsedEndMoment = moment(newEvent.endTime, 'MM/DD/YYYY HH:mm');
-      if (!parsedEndMoment.isValid()) {
-        Alert.alert('Error', 'Invalid end time format. Use MM/DD/YYYY HH:MM');
-        return;
-      }
-      parsedEndTime = parsedEndMoment.toDate();
-    } else {
-      parsedEndTime = new Date(parsedStartTime.getTime() + 60 * 60 * 1000);
-    }
+    // Calculate end time based on duration
+    const parsedEndTime = new Date(parsedStartTime.getTime() + (newEvent.duration * 60 * 1000));
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/calendar/events`, {
@@ -466,8 +468,9 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           location: '',
           eventType: 'appointment',
-          startTime: '',
-          endTime: '',
+          startDate: moment().format('MM/DD/YYYY'),
+          startTimeValue: '09:00',
+          duration: 60,
           reminderEnabled: true,
           selectedPatientId: ''
         });
@@ -1542,25 +1545,48 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Start Date & Time *</Text>
+              <Text style={styles.modalLabel}>Date *</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="MM/DD/YYYY HH:MM (e.g., 01/15/2025 09:00)"
+                placeholder="MM/DD/YYYY"
                 placeholderTextColor="#999"
-                value={newEvent.startTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
+                value={newEvent.startDate}
+                onChangeText={(text) => setNewEvent({ ...newEvent, startDate: text })}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
+              <Text style={styles.modalLabel}>Time *</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="MM/DD/YYYY HH:MM (defaults to 1 hour after start)"
+                placeholder="HH:MM (e.g., 09:00)"
                 placeholderTextColor="#999"
-                value={newEvent.endTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
+                value={newEvent.startTimeValue}
+                onChangeText={(text) => setNewEvent({ ...newEvent, startTimeValue: text })}
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.modalLabel}>Length</Text>
+              <View style={styles.durationGrid}>
+                {DURATION_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.durationOption,
+                      newEvent.duration === option.value && styles.durationOptionActive
+                    ]}
+                    onPress={() => setNewEvent({ ...newEvent, duration: option.value })}
+                  >
+                    <Text style={[
+                      styles.durationOptionText,
+                      newEvent.duration === option.value && styles.durationOptionTextActive
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
@@ -2018,6 +2044,32 @@ const styles = StyleSheet.create({
   eventTypeLabel: {
     color: '#999',
     fontSize: 13,
+  },
+  durationGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  durationOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    minWidth: 70,
+    alignItems: 'center'
+  },
+  durationOptionActive: {
+    backgroundColor: '#FFD700'
+  },
+  durationOptionText: {
+    color: '#FFD700',
+    fontSize: 13,
+    fontWeight: '600'
+  },
+  durationOptionTextActive: {
+    color: '#1a1a2e',
     fontWeight: '500'
   },
   patientScrollView: {
