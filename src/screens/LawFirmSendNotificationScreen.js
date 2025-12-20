@@ -94,6 +94,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [taskDueDate, setTaskDueDate] = useState('');
   const [taskCoinsReward, setTaskCoinsReward] = useState('50');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
 
   useEffect(() => {
     fetchClients();
@@ -298,77 +299,129 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
 
         {/* Step 2: Select Recipients */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Step 2: Select Recipients</Text>
-            <TouchableOpacity
-              style={styles.selectAllButton}
-              onPress={selectAllClients}
-            >
-              <Text style={styles.selectAllText}>
-                {selectedClients.length === clients.length ? 'Deselect All' : 'Select All'}
+          <Text style={styles.sectionTitle}>Step 2: Select Recipients</Text>
+          
+          {/* Dropdown Toggle Button */}
+          <TouchableOpacity
+            style={styles.recipientDropdownButton}
+            onPress={() => setShowRecipientDropdown(!showRecipientDropdown)}
+          >
+            <View style={styles.recipientDropdownContent}>
+              <Text style={styles.recipientDropdownIcon}>👥</Text>
+              <Text style={styles.recipientDropdownText}>
+                {selectedClients.length === 0 
+                  ? 'Select clients...' 
+                  : `${selectedClients.length} client${selectedClients.length !== 1 ? 's' : ''} selected`}
               </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search clients by name or email..."
-              placeholderTextColor="#999"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearSearchButton}
-                onPress={() => setSearchQuery('')}
-              >
-                <Text style={styles.clearSearchText}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          {clients.length === 0 ? (
-            <View style={styles.emptyClients}>
-              <Text style={styles.emptyClientsText}>No clients found</Text>
             </View>
-          ) : (
-            <View style={styles.clientsList}>
-              {clients.filter(client => {
-                if (!searchQuery.trim()) return true;
-                const query = searchQuery.toLowerCase();
-                const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-                const email = client.email.toLowerCase();
-                return fullName.includes(query) || email.includes(query);
-              }).map(client => (
-                <TouchableOpacity
-                  key={client.id}
-                  style={[
-                    styles.clientCard,
-                    selectedClients.includes(client.id) && styles.clientCardSelected
-                  ]}
-                  onPress={() => toggleClientSelection(client.id)}
-                >
-                  <View style={styles.clientInfo}>
-                    <Text style={styles.clientName}>
+            <Text style={styles.recipientDropdownArrow}>{showRecipientDropdown ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          
+          {/* Selected Clients Tags */}
+          {selectedClients.length > 0 && !showRecipientDropdown && (
+            <View style={styles.selectedClientsTags}>
+              {selectedClients.slice(0, 3).map(clientId => {
+                const client = clients.find(c => c.id === clientId);
+                if (!client) return null;
+                return (
+                  <View key={clientId} style={styles.clientTag}>
+                    <Text style={styles.clientTagText} numberOfLines={1}>
                       {client.first_name} {client.last_name}
                     </Text>
-                    <Text style={styles.clientEmail}>{client.email}</Text>
+                    <TouchableOpacity
+                      style={styles.clientTagRemove}
+                      onPress={() => toggleClientSelection(clientId)}
+                    >
+                      <Text style={styles.clientTagRemoveText}>✕</Text>
+                    </TouchableOpacity>
                   </View>
-                  {selectedClients.includes(client.id) && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+                );
+              })}
+              {selectedClients.length > 3 && (
+                <View style={styles.clientTagMore}>
+                  <Text style={styles.clientTagMoreText}>+{selectedClients.length - 3} more</Text>
+                </View>
+              )}
             </View>
           )}
           
-          {selectedClients.length > 0 && (
-            <Text style={styles.selectedCount}>
-              {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''} selected
-            </Text>
+          {/* Dropdown Menu */}
+          {showRecipientDropdown && (
+            <View style={styles.recipientDropdownMenu}>
+              {/* Search Bar inside dropdown */}
+              <View style={styles.dropdownSearchContainer}>
+                <Text style={styles.searchIcon}>🔍</Text>
+                <TextInput
+                  style={styles.dropdownSearchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search clients..."
+                  placeholderTextColor={theme.lawFirm.textLight}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearSearchButton}
+                    onPress={() => setSearchQuery('')}
+                  >
+                    <Text style={styles.clearSearchText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {/* Select All / Deselect All */}
+              <TouchableOpacity
+                style={styles.selectAllRow}
+                onPress={selectAllClients}
+              >
+                <Text style={styles.selectAllRowText}>
+                  {selectedClients.length === clients.length ? '☑ Deselect All' : '☐ Select All'}
+                </Text>
+                <Text style={styles.selectAllCount}>({clients.length} total)</Text>
+              </TouchableOpacity>
+              
+              {/* Client List */}
+              <ScrollView style={styles.dropdownClientList} nestedScrollEnabled={true}>
+                {clients.length === 0 ? (
+                  <View style={styles.emptyClients}>
+                    <Text style={styles.emptyClientsText}>No clients found</Text>
+                  </View>
+                ) : (
+                  clients.filter(client => {
+                    if (!searchQuery.trim()) return true;
+                    const query = searchQuery.toLowerCase();
+                    const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
+                    const email = client.email.toLowerCase();
+                    return fullName.includes(query) || email.includes(query);
+                  }).map(client => (
+                    <TouchableOpacity
+                      key={client.id}
+                      style={styles.dropdownClientItem}
+                      onPress={() => toggleClientSelection(client.id)}
+                    >
+                      <View style={styles.dropdownClientCheckbox}>
+                        <Text style={styles.dropdownCheckboxIcon}>
+                          {selectedClients.includes(client.id) ? '☑' : '☐'}
+                        </Text>
+                      </View>
+                      <View style={styles.dropdownClientInfo}>
+                        <Text style={styles.dropdownClientName}>
+                          {client.first_name} {client.last_name}
+                        </Text>
+                        <Text style={styles.dropdownClientEmail}>{client.email}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+              
+              {/* Done Button */}
+              <TouchableOpacity
+                style={styles.dropdownDoneButton}
+                onPress={() => setShowRecipientDropdown(false)}
+              >
+                <Text style={styles.dropdownDoneButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
@@ -789,6 +842,160 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: theme.lawFirm.textSecondary,
+  },
+  recipientDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  recipientDropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  recipientDropdownIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  recipientDropdownText: {
+    fontSize: 16,
+    color: theme.lawFirm.text,
+    fontWeight: '500',
+  },
+  recipientDropdownArrow: {
+    fontSize: 12,
+    color: theme.lawFirm.textSecondary,
+    marginLeft: 8,
+  },
+  selectedClientsTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 8,
+  },
+  clientTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.primary + '20',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingLeft: 12,
+    paddingRight: 8,
+    maxWidth: 180,
+  },
+  clientTagText: {
+    fontSize: 13,
+    color: theme.lawFirm.primary,
+    fontWeight: '500',
+    marginRight: 6,
+  },
+  clientTagRemove: {
+    padding: 2,
+  },
+  clientTagRemoveText: {
+    fontSize: 14,
+    color: theme.lawFirm.primary,
+    fontWeight: 'bold',
+  },
+  clientTagMore: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  clientTagMoreText: {
+    fontSize: 13,
+    color: theme.lawFirm.textSecondary,
+    fontWeight: '500',
+  },
+  recipientDropdownMenu: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    overflow: 'hidden',
+    maxHeight: 350,
+  },
+  dropdownSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  dropdownSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.lawFirm.text,
+    padding: 0,
+  },
+  selectAllRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  selectAllRowText: {
+    fontSize: 14,
+    color: theme.lawFirm.primary,
+    fontWeight: '600',
+  },
+  selectAllCount: {
+    fontSize: 12,
+    color: theme.lawFirm.textSecondary,
+  },
+  dropdownClientList: {
+    maxHeight: 200,
+  },
+  dropdownClientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  dropdownClientCheckbox: {
+    marginRight: 12,
+  },
+  dropdownCheckboxIcon: {
+    fontSize: 18,
+    color: theme.lawFirm.primary,
+  },
+  dropdownClientInfo: {
+    flex: 1,
+  },
+  dropdownClientName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.lawFirm.text,
+    marginBottom: 2,
+  },
+  dropdownClientEmail: {
+    fontSize: 12,
+    color: theme.lawFirm.textSecondary,
+  },
+  dropdownDoneButton: {
+    backgroundColor: theme.lawFirm.primary,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  dropdownDoneButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
