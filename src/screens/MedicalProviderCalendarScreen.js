@@ -11,6 +11,45 @@ import { API_BASE_URL } from '../config/api';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const APPOINTMENT_TYPES = ['consultation', 'follow_up', 'treatment', 'evaluation', 'imaging'];
+
+const TIME_SLOTS = [
+  { label: '8:00 AM', value: '08:00' },
+  { label: '8:30 AM', value: '08:30' },
+  { label: '9:00 AM', value: '09:00' },
+  { label: '9:30 AM', value: '09:30' },
+  { label: '10:00 AM', value: '10:00' },
+  { label: '10:30 AM', value: '10:30' },
+  { label: '11:00 AM', value: '11:00' },
+  { label: '11:30 AM', value: '11:30' },
+  { label: '12:00 PM', value: '12:00' },
+  { label: '12:30 PM', value: '12:30' },
+  { label: '1:00 PM', value: '13:00' },
+  { label: '1:30 PM', value: '13:30' },
+  { label: '2:00 PM', value: '14:00' },
+  { label: '2:30 PM', value: '14:30' },
+  { label: '3:00 PM', value: '15:00' },
+  { label: '3:30 PM', value: '15:30' },
+  { label: '4:00 PM', value: '16:00' },
+  { label: '4:30 PM', value: '16:30' },
+  { label: '5:00 PM', value: '17:00' },
+  { label: '5:30 PM', value: '17:30' },
+  { label: '6:00 PM', value: '18:00' }
+];
+
+const formatDateUSA = (dateString) => {
+  if (!dateString) return '';
+  const [year, month, day] = dateString.split('-');
+  return `${month}/${day}/${year}`;
+};
+
+const parseUSADate = (usaDate) => {
+  if (!usaDate) return '';
+  const parts = usaDate.split('/');
+  if (parts.length !== 3) return '';
+  const [month, day, year] = parts;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+};
+
 const STATUS_COLORS = {
   pending: '#f59e0b',
   confirmed: '#10b981',
@@ -43,9 +82,9 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'appointment',
-    startDate: moment().format('MM/DD/YYYY'),
-    startTimeValue: '09:00',
-    duration: 60,
+    eventDate: moment().format('MM/DD/YYYY'),
+    startTime: '09:00',
+    endTime: '10:00',
     reminderEnabled: true,
     selectedPatientId: ''
   });
@@ -98,6 +137,9 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const [showPatientPicker, setShowPatientPicker] = useState(false);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
+  const [showEventStartTimePicker, setShowEventStartTimePicker] = useState(false);
+  const [showEventEndTimePicker, setShowEventEndTimePicker] = useState(false);
 
   const providerId = user?.medicalProviderId || user?.id;
 
@@ -1544,48 +1586,124 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               )}
             </View>
 
-            <View style={styles.inputGroup}>
+            <View style={[styles.inputGroup, { zIndex: 100 }]}>
               <Text style={styles.modalLabel}>Date *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="MM/DD/YYYY"
-                placeholderTextColor="#999"
-                value={newEvent.startDate}
-                onChangeText={(text) => setNewEvent({ ...newEvent, startDate: text })}
-              />
+              <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => {
+                  setShowEventDatePicker(!showEventDatePicker);
+                  setShowEventStartTimePicker(false);
+                  setShowEventEndTimePicker(false);
+                }}
+              >
+                <Text style={styles.datePickerButtonText}>
+                  {newEvent.eventDate || '📅 Select Date'}
+                </Text>
+              </TouchableOpacity>
+              {showEventDatePicker && (
+                <View style={styles.calendarDropdown}>
+                  <Calendar
+                    onDayPress={(day) => {
+                      setNewEvent({ ...newEvent, eventDate: formatDateUSA(day.dateString) });
+                      setShowEventDatePicker(false);
+                    }}
+                    markedDates={{
+                      [parseUSADate(newEvent.eventDate) || '']: { selected: true, selectedColor: theme.colors.primary }
+                    }}
+                    theme={{
+                      backgroundColor: '#FFFFFF',
+                      calendarBackground: '#FFFFFF',
+                      todayTextColor: theme.colors.primary,
+                      selectedDayBackgroundColor: theme.colors.primary,
+                      arrowColor: theme.colors.primary
+                    }}
+                  />
+                </View>
+              )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Time *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="HH:MM (e.g., 09:00)"
-                placeholderTextColor="#999"
-                value={newEvent.startTimeValue}
-                onChangeText={(text) => setNewEvent({ ...newEvent, startTimeValue: text })}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Length</Text>
-              <View style={styles.durationGrid}>
-                {DURATION_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.durationOption,
-                      newEvent.duration === option.value && styles.durationOptionActive
-                    ]}
-                    onPress={() => setNewEvent({ ...newEvent, duration: option.value })}
-                  >
-                    <Text style={[
-                      styles.durationOptionText,
-                      newEvent.duration === option.value && styles.durationOptionTextActive
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+            <View style={[styles.timeRow, { zIndex: 10 }]}>
+              <View style={[styles.timeInput, { zIndex: 11 }]}>
+                <Text style={styles.modalLabel}>Start Time *</Text>
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => {
+                    setShowEventStartTimePicker(!showEventStartTimePicker);
+                    setShowEventEndTimePicker(false);
+                    setShowEventDatePicker(false);
+                  }}
+                >
+                  <Text style={styles.datePickerButtonText}>
+                    {TIME_SLOTS.find(t => t.value === newEvent.startTime)?.label || '9:00 AM'}
+                  </Text>
+                </TouchableOpacity>
+                {showEventStartTimePicker && (
+                  <View style={styles.timePickerDropdown}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                      {TIME_SLOTS.map((slot) => (
+                        <TouchableOpacity
+                          key={slot.value}
+                          style={[
+                            styles.timeSlotOption,
+                            newEvent.startTime === slot.value && styles.timeSlotOptionSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, startTime: slot.value });
+                            setShowEventStartTimePicker(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.timeSlotOptionText,
+                            newEvent.startTime === slot.value && styles.timeSlotOptionTextSelected
+                          ]}>
+                            {slot.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+              <View style={[styles.timeInput, { zIndex: 10 }]}>
+                <Text style={styles.modalLabel}>End Time *</Text>
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => {
+                    setShowEventEndTimePicker(!showEventEndTimePicker);
+                    setShowEventStartTimePicker(false);
+                    setShowEventDatePicker(false);
+                  }}
+                >
+                  <Text style={styles.datePickerButtonText}>
+                    {TIME_SLOTS.find(t => t.value === newEvent.endTime)?.label || '10:00 AM'}
+                  </Text>
+                </TouchableOpacity>
+                {showEventEndTimePicker && (
+                  <View style={styles.timePickerDropdown}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                      {TIME_SLOTS.map((slot) => (
+                        <TouchableOpacity
+                          key={slot.value}
+                          style={[
+                            styles.timeSlotOption,
+                            newEvent.endTime === slot.value && styles.timeSlotOptionSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, endTime: slot.value });
+                            setShowEventEndTimePicker(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.timeSlotOptionText,
+                            newEvent.endTime === slot.value && styles.timeSlotOptionTextSelected
+                          ]}>
+                            {slot.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
             </View>
 
@@ -2525,6 +2643,71 @@ const styles = StyleSheet.create({
   },
   maxBookingsOptionTextActive: {
     color: '#FFD700'
+  },
+  datePickerButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.colors.backgroundDark,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  datePickerButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: 16
+  },
+  calendarDropdown: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.backgroundDark,
+    zIndex: 9999,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12
+  },
+  timePickerDropdown: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.backgroundDark,
+    zIndex: 9999,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    maxHeight: 200
+  },
+  timeSlotOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.backgroundDark
+  },
+  timeSlotOptionSelected: {
+    backgroundColor: theme.colors.offWhite
+  },
+  timeSlotOptionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 14
+  },
+  timeSlotOptionTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: '600'
   }
 });
 
