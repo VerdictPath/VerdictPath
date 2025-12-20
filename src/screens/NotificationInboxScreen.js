@@ -1472,7 +1472,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   notificationCard: {
-    backgroundColor: 'rgba(26, 26, 26, 0.88)',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -1480,7 +1480,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   unreadCard: {
-    backgroundColor: 'rgba(26, 26, 26, 0.95)',
+    backgroundColor: '#242424',
     borderLeftWidth: 4,
     borderLeftColor: '#FFD700',
     borderColor: 'rgba(255, 215, 0, 0.5)',
@@ -1488,7 +1488,7 @@ const styles = StyleSheet.create({
   urgentCard: {
     borderColor: '#dc3545',
     borderWidth: 2,
-    backgroundColor: 'rgba(220, 53, 69, 0.15)',
+    backgroundColor: '#2D1A1A',
   },
   urgentBanner: {
     backgroundColor: '#dc3545',
