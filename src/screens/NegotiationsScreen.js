@@ -1063,17 +1063,25 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
             numberOfLines={4}
           />
 
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: themeColors.primary }]}
-            onPress={handleInitiateNegotiation}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.submitButtonText}>Initiate Negotiation</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.cancelButton, { borderColor: themeColors.primary }]}
+              onPress={() => setShowNewNegotiationModal(false)}
+            >
+              <Text style={[styles.cancelButtonText, { color: themeColors.primary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.submitButton, { backgroundColor: themeColors.primary, flex: 1 }]}
+              onPress={handleInitiateNegotiation}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Initiate Negotiation</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </View>
     </Modal>
@@ -1646,13 +1654,28 @@ const createStyles = (themeColors) => StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  cancelButton: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 2,
+    minWidth: 100,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   submitButton: {
     backgroundColor: themeColors.primary,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
   },
   submitButtonText: {
     color: '#FFFFFF',
