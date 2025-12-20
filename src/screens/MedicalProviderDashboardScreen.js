@@ -26,6 +26,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
   const [lawFirms, setLawFirms] = useState([]);
   const [firmCode, setFirmCode] = useState('');
   const [addingFirm, setAddingFirm] = useState(false);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   
   // Get unread count from NotificationContext (Firebase real-time)
   const { unreadCount: unreadNotificationCount } = useNotifications();
@@ -358,26 +359,6 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚕️ Patient List</Text>
-          
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search patients by name or email..."
-              placeholderTextColor={medicalProviderTheme.colors.mediumGray}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity 
-                onPress={() => setSearchQuery('')}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
 
           {/* Quick Actions */}
           <View style={styles.quickActionsContainer}>
@@ -437,62 +418,91 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                 Share your provider code with patients: {providerData?.providerCode}
               </Text>
             </View>
-          ) : filteredPatients.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyText}>No patients found</Text>
-              <Text style={styles.emptySubtext}>
-                Try a different search term
-              </Text>
-            </View>
           ) : (
-            <View key={`patient-list-${searchQuery}-${filteredPatients.length}`}>
-              {filteredPatients.map(patient => (
+            <View>
+              {/* Dropdown Button */}
               <TouchableOpacity
-                key={patient.id}
-                style={styles.patientCard}
-                onPress={() => onNavigateToPatient(patient.id)}
+                style={styles.patientDropdownButton}
+                onPress={() => setShowPatientDropdown(!showPatientDropdown)}
               >
-              <View style={styles.patientHeader}>
-                <Text style={styles.patientName}>👤 {patient.displayName}</Text>
-                <Text style={styles.patientBadge}>
-                  {patient.hasConsent ? 'Active' : 'Pending'}
-                </Text>
-              </View>
-              <Text style={styles.patientEmail}>{patient.email}</Text>
-              
-              {/* Litigation Progress */}
-              <View style={styles.litigationSection}>
-                <View style={styles.litigationHeader}>
-                  <Text style={styles.litigationLabel}>⚖️ Litigation Stage:</Text>
-                  <Text style={styles.litigationStage}>
-                    {patient.litigationStage || 'Pre-Litigation'}
+                <View style={styles.patientDropdownButtonContent}>
+                  <Text style={{ fontSize: 18, marginRight: 8 }}>👥</Text>
+                  <Text style={styles.patientDropdownButtonText}>
+                    {patients.length} Patient{patients.length !== 1 ? 's' : ''} - Tap to {showPatientDropdown ? 'collapse' : 'view'}
                   </Text>
                 </View>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[
-                      styles.progressFill, 
-                      { width: `${patient.litigationProgress || 0}%` }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>
-                  {patient.litigationProgress || 0}% Complete
-                </Text>
-              </View>
+                <Text style={styles.patientDropdownArrow}>{showPatientDropdown ? '▲' : '▼'}</Text>
+              </TouchableOpacity>
 
-              <View style={styles.patientStats}>
-                <Text style={styles.patientStat}>📋 {patient.recordCount || 0} Records</Text>
-                <Text style={styles.patientStat}>💰 ${patient.totalBilled || 0} Billed</Text>
-              </View>
-              <Text style={styles.patientDate}>
-                ⏰ Registered: {new Date(patient.registeredDate).toLocaleDateString('en-US')}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              {/* Dropdown Content */}
+              {showPatientDropdown && (
+                <View style={styles.patientDropdownContent}>
+                  {/* Search Bar inside Dropdown */}
+                  <View style={styles.patientDropdownSearchContainer}>
+                    <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+                    <TextInput
+                      style={styles.patientDropdownSearchInput}
+                      placeholder="Search patients..."
+                      placeholderTextColor={medicalProviderTheme.colors.mediumGray}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                    {searchQuery.length > 0 && (
+                      <TouchableOpacity onPress={() => setSearchQuery('')}>
+                        <Text style={{ fontSize: 16, color: '#999' }}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Patient List */}
+                  <ScrollView style={styles.patientDropdownList} nestedScrollEnabled={true}>
+                    {filteredPatients.length === 0 ? (
+                      <View style={styles.patientDropdownEmpty}>
+                        <Text style={styles.patientDropdownEmptyText}>
+                          No patients match "{searchQuery}"
+                        </Text>
+                      </View>
+                    ) : (
+                      filteredPatients.map(patient => (
+                        <TouchableOpacity
+                          key={patient.id}
+                          style={styles.patientDropdownItem}
+                          onPress={() => {
+                            setShowPatientDropdown(false);
+                            onNavigateToPatient(patient.id);
+                          }}
+                        >
+                          <View style={styles.patientDropdownItemHeader}>
+                            <Text style={styles.patientDropdownItemName}>
+                              👤 {patient.displayName}
+                            </Text>
+                            <Text style={[
+                              styles.patientDropdownItemBadge,
+                              patient.hasConsent ? styles.patientDropdownItemBadgeActive : styles.patientDropdownItemBadgePending
+                            ]}>
+                              {patient.hasConsent ? 'Active' : 'Pending'}
+                            </Text>
+                          </View>
+                          <Text style={styles.patientDropdownItemEmail}>{patient.email}</Text>
+                          <View style={styles.patientDropdownItemStats}>
+                            <Text style={styles.patientDropdownItemStat}>
+                              ⚖️ {patient.litigationStage || 'Pre-Litigation'}
+                            </Text>
+                            <Text style={styles.patientDropdownItemStat}>
+                              📋 {patient.recordCount || 0} Records
+                            </Text>
+                            <Text style={styles.patientDropdownItemStat}>
+                              💰 ${patient.totalBilled || 0}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </ScrollView>
+                </View>
+              )}
             </View>
-        )}
+          )}
       </View>
     </View>
   );
@@ -1262,6 +1272,113 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     color: colors.mediumGray,
     marginTop: 4,
+  },
+  patientDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: colors.offWhite,
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    marginBottom: 8,
+  },
+  patientDropdownButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  patientDropdownButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  patientDropdownArrow: {
+    fontSize: 14,
+    color: colors.primary,
+  },
+  patientDropdownContent: {
+    backgroundColor: colors.offWhite,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.mediumGray,
+    maxHeight: 350,
+    overflow: 'hidden',
+  },
+  patientDropdownSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.mediumGray,
+    backgroundColor: '#fff',
+  },
+  patientDropdownSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.charcoal,
+    paddingVertical: 4,
+  },
+  patientDropdownList: {
+    maxHeight: 280,
+  },
+  patientDropdownEmpty: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  patientDropdownEmptyText: {
+    fontSize: 14,
+    color: colors.mediumGray,
+  },
+  patientDropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff',
+  },
+  patientDropdownItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  patientDropdownItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+    flex: 1,
+  },
+  patientDropdownItemBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: '600',
+    overflow: 'hidden',
+  },
+  patientDropdownItemBadgeActive: {
+    backgroundColor: colors.primary,
+    color: '#fff',
+  },
+  patientDropdownItemBadgePending: {
+    backgroundColor: '#f59e0b',
+    color: '#fff',
+  },
+  patientDropdownItemEmail: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 6,
+  },
+  patientDropdownItemStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  patientDropdownItemStat: {
+    fontSize: 12,
+    color: colors.mediumGray,
   },
   statsGrid: {
     flexDirection: 'row',
