@@ -209,12 +209,6 @@ const DashboardScreen = ({
             onPress={() => onNavigate('appointments')}
           />
           <QuickActionButton
-            icon="📨"
-            title="Event Requests"
-            color={selectedAvatar.accentColor}
-            onPress={() => onNavigate('event-requests')}
-          />
-          <QuickActionButton
             icon="🏆"
             title="Achievements"
             color={selectedAvatar.accentColor}

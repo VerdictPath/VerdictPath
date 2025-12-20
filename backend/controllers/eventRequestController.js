@@ -133,12 +133,14 @@ const eventRequestController = {
 
         await pool.query(
           `INSERT INTO notifications (
-            user_id, sender_id, notification_type, title, body, 
-            action_type, action_data, is_read
-          ) VALUES ($1, $2, 'event_request', $3, $4, 'navigate', $5, false)`,
+            recipient_id, recipient_type, sender_id, sender_type, 
+            type, notification_type, title, body, 
+            action_type, action_data, status
+          ) VALUES ($1, 'individual', $2, $3, 'event_request', 'event_request', $4, $5, 'navigate', $6, 'pending')`,
           [
             finalRecipientId,
             providerId,
+            userType,
             notificationTitle,
             notificationBody,
             JSON.stringify({ screen: 'event-requests', requestId: eventRequest.id })
