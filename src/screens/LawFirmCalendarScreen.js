@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 
@@ -51,11 +50,11 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   });
 
   const EVENT_TYPES = [
-    { value: 'meeting', label: 'Meeting', icon: 'account-group' },
-    { value: 'court_date', label: 'Court Date', icon: 'gavel' },
-    { value: 'deposition', label: 'Deposition', icon: 'file-document' },
-    { value: 'deadline', label: 'Deadline', icon: 'clock-alert' },
-    { value: 'reminder', label: 'Reminder', icon: 'bell' }
+    { value: 'meeting', label: 'Meeting', emoji: '👥' },
+    { value: 'court_date', label: 'Court Date', emoji: '⚖️' },
+    { value: 'deposition', label: 'Deposition', emoji: '📄' },
+    { value: 'deadline', label: 'Deadline', emoji: '⏰' },
+    { value: 'reminder', label: 'Reminder', emoji: '🔔' }
   ];
 
   const EVENT_TYPE_COLORS = {
@@ -736,12 +735,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     <View style={styles.header}>
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Icon name="sail-boat" size={28} color="#C0C0C0" />
+          <Text style={styles.headerIcon}>⛵</Text>
         </TouchableOpacity>
-        <Icon name="scale-balance" size={28} color="#C0C0C0" />
+        <Text style={styles.headerIcon}>⚖️</Text>
         <Text style={styles.headerTitle}>Client Calendars</Text>
         <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-          <Icon name="minus" size={24} color="#C0C0C0" />
+          <Text style={styles.headerIcon}>➖</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.headerSubtitle}>Manage Your Schedule</Text>
@@ -756,11 +755,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           style={[styles.viewModeButton, viewMode === mode && styles.viewModeButtonActive]}
           onPress={() => setViewMode(mode)}
         >
-          <Icon 
-            name={mode === 'month' ? 'calendar-month' : mode === 'week' ? 'calendar-week' : 'calendar-today'} 
-            size={20} 
-            color={viewMode === mode ? '#C0C0C0' : '#fff'} 
-          />
+          <Text style={[styles.viewModeIcon, viewMode === mode && styles.viewModeIconActive]}>
+            {mode === 'month' ? '📅' : mode === 'week' ? '📆' : '📋'}
+          </Text>
           <Text style={[styles.viewModeText, viewMode === mode && styles.viewModeTextActive]}>
             {mode.charAt(0).toUpperCase() + mode.slice(1)}
           </Text>
@@ -772,27 +769,27 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const renderActionButtons = () => (
     <View style={styles.actionButtons}>
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityModal(true)}>
-        <Icon name="clock-outline" size={20} color="#fff" />
+        <Text style={styles.actionIcon}>🕐</Text>
         <Text style={styles.actionButtonText}>Set Hours</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowBlockTimeModal(true)}>
-        <Icon name="block-helper" size={20} color="#fff" />
+        <Text style={styles.actionIcon}>🚫</Text>
         <Text style={styles.actionButtonText}>Block Time</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowCreateAppointmentModal(true)}>
-        <Icon name="calendar-plus" size={20} color="#fff" />
+        <Text style={styles.actionIcon}>📅</Text>
         <Text style={styles.actionButtonText}>New Appt</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddEventModal(true)}>
-        <Icon name="calendar-star" size={20} color="#fff" />
+        <Text style={styles.actionIcon}>⭐</Text>
         <Text style={styles.actionButtonText}>Add Event</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowSettingsModal(true)}>
-        <Icon name="cog" size={20} color="#fff" />
+        <Text style={styles.actionIcon}>⚙️</Text>
         <Text style={styles.actionButtonText}>Settings</Text>
       </TouchableOpacity>
     </View>
@@ -801,7 +798,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const renderSecondaryActions = () => (
     <View style={styles.secondaryActions}>
       <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAvailabilityRequestModal(true)}>
-        <Icon name="send" size={18} color="#C0C0C0" />
+        <Text style={styles.secondaryIcon}>📨</Text>
         <Text style={styles.secondaryButtonText}>Request Client Availability</Text>
       </TouchableOpacity>
     </View>
@@ -851,7 +848,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     return (
       <View style={styles.dayViewContainer}>
         <View style={styles.dayViewHeader}>
-          <Icon name="calendar-star" size={24} color="#C0C0C0" />
+          <Text style={styles.dayViewIcon}>⭐</Text>
           <Text style={styles.dayViewTitle}>
             {moment(selectedDate).format('dddd, MM/DD/YYYY')}
           </Text>
@@ -859,7 +856,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
         {!dayAvailability ? (
           <View style={styles.noAvailabilityContainer}>
-            <Icon name="calendar-remove" size={48} color="#666" />
+            <Text style={styles.noAvailabilityIcon}>📅</Text>
             <Text style={styles.noAvailabilityText}>No availability set for this day</Text>
             <Text style={styles.noAvailabilitySubtext}>Set your hours to start accepting appointments</Text>
           </View>
@@ -888,11 +885,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 </View>
 
                 <View style={styles.timeSlotContent}>
-                  <Icon 
-                    name={slot.appointment ? 'account-check' : slot.blocked ? 'block-helper' : 'calendar-blank'} 
-                    size={24} 
-                    color="#fff" 
-                  />
+                  <Text style={styles.slotIcon}>
+                    {slot.appointment ? '✅' : slot.blocked ? '🚫' : '📅'}
+                  </Text>
                   {slot.appointment ? (
                     <View style={styles.appointmentInfo}>
                       <Text style={styles.appointmentClientName}>
@@ -910,11 +905,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 </View>
 
                 {slot.appointment && (
-                  <Icon
-                    name={slot.appointment.status === 'confirmed' ? 'check-circle' : 'clock-outline'}
-                    size={20}
-                    color={slot.appointment.status === 'confirmed' ? '#10b981' : '#f59e0b'}
-                  />
+                  <Text style={[styles.slotStatusIcon, { color: slot.appointment.status === 'confirmed' ? '#10b981' : '#f59e0b' }]}>
+                    {slot.appointment.status === 'confirmed' ? '✓' : '🕐'}
+                  </Text>
                 )}
               </TouchableOpacity>
             ))}
@@ -991,7 +984,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </Text>
             </View>
             <TouchableOpacity onPress={() => handleDeleteAvailability(avail.id)}>
-              <Icon name="delete" size={20} color="#ef4444" />
+              <Text style={styles.deleteIcon}>🗑️</Text>
             </TouchableOpacity>
           </View>
         ))
@@ -1080,7 +1073,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Set Weekly Hours</Text>
             <TouchableOpacity onPress={() => setShowAvailabilityModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1090,14 +1083,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 style={[styles.modeToggleButton, bulkMode && styles.modeToggleButtonActive]}
                 onPress={() => setBulkMode(true)}
               >
-                <Icon name="calendar-week" size={18} color={bulkMode ? '#fff' : '#999'} />
+                <Text style={[styles.modeToggleIcon, bulkMode && styles.modeToggleIconActive]}>📆</Text>
                 <Text style={[styles.modeToggleText, bulkMode && styles.modeToggleTextActive]}>Multiple Days</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modeToggleButton, !bulkMode && styles.modeToggleButtonActive]}
                 onPress={() => setBulkMode(false)}
               >
-                <Icon name="calendar" size={18} color={!bulkMode ? '#fff' : '#999'} />
+                <Text style={[styles.modeToggleIcon, !bulkMode && styles.modeToggleIconActive]}>📅</Text>
                 <Text style={[styles.modeToggleText, !bulkMode && styles.modeToggleTextActive]}>Single Day</Text>
               </TouchableOpacity>
             </View>
@@ -1205,11 +1198,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 style={styles.recurringToggle}
                 onPress={() => setIsRecurring(!isRecurring)}
               >
-                <Icon 
-                  name={isRecurring ? 'checkbox-marked' : 'checkbox-blank-outline'} 
-                  size={24} 
-                  color={isRecurring ? '#4ade80' : '#666'} 
-                />
+                <Text style={[styles.checkboxIcon, isRecurring && styles.checkboxIconActive]}>
+                  {isRecurring ? '☑️' : '⬜'}
+                </Text>
                 <View style={styles.recurringTextContainer}>
                   <Text style={styles.recurringLabel}>Repeat Weekly</Text>
                   <Text style={styles.recurringDescription}>
@@ -1220,7 +1211,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <TouchableOpacity style={styles.saveButton} onPress={handleAddAvailability}>
-              <Icon name="content-save" size={20} color="#fff" />
+              <Text style={styles.saveIcon}>💾</Text>
               <Text style={styles.saveButtonText}>
                 {bulkMode ? `Save Hours for ${selectedDays.length} Day(s)` : 'Save Availability'}
               </Text>
@@ -1228,7 +1219,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
             {availability.length > 0 && (
               <TouchableOpacity style={styles.clearAllButton} onPress={handleClearAllAvailability}>
-                <Icon name="delete-sweep" size={20} color="#ef4444" />
+                <Text style={styles.clearIcon}>🧹</Text>
                 <Text style={styles.clearAllButtonText}>Clear All Hours (Stop Repeat)</Text>
               </TouchableOpacity>
             )}
@@ -1245,7 +1236,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Block Time</Text>
             <TouchableOpacity onPress={() => setShowBlockTimeModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1280,7 +1271,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             />
 
             <TouchableOpacity style={styles.saveButton} onPress={handleBlockTime}>
-              <Icon name="block-helper" size={20} color="#fff" />
+              <Text style={styles.saveIcon}>🚫</Text>
               <Text style={styles.saveButtonText}>Block Time</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1296,7 +1287,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Create Appointment</Text>
             <TouchableOpacity onPress={() => setShowCreateAppointmentModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1304,7 +1295,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <Text style={styles.modalLabel}>Select Client</Text>
             <View style={styles.clientSelectorContainer}>
               <View style={styles.clientSearchContainer}>
-                <Icon name="magnify" size={20} color="#999" style={styles.searchIcon} />
+                <Text style={styles.searchIconEmoji}>🔍</Text>
                 <TextInput
                   style={styles.clientSearchInput}
                   value={clientSearch}
@@ -1314,7 +1305,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 />
                 {clientSearch.length > 0 && (
                   <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
-                    <Icon name="close-circle" size={18} color="#999" />
+                    <Text style={styles.clearSearchIcon}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1325,7 +1316,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
                   {getSelectedClientName(newAppointment.clientId)}
                 </Text>
-                <Icon name={showClientDropdown ? "chevron-up" : "chevron-down"} size={20} color="#C0C0C0" />
+                <Text style={styles.dropdownArrow}>{showClientDropdown ? "▲" : "▼"}</Text>
               </TouchableOpacity>
               {showClientDropdown && (
                 <View style={styles.clientDropdownList}>
@@ -1414,7 +1405,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             />
 
             <TouchableOpacity style={styles.saveButton} onPress={handleCreateAppointment}>
-              <Icon name="calendar-plus" size={20} color="#fff" />
+              <Text style={styles.saveIcon}>📅</Text>
               <Text style={styles.saveButtonText}>Create Appointment</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1430,7 +1421,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Request Client Availability</Text>
             <TouchableOpacity onPress={() => setShowAvailabilityRequestModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1438,7 +1429,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <Text style={styles.modalLabel}>Select Client</Text>
             <View style={styles.clientSelectorContainer}>
               <View style={styles.clientSearchContainer}>
-                <Icon name="magnify" size={20} color="#999" style={styles.searchIcon} />
+                <Text style={styles.searchIconEmoji}>🔍</Text>
                 <TextInput
                   style={styles.clientSearchInput}
                   value={clientSearch}
@@ -1448,7 +1439,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 />
                 {clientSearch.length > 0 && (
                   <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
-                    <Icon name="close-circle" size={18} color="#999" />
+                    <Text style={styles.clearSearchIcon}>✕</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1459,7 +1450,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
                   {getSelectedClientName(newAvailabilityRequest.clientId)}
                 </Text>
-                <Icon name={showClientDropdownAvailability ? "chevron-up" : "chevron-down"} size={20} color="#C0C0C0" />
+                <Text style={styles.dropdownArrow}>{showClientDropdownAvailability ? "▲" : "▼"}</Text>
               </TouchableOpacity>
               {showClientDropdownAvailability && (
                 <View style={styles.clientDropdownList}>
@@ -1531,7 +1522,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <TouchableOpacity style={styles.saveButton} onPress={handleSendAvailabilityRequest}>
-              <Icon name="send" size={20} color="#fff" />
+              <Text style={styles.saveIcon}>📨</Text>
               <Text style={styles.saveButtonText}>Send Request</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1547,14 +1538,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Appointment Details</Text>
             <TouchableOpacity onPress={() => setShowAppointmentModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
           {selectedAppointment && (
             <ScrollView style={styles.modalContent}>
               <View style={styles.appointmentDetailCard}>
-                <Icon name="account" size={40} color="#C0C0C0" />
+                <Text style={styles.appointmentDetailIcon}>👤</Text>
                 <Text style={styles.appointmentDetailName}>
                   {selectedAppointment.client_first_name} {selectedAppointment.client_last_name}
                 </Text>
@@ -1564,14 +1555,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
 
               <View style={styles.appointmentDetailRow}>
-                <Icon name="clock-outline" size={20} color="#C0C0C0" />
+                <Text style={styles.detailRowIcon}>🕐</Text>
                 <Text style={styles.appointmentDetailText}>
                   {formatTime(selectedAppointment.start_time)} - {formatTime(selectedAppointment.end_time)}
                 </Text>
               </View>
 
               <View style={styles.appointmentDetailRow}>
-                <Icon name="briefcase" size={20} color="#C0C0C0" />
+                <Text style={styles.detailRowIcon}>💼</Text>
                 <Text style={styles.appointmentDetailText}>
                   {selectedAppointment.appointment_type || 'Consultation'}
                 </Text>
@@ -1579,14 +1570,14 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               {selectedAppointment.title && (
                 <View style={styles.appointmentDetailRow}>
-                  <Icon name="text" size={20} color="#C0C0C0" />
+                  <Text style={styles.detailRowIcon}>📝</Text>
                   <Text style={styles.appointmentDetailText}>{selectedAppointment.title}</Text>
                 </View>
               )}
 
               {selectedAppointment.description && (
                 <View style={styles.appointmentDetailRow}>
-                  <Icon name="note-text" size={20} color="#C0C0C0" />
+                  <Text style={styles.detailRowIcon}>📄</Text>
                   <Text style={styles.appointmentDetailText}>{selectedAppointment.description}</Text>
                 </View>
               )}
@@ -1597,7 +1588,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     style={[styles.appointmentActionButton, { backgroundColor: '#10b981' }]}
                     onPress={() => handleConfirmAppointment(selectedAppointment.id)}
                   >
-                    <Icon name="check" size={20} color="#fff" />
+                    <Text style={styles.actionButtonIcon}>✓</Text>
                     <Text style={styles.appointmentActionText}>Confirm</Text>
                   </TouchableOpacity>
                 )}
@@ -1607,7 +1598,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     style={[styles.appointmentActionButton, { backgroundColor: '#6366f1' }]}
                     onPress={() => handleCompleteAppointment(selectedAppointment.id, '')}
                   >
-                    <Icon name="check-all" size={20} color="#fff" />
+                    <Text style={styles.actionButtonIcon}>✓✓</Text>
                     <Text style={styles.appointmentActionText}>Complete</Text>
                   </TouchableOpacity>
                 )}
@@ -1617,7 +1608,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     style={[styles.appointmentActionButton, { backgroundColor: '#ef4444' }]}
                     onPress={() => handleCancelAppointment(selectedAppointment.id, 'Cancelled by firm')}
                   >
-                    <Icon name="close" size={20} color="#fff" />
+                    <Text style={styles.actionButtonIcon}>✕</Text>
                     <Text style={styles.appointmentActionText}>Cancel</Text>
                   </TouchableOpacity>
                 )}
@@ -1636,7 +1627,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Calendar Settings</Text>
             <TouchableOpacity onPress={() => setShowSettingsModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1649,7 +1640,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="account-group" size={24} color="#C0C0C0" />
+                  <Text style={styles.settingsIcon}>👥</Text>
                   <Text style={styles.toggleLabel}>Enable Multi-Booking</Text>
                 </View>
                 <TouchableOpacity
@@ -1702,7 +1693,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="email-outline" size={24} color="#C0C0C0" />
+                  <Text style={styles.settingsIcon}>📧</Text>
                   <Text style={styles.toggleLabel}>Email Notifications</Text>
                 </View>
                 <TouchableOpacity
@@ -1723,7 +1714,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="message-text-outline" size={24} color="#C0C0C0" />
+                  <Text style={styles.settingsIcon}>💬</Text>
                   <Text style={styles.toggleLabel}>SMS Notifications</Text>
                 </View>
                 <TouchableOpacity
@@ -1748,7 +1739,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Icon name="check-circle-outline" size={24} color="#C0C0C0" />
+                  <Text style={styles.settingsIcon}>✅</Text>
                   <Text style={styles.toggleLabel}>Auto-confirm Appointments</Text>
                 </View>
                 <TouchableOpacity
@@ -1780,7 +1771,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Event</Text>
             <TouchableOpacity onPress={() => setShowAddEventModal(false)}>
-              <Icon name="close" size={24} color="#fff" />
+              <Text style={styles.modalCloseIcon}>✕</Text>
             </TouchableOpacity>
           </View>
 
@@ -1809,11 +1800,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     ]}
                     onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
                   >
-                    <Icon 
-                      name={type.icon} 
-                      size={20} 
-                      color={newEvent.eventType === type.value ? EVENT_TYPE_COLORS[type.value] : '#999'} 
-                    />
+                    <Text style={[
+                      styles.eventTypeEmoji,
+                      newEvent.eventType === type.value && { opacity: 1 }
+                    ]}>
+                      {type.emoji}
+                    </Text>
                     <Text style={[
                       styles.eventTypeLabel,
                       newEvent.eventType === type.value && { color: EVENT_TYPE_COLORS[type.value] }
@@ -1835,11 +1827,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 onPress={() => setShowClientPickerEvent(!showClientPickerEvent)}
               >
                 <View style={styles.clientPickerContent}>
-                  <Icon 
-                    name={newEvent.selectedClientId ? 'account' : 'account-off'} 
-                    size={20} 
-                    color={newEvent.selectedClientId ? '#C0C0C0' : '#999'} 
-                  />
+                  <Text style={styles.clientPickerIcon}>
+                    {newEvent.selectedClientId ? '👤' : '🚫'}
+                  </Text>
                   <Text style={[
                     styles.clientPickerText,
                     newEvent.selectedClientId && styles.clientPickerTextSelected
@@ -1859,7 +1849,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               {showClientPickerEvent && (
                 <View style={styles.clientDropdown}>
                   <View style={styles.clientSearchContainer}>
-                    <Icon name="magnify" size={20} color="#999" />
+                    <Text style={styles.searchIconEmoji}>🔍</Text>
                     <TextInput
                       style={styles.clientSearchInputDropdown}
                       placeholder="Search clients..."
@@ -1870,7 +1860,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     />
                     {clientSearchEvent.length > 0 && (
                       <TouchableOpacity onPress={() => setClientSearchEvent('')}>
-                        <Icon name="close-circle" size={18} color="#999" />
+                        <Text style={styles.clearSearchIcon}>✕</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1887,7 +1877,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                         setClientSearchEvent('');
                       }}
                     >
-                      <Icon name="account-off" size={20} color={!newEvent.selectedClientId ? '#C0C0C0' : '#999'} />
+                      <Text style={styles.clientItemIcon}>🚫</Text>
                       <Text style={[
                         styles.clientDropdownItemText,
                         !newEvent.selectedClientId && styles.clientDropdownItemTextSelected
@@ -1914,11 +1904,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                             setClientSearchEvent('');
                           }}
                         >
-                          <Icon 
-                            name="account" 
-                            size={20} 
-                            color={newEvent.selectedClientId === client.id ? '#C0C0C0' : '#999'} 
-                          />
+                          <Text style={styles.clientItemIcon}>👤</Text>
                           <View style={styles.clientDropdownItemInfo}>
                             <Text style={[
                               styles.clientDropdownItemText,
@@ -1931,7 +1917,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                             )}
                           </View>
                           {newEvent.selectedClientId === client.id && (
-                            <Icon name="check" size={20} color="#C0C0C0" />
+                            <Text style={styles.checkIcon}>✓</Text>
                           )}
                         </TouchableOpacity>
                       ))
@@ -1988,7 +1974,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
             <View style={styles.toggleRow}>
               <View style={styles.toggleInfo}>
-                <Icon name="bell-outline" size={24} color="#C0C0C0" />
+                <Text style={styles.settingsIcon}>🔔</Text>
                 <Text style={styles.toggleLabel}>Enable Reminder</Text>
               </View>
               <TouchableOpacity
@@ -2000,7 +1986,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <TouchableOpacity style={styles.submitButton} onPress={handleAddEvent}>
-              <Icon name="calendar-check" size={20} color="#fff" />
+              <Text style={styles.saveIcon}>✓</Text>
               <Text style={styles.submitButtonText}>Create Event</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -2172,8 +2158,114 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#C0C0C0',
+  },
+  headerIcon: {
+    fontSize: 24,
+    color: '#C0C0C0',
+  },
+  viewModeIcon: {
+    fontSize: 18,
+  },
+  viewModeIconActive: {
+    opacity: 1,
+  },
+  actionIcon: {
+    fontSize: 18,
+  },
+  secondaryIcon: {
+    fontSize: 16,
+  },
+  dayViewIcon: {
+    fontSize: 22,
+    color: '#C0C0C0',
+  },
+  noAvailabilityIcon: {
+    fontSize: 44,
+    color: '#666',
+    marginBottom: 12,
+  },
+  slotIcon: {
+    fontSize: 22,
+    color: '#fff',
+  },
+  slotStatusIcon: {
+    fontSize: 18,
+  },
+  deleteIcon: {
+    fontSize: 18,
+  },
+  modalCloseIcon: {
+    fontSize: 22,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modeToggleIcon: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  modeToggleIconActive: {
+    opacity: 1,
+  },
+  checkboxIcon: {
+    fontSize: 22,
+  },
+  checkboxIconActive: {
+    opacity: 1,
+  },
+  saveIcon: {
+    fontSize: 18,
+    marginRight: 2,
+  },
+  clearIcon: {
+    fontSize: 18,
+    marginRight: 2,
+  },
+  searchIconEmoji: {
+    fontSize: 18,
+    color: '#999',
+  },
+  clearSearchIcon: {
+    fontSize: 16,
+    color: '#999',
+  },
+  dropdownArrow: {
     fontSize: 14,
-    fontWeight: '600'
+    color: '#C0C0C0',
+  },
+  appointmentDetailIcon: {
+    fontSize: 36,
+    color: '#C0C0C0',
+    marginBottom: 8,
+  },
+  detailRowIcon: {
+    fontSize: 18,
+    color: '#C0C0C0',
+    marginRight: 8,
+  },
+  actionButtonIcon: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  settingsIcon: {
+    fontSize: 22,
+    color: '#C0C0C0',
+    marginRight: 4,
+  },
+  eventTypeEmoji: {
+    fontSize: 18,
+    opacity: 0.7,
+  },
+  clientPickerIcon: {
+    fontSize: 18,
+    marginRight: 4,
+  },
+  clientItemIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  checkIcon: {
+    fontSize: 18,
+    color: '#C0C0C0',
   },
   scrollView: {
     flex: 1
