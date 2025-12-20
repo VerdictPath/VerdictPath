@@ -78,6 +78,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -255,78 +256,121 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
 
         {/* Step 2: Select Recipients */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Step 2: Select Recipients</Text>
-            <TouchableOpacity
-              style={styles.selectAllButton}
-              onPress={selectAllPatients}
-            >
-              <Text style={styles.selectAllText}>
-                {selectedPatients.length === patients.length ? 'Deselect All' : 'Select All'}
+          <Text style={styles.sectionTitle}>Step 2: Select Recipients</Text>
+          
+          {/* Dropdown Selector */}
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setShowPatientDropdown(!showPatientDropdown)}
+          >
+            <View style={styles.dropdownButtonContent}>
+              <Text style={{ fontSize: 18, marginRight: 8 }}>👥</Text>
+              <Text style={styles.dropdownButtonText}>
+                {selectedPatients.length === 0
+                  ? 'Select patients...'
+                  : selectedPatients.length === patients.length
+                    ? `All patients (${patients.length})`
+                    : `${selectedPatients.length} patient${selectedPatients.length !== 1 ? 's' : ''} selected`
+                }
               </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search patients by name or email..."
-              placeholderTextColor="#999"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearSearchButton}
-                onPress={() => setSearchQuery('')}
-              >
-                <Text style={styles.clearSearchText}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          {patients.length === 0 ? (
-            <View style={styles.emptyPatients}>
-              <Text style={styles.emptyPatientsText}>No patients found</Text>
             </View>
-          ) : (
-            <View style={styles.patientsList}>
-              {patients.filter(patient => {
-                if (!searchQuery.trim()) return true;
-                const query = searchQuery.toLowerCase();
-                const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
-                const displayName = (patient.displayName || '').toLowerCase();
-                const email = (patient.email || '').toLowerCase();
-                return fullName.includes(query) || displayName.includes(query) || email.includes(query);
-              }).map(patient => (
-                <TouchableOpacity
-                  key={patient.id}
-                  style={[
-                    styles.patientCard,
-                    selectedPatients.includes(patient.id) && styles.patientCardSelected
-                  ]}
-                  onPress={() => togglePatientSelection(patient.id)}
-                >
-                  <View style={styles.patientInfo}>
-                    <Text style={styles.patientName}>
-                      {patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`}
-                    </Text>
-                    <Text style={styles.patientEmail}>{patient.email}</Text>
+            <Text style={styles.dropdownArrow}>{showPatientDropdown ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {/* Dropdown Content */}
+          {showPatientDropdown && (
+            <View style={styles.dropdownContent}>
+              {/* Search Bar */}
+              <View style={styles.dropdownSearchContainer}>
+                <Text style={{ fontSize: 16, marginRight: 8 }}>🔍</Text>
+                <TextInput
+                  style={styles.dropdownSearchInput}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search patients..."
+                  placeholderTextColor="#999"
+                  autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Text style={{ fontSize: 16, color: '#999' }}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Select All Option */}
+              <TouchableOpacity
+                style={styles.dropdownSelectAll}
+                onPress={selectAllPatients}
+              >
+                <Text style={{ fontSize: 16, marginRight: 8 }}>
+                  {selectedPatients.length === patients.length ? '☑️' : '⬜'}
+                </Text>
+                <Text style={styles.dropdownSelectAllText}>
+                  {selectedPatients.length === patients.length ? 'Deselect All' : 'Select All'} ({patients.length})
+                </Text>
+              </TouchableOpacity>
+
+              {/* Patient List */}
+              <ScrollView style={styles.dropdownList} nestedScrollEnabled={true}>
+                {patients.length === 0 ? (
+                  <View style={styles.dropdownEmptyState}>
+                    <Text style={styles.dropdownEmptyText}>No patients found</Text>
                   </View>
-                  {selectedPatients.includes(patient.id) && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+                ) : (
+                  patients.filter(patient => {
+                    if (!searchQuery.trim()) return true;
+                    const query = searchQuery.toLowerCase();
+                    const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
+                    const displayName = (patient.displayName || '').toLowerCase();
+                    const email = (patient.email || '').toLowerCase();
+                    return fullName.includes(query) || displayName.includes(query) || email.includes(query);
+                  }).map(patient => (
+                    <TouchableOpacity
+                      key={patient.id}
+                      style={[
+                        styles.dropdownItem,
+                        selectedPatients.includes(patient.id) && styles.dropdownItemSelected
+                      ]}
+                      onPress={() => togglePatientSelection(patient.id)}
+                    >
+                      <Text style={{ fontSize: 16, marginRight: 8 }}>
+                        {selectedPatients.includes(patient.id) ? '☑️' : '⬜'}
+                      </Text>
+                      <View style={styles.dropdownItemInfo}>
+                        <Text style={[
+                          styles.dropdownItemName,
+                          selectedPatients.includes(patient.id) && styles.dropdownItemNameSelected
+                        ]}>
+                          {patient.displayName || `${patient.firstName || ''} ${patient.lastName || ''}`}
+                        </Text>
+                        <Text style={styles.dropdownItemEmail}>{patient.email}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                )}
+                {searchQuery && patients.filter(patient => {
+                  const query = searchQuery.toLowerCase();
+                  const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase();
+                  const displayName = (patient.displayName || '').toLowerCase();
+                  const email = (patient.email || '').toLowerCase();
+                  return fullName.includes(query) || displayName.includes(query) || email.includes(query);
+                }).length === 0 && (
+                  <View style={styles.dropdownEmptyState}>
+                    <Text style={styles.dropdownEmptyText}>No patients match "{searchQuery}"</Text>
+                  </View>
+                )}
+              </ScrollView>
             </View>
           )}
           
-          {selectedPatients.length > 0 && (
-            <Text style={styles.selectedCount}>
-              {selectedPatients.length} patient{selectedPatients.length !== 1 ? 's' : ''} selected
-            </Text>
+          {/* Selected Patients Summary */}
+          {selectedPatients.length > 0 && !showPatientDropdown && (
+            <View style={styles.selectedSummary}>
+              <Text style={styles.selectedSummaryText}>
+                ✓ {selectedPatients.length} patient{selectedPatients.length !== 1 ? 's' : ''} will receive this notification
+              </Text>
+            </View>
           )}
         </View>
 
@@ -604,6 +648,116 @@ const styles = StyleSheet.create({
     marginTop: medicalProviderTheme.spacing.lg,
     fontSize: 16,
     color: medicalProviderTheme.colors.darkGray,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    padding: medicalProviderTheme.spacing.lg,
+    borderWidth: 2,
+    borderColor: medicalProviderTheme.colors.lightGray,
+    ...medicalProviderTheme.shadows.card,
+  },
+  dropdownButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: medicalProviderTheme.colors.charcoal,
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: medicalProviderTheme.colors.darkGray,
+  },
+  dropdownContent: {
+    marginTop: medicalProviderTheme.spacing.sm,
+    backgroundColor: medicalProviderTheme.colors.clinicalWhite,
+    borderRadius: medicalProviderTheme.borderRadius.medium,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.lightGray,
+    ...medicalProviderTheme.shadows.card,
+    maxHeight: 300,
+  },
+  dropdownSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.lightGray,
+  },
+  dropdownSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: medicalProviderTheme.colors.charcoal,
+    paddingVertical: medicalProviderTheme.spacing.xs,
+  },
+  dropdownSelectAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    paddingVertical: medicalProviderTheme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.lightGray,
+    backgroundColor: medicalProviderTheme.colors.lightTeal,
+  },
+  dropdownSelectAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: medicalProviderTheme.colors.deepTeal,
+  },
+  dropdownList: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: medicalProviderTheme.spacing.md,
+    paddingVertical: medicalProviderTheme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.offWhite,
+  },
+  dropdownItemSelected: {
+    backgroundColor: medicalProviderTheme.colors.lightTeal,
+  },
+  dropdownItemInfo: {
+    flex: 1,
+  },
+  dropdownItemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: medicalProviderTheme.colors.charcoal,
+  },
+  dropdownItemNameSelected: {
+    color: medicalProviderTheme.colors.deepTeal,
+  },
+  dropdownItemEmail: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.darkGray,
+  },
+  dropdownEmptyState: {
+    padding: medicalProviderTheme.spacing.xl,
+    alignItems: 'center',
+  },
+  dropdownEmptyText: {
+    fontSize: 14,
+    color: medicalProviderTheme.colors.darkGray,
+  },
+  selectedSummary: {
+    marginTop: medicalProviderTheme.spacing.md,
+    padding: medicalProviderTheme.spacing.md,
+    backgroundColor: medicalProviderTheme.colors.lightTeal,
+    borderRadius: medicalProviderTheme.borderRadius.small,
+  },
+  selectedSummaryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: medicalProviderTheme.colors.deepTeal,
+    textAlign: 'center',
   },
 });
 
