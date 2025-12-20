@@ -121,7 +121,13 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     appointmentType: 'consultation',
     priority: 'normal',
-    minDurationMinutes: 30
+    minDurationMinutes: 30,
+    option1Date: '',
+    option1Time: '',
+    option2Date: '',
+    option2Time: '',
+    option3Date: '',
+    option3Time: ''
   });
 
   const [clientSearch, setClientSearch] = useState('');
@@ -593,20 +599,51 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
+    const { option1Date, option1Time, option2Date, option2Time, option3Date, option3Time } = newAvailabilityRequest;
+    
+    if (!option1Date || !option1Time || !option2Date || !option2Time || !option3Date || !option3Time) {
+      Alert.alert('Error', 'Please provide all 3 date and time options');
+      return;
+    }
+    
+    const durationMinutes = newAvailabilityRequest.minDurationMinutes || 60;
+    
+    const proposedDates = [
+      { date: option1Date, time: option1Time },
+      { date: option2Date, time: option2Time },
+      { date: option3Date, time: option3Time }
+    ].map(option => {
+      const isoDate = parseUSADate(option.date);
+      const startTimeStr = `${isoDate}T${option.time}:00`;
+      const startDate = new Date(startTimeStr);
+      const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+      return {
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString()
+      };
+    });
+    
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/availability-requests`,
+        `${API_BASE_URL}/api/event-requests`,
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${user.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(newAvailabilityRequest)
+          body: JSON.stringify({
+            clientId: newAvailabilityRequest.clientId,
+            eventType: newAvailabilityRequest.appointmentType || 'consultation',
+            title: newAvailabilityRequest.title,
+            description: newAvailabilityRequest.description,
+            durationMinutes: durationMinutes,
+            proposedDates: proposedDates
+          })
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Availability request sent to client!');
+        Alert.alert('Success', 'Availability request with 3 options sent to client!');
         setShowAvailabilityRequestModal(false);
         setNewAvailabilityRequest({
           clientId: '',
@@ -614,7 +651,13 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           appointmentType: 'consultation',
           priority: 'normal',
-          minDurationMinutes: 30
+          minDurationMinutes: 30,
+          option1Date: '',
+          option1Time: '',
+          option2Date: '',
+          option2Time: '',
+          option3Date: '',
+          option3Time: ''
         });
       } else {
         const data = await response.json();
@@ -1403,19 +1446,100 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               numberOfLines={3}
             />
 
-            <Text style={styles.modalLabel}>Priority</Text>
-            <View style={styles.prioritySelector}>
-              {['normal', 'high', 'urgent'].map((priority) => (
+            <Text style={styles.modalLabel}>Duration (minutes)</Text>
+            <View style={styles.durationSelector}>
+              {[30, 60, 90, 120].map((duration) => (
                 <TouchableOpacity
-                  key={priority}
-                  style={[styles.priorityOption, newAvailabilityRequest.priority === priority && styles.priorityOptionActive]}
-                  onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, priority })}
+                  key={duration}
+                  style={[styles.priorityOption, newAvailabilityRequest.minDurationMinutes === duration && styles.priorityOptionActive]}
+                  onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, minDurationMinutes: duration })}
                 >
-                  <Text style={[styles.priorityOptionText, newAvailabilityRequest.priority === priority && styles.priorityOptionTextActive]}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  <Text style={[styles.priorityOptionText, newAvailabilityRequest.minDurationMinutes === duration && styles.priorityOptionTextActive]}>
+                    {duration}
                   </Text>
                 </TouchableOpacity>
               ))}
+            </View>
+
+            <Text style={styles.optionsSectionTitle}>Provide 3 Date/Time Options</Text>
+            <Text style={styles.optionsSectionSubtitle}>Your client will select one of these options</Text>
+
+            <View style={styles.optionBox}>
+              <Text style={styles.optionLabel}>Option 1</Text>
+              <View style={styles.dateTimeRow}>
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.inputSubLabel}>Date</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    value={newAvailabilityRequest.option1Date}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: text })}
+                    placeholder="MM/DD/YYYY"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.timeInputContainer}>
+                  <Text style={styles.inputSubLabel}>Time</Text>
+                  <TextInput
+                    style={styles.timeInput}
+                    value={newAvailabilityRequest.option1Time}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: text })}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.optionBox}>
+              <Text style={styles.optionLabel}>Option 2</Text>
+              <View style={styles.dateTimeRow}>
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.inputSubLabel}>Date</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    value={newAvailabilityRequest.option2Date}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: text })}
+                    placeholder="MM/DD/YYYY"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.timeInputContainer}>
+                  <Text style={styles.inputSubLabel}>Time</Text>
+                  <TextInput
+                    style={styles.timeInput}
+                    value={newAvailabilityRequest.option2Time}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: text })}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.optionBox}>
+              <Text style={styles.optionLabel}>Option 3</Text>
+              <View style={styles.dateTimeRow}>
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.inputSubLabel}>Date</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    value={newAvailabilityRequest.option3Date}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: text })}
+                    placeholder="MM/DD/YYYY"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <View style={styles.timeInputContainer}>
+                  <Text style={styles.inputSubLabel}>Time</Text>
+                  <TextInput
+                    style={styles.timeInput}
+                    value={newAvailabilityRequest.option3Time}
+                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: text })}
+                    placeholder="HH:MM"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
             </View>
 
             <TouchableOpacity style={styles.saveButton} onPress={handleSendAvailabilityRequest}>
@@ -2900,6 +3024,72 @@ const styles = StyleSheet.create({
   prioritySelector: {
     flexDirection: 'row',
     gap: 8
+  },
+  durationSelector: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16
+  },
+  optionsSectionTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 4
+  },
+  optionsSectionSubtitle: {
+    color: '#999',
+    fontSize: 13,
+    marginBottom: 16
+  },
+  optionBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)'
+  },
+  optionLabel: {
+    color: '#C0C0C0',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  dateInputContainer: {
+    flex: 2
+  },
+  timeInputContainer: {
+    flex: 1
+  },
+  inputSubLabel: {
+    color: '#999',
+    fontSize: 12,
+    marginBottom: 4
+  },
+  dateInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  timeInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
   },
   priorityOption: {
     flex: 1,
