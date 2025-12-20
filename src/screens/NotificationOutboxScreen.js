@@ -420,6 +420,103 @@ const getLawFirmStyles = () => ({
     borderRadius: 8,
     marginTop: 8,
   },
+  modalBody: {
+    padding: 16,
+  },
+  modalUrgentBanner: {
+    backgroundColor: '#dc3545',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  modalUrgentText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  detailSection: {
+    marginBottom: 16,
+  },
+  detailMessage: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    lineHeight: 22,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    padding: 12,
+    borderRadius: 8,
+  },
+  analyticsSection: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  analyticsSectionTitle: {
+    color: theme.lawFirm.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  analyticsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  analyticsIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  analyticsInfo: {
+    flex: 1,
+  },
+  analyticsLabel: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  analyticsTime: {
+    color: theme.lawFirm.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  analyticsCheck: {
+    color: '#4ade80',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  currentStatusSection: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  currentStatusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  trackingContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.lawFirm.border,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  trackingText: {
+    fontSize: 11,
+    marginRight: 12,
+  },
 });
 
 const NOTIFICATION_TYPES = [
@@ -601,11 +698,11 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         borderColor: '#fbbf24'
       };
     }
-    if (notification.deliveredAt) {
+    if (notification.sentAt && !notification.clickedAt && !notification.readAt) {
       return { 
-        label: 'Delivered', 
+        label: 'Sent', 
         color: '#9ca3af', 
-        icon: '→',
+        icon: '↑',
         bgColor: 'rgba(156, 163, 175, 0.15)',
         borderColor: '#9ca3af'
       };
@@ -754,19 +851,6 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
                     <Text style={currentStyles.analyticsTime}>{formatFullTimestamp(selectedNotification.sentAt)}</Text>
                   </View>
                   <Text style={currentStyles.analyticsCheck}>✓</Text>
-                </View>
-                
-                <View style={currentStyles.analyticsRow}>
-                  <View style={[currentStyles.analyticsIcon, { backgroundColor: selectedNotification.deliveredAt ? 'rgba(156, 163, 175, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
-                    <Text>→</Text>
-                  </View>
-                  <View style={currentStyles.analyticsInfo}>
-                    <Text style={currentStyles.analyticsLabel}>Delivered</Text>
-                    <Text style={currentStyles.analyticsTime}>
-                      {selectedNotification.deliveredAt ? formatFullTimestamp(selectedNotification.deliveredAt) : 'Pending...'}
-                    </Text>
-                  </View>
-                  {selectedNotification.deliveredAt && <Text style={currentStyles.analyticsCheck}>✓</Text>}
                 </View>
                 
                 <View style={currentStyles.analyticsRow}>
