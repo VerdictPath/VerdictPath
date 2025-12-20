@@ -360,56 +360,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚕️ Patient List</Text>
 
-          {/* Quick Actions */}
-          <View style={styles.quickActionsContainer}>
-            <Text style={styles.quickActionsTitle}>⚡ Quick Actions</Text>
-            <View style={styles.quickActionsRow}>
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-negotiations', activeTab)}
-              >
-                <Text style={styles.quickActionIcon}>💰</Text>
-                <Text style={styles.quickActionText}>Bill Negotiations</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-disbursements', activeTab)}
-              >
-                <Text style={styles.quickActionIcon}>💵</Text>
-                <Text style={styles.quickActionText}>Disbursements</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.quickActionsRow}>
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-user-management', activeTab)}
-              >
-                <Text style={styles.quickActionIcon}>👥</Text>
-                <Text style={styles.quickActionText}>Manage Users</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-activity-dashboard', activeTab)}
-              >
-                <Text style={styles.quickActionIcon}>📊</Text>
-                <Text style={styles.quickActionText}>User Activity</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.quickActionsRow}>
-              <TouchableOpacity 
-                style={styles.quickActionButton}
-                onPress={() => onNavigate && onNavigate('medicalprovider-hipaa-dashboard', activeTab)}
-              >
-                <Text style={styles.quickActionIcon}>🔒</Text>
-                <Text style={styles.quickActionText}>HIPAA Report</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
+          {/* Patient Dropdown - Now above Quick Actions */}
           {patients.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>🏥</Text>
@@ -419,7 +370,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
               </Text>
             </View>
           ) : (
-            <View>
+            <View style={{ marginBottom: 16 }}>
               {/* Dropdown Button */}
               <TouchableOpacity
                 style={styles.patientDropdownButton}
@@ -503,6 +454,56 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
               )}
             </View>
           )}
+
+          {/* Quick Actions */}
+          <View style={styles.quickActionsContainer}>
+            <Text style={styles.quickActionsTitle}>⚡ Quick Actions</Text>
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-negotiations', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>💰</Text>
+                <Text style={styles.quickActionText}>Bill Negotiations</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-disbursements', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>💵</Text>
+                <Text style={styles.quickActionText}>Disbursements</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-user-management', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>👥</Text>
+                <Text style={styles.quickActionText}>Manage Users</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-activity-dashboard', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>📊</Text>
+                <Text style={styles.quickActionText}>User Activity</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('medicalprovider-hipaa-dashboard', activeTab)}
+              >
+                <Text style={styles.quickActionIcon}>🔒</Text>
+                <Text style={styles.quickActionText}>HIPAA Report</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
       </View>
     </View>
   );
