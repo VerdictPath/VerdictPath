@@ -896,21 +896,23 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
 
   const renderContent = () => (
     <View style={currentStyles.contentContainer}>
-      <View style={currentStyles.header}>
-        <TouchableOpacity
-          style={currentStyles.backButton}
-          onPress={() => onNavigate && onNavigate('notifications')}
-        >
-          <Text style={currentStyles.backButtonText}>← Inbox</Text>
-        </TouchableOpacity>
-        <Text style={currentStyles.headerTitle}>📤 Sent ({total})</Text>
-        <TouchableOpacity
-          style={currentStyles.analyticsButton}
-          onPress={() => onViewAnalytics && onViewAnalytics()}
-        >
-          <Text style={currentStyles.analyticsButtonText}>📊</Text>
-        </TouchableOpacity>
-      </View>
+      {!embedded && (
+        <View style={currentStyles.header}>
+          <TouchableOpacity
+            style={currentStyles.backButton}
+            onPress={() => onNavigate && onNavigate('notifications')}
+          >
+            <Text style={currentStyles.backButtonText}>← Inbox</Text>
+          </TouchableOpacity>
+          <Text style={currentStyles.headerTitle}>📤 Sent ({total})</Text>
+          <TouchableOpacity
+            style={currentStyles.analyticsButton}
+            onPress={() => onViewAnalytics && onViewAnalytics()}
+          >
+            <Text style={currentStyles.analyticsButtonText}>📊</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={currentStyles.searchContainer}>
         <TextInput

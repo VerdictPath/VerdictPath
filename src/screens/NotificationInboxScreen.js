@@ -606,43 +606,47 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
 
   const renderContent = () => (
     <View style={currentStyles.contentContainer}>
-      <View style={currentStyles.header}>
-        <TouchableOpacity
-          style={currentStyles.backButton}
-          onPress={() => onNavigate && onNavigate('dashboard')}
-        >
-          <Text style={currentStyles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={currentStyles.headerTitle}>🔔 Notifications</Text>
-        <View style={currentStyles.placeholder} />
-      </View>
+      {!embedded && (
+        <>
+          <View style={currentStyles.header}>
+            <TouchableOpacity
+              style={currentStyles.backButton}
+              onPress={() => onNavigate && onNavigate('dashboard')}
+            >
+              <Text style={currentStyles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={currentStyles.headerTitle}>🔔 Notifications</Text>
+            <View style={currentStyles.placeholder} />
+          </View>
 
-      <View style={currentStyles.tabContainer}>
-        <TouchableOpacity
-          style={[currentStyles.tab, activeTab === 'inbox' && currentStyles.activeTab]}
-          onPress={() => setActiveTab('inbox')}
-        >
-          <Text style={[currentStyles.tabText, activeTab === 'inbox' && currentStyles.activeTabText]}>
-            📥 Inbox
-          </Text>
-          {unreadCount > 0 && (
-            <View style={currentStyles.tabBadge}>
-              <Text style={currentStyles.tabBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[currentStyles.tab, activeTab === 'outbox' && currentStyles.activeTab]}
-          onPress={() => {
-            setActiveTab('outbox');
-            onNavigate && onNavigate('notification-outbox');
-          }}
-        >
-          <Text style={[currentStyles.tabText, activeTab === 'outbox' && currentStyles.activeTabText]}>
-            📤 Sent
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <View style={currentStyles.tabContainer}>
+            <TouchableOpacity
+              style={[currentStyles.tab, activeTab === 'inbox' && currentStyles.activeTab]}
+              onPress={() => setActiveTab('inbox')}
+            >
+              <Text style={[currentStyles.tabText, activeTab === 'inbox' && currentStyles.activeTabText]}>
+                📥 Inbox
+              </Text>
+              {unreadCount > 0 && (
+                <View style={currentStyles.tabBadge}>
+                  <Text style={currentStyles.tabBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[currentStyles.tab, activeTab === 'outbox' && currentStyles.activeTab]}
+              onPress={() => {
+                setActiveTab('outbox');
+                onNavigate && onNavigate('notification-outbox');
+              }}
+            >
+              <Text style={[currentStyles.tabText, activeTab === 'outbox' && currentStyles.activeTabText]}>
+                📤 Sent
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       <View style={currentStyles.searchContainer}>
         <TextInput
