@@ -2484,7 +2484,7 @@ exports.sendToConnection = async (req, res) => {
         recipient_type, recipient_id, sender_type, sender_id, sender_name,
         type, notification_type, title, subject, body, priority, is_urgent,
         action_type, action_data, sent_at, auto_delete_at, created_at
-      ) VALUES ($1, $2, 'user', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14, NOW())
+      ) VALUES ($1, $2, 'individual', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14, NOW())
       RETURNING id`,
       [
         recipientType,
@@ -2516,7 +2516,7 @@ exports.sendToConnection = async (req, res) => {
         title,
         body,
         priority,
-        sender_type: 'user',
+        sender_type: 'individual',
         sender_id: userId,
         created_at: new Date().toISOString()
       });
