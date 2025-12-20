@@ -197,7 +197,7 @@ const eventRequestController = {
       if (userType === 'law_firm') {
         query = `
           SELECT er.*, 
-            u.name as client_name,
+            CONCAT(u.first_name, ' ', u.last_name) as client_name,
             u.email as client_email,
             ce.id as confirmed_event_id
           FROM event_requests er
@@ -209,7 +209,7 @@ const eventRequestController = {
       } else if (userType === 'medical_provider') {
         query = `
           SELECT er.*, 
-            u.name as patient_name,
+            CONCAT(u.first_name, ' ', u.last_name) as patient_name,
             u.email as patient_email,
             ce.id as confirmed_event_id
           FROM event_requests er
@@ -221,14 +221,16 @@ const eventRequestController = {
       } else if (userType === 'individual') {
         query = `
           SELECT er.*, 
-            lf.name as law_firm_name,
+            COALESCE(lawf.firm_name, CONCAT(lf.first_name, ' ', lf.last_name)) as law_firm_name,
             lf.email as law_firm_email,
-            mp.name as medical_provider_name,
+            COALESCE(medp.provider_name, CONCAT(mp.first_name, ' ', mp.last_name)) as medical_provider_name,
             mp.email as medical_provider_email,
             ce.id as confirmed_event_id
           FROM event_requests er
           LEFT JOIN users lf ON er.law_firm_id = lf.id
+          LEFT JOIN law_firms lawf ON lf.id = lawf.user_id
           LEFT JOIN users mp ON er.medical_provider_id = mp.id
+          LEFT JOIN medical_providers medp ON mp.id = medp.user_id
           LEFT JOIN calendar_events ce ON er.confirmed_event_id = ce.id
           WHERE er.client_id = $1 OR er.patient_id = $1
         `;
@@ -286,10 +288,11 @@ const eventRequestController = {
 
       const eventRequestResult = await pool.query(
         `SELECT er.*, 
-          lf.name as law_firm_name,
-          c.name as client_name
+          COALESCE(lawf.firm_name, CONCAT(lf.first_name, ' ', lf.last_name)) as law_firm_name,
+          CONCAT(c.first_name, ' ', c.last_name) as client_name
          FROM event_requests er
          LEFT JOIN users lf ON er.law_firm_id = lf.id
+         LEFT JOIN law_firms lawf ON lf.id = lawf.user_id
          LEFT JOIN users c ON er.client_id = c.id
          WHERE er.id = $1`,
         [requestId]
