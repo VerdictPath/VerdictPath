@@ -1549,7 +1549,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <Text style={styles.optionsSectionTitle}>Provide 3 Date/Time Options</Text>
             <Text style={styles.optionsSectionSubtitle}>Your client will select one of these options</Text>
 
-            <View style={styles.optionBox}>
+            <View style={[styles.optionBox, showDatePicker1 && { zIndex: 100 }]}>
               <Text style={styles.optionLabel}>Option 1</Text>
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
@@ -1619,7 +1619,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
             </View>
 
-            <View style={styles.optionBox}>
+            <View style={[styles.optionBox, showDatePicker2 && { zIndex: 100 }]}>
               <Text style={styles.optionLabel}>Option 2</Text>
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
@@ -1689,7 +1689,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
             </View>
 
-            <View style={styles.optionBox}>
+            <View style={[styles.optionBox, showDatePicker3 && { zIndex: 100 }]}>
               <Text style={styles.optionLabel}>Option 3</Text>
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
@@ -3415,17 +3415,17 @@ const styles = StyleSheet.create({
     top: 45,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: 9999,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 2,
     borderColor: '#1E3A5F',
-    overflow: 'hidden',
+    overflow: 'visible',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 10
+    elevation: 100
   },
   timePickerButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
