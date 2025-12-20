@@ -811,9 +811,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         <Text style={styles.actionButtonText}>Block Time</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowCreateAppointmentModal(true)}>
-        <Text style={styles.actionIcon}>📅</Text>
-        <Text style={styles.actionButtonText}>New Appt</Text>
+      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityRequestModal(true)}>
+        <Text style={styles.actionIcon}>📨</Text>
+        <Text style={styles.actionButtonText}>Request</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddEventModal(true)}>
@@ -828,14 +828,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     </View>
   );
 
-  const renderSecondaryActions = () => (
-    <View style={styles.secondaryActions}>
-      <TouchableOpacity style={styles.secondaryButton} onPress={() => setShowAvailabilityRequestModal(true)}>
-        <Text style={styles.secondaryIcon}>📨</Text>
-        <Text style={styles.secondaryButtonText}>Request Client Availability</Text>
-      </TouchableOpacity>
-    </View>
-  );
 
   const renderMonthView = () => (
     <View style={styles.calendarContainer}>
@@ -1306,146 +1298,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <TouchableOpacity style={styles.saveButton} onPress={handleBlockTime}>
               <Text style={styles.saveIcon}>🚫</Text>
               <Text style={styles.saveButtonText}>Block Time</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const renderCreateAppointmentModal = () => (
-    <Modal visible={showCreateAppointmentModal} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create Appointment</Text>
-            <TouchableOpacity onPress={() => setShowCreateAppointmentModal(false)}>
-              <Text style={styles.modalCloseIcon}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalLabel}>Select Client</Text>
-            <View style={styles.compactClientSelector}>
-              {newAppointment.clientId ? (
-                <View style={styles.selectedClientTag}>
-                  <Text style={styles.selectedClientTagText} numberOfLines={1}>
-                    {getSelectedClientName(newAppointment.clientId)}
-                  </Text>
-                  <TouchableOpacity 
-                    onPress={() => setNewAppointment({ ...newAppointment, clientId: null })}
-                    style={styles.removeClientTagButton}
-                  >
-                    <Text style={styles.removeClientTagIcon}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity 
-                  style={styles.compactDropdownButton}
-                  onPress={() => setShowClientDropdown(!showClientDropdown)}
-                >
-                  <Text style={styles.compactDropdownPlaceholder}>Select a client...</Text>
-                  <Text style={styles.compactDropdownArrow}>{showClientDropdown ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-              )}
-              {showClientDropdown && (
-                <View style={styles.compactDropdownMenu}>
-                  <View style={styles.compactSearchRow}>
-                    <Text style={styles.compactSearchIcon}>🔍</Text>
-                    <TextInput
-                      style={styles.compactSearchInput}
-                      value={clientSearch}
-                      onChangeText={setClientSearch}
-                      placeholder="Search clients..."
-                      placeholderTextColor="#999"
-                    />
-                    {clientSearch.length > 0 && (
-                      <TouchableOpacity onPress={() => setClientSearch('')}>
-                        <Text style={styles.compactClearIcon}>✕</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <FlatList
-                    data={filteredClients}
-                    keyExtractor={(item) => item.id.toString()}
-                    style={styles.compactClientList}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.compactClientItem}
-                        onPress={() => {
-                          setNewAppointment({ ...newAppointment, clientId: item.id });
-                          setShowClientDropdown(false);
-                          setClientSearch('');
-                        }}
-                      >
-                        <Text style={styles.compactClientItemText}>
-                          {getClientDisplayName(item)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    ListEmptyComponent={
-                      <Text style={styles.compactNoClientsText}>No clients found</Text>
-                    }
-                  />
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.modalLabel}>Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAppointment.appointmentDate}
-              onChangeText={(text) => setNewAppointment({ ...newAppointment, appointmentDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
-
-            <View style={styles.timeRow}>
-              <View style={styles.timeInput}>
-                <Text style={styles.modalLabel}>Start Time</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  value={newAppointment.startTime}
-                  onChangeText={(text) => setNewAppointment({ ...newAppointment, startTime: text })}
-                  placeholder="09:00"
-                  placeholderTextColor="#999"
-                />
-              </View>
-              <View style={styles.timeInput}>
-                <Text style={styles.modalLabel}>End Time</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  value={newAppointment.endTime}
-                  onChangeText={(text) => setNewAppointment({ ...newAppointment, endTime: text })}
-                  placeholder="09:30"
-                  placeholderTextColor="#999"
-                />
-              </View>
-            </View>
-
-            <Text style={styles.modalLabel}>Title</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAppointment.title}
-              onChangeText={(text) => setNewAppointment({ ...newAppointment, title: text })}
-              placeholder="Meeting title"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.modalLabel}>Description</Text>
-            <TextInput
-              style={[styles.modalInput, styles.modalTextArea]}
-              value={newAppointment.description}
-              onChangeText={(text) => setNewAppointment({ ...newAppointment, description: text })}
-              placeholder="Meeting details..."
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={3}
-            />
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleCreateAppointment}>
-              <Text style={styles.saveIcon}>📅</Text>
-              <Text style={styles.saveButtonText}>Create Appointment</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -2016,7 +1868,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       {renderHeader()}
       {renderViewModeSelector()}
       {renderActionButtons()}
-      {renderSecondaryActions()}
       
       <ScrollView style={styles.scrollView}>
         {viewMode === 'month' && renderMonthView()}
@@ -2028,7 +1879,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
       {renderAvailabilityModal()}
       {renderBlockTimeModal()}
-      {renderCreateAppointmentModal()}
       {renderAvailabilityRequestModal()}
       {renderAppointmentModal()}
       {renderSettingsModal()}
