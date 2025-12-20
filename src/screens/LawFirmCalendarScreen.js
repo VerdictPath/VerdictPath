@@ -589,6 +589,19 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const validateDateFormat = (dateStr) => {
+    const regex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+    if (!regex.test(dateStr)) return false;
+    const [month, day, year] = dateStr.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.getMonth() === month - 1 && date.getDate() === day && date.getFullYear() === year;
+  };
+
+  const validateTimeFormat = (timeStr) => {
+    const regex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    return regex.test(timeStr);
+  };
+
   const handleSendAvailabilityRequest = async () => {
     if (!newAvailabilityRequest.clientId) {
       Alert.alert('Error', 'Please select a client');
@@ -606,13 +619,26 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
+    const options = [
+      { date: option1Date, time: option1Time, label: 'Option 1' },
+      { date: option2Date, time: option2Time, label: 'Option 2' },
+      { date: option3Date, time: option3Time, label: 'Option 3' }
+    ];
+    
+    for (const opt of options) {
+      if (!validateDateFormat(opt.date)) {
+        Alert.alert('Error', `${opt.label}: Invalid date format. Use MM/DD/YYYY (e.g., 01/15/2025)`);
+        return;
+      }
+      if (!validateTimeFormat(opt.time)) {
+        Alert.alert('Error', `${opt.label}: Invalid time format. Use HH:MM in 24-hour format (e.g., 09:00 or 14:30)`);
+        return;
+      }
+    }
+    
     const durationMinutes = newAvailabilityRequest.minDurationMinutes || 60;
     
-    const proposedDates = [
-      { date: option1Date, time: option1Time },
-      { date: option2Date, time: option2Time },
-      { date: option3Date, time: option3Time }
-    ].map(option => {
+    const proposedDates = options.map(option => {
       const isoDate = parseUSADate(option.date);
       const startTimeStr = `${isoDate}T${option.time}:00`;
       const startDate = new Date(startTimeStr);
