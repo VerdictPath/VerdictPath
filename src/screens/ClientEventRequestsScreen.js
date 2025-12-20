@@ -40,7 +40,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
     try {
       const token = await AsyncStorage.getItem('authToken');
       
-      const response = await fetch(`${API_BASE_URL}/event-requests`, {
+      const response = await fetch(`${API_BASE_URL}/api/event-requests`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -58,7 +58,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
     try {
       const token = await AsyncStorage.getItem('authToken');
       
-      const response = await fetch(`${API_BASE_URL}/event-requests/${request.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/event-requests/${request.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -142,7 +142,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       const token = await AsyncStorage.getItem('authToken');
       
       const response = await fetch(
-        `${API_BASE_URL}/event-requests/${selectedRequest.eventRequest.id}/propose-dates`,
+        `${API_BASE_URL}/api/event-requests/${selectedRequest.eventRequest.id}/propose-dates`,
         {
           method: 'POST',
           headers: {
@@ -177,7 +177,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       const token = await AsyncStorage.getItem('authToken');
       
       const response = await fetch(
-        `${API_BASE_URL}/event-requests/${selectedRequest.eventRequest.id}/select-date`,
+        `${API_BASE_URL}/api/event-requests/${selectedRequest.eventRequest.id}/select-date`,
         {
           method: 'POST',
           headers: {
