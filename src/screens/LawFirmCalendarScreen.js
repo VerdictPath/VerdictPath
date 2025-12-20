@@ -10,6 +10,20 @@ import { API_BASE_URL } from '../config/api';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const APPOINTMENT_TYPES = ['consultation', 'case_review', 'deposition', 'mediation', 'court_hearing', 'settlement_conference'];
+
+const formatDateUSA = (isoDate) => {
+  if (!isoDate) return '';
+  return moment(isoDate, 'YYYY-MM-DD').format('MM/DD/YYYY');
+};
+
+const parseUSADate = (usaDate) => {
+  if (!usaDate) return '';
+  const parsed = moment(usaDate, 'MM/DD/YYYY', true);
+  if (parsed.isValid()) {
+    return parsed.format('YYYY-MM-DD');
+  }
+  return usaDate;
+};
 const STATUS_COLORS = {
   pending: '#f59e0b',
   confirmed: '#10b981',
@@ -43,7 +57,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'meeting',
-    eventDate: moment().format('YYYY-MM-DD'),
+    eventDate: moment().format('MM/DD/YYYY'),
     startTime: '09:00',
     endTime: '10:00',
     reminderEnabled: true,
@@ -82,8 +96,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [bulkMode, setBulkMode] = useState(true);
   
   const [newBlockedTime, setNewBlockedTime] = useState({
-    startDate: moment().format('YYYY-MM-DD'),
-    endDate: moment().format('YYYY-MM-DD'),
+    startDate: moment().format('MM/DD/YYYY'),
+    endDate: moment().format('MM/DD/YYYY'),
     reason: '',
     blockType: 'personal',
     isAllDay: true
@@ -91,7 +105,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const [newAppointment, setNewAppointment] = useState({
     clientId: '',
-    appointmentDate: moment().format('YYYY-MM-DD'),
+    appointmentDate: moment().format('MM/DD/YYYY'),
     startTime: '09:00',
     endTime: '09:30',
     appointmentType: 'consultation',
@@ -389,6 +403,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
+    const isoStartDate = parseUSADate(newBlockedTime.startDate);
+    const isoEndDate = parseUSADate(newBlockedTime.endDate);
+    
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/block-time`,
@@ -399,8 +416,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            startDatetime: `${newBlockedTime.startDate}T00:00:00`,
-            endDatetime: `${newBlockedTime.endDate}T23:59:59`,
+            startDatetime: `${isoStartDate}T00:00:00`,
+            endDatetime: `${isoEndDate}T23:59:59`,
             reason: newBlockedTime.reason,
             blockType: newBlockedTime.blockType,
             isAllDay: newBlockedTime.isAllDay
@@ -412,8 +429,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         setShowBlockTimeModal(false);
         fetchBlockedTimes();
         setNewBlockedTime({
-          startDate: moment().format('YYYY-MM-DD'),
-          endDate: moment().format('YYYY-MM-DD'),
+          startDate: moment().format('MM/DD/YYYY'),
+          endDate: moment().format('MM/DD/YYYY'),
           reason: '',
           blockType: 'personal',
           isAllDay: true
@@ -450,16 +467,17 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
 
-    const startDateTime = `${newEvent.eventDate}T${newEvent.startTime}`;
+    const isoDate = parseUSADate(newEvent.eventDate);
+    const startDateTime = `${isoDate}T${newEvent.startTime}`;
     const parsedStartTime = new Date(startDateTime);
     if (isNaN(parsedStartTime.getTime())) {
-      Alert.alert('Error', 'Invalid date or start time format');
+      Alert.alert('Error', 'Invalid date or start time format. Use MM/DD/YYYY');
       return;
     }
 
     let parsedEndTime = parsedStartTime;
     if (newEvent.endTime) {
-      const endDateTime = `${newEvent.eventDate}T${newEvent.endTime}`;
+      const endDateTime = `${isoDate}T${newEvent.endTime}`;
       parsedEndTime = new Date(endDateTime);
       if (isNaN(parsedEndTime.getTime())) {
         Alert.alert('Error', 'Invalid end time format');
@@ -501,7 +519,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           location: '',
           eventType: 'meeting',
-          eventDate: moment().format('YYYY-MM-DD'),
+          eventDate: moment().format('MM/DD/YYYY'),
           startTime: '09:00',
           endTime: '10:00',
           reminderEnabled: true,
@@ -524,6 +542,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
+    const isoAppointmentDate = parseUSADate(newAppointment.appointmentDate);
+    
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/law-firm-calendar/law-firms/${lawFirmId}/appointments`,
@@ -533,7 +553,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             'Authorization': `Bearer ${user.token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(newAppointment)
+          body: JSON.stringify({
+            ...newAppointment,
+            appointmentDate: isoAppointmentDate
+          })
         }
       );
       if (response.ok) {
@@ -542,7 +565,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchAppointments();
         setNewAppointment({
           clientId: '',
-          appointmentDate: moment().format('YYYY-MM-DD'),
+          appointmentDate: moment().format('MM/DD/YYYY'),
           startTime: '09:00',
           endTime: '09:30',
           appointmentType: 'consultation',
@@ -1256,7 +1279,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newBlockedTime.startDate}
               onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, startDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
@@ -1265,7 +1288,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newBlockedTime.endDate}
               onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, endDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
@@ -1373,7 +1396,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newAppointment.appointmentDate}
               onChangeText={(text) => setNewAppointment({ ...newAppointment, appointmentDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
@@ -1903,7 +1926,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newEvent.eventDate || ''}
               onChangeText={(text) => setNewEvent({ ...newEvent, eventDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
