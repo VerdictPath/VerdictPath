@@ -43,8 +43,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'meeting',
-    startTime: '',
-    endTime: '',
+    eventDate: moment().format('YYYY-MM-DD'),
+    startTime: '09:00',
+    endTime: '10:00',
     reminderEnabled: true,
     selectedClientId: ''
   });
@@ -444,22 +445,24 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startTime) {
-      Alert.alert('Error', 'Please enter a title and start time');
+    if (!newEvent.title || !newEvent.eventDate || !newEvent.startTime) {
+      Alert.alert('Error', 'Please enter a title, date, and start time');
       return;
     }
 
-    const parsedStartTime = new Date(newEvent.startTime.replace(' ', 'T'));
+    const startDateTime = `${newEvent.eventDate}T${newEvent.startTime}`;
+    const parsedStartTime = new Date(startDateTime);
     if (isNaN(parsedStartTime.getTime())) {
-      Alert.alert('Error', 'Invalid start time format. Use YYYY-MM-DD HH:MM');
+      Alert.alert('Error', 'Invalid date or start time format');
       return;
     }
 
     let parsedEndTime = parsedStartTime;
     if (newEvent.endTime) {
-      parsedEndTime = new Date(newEvent.endTime.replace(' ', 'T'));
+      const endDateTime = `${newEvent.eventDate}T${newEvent.endTime}`;
+      parsedEndTime = new Date(endDateTime);
       if (isNaN(parsedEndTime.getTime())) {
-        Alert.alert('Error', 'Invalid end time format. Use YYYY-MM-DD HH:MM');
+        Alert.alert('Error', 'Invalid end time format');
         return;
       }
     } else {
@@ -498,8 +501,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           location: '',
           eventType: 'meeting',
-          startTime: '',
-          endTime: '',
+          eventDate: moment().format('YYYY-MM-DD'),
+          startTime: '09:00',
+          endTime: '10:00',
           reminderEnabled: true,
           selectedClientId: ''
         });
@@ -1794,218 +1798,170 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Event Title *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter event title"
-                placeholderTextColor="#999"
-                value={newEvent.title}
-                onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Event Type</Text>
-              <View style={styles.eventTypeGrid}>
-                {EVENT_TYPES.map((type) => (
-                  <TouchableOpacity
-                    key={type.value}
-                    style={[
-                      styles.eventTypeOption,
-                      newEvent.eventType === type.value && styles.eventTypeOptionActive,
-                      { borderColor: EVENT_TYPE_COLORS[type.value] }
-                    ]}
-                    onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
+            <Text style={styles.modalLabel}>Share with Client (Optional)</Text>
+            <Text style={styles.modalDescription}>
+              Select a client to automatically add this event to their calendar and send a notification
+            </Text>
+            <View style={styles.compactClientSelector}>
+              {newEvent.selectedClientId ? (
+                <View style={styles.selectedClientTag}>
+                  <Text style={styles.selectedClientTagText} numberOfLines={1}>
+                    {(() => {
+                      const selected = clients.find(c => c.id === newEvent.selectedClientId);
+                      return selected ? `${selected.first_name || selected.firstName} ${selected.last_name || selected.lastName}` : 'Selected Client';
+                    })()}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => setNewEvent({ ...newEvent, selectedClientId: '' })}
+                    style={styles.removeClientTagButton}
                   >
-                    <Text style={[
-                      styles.eventTypeEmoji,
-                      newEvent.eventType === type.value && { opacity: 1 }
-                    ]}>
-                      {type.emoji}
-                    </Text>
-                    <Text style={[
-                      styles.eventTypeLabel,
-                      newEvent.eventType === type.value && { color: EVENT_TYPE_COLORS[type.value] }
-                    ]}>
-                      {type.label}
-                    </Text>
+                    <Text style={styles.removeClientTagIcon}>✕</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Share with Client</Text>
-              <Text style={styles.settingsDescription}>
-                Select a client to automatically add this event to their calendar and send a notification
-              </Text>
-              <TouchableOpacity
-                style={styles.clientPickerButton}
-                onPress={() => setShowClientPickerEvent(!showClientPickerEvent)}
-              >
-                <View style={styles.clientPickerContent}>
-                  <Text style={styles.clientPickerIcon}>
-                    {newEvent.selectedClientId ? '👤' : '🚫'}
-                  </Text>
-                  <Text style={[
-                    styles.clientPickerText,
-                    newEvent.selectedClientId && styles.clientPickerTextSelected
-                  ]}>
-                    {newEvent.selectedClientId 
-                      ? (() => {
-                          const selected = clients.find(c => c.id === newEvent.selectedClientId);
-                          return selected ? `${selected.first_name || selected.firstName} ${selected.last_name || selected.lastName}` : 'Select Client';
-                        })()
-                      : "Don't Share"
-                    }
-                  </Text>
                 </View>
-                <Text style={styles.dropdownIconClient}>{showClientPickerEvent ? '▲' : '▼'}</Text>
-              </TouchableOpacity>
-
+              ) : (
+                <TouchableOpacity 
+                  style={styles.compactDropdownButton}
+                  onPress={() => setShowClientPickerEvent(!showClientPickerEvent)}
+                >
+                  <Text style={styles.compactDropdownPlaceholder}>Don't share (optional)</Text>
+                  <Text style={styles.compactDropdownArrow}>{showClientPickerEvent ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+              )}
               {showClientPickerEvent && (
-                <View style={styles.clientDropdown}>
-                  <View style={styles.clientSearchContainer}>
-                    <Text style={styles.searchIconEmoji}>🔍</Text>
+                <View style={styles.compactDropdownMenu}>
+                  <View style={styles.compactSearchRow}>
+                    <Text style={styles.compactSearchIcon}>🔍</Text>
                     <TextInput
-                      style={styles.clientSearchInputDropdown}
-                      placeholder="Search clients..."
-                      placeholderTextColor="#999"
+                      style={styles.compactSearchInput}
                       value={clientSearchEvent}
                       onChangeText={setClientSearchEvent}
-                      autoCapitalize="none"
+                      placeholder="Search clients..."
+                      placeholderTextColor="#999"
                     />
                     {clientSearchEvent.length > 0 && (
                       <TouchableOpacity onPress={() => setClientSearchEvent('')}>
-                        <Text style={styles.clearSearchIcon}>✕</Text>
+                        <Text style={styles.compactClearIcon}>✕</Text>
                       </TouchableOpacity>
                     )}
                   </View>
-                  
-                  <ScrollView style={styles.clientDropdownList} nestedScrollEnabled={true}>
-                    <TouchableOpacity
-                      style={[
-                        styles.clientDropdownItem,
-                        !newEvent.selectedClientId && styles.clientDropdownItemSelected
-                      ]}
-                      onPress={() => {
-                        setNewEvent({ ...newEvent, selectedClientId: '' });
-                        setShowClientPickerEvent(false);
-                        setClientSearchEvent('');
-                      }}
-                    >
-                      <Text style={styles.clientItemIcon}>🚫</Text>
-                      <Text style={[
-                        styles.clientDropdownItemText,
-                        !newEvent.selectedClientId && styles.clientDropdownItemTextSelected
-                      ]}>
-                        Don't Share
-                      </Text>
-                    </TouchableOpacity>
-                    
-                    {filteredClientsEvent.length === 0 && clientSearchEvent ? (
-                      <View style={styles.noResultsContainer}>
-                        <Text style={styles.noResultsText}>No clients found matching "{clientSearchEvent}"</Text>
-                      </View>
-                    ) : (
-                      filteredClientsEvent.map((client) => (
-                        <TouchableOpacity
-                          key={client.id}
-                          style={[
-                            styles.clientDropdownItem,
-                            newEvent.selectedClientId === client.id && styles.clientDropdownItemSelected
-                          ]}
-                          onPress={() => {
-                            setNewEvent({ ...newEvent, selectedClientId: client.id });
-                            setShowClientPickerEvent(false);
-                            setClientSearchEvent('');
-                          }}
-                        >
-                          <Text style={styles.clientItemIcon}>👤</Text>
-                          <View style={styles.clientDropdownItemInfo}>
-                            <Text style={[
-                              styles.clientDropdownItemText,
-                              newEvent.selectedClientId === client.id && styles.clientDropdownItemTextSelected
-                            ]}>
-                              {client.first_name || client.firstName} {client.last_name || client.lastName}
-                            </Text>
-                            {client.email && (
-                              <Text style={styles.clientDropdownItemEmail}>{client.email}</Text>
-                            )}
-                          </View>
-                          {newEvent.selectedClientId === client.id && (
-                            <Text style={styles.checkIcon}>✓</Text>
-                          )}
-                        </TouchableOpacity>
-                      ))
+                  <FlatList
+                    data={filteredClientsEvent}
+                    keyExtractor={(item) => item.id.toString()}
+                    style={styles.compactClientList}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.compactClientItem}
+                        onPress={() => {
+                          setNewEvent({ ...newEvent, selectedClientId: item.id });
+                          setShowClientPickerEvent(false);
+                          setClientSearchEvent('');
+                        }}
+                      >
+                        <Text style={styles.compactClientItemText}>
+                          {item.first_name || item.firstName} {item.last_name || item.lastName}
+                        </Text>
+                      </TouchableOpacity>
                     )}
-                  </ScrollView>
+                    ListEmptyComponent={
+                      <Text style={styles.compactNoClientsText}>No clients found</Text>
+                    }
+                  />
                 </View>
               )}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Start Date & Time *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM (e.g., 2025-01-15 09:00)"
-                placeholderTextColor="#999"
-                value={newEvent.startTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
-              />
+            <Text style={styles.modalLabel}>Event Type</Text>
+            <View style={styles.eventTypeGrid}>
+              {EVENT_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={[
+                    styles.eventTypeOption,
+                    newEvent.eventType === type.value && styles.eventTypeOptionActive,
+                    { borderColor: EVENT_TYPE_COLORS[type.value] }
+                  ]}
+                  onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
+                >
+                  <Text style={[
+                    styles.eventTypeEmoji,
+                    newEvent.eventType === type.value && { opacity: 1 }
+                  ]}>
+                    {type.emoji}
+                  </Text>
+                  <Text style={[
+                    styles.eventTypeLabel,
+                    newEvent.eventType === type.value && { color: EVENT_TYPE_COLORS[type.value] }
+                  ]}>
+                    {type.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM (defaults to 1 hour after start)"
-                placeholderTextColor="#999"
-                value={newEvent.endTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
-              />
-            </View>
+            <Text style={styles.modalLabel}>Date</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.eventDate || ''}
+              onChangeText={(text) => setNewEvent({ ...newEvent, eventDate: text })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#999"
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Location (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter location"
-                placeholderTextColor="#999"
-                value={newEvent.location}
-                onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.modalLabel}>Description (Optional)</Text>
-              <TextInput
-                style={[styles.textInput, { height: 80, textAlignVertical: 'top' }]}
-                placeholder="Enter description"
-                placeholderTextColor="#999"
-                value={newEvent.description}
-                onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
-                multiline
-              />
-            </View>
-
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleInfo}>
-                <Text style={styles.settingsIcon}>🔔</Text>
-                <Text style={styles.toggleLabel}>Enable Reminder</Text>
+            <View style={styles.timeRow}>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>Start Time</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newEvent.startTime}
+                  onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
+                  placeholder="09:00"
+                  placeholderTextColor="#999"
+                />
               </View>
-              <TouchableOpacity
-                style={[styles.toggleButton, newEvent.reminderEnabled && styles.toggleButtonActive]}
-                onPress={() => setNewEvent({ ...newEvent, reminderEnabled: !newEvent.reminderEnabled })}
-              >
-                <View style={[styles.toggleCircle, newEvent.reminderEnabled && styles.toggleCircleActive]} />
-              </TouchableOpacity>
+              <View style={styles.timeInput}>
+                <Text style={styles.modalLabel}>End Time</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={newEvent.endTime}
+                  onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
+                  placeholder="10:00"
+                  placeholderTextColor="#999"
+                />
+              </View>
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddEvent}>
-              <Text style={styles.saveIcon}>✓</Text>
-              <Text style={styles.submitButtonText}>Create Event</Text>
+            <Text style={styles.modalLabel}>Title</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.title}
+              onChangeText={(text) => setNewEvent({ ...newEvent, title: text })}
+              placeholder="Event title"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Location (Optional)</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newEvent.location}
+              onChangeText={(text) => setNewEvent({ ...newEvent, location: text })}
+              placeholder="Enter location"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.modalLabel}>Description (Optional)</Text>
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              value={newEvent.description}
+              onChangeText={(text) => setNewEvent({ ...newEvent, description: text })}
+              placeholder="Event details..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity style={styles.saveButton} onPress={handleAddEvent}>
+              <Text style={styles.saveIcon}>📅</Text>
+              <Text style={styles.saveButtonText}>Create Event</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -2555,6 +2511,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 16
+  },
+  modalDescription: {
+    color: '#999',
+    fontSize: 12,
+    marginBottom: 12,
+    marginTop: -4
   },
   inputGroup: {
     marginBottom: 16
