@@ -32,6 +32,7 @@ const LandingScreen = ({ onNavigate }) => {
     // Set all player properties for maximum performance
     player.loop = true;
     player.muted = true;
+    player.volume = 0;
     // Slightly reduce playback rate to reduce lag (0.95 = 95% speed)
     player.playbackRate = 0.95;
     
