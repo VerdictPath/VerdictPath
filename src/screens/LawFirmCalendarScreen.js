@@ -1880,7 +1880,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                     newEvent.eventType === type.value && styles.eventTypeOptionActive,
                     { borderColor: EVENT_TYPE_COLORS[type.value] }
                   ]}
-                  onPress={() => setNewEvent({ ...newEvent, eventType: type.value })}
+                  onPress={() => setNewEvent({ ...newEvent, eventType: type.value, title: type.label })}
                 >
                   <Text style={[
                     styles.eventTypeEmoji,
