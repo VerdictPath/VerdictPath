@@ -1600,6 +1600,13 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </View>
 
               <View style={styles.appointmentDetailRow}>
+                <Text style={styles.detailRowIcon}>📅</Text>
+                <Text style={styles.appointmentDetailText}>
+                  {formatDateUSA(selectedAppointment.appointment_date)}
+                </Text>
+              </View>
+
+              <View style={styles.appointmentDetailRow}>
                 <Text style={styles.detailRowIcon}>🕐</Text>
                 <Text style={styles.appointmentDetailText}>
                   {formatTime(selectedAppointment.start_time)} - {formatTime(selectedAppointment.end_time)}
