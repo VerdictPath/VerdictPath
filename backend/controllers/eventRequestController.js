@@ -54,14 +54,14 @@ const eventRequestController = {
       let connectionCheck;
       if (userType === 'law_firm') {
         connectionCheck = await pool.query(
-          `SELECT id FROM connections 
-           WHERE individual_user_id = $1 AND law_firm_id = $2 AND status = 'accepted'`,
+          `SELECT id FROM law_firm_clients 
+           WHERE client_id = $1 AND law_firm_id = $2`,
           [finalRecipientId, providerId]
         );
       } else {
         connectionCheck = await pool.query(
-          `SELECT id FROM connections 
-           WHERE individual_user_id = $1 AND medical_provider_id = $2 AND status = 'accepted'`,
+          `SELECT id FROM client_medical_providers 
+           WHERE client_id = $1 AND medical_provider_id = $2`,
           [finalRecipientId, providerId]
         );
       }
@@ -172,8 +172,9 @@ const eventRequestController = {
         }
       });
     } catch (error) {
-      console.error('Error creating event request:', error);
-      res.status(500).json({ error: 'Failed to create event request' });
+      console.error('Error creating event request:', error.message);
+      console.error('Error stack:', error.stack);
+      res.status(500).json({ error: 'Failed to create event request', details: error.message });
     }
   },
 
