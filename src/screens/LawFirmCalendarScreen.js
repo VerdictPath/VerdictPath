@@ -1293,59 +1293,65 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
           <ScrollView style={styles.modalContent}>
             <Text style={styles.modalLabel}>Select Client</Text>
-            <View style={styles.clientSelectorContainer}>
-              <View style={styles.clientSearchContainer}>
-                <Text style={styles.searchIconEmoji}>🔍</Text>
-                <TextInput
-                  style={styles.clientSearchInput}
-                  value={clientSearch}
-                  onChangeText={setClientSearch}
-                  placeholder="Search clients..."
-                  placeholderTextColor="#999"
-                />
-                {clientSearch.length > 0 && (
-                  <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
-                    <Text style={styles.clearSearchIcon}>✕</Text>
+            <View style={styles.compactClientSelector}>
+              {newAppointment.clientId ? (
+                <View style={styles.selectedClientTag}>
+                  <Text style={styles.selectedClientTagText} numberOfLines={1}>
+                    {getSelectedClientName(newAppointment.clientId)}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => setNewAppointment({ ...newAppointment, clientId: null })}
+                    style={styles.removeClientTagButton}
+                  >
+                    <Text style={styles.removeClientTagIcon}>✕</Text>
                   </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity 
-                style={styles.clientDropdownButton}
-                onPress={() => setShowClientDropdown(!showClientDropdown)}
-              >
-                <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
-                  {getSelectedClientName(newAppointment.clientId)}
-                </Text>
-                <Text style={styles.dropdownArrow}>{showClientDropdown ? "▲" : "▼"}</Text>
-              </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.compactDropdownButton}
+                  onPress={() => setShowClientDropdown(!showClientDropdown)}
+                >
+                  <Text style={styles.compactDropdownPlaceholder}>Select a client...</Text>
+                  <Text style={styles.compactDropdownArrow}>{showClientDropdown ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+              )}
               {showClientDropdown && (
-                <View style={styles.clientDropdownList}>
+                <View style={styles.compactDropdownMenu}>
+                  <View style={styles.compactSearchRow}>
+                    <Text style={styles.compactSearchIcon}>🔍</Text>
+                    <TextInput
+                      style={styles.compactSearchInput}
+                      value={clientSearch}
+                      onChangeText={setClientSearch}
+                      placeholder="Search clients..."
+                      placeholderTextColor="#999"
+                    />
+                    {clientSearch.length > 0 && (
+                      <TouchableOpacity onPress={() => setClientSearch('')}>
+                        <Text style={styles.compactClearIcon}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   <FlatList
                     data={filteredClients}
                     keyExtractor={(item) => item.id.toString()}
-                    style={styles.clientFlatList}
+                    style={styles.compactClientList}
                     renderItem={({ item }) => (
                       <TouchableOpacity
-                        style={[
-                          styles.clientDropdownItem,
-                          newAppointment.clientId === item.id && styles.clientDropdownItemActive
-                        ]}
+                        style={styles.compactClientItem}
                         onPress={() => {
                           setNewAppointment({ ...newAppointment, clientId: item.id });
                           setShowClientDropdown(false);
                           setClientSearch('');
                         }}
                       >
-                        <Text style={[
-                          styles.clientDropdownItemText,
-                          newAppointment.clientId === item.id && styles.clientDropdownItemTextActive
-                        ]}>
+                        <Text style={styles.compactClientItemText}>
                           {getClientDisplayName(item)}
                         </Text>
                       </TouchableOpacity>
                     )}
                     ListEmptyComponent={
-                      <Text style={styles.noClientsText}>No clients found</Text>
+                      <Text style={styles.compactNoClientsText}>No clients found</Text>
                     }
                   />
                 </View>
@@ -1427,59 +1433,65 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
           <ScrollView style={styles.modalContent}>
             <Text style={styles.modalLabel}>Select Client</Text>
-            <View style={styles.clientSelectorContainer}>
-              <View style={styles.clientSearchContainer}>
-                <Text style={styles.searchIconEmoji}>🔍</Text>
-                <TextInput
-                  style={styles.clientSearchInput}
-                  value={clientSearch}
-                  onChangeText={setClientSearch}
-                  placeholder="Search clients..."
-                  placeholderTextColor="#999"
-                />
-                {clientSearch.length > 0 && (
-                  <TouchableOpacity onPress={() => setClientSearch('')} style={styles.clearSearchButton}>
-                    <Text style={styles.clearSearchIcon}>✕</Text>
+            <View style={styles.compactClientSelector}>
+              {newAvailabilityRequest.clientId ? (
+                <View style={styles.selectedClientTag}>
+                  <Text style={styles.selectedClientTagText} numberOfLines={1}>
+                    {getSelectedClientName(newAvailabilityRequest.clientId)}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, clientId: null })}
+                    style={styles.removeClientTagButton}
+                  >
+                    <Text style={styles.removeClientTagIcon}>✕</Text>
                   </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity 
-                style={styles.clientDropdownButton}
-                onPress={() => setShowClientDropdownAvailability(!showClientDropdownAvailability)}
-              >
-                <Text style={styles.clientDropdownButtonText} numberOfLines={1}>
-                  {getSelectedClientName(newAvailabilityRequest.clientId)}
-                </Text>
-                <Text style={styles.dropdownArrow}>{showClientDropdownAvailability ? "▲" : "▼"}</Text>
-              </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.compactDropdownButton}
+                  onPress={() => setShowClientDropdownAvailability(!showClientDropdownAvailability)}
+                >
+                  <Text style={styles.compactDropdownPlaceholder}>Select a client...</Text>
+                  <Text style={styles.compactDropdownArrow}>{showClientDropdownAvailability ? '▲' : '▼'}</Text>
+                </TouchableOpacity>
+              )}
               {showClientDropdownAvailability && (
-                <View style={styles.clientDropdownList}>
+                <View style={styles.compactDropdownMenu}>
+                  <View style={styles.compactSearchRow}>
+                    <Text style={styles.compactSearchIcon}>🔍</Text>
+                    <TextInput
+                      style={styles.compactSearchInput}
+                      value={clientSearch}
+                      onChangeText={setClientSearch}
+                      placeholder="Search clients..."
+                      placeholderTextColor="#999"
+                    />
+                    {clientSearch.length > 0 && (
+                      <TouchableOpacity onPress={() => setClientSearch('')}>
+                        <Text style={styles.compactClearIcon}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                   <FlatList
                     data={filteredClients}
                     keyExtractor={(item) => item.id.toString()}
-                    style={styles.clientFlatList}
+                    style={styles.compactClientList}
                     renderItem={({ item }) => (
                       <TouchableOpacity
-                        style={[
-                          styles.clientDropdownItem,
-                          newAvailabilityRequest.clientId === item.id && styles.clientDropdownItemActive
-                        ]}
+                        style={styles.compactClientItem}
                         onPress={() => {
                           setNewAvailabilityRequest({ ...newAvailabilityRequest, clientId: item.id });
                           setShowClientDropdownAvailability(false);
                           setClientSearch('');
                         }}
                       >
-                        <Text style={[
-                          styles.clientDropdownItemText,
-                          newAvailabilityRequest.clientId === item.id && styles.clientDropdownItemTextActive
-                        ]}>
+                        <Text style={styles.compactClientItemText}>
                           {getClientDisplayName(item)}
                         </Text>
                       </TouchableOpacity>
                     )}
                     ListEmptyComponent={
-                      <Text style={styles.noClientsText}>No clients found</Text>
+                      <Text style={styles.compactNoClientsText}>No clients found</Text>
                     }
                   />
                 </View>
@@ -2917,6 +2929,101 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   noClientsText: {
+    color: '#999',
+    fontSize: 14,
+    textAlign: 'center',
+    padding: 16
+  },
+  compactClientSelector: {
+    marginBottom: 8
+  },
+  selectedClientTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E3A5F',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start'
+  },
+  selectedClientTagText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginRight: 8,
+    maxWidth: 200
+  },
+  removeClientTagButton: {
+    padding: 2
+  },
+  removeClientTagIcon: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  compactDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    borderRadius: 12,
+    padding: 14
+  },
+  compactDropdownPlaceholder: {
+    color: '#999',
+    fontSize: 16
+  },
+  compactDropdownArrow: {
+    color: '#fff',
+    fontSize: 12
+  },
+  compactDropdownMenu: {
+    marginTop: 8,
+    backgroundColor: 'rgba(26, 84, 144, 0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.5)',
+    borderRadius: 12,
+    overflow: 'hidden'
+  },
+  compactSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.15)'
+  },
+  compactSearchIcon: {
+    fontSize: 14,
+    marginRight: 8
+  },
+  compactSearchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 15,
+    paddingVertical: 6
+  },
+  compactClearIcon: {
+    color: '#999',
+    fontSize: 14,
+    padding: 4
+  },
+  compactClientList: {
+    maxHeight: 180
+  },
+  compactClientItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  compactClientItemText: {
+    color: '#fff',
+    fontSize: 15
+  },
+  compactNoClientsText: {
     color: '#999',
     fontSize: 14,
     textAlign: 'center',
