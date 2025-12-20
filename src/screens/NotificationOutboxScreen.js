@@ -529,6 +529,29 @@ const getLawFirmStyles = () => ({
     fontSize: 12,
     fontStyle: 'italic',
   },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
+  },
+  legendText: {
+    color: theme.lawFirm.textSecondary,
+    fontSize: 12,
+  },
 });
 
 const NOTIFICATION_TYPES = [
