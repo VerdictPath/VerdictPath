@@ -11,12 +11,11 @@ import {
   Alert,
   Modal,
   Switch,
-  ImageBackground,
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
+import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 // Cross-platform alert helper
@@ -140,14 +139,8 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <ImageBackground
-        source={require('../../attached_assets/Ship_1763681596533.png')}
-        style={styles.background}
-        resizeMode="cover"
-      />
-
       {/* Header */}
-      <BlurView intensity={30} style={styles.header}>
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={onBack}>
             <Text style={styles.backText}>← Back</Text>
@@ -157,7 +150,7 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
             <Text style={styles.addButton}>+ Add</Text>
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
 
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
@@ -378,11 +371,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
 
   return (
     <Modal visible={visible} animationType="slide" transparent={true}>
-      <ImageBackground
-        source={require('../../attached_assets/Ship_1763681250752.png')}
-        style={styles.modalContainer}
-        resizeMode="cover"
-      >
+      <View style={styles.modalContainer}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add New User</Text>
@@ -543,7 +532,7 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
           </View>
         </View>
         </View>
-      </ImageBackground>
+      </View>
     </Modal>
   );
 };
@@ -551,20 +540,16 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: lawFirmTheme.colors.deepNavy,
+    backgroundColor: theme.lawFirm.background,
     paddingBottom: 100,
-  },
-  background: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    backgroundColor: theme.lawFirm.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
   },
   headerContent: {
     flexDirection: 'row',
@@ -572,33 +557,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     fontSize: 16,
     fontWeight: '600',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    color: theme.lawFirm.text,
   },
   addButton: {
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     fontSize: 16,
     fontWeight: '700',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   filterContainer: {
     flexDirection: 'row',
     padding: 20,
     paddingTop: 10,
+    backgroundColor: theme.lawFirm.background,
   },
   filterTab: {
     flex: 1,
@@ -606,24 +583,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     marginHorizontal: 5,
-    backgroundColor: 'rgba(20, 30, 48, 0.5)',
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
+    backgroundColor: theme.lawFirm.surface,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   filterTabActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.8)',
-    borderColor: '#d4af37',
+    backgroundColor: theme.lawFirm.primary,
+    borderColor: theme.lawFirm.primary,
   },
   filterText: {
-    color: '#FFFFFF',
+    color: theme.lawFirm.text,
     fontSize: 14,
     fontWeight: '600',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   filterTextActive: {
-    color: '#1e3a5f',
+    color: '#FFFFFF',
   },
   scrollView: {
     flex: 1,
@@ -635,10 +609,10 @@ const styles = StyleSheet.create({
   userCard: {
     padding: 16,
     marginBottom: 12,
-    backgroundColor: 'rgba(20, 30, 48, 0.7)',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.6)',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   userCardContent: {
     flexDirection: 'row',
@@ -662,21 +636,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    color: '#FFFFFF',
+    color: theme.lawFirm.text,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   userEmail: {
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     fontSize: 14,
     marginBottom: 6,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   userMeta: {
     flexDirection: 'row',
@@ -704,125 +672,114 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: theme.lawFirm.background,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   dangerButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.5)',
   },
   successButton: {
-    backgroundColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.5)',
   },
   actionButtonText: {
     fontSize: 20,
   },
   lastLogin: {
-    color: lawFirmTheme.colors.mediumGray,
+    color: theme.colors.warmGray,
     fontSize: 12,
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopColor: theme.lawFirm.border,
   },
   emptyCard: {
     padding: 40,
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 30, 48, 0.7)',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.6)',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   emptyText: {
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     fontSize: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     padding: 20,
     width: '100%',
   },
   modalContent: {
     width: '100%',
     maxHeight: '90%',
-    backgroundColor: 'rgba(20, 30, 48, 0.75)',
+    backgroundColor: theme.lawFirm.surface,
     borderRadius: 20,
     padding: 20,
-    borderWidth: 2,
-    borderColor: '#d4af37',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     marginBottom: 20,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.9)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: theme.lawFirm.background,
     borderRadius: 12,
     padding: 15,
-    color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    color: theme.lawFirm.text,
     fontSize: 16,
     marginBottom: 15,
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.8)',
   },
   label: {
-    color: '#d4af37',
+    color: theme.lawFirm.primary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
     marginTop: 5,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.lawFirm.background,
     borderRadius: 12,
     padding: 15,
     marginBottom: 15,
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.6)',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   toggleTextContainer: {
     flex: 1,
     marginRight: 15,
   },
   toggleLabel: {
-    color: '#FFFFFF',
+    color: theme.lawFirm.text,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   toggleDesc: {
-    color: 'rgba(212, 175, 55, 0.8)',
+    color: theme.colors.warmGray,
     fontSize: 12,
-    textShadowColor: 'rgba(0, 0, 0, 0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 1,
   },
   notificationSelector: {
     flexDirection: 'row',
@@ -834,30 +791,30 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.5)',
+    backgroundColor: theme.lawFirm.background,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
     alignItems: 'center',
   },
   notificationOptionActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.25)',
-    borderColor: 'rgba(212, 175, 55, 1)',
+    backgroundColor: theme.lawFirm.primary,
+    borderColor: theme.lawFirm.primary,
   },
   notificationOptionLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: theme.lawFirm.text,
     marginBottom: 4,
   },
   notificationOptionLabelActive: {
-    color: '#D4AF37',
+    color: '#FFFFFF',
   },
   notificationOptionDesc: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: theme.colors.warmGray,
   },
   notificationOptionDescActive: {
-    color: 'rgba(212, 175, 55, 0.9)',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   roleSelector: {
     flexDirection: 'row',
@@ -868,23 +825,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: theme.lawFirm.background,
     marginRight: 10,
     marginBottom: 10,
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.8)',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   roleOptionActive: {
-    backgroundColor: 'rgba(212, 175, 55, 0.95)',
-    borderColor: '#d4af37',
+    backgroundColor: theme.lawFirm.primary,
+    borderColor: theme.lawFirm.primary,
   },
   roleOptionText: {
-    color: '#FFFFFF',
+    color: theme.lawFirm.text,
     fontSize: 14,
     fontWeight: '600',
   },
   roleOptionTextActive: {
-    color: '#1e3a5f',
+    color: '#FFFFFF',
   },
   modalActions: {
     flexDirection: 'row',
@@ -895,31 +852,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: theme.lawFirm.background,
     marginRight: 10,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(212, 175, 55, 0.8)',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
   },
   cancelButtonText: {
-    color: '#FFFFFF',
+    color: theme.lawFirm.text,
     fontSize: 16,
     fontWeight: '600',
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   submitButton: {
     flex: 1,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.95)',
+    backgroundColor: theme.lawFirm.primary,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#d4af37',
   },
   submitButtonText: {
-    color: '#1e3a5f',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
