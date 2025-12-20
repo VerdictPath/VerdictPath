@@ -3410,15 +3410,20 @@ const styles = StyleSheet.create({
   },
   calendarDropdown: {
     position: 'absolute',
-    top: 70,
+    top: 45,
     left: 0,
     right: 0,
     zIndex: 1000,
-    backgroundColor: '#1E3A5F',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden'
+    borderWidth: 2,
+    borderColor: '#1E3A5F',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10
   },
   timePickerButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
