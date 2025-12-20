@@ -52,9 +52,9 @@ const getMedicalProviderStyles = () => ({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+    borderBottomColor: '#E0E0E0',
   },
   tab: {
     flex: 1,
@@ -64,15 +64,16 @@ const getMedicalProviderStyles = () => ({
     paddingVertical: 14,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
+    backgroundColor: '#FFFFFF',
   },
   activeTab: {
     borderBottomColor: medicalProviderTheme.colors.primary,
-    backgroundColor: medicalProviderTheme.colors.offWhite,
+    backgroundColor: '#F0F8FF',
   },
   tabText: {
     fontSize: 16,
-    color: '#000000',
-    fontWeight: '600',
+    color: '#333333',
+    fontWeight: '700',
   },
   activeTabText: {
     color: medicalProviderTheme.colors.primary,
