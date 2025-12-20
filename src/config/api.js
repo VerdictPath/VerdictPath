@@ -15,16 +15,14 @@ const getApiBaseUrl = () => {
     return process.env.EXPO_PUBLIC_API_BASE_URL;
   }
 
-  // Priority 2: Production deployment (Railway)
-  // Uncomment this line when deploying to production:
-  // return 'https://verdictpath.up.railway.app';
+  // Priority 2: Use relative URL (works on all deployments)
+  // This uses the same origin as the frontend, which is served by the backend
+  if (typeof window !== 'undefined' && window.location) {
+    return window.location.origin;
+  }
 
-  // Priority 3: Local development (default)
-  // Backend runs on port 3000 by default (check backend/server.js)
-  return 'http://localhost:3000';
-
-  // REPLIT DEVELOPMENT (if using Replit for backend - currently returning 503)
-  // return 'https://3db82e01-661d-40f3-8a58-a2671f45f1df-00-ogc5sltdyi6u.riker.replit.dev';
+  // Priority 3: Fallback for SSR or build-time
+  return '';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
