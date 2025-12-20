@@ -52,27 +52,29 @@ const getMedicalProviderStyles = () => ({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: medicalProviderTheme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+    backgroundColor: medicalProviderTheme.colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-    backgroundColor: medicalProviderTheme.colors.background,
+    paddingVertical: 12,
+    marginHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   activeTab: {
-    borderBottomColor: medicalProviderTheme.colors.primary,
     backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderColor: medicalProviderTheme.colors.cardBackground,
   },
   tabText: {
     fontSize: 16,
-    color: medicalProviderTheme.colors.textPrimary,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   activeTabText: {
@@ -909,13 +911,14 @@ const getNotificationTypeIcon = (type) => {
 };
 
 const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onViewAnalytics, embedded = false }) => {
-  const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
-  const isLawFirm = user?.userType === 'law_firm' || user?.type === 'lawfirm';
+  const userType = (user?.userType || user?.type || '').toLowerCase().replace(/[_\s-]/g, '');
+  const isMedicalProvider = userType === 'medicalprovider' || userType === 'medical_provider';
+  const isLawFirm = userType === 'lawfirm' || userType === 'law_firm';
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const lfStyles = isLawFirm ? getLawFirmStyles() : null;
   
-  // Use law firm styles when user is law firm, otherwise default styles
-  const currentStyles = isLawFirm ? lfStyles : styles;
+  // Use appropriate styles based on user type
+  const currentStyles = isLawFirm ? lfStyles : (isMedicalProvider ? mpStyles : styles);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
