@@ -53,6 +53,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     { value: 'meeting', label: 'Meeting', emoji: '👥' },
     { value: 'court_date', label: 'Court Date', emoji: '⚖️' },
     { value: 'deposition', label: 'Deposition', emoji: '📄' },
+    { value: 'mediation', label: 'Mediation', emoji: '🤝' },
     { value: 'deadline', label: 'Deadline', emoji: '⏰' },
     { value: 'reminder', label: 'Reminder', emoji: '🔔' }
   ];
@@ -61,6 +62,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     meeting: '#3498db',
     court_date: '#e74c3c',
     deposition: '#9b59b6',
+    mediation: '#27ae60',
     deadline: '#f39c12',
     reminder: '#1abc9c'
   };
@@ -480,12 +482,16 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           end_time: parsedEndTime.toISOString(),
           all_day: false,
           reminder_enabled: newEvent.reminderEnabled,
-          share_with_client_id: newEvent.selectedClientId || null
+          share_with_client_id: newEvent.selectedClientId || null,
+          send_notification: !!newEvent.selectedClientId
         })
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Event created successfully!');
+        const successMessage = newEvent.selectedClientId 
+          ? 'Event created and notification sent to client!' 
+          : 'Event created successfully!';
+        Alert.alert('Success', successMessage);
         setShowAddEventModal(false);
         setNewEvent({
           title: '',
@@ -1832,7 +1838,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <View style={styles.inputGroup}>
               <Text style={styles.modalLabel}>Share with Client</Text>
               <Text style={styles.settingsDescription}>
-                Select a client to automatically add this event to their calendar
+                Select a client to automatically add this event to their calendar and send a notification
               </Text>
               <TouchableOpacity
                 style={styles.clientPickerButton}

@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
 const { syncNotificationToFirebase, updateUnreadCount } = require('../services/firebaseSync');
+const { sendCalendarEventEmail } = require('../services/emailService');
+const { sendNotificationSMS } = require('../services/smsService');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -276,7 +278,51 @@ const calendarController = {
             await syncNotificationToFirebase(notification);
             await updateUnreadCount('user', clientToShareWith);
 
-            console.log(`📬 Notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
+            console.log(`📬 Push notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
+
+            // Get client details for email and SMS
+            const clientResult = await pool.query(
+              'SELECT email, phone_number, first_name, last_name, sms_notifications_enabled, email_notifications_enabled FROM users WHERE id = $1',
+              [clientToShareWith]
+            );
+
+            if (clientResult.rows.length > 0) {
+              const client = clientResult.rows[0];
+              const clientName = `${client.first_name || ''} ${client.last_name || ''}`.trim() || 'Valued Client';
+
+              // Send email notification if enabled
+              if (client.email && client.email_notifications_enabled !== false) {
+                try {
+                  await sendCalendarEventEmail(client.email, clientName, {
+                    title: title,
+                    date: startTime,
+                    time: formattedTime,
+                    location: location || '',
+                    description: description || '',
+                    senderName: senderName
+                  });
+                  console.log(`📧 Email notification sent to ${client.email} for event ${createdEvent.id}`);
+                } catch (emailError) {
+                  console.error('Error sending calendar event email:', emailError);
+                }
+              }
+
+              // Send SMS notification if enabled and phone number exists
+              if (client.phone_number && client.sms_notifications_enabled === true) {
+                try {
+                  await sendNotificationSMS(
+                    client.phone_number,
+                    'calendar_event',
+                    `📅 New Event from ${senderName}`,
+                    `${title} scheduled for ${formattedDate} at ${formattedTime}${location ? ` at ${location}` : ''}`,
+                    'normal'
+                  );
+                  console.log(`📱 SMS notification sent to ${client.phone_number.slice(-4)} for event ${createdEvent.id}`);
+                } catch (smsError) {
+                  console.error('Error sending calendar event SMS:', smsError);
+                }
+              }
+            }
           } catch (notifyError) {
             console.error('Error sending event notification:', notifyError);
             // Don't fail if notification fails
