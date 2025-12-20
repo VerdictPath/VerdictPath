@@ -738,7 +738,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           <Text style={styles.headerIcon}>⛵</Text>
         </TouchableOpacity>
         <Text style={styles.headerIcon}>⚖️</Text>
-        <Text style={styles.headerTitle}>Client Calendars</Text>
+        <Text style={styles.headerTitle}>Law Firm Calendar</Text>
         <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
           <Text style={styles.headerIcon}>➖</Text>
         </TouchableOpacity>
