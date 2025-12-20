@@ -2594,7 +2594,7 @@ exports.getSentNotifications = async (req, res) => {
     } else if (deviceType === 'medical_provider') {
       senderType = 'medical_provider';
     } else {
-      senderType = 'user';
+      senderType = 'individual';
     }
 
     let whereClause = 'sender_type = $1 AND sender_id = $2';
@@ -2627,20 +2627,20 @@ exports.getSentNotifications = async (req, res) => {
 
     // Get recipient names
     const recipientIds = {
-      user: result.rows.filter(n => n.recipient_type === 'user').map(n => n.recipient_id),
+      individual: result.rows.filter(n => n.recipient_type === 'individual').map(n => n.recipient_id),
       law_firm: result.rows.filter(n => n.recipient_type === 'law_firm').map(n => n.recipient_id),
       medical_provider: result.rows.filter(n => n.recipient_type === 'medical_provider').map(n => n.recipient_id)
     };
 
     const recipientNames = {};
 
-    if (recipientIds.user.length > 0) {
+    if (recipientIds.individual.length > 0) {
       const usersResult = await pool.query(
         'SELECT id, first_name, last_name FROM users WHERE id = ANY($1)',
-        [recipientIds.user]
+        [recipientIds.individual]
       );
       usersResult.rows.forEach(u => {
-        recipientNames[`user_${u.id}`] = `${u.first_name} ${u.last_name}`;
+        recipientNames[`individual_${u.id}`] = `${u.first_name} ${u.last_name}`;
       });
     }
 
