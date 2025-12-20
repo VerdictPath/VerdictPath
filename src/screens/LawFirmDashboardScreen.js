@@ -121,6 +121,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const handleClientSelect = (clientId) => {
     setSelectedClientId(clientId);
     setShowClientDropdown(false);
+    setSearchQuery('');
     if (clientId) {
       onNavigateToClient(clientId);
     }
@@ -150,6 +151,22 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             
             {showClientDropdown && (
               <View style={styles.dropdownList}>
+                <View style={styles.dropdownSearchContainer}>
+                  <Text style={styles.dropdownSearchIcon}>🔍</Text>
+                  <TextInput
+                    style={styles.dropdownSearchInput}
+                    placeholder="Search clients..."
+                    placeholderTextColor={theme.colors.warmGray}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoFocus={true}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Text style={styles.dropdownSearchClear}>✕</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <ScrollView style={styles.dropdownScroll} nestedScrollEnabled={true}>
                   {clients.length === 0 ? (
                     <View style={styles.dropdownEmptyState}>
@@ -158,8 +175,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                         Share your firm code: {firmData?.firmCode}
                       </Text>
                     </View>
+                  ) : getFilteredClients().length === 0 ? (
+                    <View style={styles.dropdownEmptyState}>
+                      <Text style={styles.dropdownEmptyText}>No clients match "{searchQuery}"</Text>
+                    </View>
                   ) : (
-                    clients.map(client => (
+                    getFilteredClients().map(client => (
                       <TouchableOpacity
                         key={client.id}
                         style={[
@@ -1411,6 +1432,31 @@ const styles = StyleSheet.create({
   dropdownEmptySubtext: {
     fontSize: 12,
     color: theme.colors.warmGray,
+  },
+  dropdownSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+    backgroundColor: theme.lawFirm.surface,
+  },
+  dropdownSearchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  dropdownSearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.lawFirm.text,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 8,
+  },
+  dropdownSearchClear: {
+    fontSize: 16,
+    color: theme.colors.warmGray,
+    padding: 8,
   },
   quickActionsContainer: {
     marginVertical: 16,
