@@ -71,8 +71,8 @@ const getMedicalProviderStyles = () => ({
   },
   tabText: {
     fontSize: 16,
-    color: medicalProviderTheme.colors.textPrimary,
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '600',
   },
   activeTabText: {
     color: medicalProviderTheme.colors.primary,
@@ -407,9 +407,9 @@ const getMedicalProviderStyles = () => ({
     backgroundColor: medicalProviderTheme.colors.primary + '30',
   },
   readFilterText: {
-    color: medicalProviderTheme.colors.textPrimary,
+    color: '#000000',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   activeReadFilterText: {
     color: medicalProviderTheme.colors.primary,
