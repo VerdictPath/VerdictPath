@@ -20,11 +20,392 @@ const getMedicalProviderStyles = () => ({
 const getLawFirmStyles = () => ({
   container: {
     flex: 1,
-    backgroundColor: theme.lawFirm?.background || '#1a1a2e',
+    backgroundColor: theme.lawFirm.background,
   },
   overlay: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    backgroundColor: theme.lawFirm.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.primaryDark,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: theme.lawFirm.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: theme.lawFirm.primary,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  tabText: {
+    fontSize: 16,
+    color: theme.lawFirm.textSecondary,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: theme.lawFirm.primary,
+    fontWeight: '700',
+  },
+  tabBadge: {
+    backgroundColor: '#dc3545',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  tabBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  clearSearchButton: {
+    marginLeft: 10,
+    padding: 8,
+  },
+  clearSearchText: {
+    color: theme.lawFirm.primary,
+    fontSize: 16,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  typeDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  typeDropdownText: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownArrow: {
+    color: theme.lawFirm.textSecondary,
+    marginLeft: 8,
+    fontSize: 10,
+  },
+  typeDropdownMenu: {
+    backgroundColor: theme.lawFirm.surface,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    overflow: 'hidden',
+  },
+  typeDropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  activeTypeDropdownItem: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  typeDropdownItemText: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+  },
+  checkmark: {
+    color: theme.lawFirm.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  readFilterContainer: {
+    flexDirection: 'row',
+    marginLeft: 'auto',
+  },
+  readFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  activeReadFilter: {
+    backgroundColor: theme.lawFirm.primary + '20',
+  },
+  readFilterText: {
+    color: theme.lawFirm.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  activeReadFilterText: {
+    color: theme.lawFirm.primary,
+    fontWeight: '700',
+  },
+  actionButtonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: theme.lawFirm.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  sendNotificationButton: {
+    backgroundColor: theme.lawFirm.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  sendNotificationText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  markAllReadButton: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  markAllReadText: {
+    color: theme.lawFirm.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  notificationCard: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  unreadCard: {
+    backgroundColor: theme.lawFirm.surface,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.lawFirm.primary,
+    borderColor: theme.lawFirm.primary + '40',
+  },
+  urgentCard: {
+    borderColor: '#dc3545',
+    borderWidth: 2,
+    backgroundColor: 'rgba(220, 53, 69, 0.05)',
+  },
+  urgentBanner: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  urgentBannerText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  notificationRow: {
+    flexDirection: 'row',
+  },
+  typeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  typeIcon: {
+    fontSize: 18,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  notificationTitle: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.lawFirm.text,
+    fontWeight: '500',
+  },
+  unreadTitle: {
+    fontWeight: '700',
+    color: theme.lawFirm.primary,
+  },
+  urgentTitle: {
+    color: '#dc3545',
+  },
+  unreadBadge: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.lawFirm.info,
+    marginLeft: 8,
+  },
+  senderName: {
+    fontSize: 13,
+    color: theme.lawFirm.textSecondary,
+    marginBottom: 6,
+  },
+  notificationBody: {
+    fontSize: 14,
+    color: theme.lawFirm.textSecondary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notificationFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: theme.lawFirm.textLight,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clickedLabel: {
+    fontSize: 11,
+    color: theme.lawFirm.success,
+    fontWeight: '600',
+  },
+  readLabel: {
+    fontSize: 11,
+    color: theme.lawFirm.textLight,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: theme.lawFirm.primary,
+    marginTop: 12,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.lawFirm.primary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: theme.lawFirm.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  autoRefreshIndicator: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.lawFirm.border,
+  },
+  autoRefreshText: {
+    fontSize: 11,
+    color: theme.lawFirm.textLight,
+  },
+  placeholder: {
+    width: 60,
   },
 });
 
@@ -69,6 +450,9 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   const isLawFirm = user?.userType === 'law_firm' || user?.type === 'lawfirm';
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const lfStyles = isLawFirm ? getLawFirmStyles() : null;
+  
+  // Use law firm styles when user is law firm, otherwise default styles
+  const currentStyles = isLawFirm ? lfStyles : styles;
   const [activeTab, setActiveTab] = useState('inbox');
   const [readFilter, setReadFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -164,51 +548,51 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
     return (
       <TouchableOpacity
         style={[
-          styles.notificationCard,
-          !item.is_read && styles.unreadCard,
-          isUrgent && styles.urgentCard
+          currentStyles.notificationCard,
+          !item.is_read && currentStyles.unreadCard,
+          isUrgent && currentStyles.urgentCard
         ]}
         onPress={() => onNotificationPress && onNotificationPress(item.id)}
       >
         {isUrgent && (
-          <View style={styles.urgentBanner}>
-            <Text style={styles.urgentBannerText}>⚠️ URGENT</Text>
+          <View style={currentStyles.urgentBanner}>
+            <Text style={currentStyles.urgentBannerText}>⚠️ URGENT</Text>
           </View>
         )}
-        <View style={styles.notificationRow}>
-          <View style={styles.typeIconContainer}>
-            <Text style={styles.typeIcon}>{typeIcon}</Text>
+        <View style={currentStyles.notificationRow}>
+          <View style={currentStyles.typeIconContainer}>
+            <Text style={currentStyles.typeIcon}>{typeIcon}</Text>
           </View>
-          <View style={styles.notificationContent}>
-            <View style={styles.notificationHeader}>
+          <View style={currentStyles.notificationContent}>
+            <View style={currentStyles.notificationHeader}>
               <Text 
                 style={[
-                  styles.notificationTitle, 
-                  isUrgent && styles.urgentTitle,
-                  !item.is_read && styles.unreadTitle
+                  currentStyles.notificationTitle, 
+                  isUrgent && currentStyles.urgentTitle,
+                  !item.is_read && currentStyles.unreadTitle
                 ]} 
                 numberOfLines={1}
               >
                 {item.subject || item.title}
               </Text>
-              {!item.is_read && <View style={styles.unreadBadge} />}
+              {!item.is_read && <View style={currentStyles.unreadBadge} />}
             </View>
             {item.sender_name && (
-              <Text style={styles.senderName}>From: {item.sender_name}</Text>
+              <Text style={currentStyles.senderName}>From: {item.sender_name}</Text>
             )}
-            <Text style={styles.notificationBody} numberOfLines={2}>
+            <Text style={currentStyles.notificationBody} numberOfLines={2}>
               {item.body}
             </Text>
-            <View style={styles.notificationFooter}>
-              <Text style={styles.notificationTime}>
+            <View style={currentStyles.notificationFooter}>
+              <Text style={currentStyles.notificationTime}>
                 {formatTimestamp(item.created_at)}
               </Text>
-              <View style={styles.statusContainer}>
+              <View style={currentStyles.statusContainer}>
                 {item.is_clicked && (
-                  <Text style={styles.clickedLabel}>✓ Viewed</Text>
+                  <Text style={currentStyles.clickedLabel}>✓ Viewed</Text>
                 )}
                 {item.is_read && !item.is_clicked && (
-                  <Text style={styles.readLabel}>Read</Text>
+                  <Text style={currentStyles.readLabel}>Read</Text>
                 )}
               </View>
             </View>
@@ -221,82 +605,82 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   const selectedType = NOTIFICATION_TYPES.find(t => t.key === typeFilter);
 
   const renderContent = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.header}>
+    <View style={currentStyles.contentContainer}>
+      <View style={currentStyles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={currentStyles.backButton}
           onPress={() => onNavigate && onNavigate('dashboard')}
         >
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={currentStyles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🔔 Notifications</Text>
-        <View style={styles.placeholder} />
+        <Text style={currentStyles.headerTitle}>🔔 Notifications</Text>
+        <View style={currentStyles.placeholder} />
       </View>
 
-      <View style={styles.tabContainer}>
+      <View style={currentStyles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'inbox' && styles.activeTab]}
+          style={[currentStyles.tab, activeTab === 'inbox' && currentStyles.activeTab]}
           onPress={() => setActiveTab('inbox')}
         >
-          <Text style={[styles.tabText, activeTab === 'inbox' && styles.activeTabText]}>
+          <Text style={[currentStyles.tabText, activeTab === 'inbox' && currentStyles.activeTabText]}>
             📥 Inbox
           </Text>
           {unreadCount > 0 && (
-            <View style={styles.tabBadge}>
-              <Text style={styles.tabBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+            <View style={currentStyles.tabBadge}>
+              <Text style={currentStyles.tabBadgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'outbox' && styles.activeTab]}
+          style={[currentStyles.tab, activeTab === 'outbox' && currentStyles.activeTab]}
           onPress={() => {
             setActiveTab('outbox');
             onNavigate && onNavigate('notification-outbox');
           }}
         >
-          <Text style={[styles.tabText, activeTab === 'outbox' && styles.activeTabText]}>
+          <Text style={[currentStyles.tabText, activeTab === 'outbox' && currentStyles.activeTabText]}>
             📤 Sent
           </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={currentStyles.searchContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={currentStyles.searchInput}
           placeholder="Search notifications..."
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          placeholderTextColor={isLawFirm ? theme.lawFirm.textLight : "rgba(255, 255, 255, 0.5)"}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
-            style={styles.clearSearchButton}
+            style={currentStyles.clearSearchButton}
             onPress={() => setSearchQuery('')}
           >
-            <Text style={styles.clearSearchText}>✕</Text>
+            <Text style={currentStyles.clearSearchText}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={currentStyles.filterRow}>
         <TouchableOpacity
-          style={styles.typeDropdownButton}
+          style={currentStyles.typeDropdownButton}
           onPress={() => setShowTypeDropdown(!showTypeDropdown)}
         >
-          <Text style={styles.typeDropdownText}>
+          <Text style={currentStyles.typeDropdownText}>
             {selectedType?.icon} {selectedType?.label}
           </Text>
-          <Text style={styles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
+          <Text style={currentStyles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
-        <View style={styles.readFilterContainer}>
+        <View style={currentStyles.readFilterContainer}>
           {['all', 'unread', 'read'].map((filter) => (
             <TouchableOpacity
               key={filter}
-              style={[styles.readFilterButton, readFilter === filter && styles.activeReadFilter]}
+              style={[currentStyles.readFilterButton, readFilter === filter && currentStyles.activeReadFilter]}
               onPress={() => setReadFilter(filter)}
             >
-              <Text style={[styles.readFilterText, readFilter === filter && styles.activeReadFilterText]}>
+              <Text style={[currentStyles.readFilterText, readFilter === filter && currentStyles.activeReadFilterText]}>
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Text>
             </TouchableOpacity>
@@ -305,41 +689,41 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
       </View>
 
       {showTypeDropdown && (
-        <View style={styles.typeDropdownMenu}>
+        <View style={currentStyles.typeDropdownMenu}>
           {NOTIFICATION_TYPES.map((type) => (
             <TouchableOpacity
               key={type.key}
-              style={[styles.typeDropdownItem, typeFilter === type.key && styles.activeTypeDropdownItem]}
+              style={[currentStyles.typeDropdownItem, typeFilter === type.key && currentStyles.activeTypeDropdownItem]}
               onPress={() => {
                 setTypeFilter(type.key);
                 setShowTypeDropdown(false);
               }}
             >
-              <Text style={styles.typeDropdownItemText}>
+              <Text style={currentStyles.typeDropdownItemText}>
                 {type.icon} {type.label}
               </Text>
-              {typeFilter === type.key && <Text style={styles.checkmark}>✓</Text>}
+              {typeFilter === type.key && <Text style={currentStyles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      <View style={styles.actionButtonContainer}>
+      <View style={currentStyles.actionButtonContainer}>
         {user?.userType === 'individual' && (
           <TouchableOpacity
-            style={styles.sendNotificationButton}
+            style={currentStyles.sendNotificationButton}
             onPress={() => onNavigate && onNavigate('individual-send-notification')}
           >
-            <Text style={styles.sendNotificationText}>📨 Compose</Text>
+            <Text style={currentStyles.sendNotificationText}>📨 Compose</Text>
           </TouchableOpacity>
         )}
         {notifications.filter(n => !n.is_read).length > 0 && (
           <TouchableOpacity
-            style={styles.markAllReadButton}
+            style={currentStyles.markAllReadButton}
             onPress={handleMarkAllAsRead}
             disabled={markingAllRead}
           >
-            <Text style={styles.markAllReadText}>
+            <Text style={currentStyles.markAllReadText}>
               {markingAllRead ? '✓ Marking...' : '✓ Mark All Read'}
             </Text>
           </TouchableOpacity>
@@ -347,15 +731,15 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
       </View>
 
       {isLoading && notifications.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFD700" />
-          <Text style={styles.loadingText}>Loading notifications...</Text>
+        <View style={currentStyles.loadingContainer}>
+          <ActivityIndicator size="large" color={isLawFirm ? theme.lawFirm.primary : "#FFD700"} />
+          <Text style={currentStyles.loadingText}>Loading notifications...</Text>
         </View>
       ) : filteredNotifications.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🏴‍☠️</Text>
-          <Text style={styles.emptyTitle}>No Notifications</Text>
-          <Text style={styles.emptyText}>
+        <View style={currentStyles.emptyContainer}>
+          <Text style={currentStyles.emptyIcon}>{isLawFirm ? '📭' : '🏴‍☠️'}</Text>
+          <Text style={currentStyles.emptyTitle}>No Notifications</Text>
+          <Text style={currentStyles.emptyText}>
             {searchQuery 
               ? `No notifications matching "${searchQuery}"`
               : readFilter === 'unread' 
@@ -372,20 +756,20 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
           data={filteredNotifications}
           renderItem={renderNotificationItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={currentStyles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              colors={['#FFD700']}
-              tintColor="#FFD700"
+              colors={[isLawFirm ? theme.lawFirm.primary : '#FFD700']}
+              tintColor={isLawFirm ? theme.lawFirm.primary : '#FFD700'}
             />
           }
         />
       )}
 
-      <View style={styles.autoRefreshIndicator}>
-        <Text style={styles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
+      <View style={currentStyles.autoRefreshIndicator}>
+        <Text style={currentStyles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
       </View>
     </View>
   );

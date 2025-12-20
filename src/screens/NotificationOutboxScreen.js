@@ -20,11 +20,405 @@ const getMedicalProviderStyles = () => ({
 const getLawFirmStyles = () => ({
   container: {
     flex: 1,
-    backgroundColor: theme.lawFirm?.background || '#1a1a2e',
+    backgroundColor: theme.lawFirm.background,
   },
   overlay: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    backgroundColor: theme.lawFirm.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.primaryDark,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: theme.lawFirm.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: theme.lawFirm.primary,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  tabText: {
+    fontSize: 16,
+    color: theme.lawFirm.textSecondary,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: theme.lawFirm.primary,
+    fontWeight: '700',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  clearSearchButton: {
+    marginLeft: 10,
+    padding: 8,
+  },
+  clearSearchText: {
+    color: theme.lawFirm.primary,
+    fontSize: 16,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  typeDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  typeDropdownText: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownArrow: {
+    color: theme.lawFirm.textSecondary,
+    marginLeft: 8,
+    fontSize: 10,
+  },
+  typeDropdownMenu: {
+    backgroundColor: theme.lawFirm.surface,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    overflow: 'hidden',
+  },
+  typeDropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  activeTypeDropdownItem: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  typeDropdownItemText: {
+    color: theme.lawFirm.text,
+    fontSize: 14,
+  },
+  checkmark: {
+    color: theme.lawFirm.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  statusFilterContainer: {
+    flexDirection: 'row',
+    marginLeft: 'auto',
+  },
+  statusFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  activeStatusFilter: {
+    backgroundColor: theme.lawFirm.primary + '20',
+  },
+  statusFilterText: {
+    color: theme.lawFirm.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  activeStatusFilterText: {
+    color: theme.lawFirm.primary,
+    fontWeight: '700',
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  notificationCard: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  notificationRow: {
+    flexDirection: 'row',
+  },
+  typeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  typeIcon: {
+    fontSize: 18,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  notificationTitle: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.lawFirm.text,
+    fontWeight: '600',
+  },
+  recipientName: {
+    fontSize: 13,
+    color: theme.lawFirm.textSecondary,
+    marginBottom: 6,
+  },
+  notificationBody: {
+    fontSize: 14,
+    color: theme.lawFirm.textSecondary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notificationFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: theme.lawFirm.textLight,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  sentBadge: {
+    backgroundColor: theme.lawFirm.info + '20',
+  },
+  deliveredBadge: {
+    backgroundColor: theme.lawFirm.success + '20',
+  },
+  readBadge: {
+    backgroundColor: theme.lawFirm.success + '30',
+  },
+  failedBadge: {
+    backgroundColor: theme.lawFirm.error + '20',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sentText: {
+    color: theme.lawFirm.info,
+  },
+  deliveredText: {
+    color: theme.lawFirm.success,
+  },
+  readText: {
+    color: theme.lawFirm.success,
+  },
+  failedText: {
+    color: theme.lawFirm.error,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: theme.lawFirm.primary,
+    marginTop: 12,
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.lawFirm.primary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: theme.lawFirm.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  autoRefreshIndicator: {
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.lawFirm.border,
+  },
+  autoRefreshText: {
+    fontSize: 11,
+    color: theme.lawFirm.textLight,
+  },
+  placeholder: {
+    width: 60,
+  },
+  analyticsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  analyticsButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.lawFirm.text,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: theme.lawFirm.textSecondary,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  detailLabel: {
+    width: 100,
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.lawFirm.textSecondary,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.lawFirm.text,
+  },
+  detailBody: {
+    fontSize: 14,
+    color: theme.lawFirm.text,
+    lineHeight: 22,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
   },
 });
 
@@ -68,6 +462,9 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
   const isLawFirm = user?.userType === 'law_firm' || user?.type === 'lawfirm';
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const lfStyles = isLawFirm ? getLawFirmStyles() : null;
+  
+  // Use law firm styles when user is law firm, otherwise default styles
+  const currentStyles = isLawFirm ? lfStyles : styles;
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -236,57 +633,57 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
     return (
       <TouchableOpacity
         style={[
-          styles.notificationCard,
-          isUrgent && styles.urgentCard,
+          currentStyles.notificationCard,
+          isUrgent && currentStyles.urgentCard,
           { borderLeftWidth: 4, borderLeftColor: statusInfo.borderColor }
         ]}
         onPress={() => openDetailModal(item)}
       >
         {isUrgent && (
-          <View style={styles.urgentBanner}>
-            <Text style={styles.urgentBannerText}>⚠️ URGENT</Text>
+          <View style={currentStyles.urgentBanner}>
+            <Text style={currentStyles.urgentBannerText}>⚠️ URGENT</Text>
           </View>
         )}
-        <View style={styles.notificationRow}>
-          <View style={[styles.typeIconContainer, { backgroundColor: statusInfo.bgColor }]}>
-            <Text style={styles.typeIcon}>{typeIcon}</Text>
+        <View style={currentStyles.notificationRow}>
+          <View style={[currentStyles.typeIconContainer, { backgroundColor: statusInfo.bgColor }]}>
+            <Text style={currentStyles.typeIcon}>{typeIcon}</Text>
           </View>
-          <View style={styles.notificationContent}>
-            <View style={styles.notificationHeader}>
-              <Text style={[styles.notificationTitle, isUrgent && styles.urgentTitle]} numberOfLines={1}>
+          <View style={currentStyles.notificationContent}>
+            <View style={currentStyles.notificationHeader}>
+              <Text style={[currentStyles.notificationTitle, isUrgent && currentStyles.urgentTitle]} numberOfLines={1}>
                 {item.subject || item.title}
               </Text>
             </View>
-            <Text style={styles.recipientName}>To: {item.recipientName}</Text>
-            <Text style={styles.notificationBody} numberOfLines={2}>
+            <Text style={currentStyles.recipientName}>To: {item.recipientName}</Text>
+            <Text style={currentStyles.notificationBody} numberOfLines={2}>
               {item.body}
             </Text>
-            <View style={styles.notificationFooter}>
-              <Text style={styles.notificationTime}>
+            <View style={currentStyles.notificationFooter}>
+              <Text style={currentStyles.notificationTime}>
                 Sent {formatTimestamp(item.sentAt)}
               </Text>
-              <View style={[styles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
-                <Text style={[styles.statusText, { color: statusInfo.color }]}>
+              <View style={[currentStyles.statusBadge, { backgroundColor: statusInfo.bgColor }]}>
+                <Text style={[currentStyles.statusText, { color: statusInfo.color }]}>
                   {statusInfo.icon} {statusInfo.label}
                 </Text>
               </View>
             </View>
             
             {!item.readAt && !item.clickedAt && (
-              <View style={styles.notOpenedContainer}>
-                <Text style={styles.notOpenedText}>📭 Not opened yet</Text>
+              <View style={currentStyles.notOpenedContainer}>
+                <Text style={currentStyles.notOpenedText}>📭 Not opened yet</Text>
               </View>
             )}
             
             {(item.clickedAt || item.readAt) && (
-              <View style={styles.trackingContainer}>
+              <View style={currentStyles.trackingContainer}>
                 {item.clickedAt && (
-                  <Text style={[styles.trackingText, { color: '#fbbf24' }]}>
+                  <Text style={[currentStyles.trackingText, { color: '#fbbf24' }]}>
                     ✓ Clicked {formatTimestamp(item.clickedAt)}
                   </Text>
                 )}
                 {item.readAt && (
-                  <Text style={[styles.trackingText, { color: '#4ade80' }]}>
+                  <Text style={[currentStyles.trackingText, { color: '#4ade80' }]}>
                     ✓✓ Read {formatTimestamp(item.readAt)}
                   </Text>
                 )}
@@ -311,96 +708,96 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         transparent={true}
         onRequestClose={() => setShowDetailModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📤 Sent Notification</Text>
+        <View style={currentStyles.modalOverlay}>
+          <View style={currentStyles.modalContent}>
+            <View style={currentStyles.modalHeader}>
+              <Text style={currentStyles.modalTitle}>📤 Sent Notification</Text>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={currentStyles.closeButton}
                 onPress={() => setShowDetailModal(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Text style={currentStyles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
             
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={currentStyles.modalBody}>
               {isUrgent && (
-                <View style={styles.modalUrgentBanner}>
-                  <Text style={styles.modalUrgentText}>⚠️ URGENT NOTIFICATION</Text>
+                <View style={currentStyles.modalUrgentBanner}>
+                  <Text style={currentStyles.modalUrgentText}>⚠️ URGENT NOTIFICATION</Text>
                 </View>
               )}
               
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Subject</Text>
-                <Text style={styles.detailValue}>{selectedNotification.subject || selectedNotification.title}</Text>
+              <View style={currentStyles.detailSection}>
+                <Text style={currentStyles.detailLabel}>Subject</Text>
+                <Text style={currentStyles.detailValue}>{selectedNotification.subject || selectedNotification.title}</Text>
               </View>
               
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Recipient</Text>
-                <Text style={styles.detailValue}>{selectedNotification.recipientName}</Text>
+              <View style={currentStyles.detailSection}>
+                <Text style={currentStyles.detailLabel}>Recipient</Text>
+                <Text style={currentStyles.detailValue}>{selectedNotification.recipientName}</Text>
               </View>
               
-              <View style={styles.detailSection}>
-                <Text style={styles.detailLabel}>Message</Text>
-                <Text style={styles.detailMessage}>{selectedNotification.body}</Text>
+              <View style={currentStyles.detailSection}>
+                <Text style={currentStyles.detailLabel}>Message</Text>
+                <Text style={currentStyles.detailMessage}>{selectedNotification.body}</Text>
               </View>
               
-              <View style={styles.analyticsSection}>
-                <Text style={styles.analyticsSectionTitle}>📊 Delivery Analytics</Text>
+              <View style={currentStyles.analyticsSection}>
+                <Text style={currentStyles.analyticsSectionTitle}>📊 Delivery Analytics</Text>
                 
-                <View style={styles.analyticsRow}>
-                  <View style={[styles.analyticsIcon, { backgroundColor: 'rgba(156, 163, 175, 0.2)' }]}>
+                <View style={currentStyles.analyticsRow}>
+                  <View style={[currentStyles.analyticsIcon, { backgroundColor: 'rgba(156, 163, 175, 0.2)' }]}>
                     <Text>↑</Text>
                   </View>
-                  <View style={styles.analyticsInfo}>
-                    <Text style={styles.analyticsLabel}>Sent</Text>
-                    <Text style={styles.analyticsTime}>{formatFullTimestamp(selectedNotification.sentAt)}</Text>
+                  <View style={currentStyles.analyticsInfo}>
+                    <Text style={currentStyles.analyticsLabel}>Sent</Text>
+                    <Text style={currentStyles.analyticsTime}>{formatFullTimestamp(selectedNotification.sentAt)}</Text>
                   </View>
-                  <Text style={styles.analyticsCheck}>✓</Text>
+                  <Text style={currentStyles.analyticsCheck}>✓</Text>
                 </View>
                 
-                <View style={styles.analyticsRow}>
-                  <View style={[styles.analyticsIcon, { backgroundColor: selectedNotification.deliveredAt ? 'rgba(156, 163, 175, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
+                <View style={currentStyles.analyticsRow}>
+                  <View style={[currentStyles.analyticsIcon, { backgroundColor: selectedNotification.deliveredAt ? 'rgba(156, 163, 175, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
                     <Text>→</Text>
                   </View>
-                  <View style={styles.analyticsInfo}>
-                    <Text style={styles.analyticsLabel}>Delivered</Text>
-                    <Text style={styles.analyticsTime}>
+                  <View style={currentStyles.analyticsInfo}>
+                    <Text style={currentStyles.analyticsLabel}>Delivered</Text>
+                    <Text style={currentStyles.analyticsTime}>
                       {selectedNotification.deliveredAt ? formatFullTimestamp(selectedNotification.deliveredAt) : 'Pending...'}
                     </Text>
                   </View>
-                  {selectedNotification.deliveredAt && <Text style={styles.analyticsCheck}>✓</Text>}
+                  {selectedNotification.deliveredAt && <Text style={currentStyles.analyticsCheck}>✓</Text>}
                 </View>
                 
-                <View style={styles.analyticsRow}>
-                  <View style={[styles.analyticsIcon, { backgroundColor: selectedNotification.clickedAt ? 'rgba(251, 191, 36, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
+                <View style={currentStyles.analyticsRow}>
+                  <View style={[currentStyles.analyticsIcon, { backgroundColor: selectedNotification.clickedAt ? 'rgba(251, 191, 36, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
                     <Text>👆</Text>
                   </View>
-                  <View style={styles.analyticsInfo}>
-                    <Text style={styles.analyticsLabel}>Clicked</Text>
-                    <Text style={[styles.analyticsTime, selectedNotification.clickedAt && { color: '#fbbf24' }]}>
+                  <View style={currentStyles.analyticsInfo}>
+                    <Text style={currentStyles.analyticsLabel}>Clicked</Text>
+                    <Text style={[currentStyles.analyticsTime, selectedNotification.clickedAt && { color: '#fbbf24' }]}>
                       {selectedNotification.clickedAt ? formatFullTimestamp(selectedNotification.clickedAt) : 'Not clicked yet'}
                     </Text>
                   </View>
-                  {selectedNotification.clickedAt && <Text style={[styles.analyticsCheck, { color: '#fbbf24' }]}>✓</Text>}
+                  {selectedNotification.clickedAt && <Text style={[currentStyles.analyticsCheck, { color: '#fbbf24' }]}>✓</Text>}
                 </View>
                 
-                <View style={styles.analyticsRow}>
-                  <View style={[styles.analyticsIcon, { backgroundColor: selectedNotification.readAt ? 'rgba(74, 222, 128, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
+                <View style={currentStyles.analyticsRow}>
+                  <View style={[currentStyles.analyticsIcon, { backgroundColor: selectedNotification.readAt ? 'rgba(74, 222, 128, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
                     <Text>👁️</Text>
                   </View>
-                  <View style={styles.analyticsInfo}>
-                    <Text style={styles.analyticsLabel}>Read</Text>
-                    <Text style={[styles.analyticsTime, selectedNotification.readAt && { color: '#4ade80' }]}>
+                  <View style={currentStyles.analyticsInfo}>
+                    <Text style={currentStyles.analyticsLabel}>Read</Text>
+                    <Text style={[currentStyles.analyticsTime, selectedNotification.readAt && { color: '#4ade80' }]}>
                       {selectedNotification.readAt ? formatFullTimestamp(selectedNotification.readAt) : 'Not read yet'}
                     </Text>
                   </View>
-                  {selectedNotification.readAt && <Text style={[styles.analyticsCheck, { color: '#4ade80' }]}>✓✓</Text>}
+                  {selectedNotification.readAt && <Text style={[currentStyles.analyticsCheck, { color: '#4ade80' }]}>✓✓</Text>}
                 </View>
               </View>
               
-              <View style={[styles.currentStatusSection, { backgroundColor: statusInfo.bgColor, borderColor: statusInfo.borderColor }]}>
-                <Text style={[styles.currentStatusText, { color: statusInfo.color }]}>
+              <View style={[currentStyles.currentStatusSection, { backgroundColor: statusInfo.bgColor, borderColor: statusInfo.borderColor }]}>
+                <Text style={[currentStyles.currentStatusText, { color: statusInfo.color }]}>
                   Current Status: {statusInfo.icon} {statusInfo.label}
                 </Text>
               </View>
@@ -414,26 +811,26 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
   const selectedType = NOTIFICATION_TYPES.find(t => t.key === typeFilter);
 
   const renderContent = () => (
-    <View style={styles.contentContainer}>
-      <View style={styles.header}>
+    <View style={currentStyles.contentContainer}>
+      <View style={currentStyles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={currentStyles.backButton}
           onPress={() => onNavigate && onNavigate('notifications')}
         >
-          <Text style={styles.backButtonText}>← Inbox</Text>
+          <Text style={currentStyles.backButtonText}>← Inbox</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📤 Sent ({total})</Text>
+        <Text style={currentStyles.headerTitle}>📤 Sent ({total})</Text>
         <TouchableOpacity
-          style={styles.analyticsButton}
+          style={currentStyles.analyticsButton}
           onPress={() => onViewAnalytics && onViewAnalytics()}
         >
-          <Text style={styles.analyticsButtonText}>📊</Text>
+          <Text style={currentStyles.analyticsButtonText}>📊</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={currentStyles.searchContainer}>
         <TextInput
-          style={styles.searchInput}
+          style={currentStyles.searchInput}
           placeholder="Search sent notifications..."
           placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={searchQuery}
@@ -441,26 +838,26 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity
-            style={styles.clearSearchButton}
+            style={currentStyles.clearSearchButton}
             onPress={() => setSearchQuery('')}
           >
-            <Text style={styles.clearSearchText}>✕</Text>
+            <Text style={currentStyles.clearSearchText}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={currentStyles.filterRow}>
         <TouchableOpacity
-          style={styles.typeDropdownButton}
+          style={currentStyles.typeDropdownButton}
           onPress={() => setShowTypeDropdown(!showTypeDropdown)}
         >
-          <Text style={styles.typeDropdownText}>
+          <Text style={currentStyles.typeDropdownText}>
             {selectedType?.icon} {selectedType?.label}
           </Text>
-          <Text style={styles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
+          <Text style={currentStyles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
-        <View style={styles.statusFilterContainer}>
+        <View style={currentStyles.statusFilterContainer}>
           {[
             { key: 'all', label: 'All' },
             { key: 'read', label: '✓✓', color: '#4ade80' },
@@ -469,12 +866,12 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
           ].map((filter) => (
             <TouchableOpacity
               key={filter.key}
-              style={[styles.statusFilterButton, statusFilter === filter.key && styles.activeStatusFilter]}
+              style={[currentStyles.statusFilterButton, statusFilter === filter.key && currentStyles.activeStatusFilter]}
               onPress={() => setStatusFilter(filter.key)}
             >
               <Text style={[
-                styles.statusFilterText, 
-                statusFilter === filter.key && styles.activeStatusFilterText,
+                currentStyles.statusFilterText, 
+                statusFilter === filter.key && currentStyles.activeStatusFilterText,
                 filter.color && { color: statusFilter === filter.key ? filter.color : 'rgba(255,255,255,0.6)' }
               ]}>
                 {filter.label}
@@ -485,50 +882,50 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
       </View>
 
       {showTypeDropdown && (
-        <View style={styles.typeDropdownMenu}>
+        <View style={currentStyles.typeDropdownMenu}>
           {NOTIFICATION_TYPES.map((type) => (
             <TouchableOpacity
               key={type.key}
-              style={[styles.typeDropdownItem, typeFilter === type.key && styles.activeTypeDropdownItem]}
+              style={[currentStyles.typeDropdownItem, typeFilter === type.key && currentStyles.activeTypeDropdownItem]}
               onPress={() => {
                 setTypeFilter(type.key);
                 setShowTypeDropdown(false);
               }}
             >
-              <Text style={styles.typeDropdownItemText}>
+              <Text style={currentStyles.typeDropdownItemText}>
                 {type.icon} {type.label}
               </Text>
-              {typeFilter === type.key && <Text style={styles.checkmark}>✓</Text>}
+              {typeFilter === type.key && <Text style={currentStyles.checkmark}>✓</Text>}
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#9ca3af' }]} />
-          <Text style={styles.legendText}>Not opened</Text>
+      <View style={currentStyles.legendContainer}>
+        <View style={currentStyles.legendItem}>
+          <View style={[currentStyles.legendDot, { backgroundColor: '#9ca3af' }]} />
+          <Text style={currentStyles.legendText}>Not opened</Text>
         </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#fbbf24' }]} />
-          <Text style={styles.legendText}>Clicked</Text>
+        <View style={currentStyles.legendItem}>
+          <View style={[currentStyles.legendDot, { backgroundColor: '#fbbf24' }]} />
+          <Text style={currentStyles.legendText}>Clicked</Text>
         </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#4ade80' }]} />
-          <Text style={styles.legendText}>Read</Text>
+        <View style={currentStyles.legendItem}>
+          <View style={[currentStyles.legendDot, { backgroundColor: '#4ade80' }]} />
+          <Text style={currentStyles.legendText}>Read</Text>
         </View>
       </View>
 
       {isLoading && notifications.length === 0 ? (
-        <View style={styles.loadingContainer}>
+        <View style={currentStyles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFD700" />
-          <Text style={styles.loadingText}>Loading sent notifications...</Text>
+          <Text style={currentStyles.loadingText}>Loading sent notifications...</Text>
         </View>
       ) : filteredNotifications.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📤</Text>
-          <Text style={styles.emptyTitle}>No Sent Notifications</Text>
-          <Text style={styles.emptyText}>
+        <View style={currentStyles.emptyContainer}>
+          <Text style={currentStyles.emptyIcon}>📤</Text>
+          <Text style={currentStyles.emptyTitle}>No Sent Notifications</Text>
+          <Text style={currentStyles.emptyText}>
             {searchQuery 
               ? `No notifications matching "${searchQuery}"`
               : statusFilter !== 'all'
@@ -541,7 +938,7 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
           data={filteredNotifications}
           renderItem={renderNotificationItem}
           keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={currentStyles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -553,8 +950,8 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         />
       )}
 
-      <View style={styles.autoRefreshIndicator}>
-        <Text style={styles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
+      <View style={currentStyles.autoRefreshIndicator}>
+        <Text style={currentStyles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
       </View>
     </View>
   );
@@ -584,10 +981,10 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
   return (
     <ImageBackground
       source={pirateShipBackground}
-      style={styles.backgroundImage}
+      style={currentStyles.backgroundImage}
       resizeMode="cover"
     >
-      <View style={styles.overlay}>
+      <View style={currentStyles.overlay}>
         {renderContent()}
         {renderDetailModal()}
       </View>
