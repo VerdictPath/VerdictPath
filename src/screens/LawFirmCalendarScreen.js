@@ -50,6 +50,9 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [showAvailabilityRequestModal, setShowAvailabilityRequestModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showEventStartTimePicker, setShowEventStartTimePicker] = useState(false);
+  const [showEventEndTimePicker, setShowEventEndTimePicker] = useState(false);
+  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const [newEvent, setNewEvent] = useState({
@@ -2119,34 +2122,117 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             </View>
 
             <Text style={styles.modalLabel}>Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newEvent.eventDate || ''}
-              onChangeText={(text) => setNewEvent({ ...newEvent, eventDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.dateInputContainer}>
+              <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => setShowEventDatePicker(!showEventDatePicker)}
+              >
+                <Text style={styles.datePickerButtonText}>
+                  {newEvent.eventDate || '📅 Select Date'}
+                </Text>
+              </TouchableOpacity>
+              {showEventDatePicker && (
+                <View style={styles.calendarDropdown}>
+                  <Calendar
+                    onDayPress={(day) => {
+                      setNewEvent({ ...newEvent, eventDate: formatDateUSA(day.dateString) });
+                      setShowEventDatePicker(false);
+                    }}
+                    markedDates={{
+                      [parseUSADate(newEvent.eventDate) || '']: { selected: true, selectedColor: '#1E3A5F' }
+                    }}
+                    theme={{
+                      backgroundColor: '#FFFFFF',
+                      calendarBackground: '#FFFFFF',
+                      todayTextColor: '#1E3A5F',
+                      selectedDayBackgroundColor: '#1E3A5F',
+                      arrowColor: '#1E3A5F'
+                    }}
+                  />
+                </View>
+              )}
+            </View>
 
-            <View style={styles.timeRow}>
-              <View style={styles.timeInput}>
+            <View style={[styles.timeRow, { zIndex: 10 }]}>
+              <View style={[styles.timeInput, { zIndex: 11 }]}>
                 <Text style={styles.modalLabel}>Start Time</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  value={newEvent.startTime}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
-                  placeholder="09:00"
-                  placeholderTextColor="#999"
-                />
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => {
+                    setShowEventStartTimePicker(!showEventStartTimePicker);
+                    setShowEventEndTimePicker(false);
+                  }}
+                >
+                  <Text style={styles.datePickerButtonText}>
+                    {TIME_SLOTS.find(t => t.value === newEvent.startTime)?.label || '09:00 AM'}
+                  </Text>
+                </TouchableOpacity>
+                {showEventStartTimePicker && (
+                  <View style={styles.timePickerDropdown}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                      {TIME_SLOTS.map((slot) => (
+                        <TouchableOpacity
+                          key={slot.value}
+                          style={[
+                            styles.timeSlotOption,
+                            newEvent.startTime === slot.value && styles.timeSlotOptionSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, startTime: slot.value });
+                            setShowEventStartTimePicker(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.timeSlotOptionText,
+                            newEvent.startTime === slot.value && styles.timeSlotOptionTextSelected
+                          ]}>
+                            {slot.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
-              <View style={styles.timeInput}>
+              <View style={[styles.timeInput, { zIndex: 10 }]}>
                 <Text style={styles.modalLabel}>End Time</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  value={newEvent.endTime}
-                  onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
-                  placeholder="10:00"
-                  placeholderTextColor="#999"
-                />
+                <TouchableOpacity
+                  style={styles.datePickerButton}
+                  onPress={() => {
+                    setShowEventEndTimePicker(!showEventEndTimePicker);
+                    setShowEventStartTimePicker(false);
+                  }}
+                >
+                  <Text style={styles.datePickerButtonText}>
+                    {TIME_SLOTS.find(t => t.value === newEvent.endTime)?.label || '10:00 AM'}
+                  </Text>
+                </TouchableOpacity>
+                {showEventEndTimePicker && (
+                  <View style={styles.timePickerDropdown}>
+                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                      {TIME_SLOTS.map((slot) => (
+                        <TouchableOpacity
+                          key={slot.value}
+                          style={[
+                            styles.timeSlotOption,
+                            newEvent.endTime === slot.value && styles.timeSlotOptionSelected
+                          ]}
+                          onPress={() => {
+                            setNewEvent({ ...newEvent, endTime: slot.value });
+                            setShowEventEndTimePicker(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.timeSlotOptionText,
+                            newEvent.endTime === slot.value && styles.timeSlotOptionTextSelected
+                          ]}>
+                            {slot.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
             </View>
 
