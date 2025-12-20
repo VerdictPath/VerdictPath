@@ -354,6 +354,88 @@ const getMedicalProviderStyles = () => ({
     paddingVertical: 4,
     borderRadius: 12,
   },
+  dropdownArrow: {
+    color: medicalProviderTheme.colors.textSecondary,
+    marginLeft: 8,
+    fontSize: 10,
+  },
+  typeDropdownMenu: {
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.backgroundDark,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  typeDropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  activeTypeDropdownItem: {
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+  },
+  typeDropdownItemText: {
+    color: medicalProviderTheme.colors.textPrimary,
+    fontSize: 14,
+  },
+  checkmark: {
+    color: medicalProviderTheme.colors.primary,
+    fontWeight: 'bold',
+  },
+  readFilterContainer: {
+    flexDirection: 'row',
+    marginLeft: 'auto',
+  },
+  readFilterButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 6,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+  },
+  activeReadFilter: {
+    backgroundColor: medicalProviderTheme.colors.primary + '30',
+  },
+  readFilterText: {
+    color: medicalProviderTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  activeReadFilterText: {
+    color: medicalProviderTheme.colors.primary,
+    fontWeight: '600',
+  },
+  actionButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  sendNotificationButton: {
+    backgroundColor: medicalProviderTheme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  sendNotificationText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 const getLawFirmStyles = () => ({
@@ -991,7 +1073,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
         <TextInput
           style={currentStyles.searchInput}
           placeholder="Search notifications..."
-          placeholderTextColor={isLawFirm ? theme.lawFirm.textLight : "rgba(255, 255, 255, 0.5)"}
+          placeholderTextColor={isLawFirm ? theme.lawFirm.textLight : (isMedicalProvider ? medicalProviderTheme.colors.textMuted : "rgba(255, 255, 255, 0.5)")}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
