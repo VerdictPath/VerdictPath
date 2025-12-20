@@ -108,12 +108,12 @@ const styles = StyleSheet.create({
     backgroundColor: medicalProviderTheme.colors.background,
   },
   header: {
-    backgroundColor: medicalProviderTheme.colors.headerBackground || '#0d1117',
+    backgroundColor: medicalProviderTheme.colors.primary,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 15,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: medicalProviderTheme.colors.primaryDark,
   },
   headerTitle: {
     fontSize: 24,
@@ -123,35 +123,37 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: medicalProviderTheme.colors.cardBackground || '#161b22',
+    backgroundColor: medicalProviderTheme.colors.primary,
     paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 10,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 8,
-    marginHorizontal: 5,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   activeTab: {
-    backgroundColor: medicalProviderTheme.colors.clinicalTeal || '#00b4d8',
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderColor: medicalProviderTheme.colors.cardBackground,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-  },
-  activeTabText: {
     color: '#FFFFFF',
   },
+  activeTabText: {
+    color: medicalProviderTheme.colors.primary,
+  },
   composeTab: {
-    backgroundColor: 'rgba(0, 180, 216, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   composeTabText: {
-    color: medicalProviderTheme.colors.clinicalTeal || '#00b4d8',
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
