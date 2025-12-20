@@ -18,7 +18,8 @@ exports.getPatients = async (req, res) => {
         u.last_name,
         u.first_name_encrypted,
         u.last_name_encrypted,
-        u.email
+        u.email,
+        u.phone_encrypted
        FROM users u
        LEFT JOIN consent_records cr ON u.id = cr.patient_id 
          AND cr.granted_to_type = 'medical_provider'
@@ -32,17 +33,19 @@ exports.getPatients = async (req, res) => {
       [providerId]
     );
     
-    // Decrypt patient names
+    // Decrypt patient names and phone
     const patients = patientsResult.rows.map((patient) => {
       const firstName = patient.first_name_encrypted ? encryption.decrypt(patient.first_name_encrypted) : patient.first_name;
       const lastName = patient.last_name_encrypted ? encryption.decrypt(patient.last_name_encrypted) : patient.last_name;
+      const phone = patient.phone_encrypted ? encryption.decrypt(patient.phone_encrypted) : null;
       
       return {
         id: patient.id,
         firstName: firstName,
         lastName: lastName,
         displayName: `${lastName}, ${firstName}`,
-        email: patient.email
+        email: patient.email,
+        phone: phone
       };
     });
     
@@ -83,6 +86,7 @@ exports.getDashboard = async (req, res) => {
         u.first_name_encrypted,
         u.last_name_encrypted,
         u.email,
+        u.phone_encrypted,
         COALESCE(cr.consent_type, 'implied') as consent_type,
         COALESCE(cr.status, 'active') as consent_status,
         COALESCE(cr.granted_at, mpp.registered_date, NOW()) as registered_date,
@@ -101,11 +105,12 @@ exports.getDashboard = async (req, res) => {
       [providerId]
     );
     
-    // Decrypt patient names and format data
+    // Decrypt patient names, phone, and format data
     const patients = await Promise.all(patientsResult.rows.map(async (patient) => {
       // Use encrypted names if available, otherwise fall back to regular names
       const firstName = patient.first_name_encrypted ? encryption.decrypt(patient.first_name_encrypted) : patient.first_name;
       const lastName = patient.last_name_encrypted ? encryption.decrypt(patient.last_name_encrypted) : patient.last_name;
+      const phone = patient.phone_encrypted ? encryption.decrypt(patient.phone_encrypted) : null;
       const recordCount = parseInt(patient.record_count) || 0;
       
       // Get litigation progress for this patient
@@ -142,6 +147,7 @@ exports.getDashboard = async (req, res) => {
         lastName: lastName,
         displayName: `${lastName}, ${firstName}`,
         email: patient.email,
+        phone: phone,
         recordCount: recordCount,
         totalBilled: parseFloat(patient.total_billed) || 0,
         registeredDate: patient.registered_date,

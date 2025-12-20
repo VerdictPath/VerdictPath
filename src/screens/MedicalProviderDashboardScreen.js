@@ -270,7 +270,8 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
       patient.displayName?.toLowerCase().includes(query) ||
       patient.email?.toLowerCase().includes(query) ||
       patient.firstName?.toLowerCase().includes(query) ||
-      patient.lastName?.toLowerCase().includes(query)
+      patient.lastName?.toLowerCase().includes(query) ||
+      patient.phone?.toLowerCase().includes(query)
     );
     
     console.log('[MedProvider Search] Filtered results:', filtered.length);
@@ -435,6 +436,9 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                             </Text>
                           </View>
                           <Text style={styles.patientDropdownItemEmail}>{patient.email}</Text>
+                          {patient.phone && (
+                            <Text style={styles.patientDropdownItemPhone}>📞 {patient.phone}</Text>
+                          )}
                           <View style={styles.patientDropdownItemStats}>
                             <Text style={styles.patientDropdownItemStat}>
                               ⚖️ {patient.litigationStage || 'Pre-Litigation'}
@@ -1368,6 +1372,11 @@ const createStyles = (colors) => StyleSheet.create({
     color: '#fff',
   },
   patientDropdownItemEmail: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  patientDropdownItemPhone: {
     fontSize: 13,
     color: colors.textSecondary,
     marginBottom: 6,
