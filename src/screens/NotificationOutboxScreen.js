@@ -516,6 +516,18 @@ const getLawFirmStyles = () => ({
   trackingText: {
     fontSize: 11,
     marginRight: 12,
+    color: theme.lawFirm.textSecondary,
+  },
+  notOpenedContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.lawFirm.border,
+  },
+  notOpenedText: {
+    color: theme.lawFirm.textSecondary,
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });
 
