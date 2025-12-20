@@ -13,7 +13,346 @@ const getMedicalProviderStyles = () => ({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: medicalProviderTheme.colors.background,
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    backgroundColor: medicalProviderTheme.colors.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.primaryDark,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  placeholder: {
+    width: 60,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: medicalProviderTheme.colors.primary,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+  },
+  tabText: {
+    fontSize: 16,
+    color: medicalProviderTheme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: medicalProviderTheme.colors.primary,
+    fontWeight: '700',
+  },
+  tabBadge: {
+    backgroundColor: '#dc3545',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  tabBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: medicalProviderTheme.colors.textPrimary,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  clearSearchButton: {
+    marginLeft: 10,
+    padding: 8,
+  },
+  clearSearchText: {
+    color: medicalProviderTheme.colors.primary,
+    fontSize: 16,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  typeDropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.primary,
+  },
+  typeDropdownText: {
+    color: medicalProviderTheme.colors.primary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  typeDropdownArrow: {
+    marginLeft: 6,
+    color: medicalProviderTheme.colors.primary,
+    fontSize: 12,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    right: 16,
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.backgroundDark,
+    maxHeight: 300,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  dropdownItemActive: {
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: medicalProviderTheme.colors.textPrimary,
+  },
+  dropdownItemTextActive: {
+    color: medicalProviderTheme.colors.primary,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 80,
+  },
+  notificationCard: {
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.backgroundDark,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  unreadCard: {
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+    borderColor: medicalProviderTheme.colors.primary,
+    borderWidth: 1,
+  },
+  urgentCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#dc3545',
+    borderWidth: 2,
+  },
+  urgentBanner: {
+    backgroundColor: '#dc3545',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  urgentBannerText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    padding: 16,
+  },
+  typeIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: medicalProviderTheme.colors.offWhite,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  typeIcon: {
+    fontSize: 20,
+  },
+  notificationContent: {
+    flex: 1,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  notificationTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: medicalProviderTheme.colors.textPrimary,
+  },
+  unreadTitle: {
+    fontWeight: '700',
+  },
+  urgentTitle: {
+    color: '#dc3545',
+  },
+  unreadBadge: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: medicalProviderTheme.colors.primary,
+    marginLeft: 8,
+  },
+  senderName: {
+    fontSize: 13,
+    color: medicalProviderTheme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  notificationBody: {
+    fontSize: 14,
+    color: medicalProviderTheme.colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notificationFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.textMuted,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  clickedLabel: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.healthy,
+    fontWeight: '500',
+  },
+  readLabel: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.textMuted,
+  },
+  markAllReadButton: {
+    backgroundColor: medicalProviderTheme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  markAllReadText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: medicalProviderTheme.colors.textPrimary,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: medicalProviderTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: medicalProviderTheme.colors.textSecondary,
+  },
+  autoRefreshIndicator: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  autoRefreshText: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.textMuted,
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
 });
 
@@ -451,8 +790,8 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const lfStyles = isLawFirm ? getLawFirmStyles() : null;
   
-  // Use law firm styles when user is law firm, otherwise default styles
-  const currentStyles = isLawFirm ? lfStyles : styles;
+  // Use appropriate styles based on user type
+  const currentStyles = isLawFirm ? lfStyles : (isMedicalProvider ? mpStyles : styles);
   const [activeTab, setActiveTab] = useState('inbox');
   const [readFilter, setReadFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
