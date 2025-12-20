@@ -336,6 +336,140 @@ const getMedicalProviderStyles = () => ({
     fontSize: 14,
     color: medicalProviderTheme.colors.textSecondary,
   },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notOpenedContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  notOpenedText: {
+    color: medicalProviderTheme.colors.textMuted,
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  trackingContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: medicalProviderTheme.colors.backgroundDark,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  trackingText: {
+    fontSize: 11,
+    marginRight: 12,
+    color: medicalProviderTheme.colors.textSecondary,
+  },
+  autoRefreshIndicator: {
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  autoRefreshText: {
+    fontSize: 11,
+    color: medicalProviderTheme.colors.textMuted,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderRadius: 16,
+    maxHeight: '85%',
+    borderWidth: 1,
+    borderColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: medicalProviderTheme.colors.primary,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    color: medicalProviderTheme.colors.primary,
+    fontSize: 20,
+  },
+  modalBody: {
+    padding: 16,
+  },
+  analyticsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  analyticsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  analyticsIconText: {
+    fontSize: 18,
+  },
+  analyticsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: medicalProviderTheme.colors.textPrimary,
+  },
+  analyticsTime: {
+    fontSize: 12,
+    color: medicalProviderTheme.colors.textSecondary,
+  },
+  analyticsCheck: {
+    fontSize: 16,
+    marginLeft: 'auto',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    backgroundColor: medicalProviderTheme.colors.cardBackground,
+    borderTopWidth: 1,
+    borderTopColor: medicalProviderTheme.colors.backgroundDark,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
+  },
+  legendText: {
+    fontSize: 11,
+    color: medicalProviderTheme.colors.textSecondary,
+  },
 });
 
 const getLawFirmStyles = () => ({
