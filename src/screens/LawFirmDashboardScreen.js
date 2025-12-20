@@ -23,6 +23,8 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [clientTrackingModalVisible, setClientTrackingModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState(null);
   
   // Get unread count from NotificationContext (Firebase real-time)
   const { unreadCount: unreadNotificationCount } = useNotifications();
@@ -116,31 +118,68 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     );
   };
 
+  const handleClientSelect = (clientId) => {
+    setSelectedClientId(clientId);
+    setShowClientDropdown(false);
+    if (clientId) {
+      onNavigateToClient(clientId);
+    }
+  };
+
+  const getSelectedClientName = () => {
+    if (!selectedClientId) return 'Select a client...';
+    const client = clients.find(c => c.id === selectedClientId);
+    return client ? client.displayName : 'Select a client...';
+  };
+
   const renderClientsTab = () => {
-    const filteredClients = getFilteredClients();
-    
     return (
       <View style={styles.tabContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚓ Active Clients</Text>
           
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search clients by name or email..."
-              placeholderTextColor={theme.colors.warmGray}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity 
-                onPress={() => setSearchQuery('')}
-                style={styles.clearButton}
-              >
-                <Text style={styles.clearButtonText}>✕</Text>
-              </TouchableOpacity>
+          {/* Client Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity 
+              style={styles.dropdownButton}
+              onPress={() => setShowClientDropdown(!showClientDropdown)}
+            >
+              <Text style={styles.dropdownButtonText}>{getSelectedClientName()}</Text>
+              <Text style={styles.dropdownArrow}>{showClientDropdown ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            
+            {showClientDropdown && (
+              <View style={styles.dropdownList}>
+                <ScrollView style={styles.dropdownScroll} nestedScrollEnabled={true}>
+                  {clients.length === 0 ? (
+                    <View style={styles.dropdownEmptyState}>
+                      <Text style={styles.dropdownEmptyText}>No clients aboard yet!</Text>
+                      <Text style={styles.dropdownEmptySubtext}>
+                        Share your firm code: {firmData?.firmCode}
+                      </Text>
+                    </View>
+                  ) : (
+                    clients.map(client => (
+                      <TouchableOpacity
+                        key={client.id}
+                        style={[
+                          styles.dropdownItem,
+                          selectedClientId === client.id && styles.dropdownItemSelected
+                        ]}
+                        onPress={() => handleClientSelect(client.id)}
+                      >
+                        <View style={styles.dropdownItemContent}>
+                          <Text style={styles.dropdownItemName}>🧭 {client.displayName}</Text>
+                          <Text style={styles.dropdownItemEmail}>{client.email}</Text>
+                        </View>
+                        <Text style={styles.dropdownItemBadge}>
+                          {client.litigationStage || 'Not Started'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
             )}
           </View>
 
@@ -193,72 +232,9 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               </TouchableOpacity>
             </View>
           </View>
-          
-          {clients.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🏴‍☠️</Text>
-              <Text style={styles.emptyText}>No clients aboard yet!</Text>
-              <Text style={styles.emptySubtext}>
-                Share your firm code with clients to get started: {firmData?.firmCode}
-              </Text>
-            </View>
-          ) : filteredClients.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyText}>No clients found</Text>
-              <Text style={styles.emptySubtext}>
-                Try a different search term
-              </Text>
-            </View>
-          ) : (
-            filteredClients.map(client => (
-            <TouchableOpacity
-              key={client.id}
-              style={styles.clientCard}
-              onPress={() => onNavigateToClient(client.id)}
-            >
-              <View style={styles.clientHeader}>
-                <Text style={styles.clientName}>🧭 {client.displayName}</Text>
-                <Text style={styles.clientBadge}>
-                  {client.litigationStage || 'Not Started'}
-                </Text>
-              </View>
-              <Text style={styles.clientEmail}>{client.email}</Text>
-              
-              {/* Litigation Progress */}
-              <View style={styles.litigationSection}>
-                <View style={styles.litigationHeader}>
-                  <Text style={styles.litigationLabel}>⚖️ Litigation Progress:</Text>
-                  <Text style={styles.litigationStage}>
-                    {client.litigationStage || 'Not Started'}
-                  </Text>
-                </View>
-                <View style={styles.progressBarContainer}>
-                  <View 
-                    style={[
-                      styles.progressBarFill, 
-                      { width: `${client.litigationProgress || 0}%` }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>
-                  {client.litigationProgress || 0}% Complete
-                </Text>
-              </View>
-
-              <View style={styles.clientStats}>
-                <Text style={styles.clientStat}>📋 {client.medicalRecordCount || 0} Records</Text>
-                <Text style={styles.clientStat}>💰 ${client.totalBilled || 0} Billed</Text>
-              </View>
-              <Text style={styles.clientDate}>
-                ⏰ Registered: {new Date(client.registeredDate).toLocaleDateString('en-US')}
-              </Text>
-            </TouchableOpacity>
-          ))
-        )}
+        </View>
       </View>
-    </View>
-  );
+    );
   };
 
   const renderNotificationsTab = () => {
@@ -1343,6 +1319,98 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: theme.lawFirm.primary,
     fontWeight: 'bold',
+  },
+  dropdownContainer: {
+    marginBottom: 16,
+    zIndex: 1000,
+  },
+  dropdownButton: {
+    backgroundColor: theme.lawFirm.surface,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: theme.lawFirm.text,
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: 14,
+    color: theme.lawFirm.primary,
+    marginLeft: 10,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.lawFirm.surface,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    borderRadius: 10,
+    marginTop: 5,
+    maxHeight: 250,
+    zIndex: 1001,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  dropdownScroll: {
+    maxHeight: 250,
+  },
+  dropdownItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownItemSelected: {
+    backgroundColor: 'rgba(218, 165, 32, 0.1)',
+  },
+  dropdownItemContent: {
+    flex: 1,
+  },
+  dropdownItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.lawFirm.text,
+    marginBottom: 4,
+  },
+  dropdownItemEmail: {
+    fontSize: 13,
+    color: theme.colors.warmGray,
+  },
+  dropdownItemBadge: {
+    fontSize: 11,
+    backgroundColor: theme.lawFirm.primary,
+    color: theme.colors.parchment,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginLeft: 10,
+  },
+  dropdownEmptyState: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  dropdownEmptyText: {
+    fontSize: 14,
+    color: theme.lawFirm.text,
+    marginBottom: 5,
+  },
+  dropdownEmptySubtext: {
+    fontSize: 12,
+    color: theme.colors.warmGray,
   },
   quickActionsContainer: {
     marginVertical: 16,
