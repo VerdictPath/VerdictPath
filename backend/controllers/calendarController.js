@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { syncNotificationToFirebase, updateUnreadCount } = require('../services/firebaseSync');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -211,6 +212,75 @@ const calendarController = {
             userId
           ]);
           console.log(`Event ${createdEvent.id} shared with user ${clientToShareWith}`);
+
+          // Send notification to the patient about the new calendar event
+          try {
+            // Get sender name based on user type
+            let senderName = 'Your Provider';
+            if (userType === 'medical_provider') {
+              const providerResult = await pool.query(
+                'SELECT provider_name FROM medical_providers WHERE id = $1',
+                [userId]
+              );
+              if (providerResult.rows.length > 0) {
+                senderName = providerResult.rows[0].provider_name;
+              }
+            } else if (userType === 'law_firm') {
+              const firmResult = await pool.query(
+                'SELECT firm_name FROM law_firms WHERE id = $1',
+                [userId]
+              );
+              if (firmResult.rows.length > 0) {
+                senderName = firmResult.rows[0].firm_name;
+              }
+            }
+
+            // Format event date for notification
+            const eventDate = new Date(startTime);
+            const formattedDate = eventDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            });
+            const formattedTime = eventDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+
+            // Create notification in database
+            const notificationResult = await pool.query(`
+              INSERT INTO notifications (
+                sender_type, sender_id, sender_name, recipient_type, recipient_id,
+                type, priority, title, body, action_url, action_data, status
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+              RETURNING *
+            `, [
+              userType,
+              userId,
+              senderName,
+              'user',
+              clientToShareWith,
+              'calendar_event',
+              'normal',
+              `📅 New Calendar Event from ${senderName}`,
+              `${title} scheduled for ${formattedDate} at ${formattedTime}`,
+              '/calendar',
+              JSON.stringify({ eventId: createdEvent.id, eventTitle: title })
+            ]);
+
+            const notification = notificationResult.rows[0];
+
+            // Sync to Firebase for real-time delivery
+            await syncNotificationToFirebase(notification);
+            await updateUnreadCount('user', clientToShareWith);
+
+            console.log(`📬 Notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
+          } catch (notifyError) {
+            console.error('Error sending event notification:', notifyError);
+            // Don't fail if notification fails
+          }
         } catch (shareError) {
           console.error('Error sharing event:', shareError);
           // Don't fail the whole request if sharing fails
