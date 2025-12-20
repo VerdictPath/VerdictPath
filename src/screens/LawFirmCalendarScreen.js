@@ -123,12 +123,48 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     priority: 'normal',
     minDurationMinutes: 30,
     option1Date: '',
-    option1Time: '',
+    option1Time: '09:00',
     option2Date: '',
-    option2Time: '',
+    option2Time: '10:00',
     option3Date: '',
-    option3Time: ''
+    option3Time: '11:00'
   });
+  
+  const [showDatePicker1, setShowDatePicker1] = useState(false);
+  const [showDatePicker2, setShowDatePicker2] = useState(false);
+  const [showDatePicker3, setShowDatePicker3] = useState(false);
+  const [showTimePicker1, setShowTimePicker1] = useState(false);
+  const [showTimePicker2, setShowTimePicker2] = useState(false);
+  const [showTimePicker3, setShowTimePicker3] = useState(false);
+  
+  const TIME_SLOTS = [
+    { label: '8:00 AM', value: '08:00' },
+    { label: '8:30 AM', value: '08:30' },
+    { label: '9:00 AM', value: '09:00' },
+    { label: '9:30 AM', value: '09:30' },
+    { label: '10:00 AM', value: '10:00' },
+    { label: '10:30 AM', value: '10:30' },
+    { label: '11:00 AM', value: '11:00' },
+    { label: '11:30 AM', value: '11:30' },
+    { label: '12:00 PM', value: '12:00' },
+    { label: '12:30 PM', value: '12:30' },
+    { label: '1:00 PM', value: '13:00' },
+    { label: '1:30 PM', value: '13:30' },
+    { label: '2:00 PM', value: '14:00' },
+    { label: '2:30 PM', value: '14:30' },
+    { label: '3:00 PM', value: '15:00' },
+    { label: '3:30 PM', value: '15:30' },
+    { label: '4:00 PM', value: '16:00' },
+    { label: '4:30 PM', value: '16:30' },
+    { label: '5:00 PM', value: '17:00' },
+    { label: '5:30 PM', value: '17:30' },
+    { label: '6:00 PM', value: '18:00' }
+  ];
+  
+  const getTimeLabel = (value) => {
+    const slot = TIME_SLOTS.find(s => s.value === value);
+    return slot ? slot.label : value;
+  };
 
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
@@ -602,20 +638,30 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     return regex.test(timeStr);
   };
 
+  const showAlert = (title, message) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}: ${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleSendAvailabilityRequest = async () => {
+    console.log('[AvailabilityRequest] Starting submission...', newAvailabilityRequest);
+    
     if (!newAvailabilityRequest.clientId) {
-      Alert.alert('Error', 'Please select a client');
+      showAlert('Error', 'Please select a client');
       return;
     }
     if (!newAvailabilityRequest.title) {
-      Alert.alert('Error', 'Please enter a title');
+      showAlert('Error', 'Please enter a title');
       return;
     }
     
     const { option1Date, option1Time, option2Date, option2Time, option3Date, option3Time } = newAvailabilityRequest;
     
-    if (!option1Date || !option1Time || !option2Date || !option2Time || !option3Date || !option3Time) {
-      Alert.alert('Error', 'Please provide all 3 date and time options');
+    if (!option1Date || !option2Date || !option3Date) {
+      showAlert('Error', 'Please select all 3 dates');
       return;
     }
     
@@ -625,13 +671,11 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       { date: option3Date, time: option3Time, label: 'Option 3' }
     ];
     
+    console.log('[AvailabilityRequest] Options:', options);
+    
     for (const opt of options) {
       if (!validateDateFormat(opt.date)) {
-        Alert.alert('Error', `${opt.label}: Invalid date format. Use MM/DD/YYYY (e.g., 01/15/2025)`);
-        return;
-      }
-      if (!validateTimeFormat(opt.time)) {
-        Alert.alert('Error', `${opt.label}: Invalid time format. Use HH:MM in 24-hour format (e.g., 09:00 or 14:30)`);
+        showAlert('Error', `${opt.label}: Invalid date format. Use MM/DD/YYYY`);
         return;
       }
     }
@@ -643,6 +687,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       const startTimeStr = `${isoDate}T${option.time}:00`;
       const startDate = new Date(startTimeStr);
       const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
+      console.log('[AvailabilityRequest] Proposed date:', { isoDate, startTimeStr, startISO: startDate.toISOString() });
       return {
         startTime: startDate.toISOString(),
         endTime: endDate.toISOString()
@@ -668,9 +713,18 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           })
         }
       );
+      console.log('[AvailabilityRequest] Response status:', response.status);
       if (response.ok) {
-        Alert.alert('Success', 'Availability request with 3 options sent to client!');
+        const data = await response.json();
+        console.log('[AvailabilityRequest] Success:', data);
+        showAlert('Success', 'Availability request with 3 options sent to client!');
         setShowAvailabilityRequestModal(false);
+        setShowDatePicker1(false);
+        setShowDatePicker2(false);
+        setShowDatePicker3(false);
+        setShowTimePicker1(false);
+        setShowTimePicker2(false);
+        setShowTimePicker3(false);
         setNewAvailabilityRequest({
           clientId: '',
           title: '',
@@ -679,18 +733,20 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           priority: 'normal',
           minDurationMinutes: 30,
           option1Date: '',
-          option1Time: '',
+          option1Time: '09:00',
           option2Date: '',
-          option2Time: '',
+          option2Time: '10:00',
           option3Date: '',
-          option3Time: ''
+          option3Time: '11:00'
         });
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to send request');
+        console.log('[AvailabilityRequest] Error:', data);
+        showAlert('Error', data.error || 'Failed to send request');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send request');
+      console.error('[AvailabilityRequest] Exception:', error);
+      showAlert('Error', 'Failed to send request: ' + error.message);
     }
   };
 
@@ -1495,23 +1551,67 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
                   <Text style={styles.inputSubLabel}>Date</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    value={newAvailabilityRequest.option1Date}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: text })}
-                    placeholder="MM/DD/YYYY"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => setShowDatePicker1(!showDatePicker1)}
+                  >
+                    <Text style={styles.datePickerButtonText}>
+                      {newAvailabilityRequest.option1Date || '📅 Select Date'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDatePicker1 && (
+                    <View style={styles.calendarDropdown}>
+                      <Calendar
+                        onDayPress={(day) => {
+                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: formatDateUSA(day.dateString) });
+                          setShowDatePicker1(false);
+                        }}
+                        minDate={moment().format('YYYY-MM-DD')}
+                        theme={{
+                          backgroundColor: '#1E3A5F',
+                          calendarBackground: '#1E3A5F',
+                          textSectionTitleColor: '#C0C0C0',
+                          dayTextColor: '#fff',
+                          todayTextColor: '#FFD700',
+                          selectedDayTextColor: '#fff',
+                          selectedDayBackgroundColor: '#1a5490',
+                          monthTextColor: '#fff',
+                          arrowColor: '#C0C0C0'
+                        }}
+                      />
+                    </View>
+                  )}
                 </View>
                 <View style={styles.timeInputContainer}>
                   <Text style={styles.inputSubLabel}>Time</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    value={newAvailabilityRequest.option1Time}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: text })}
-                    placeholder="HH:MM"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.timePickerButton}
+                    onPress={() => setShowTimePicker1(!showTimePicker1)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getTimeLabel(newAvailabilityRequest.option1Time)}
+                    </Text>
+                  </TouchableOpacity>
+                  {showTimePicker1 && (
+                    <View style={styles.timeDropdown}>
+                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
+                        {TIME_SLOTS.map((slot) => (
+                          <TouchableOpacity
+                            key={slot.value}
+                            style={[styles.timeSlotOption, newAvailabilityRequest.option1Time === slot.value && styles.timeSlotOptionActive]}
+                            onPress={() => {
+                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: slot.value });
+                              setShowTimePicker1(false);
+                            }}
+                          >
+                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option1Time === slot.value && styles.timeSlotTextActive]}>
+                              {slot.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -1521,23 +1621,67 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
                   <Text style={styles.inputSubLabel}>Date</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    value={newAvailabilityRequest.option2Date}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: text })}
-                    placeholder="MM/DD/YYYY"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => setShowDatePicker2(!showDatePicker2)}
+                  >
+                    <Text style={styles.datePickerButtonText}>
+                      {newAvailabilityRequest.option2Date || '📅 Select Date'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDatePicker2 && (
+                    <View style={styles.calendarDropdown}>
+                      <Calendar
+                        onDayPress={(day) => {
+                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: formatDateUSA(day.dateString) });
+                          setShowDatePicker2(false);
+                        }}
+                        minDate={moment().format('YYYY-MM-DD')}
+                        theme={{
+                          backgroundColor: '#1E3A5F',
+                          calendarBackground: '#1E3A5F',
+                          textSectionTitleColor: '#C0C0C0',
+                          dayTextColor: '#fff',
+                          todayTextColor: '#FFD700',
+                          selectedDayTextColor: '#fff',
+                          selectedDayBackgroundColor: '#1a5490',
+                          monthTextColor: '#fff',
+                          arrowColor: '#C0C0C0'
+                        }}
+                      />
+                    </View>
+                  )}
                 </View>
                 <View style={styles.timeInputContainer}>
                   <Text style={styles.inputSubLabel}>Time</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    value={newAvailabilityRequest.option2Time}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: text })}
-                    placeholder="HH:MM"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.timePickerButton}
+                    onPress={() => setShowTimePicker2(!showTimePicker2)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getTimeLabel(newAvailabilityRequest.option2Time)}
+                    </Text>
+                  </TouchableOpacity>
+                  {showTimePicker2 && (
+                    <View style={styles.timeDropdown}>
+                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
+                        {TIME_SLOTS.map((slot) => (
+                          <TouchableOpacity
+                            key={slot.value}
+                            style={[styles.timeSlotOption, newAvailabilityRequest.option2Time === slot.value && styles.timeSlotOptionActive]}
+                            onPress={() => {
+                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: slot.value });
+                              setShowTimePicker2(false);
+                            }}
+                          >
+                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option2Time === slot.value && styles.timeSlotTextActive]}>
+                              {slot.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -1547,23 +1691,67 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               <View style={styles.dateTimeRow}>
                 <View style={styles.dateInputContainer}>
                   <Text style={styles.inputSubLabel}>Date</Text>
-                  <TextInput
-                    style={styles.dateInput}
-                    value={newAvailabilityRequest.option3Date}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: text })}
-                    placeholder="MM/DD/YYYY"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => setShowDatePicker3(!showDatePicker3)}
+                  >
+                    <Text style={styles.datePickerButtonText}>
+                      {newAvailabilityRequest.option3Date || '📅 Select Date'}
+                    </Text>
+                  </TouchableOpacity>
+                  {showDatePicker3 && (
+                    <View style={styles.calendarDropdown}>
+                      <Calendar
+                        onDayPress={(day) => {
+                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: formatDateUSA(day.dateString) });
+                          setShowDatePicker3(false);
+                        }}
+                        minDate={moment().format('YYYY-MM-DD')}
+                        theme={{
+                          backgroundColor: '#1E3A5F',
+                          calendarBackground: '#1E3A5F',
+                          textSectionTitleColor: '#C0C0C0',
+                          dayTextColor: '#fff',
+                          todayTextColor: '#FFD700',
+                          selectedDayTextColor: '#fff',
+                          selectedDayBackgroundColor: '#1a5490',
+                          monthTextColor: '#fff',
+                          arrowColor: '#C0C0C0'
+                        }}
+                      />
+                    </View>
+                  )}
                 </View>
                 <View style={styles.timeInputContainer}>
                   <Text style={styles.inputSubLabel}>Time</Text>
-                  <TextInput
-                    style={styles.timeInput}
-                    value={newAvailabilityRequest.option3Time}
-                    onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: text })}
-                    placeholder="HH:MM"
-                    placeholderTextColor="#999"
-                  />
+                  <TouchableOpacity 
+                    style={styles.timePickerButton}
+                    onPress={() => setShowTimePicker3(!showTimePicker3)}
+                  >
+                    <Text style={styles.timePickerButtonText}>
+                      {getTimeLabel(newAvailabilityRequest.option3Time)}
+                    </Text>
+                  </TouchableOpacity>
+                  {showTimePicker3 && (
+                    <View style={styles.timeDropdown}>
+                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
+                        {TIME_SLOTS.map((slot) => (
+                          <TouchableOpacity
+                            key={slot.value}
+                            style={[styles.timeSlotOption, newAvailabilityRequest.option3Time === slot.value && styles.timeSlotOptionActive]}
+                            onPress={() => {
+                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: slot.value });
+                              setShowTimePicker3(false);
+                            }}
+                          >
+                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option3Time === slot.value && styles.timeSlotTextActive]}>
+                              {slot.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -3084,13 +3272,18 @@ const styles = StyleSheet.create({
   },
   dateTimeRow: {
     flexDirection: 'row',
-    gap: 12
+    gap: 12,
+    zIndex: 1
   },
   dateInputContainer: {
-    flex: 2
+    flex: 2,
+    position: 'relative',
+    zIndex: 2
   },
   timeInputContainer: {
-    flex: 1
+    flex: 1,
+    position: 'relative',
+    zIndex: 1
   },
   inputSubLabel: {
     color: '#999',
@@ -3116,6 +3309,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  datePickerButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  datePickerButtonText: {
+    color: '#fff',
+    fontSize: 14
+  },
+  calendarDropdown: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: '#1E3A5F',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    overflow: 'hidden'
+  },
+  timePickerButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  timePickerButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center'
+  },
+  timeDropdown: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: '#1E3A5F',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    maxHeight: 200
+  },
+  timeDropdownScroll: {
+    maxHeight: 200
+  },
+  timeSlotOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)'
+  },
+  timeSlotOptionActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.6)'
+  },
+  timeSlotText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center'
+  },
+  timeSlotTextActive: {
+    color: '#FFD700',
+    fontWeight: 'bold'
   },
   priorityOption: {
     flex: 1,
