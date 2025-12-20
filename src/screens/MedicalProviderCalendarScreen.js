@@ -78,8 +78,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [bulkMode, setBulkMode] = useState(true);
   
   const [newBlockedTime, setNewBlockedTime] = useState({
-    startDate: moment().format('YYYY-MM-DD'),
-    endDate: moment().format('YYYY-MM-DD'),
+    startDate: moment().format('MM/DD/YYYY'),
+    endDate: moment().format('MM/DD/YYYY'),
     reason: '',
     blockType: 'personal',
     isAllDay: true
@@ -348,6 +348,15 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
+    // Parse MM/DD/YYYY format to YYYY-MM-DD for API
+    const parsedStartDate = moment(newBlockedTime.startDate, 'MM/DD/YYYY');
+    const parsedEndDate = moment(newBlockedTime.endDate, 'MM/DD/YYYY');
+    
+    if (!parsedStartDate.isValid() || !parsedEndDate.isValid()) {
+      Alert.alert('Error', 'Invalid date format. Use MM/DD/YYYY');
+      return;
+    }
+    
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/medical-calendar/providers/${providerId}/block-time`,
@@ -358,8 +367,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            startDatetime: `${newBlockedTime.startDate}T00:00:00`,
-            endDatetime: `${newBlockedTime.endDate}T23:59:59`,
+            startDatetime: `${parsedStartDate.format('YYYY-MM-DD')}T00:00:00`,
+            endDatetime: `${parsedEndDate.format('YYYY-MM-DD')}T23:59:59`,
             reason: newBlockedTime.reason,
             blockType: newBlockedTime.blockType,
             isAllDay: newBlockedTime.isAllDay
@@ -409,19 +418,22 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
 
-    const parsedStartTime = new Date(newEvent.startTime.replace(' ', 'T'));
-    if (isNaN(parsedStartTime.getTime())) {
-      Alert.alert('Error', 'Invalid start time format. Use YYYY-MM-DD HH:MM');
+    // Parse MM/DD/YYYY HH:MM format
+    const parsedStartMoment = moment(newEvent.startTime, 'MM/DD/YYYY HH:mm');
+    if (!parsedStartMoment.isValid()) {
+      Alert.alert('Error', 'Invalid start time format. Use MM/DD/YYYY HH:MM');
       return;
     }
+    const parsedStartTime = parsedStartMoment.toDate();
 
     let parsedEndTime = parsedStartTime;
     if (newEvent.endTime) {
-      parsedEndTime = new Date(newEvent.endTime.replace(' ', 'T'));
-      if (isNaN(parsedEndTime.getTime())) {
-        Alert.alert('Error', 'Invalid end time format. Use YYYY-MM-DD HH:MM');
+      const parsedEndMoment = moment(newEvent.endTime, 'MM/DD/YYYY HH:mm');
+      if (!parsedEndMoment.isValid()) {
+        Alert.alert('Error', 'Invalid end time format. Use MM/DD/YYYY HH:MM');
         return;
       }
+      parsedEndTime = parsedEndMoment.toDate();
     } else {
       parsedEndTime = new Date(parsedStartTime.getTime() + 60 * 60 * 1000);
     }
@@ -1074,7 +1086,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newBlockedTime.startDate}
               onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, startDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
@@ -1083,7 +1095,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               style={styles.modalInput}
               value={newBlockedTime.endDate}
               onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, endDate: text })}
-              placeholder="YYYY-MM-DD"
+              placeholder="MM/DD/YYYY"
               placeholderTextColor="#999"
             />
 
@@ -1533,7 +1545,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.modalLabel}>Start Date & Time *</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM (e.g., 2025-01-15 09:00)"
+                placeholder="MM/DD/YYYY HH:MM (e.g., 01/15/2025 09:00)"
                 placeholderTextColor="#999"
                 value={newEvent.startTime}
                 onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
@@ -1544,7 +1556,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
               <TextInput
                 style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM (defaults to 1 hour after start)"
+                placeholder="MM/DD/YYYY HH:MM (defaults to 1 hour after start)"
                 placeholderTextColor="#999"
                 value={newEvent.endTime}
                 onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
