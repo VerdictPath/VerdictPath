@@ -1625,9 +1625,9 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleAddEvent}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleAddEvent}>
               <Text style={{ fontSize: 18, marginRight: 8 }}>📅</Text>
-              <Text style={styles.submitButtonText}>Create Event</Text>
+              <Text style={styles.saveButtonText}>Create Event</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
