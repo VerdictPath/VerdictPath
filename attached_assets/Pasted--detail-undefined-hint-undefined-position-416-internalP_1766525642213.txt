@@ -1,0 +1,112 @@
+  detail: undefined,
+  hint: undefined,
+  position: '416',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+  file: 'parse_relation.c',
+Error logging in law firm user: error: relation "law_firm_users" does not exist
+  line: '1449',
+    at /app/node_modules/pg-pool/index.js:45:11
+  routine: 'parserOpenTable'
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+}
+    at async exports.loginLawFirmUser (/app/controllers/authController.js:1097:20) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '416',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+⚠️  Rate limit exceeded for 216.144.245.174 on /register/lawfirm
+⚠️  Rate limit exceeded for 216.144.245.174 on /register/lawfirm
+⚠️  Rate limit exceeded for 216.144.245.174 on /register/lawfirm
+Error logging in law firm user: error: relation "law_firm_users" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async exports.loginLawFirmUser (/app/controllers/authController.js:1097:20) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '416',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+Error logging in law firm user: error: relation "law_firm_users" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async exports.loginLawFirmUser (/app/controllers/authController.js:1097:20) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '416',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+Error logging in law firm user: error: relation "law_firm_users" does not exist
+  position: '416',
+    at /app/node_modules/pg-pool/index.js:45:11
+  internalPosition: undefined,
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+  internalQuery: undefined,
+    at async exports.loginLawFirmUser (/app/controllers/authController.js:1097:20) {
+  length: 114,
+  where: undefined,
+  severity: 'ERROR',
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+⚠️  Rate limit exceeded for 162.255.23.59 on /register/lawfirm
+⚠️  Rate limit exceeded for 162.255.23.59 on /register/lawfirm
+⚠️  Rate limit exceeded for 162.255.23.59 on /register/lawfirm
+⚠️  Rate limit exceeded for 162.255.23.59 on /register/lawfirm
+⚠️  Rate limit exceeded for 162.255.23.59 on /login/lawfirm-user
+⚠️  Rate limit exceeded for 162.255.23.59 on /login/lawfirm-user
