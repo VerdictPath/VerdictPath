@@ -23,6 +23,60 @@ router.post('/change-password/first-login', authLimiter, changePasswordControlle
 // Password change endpoint for authenticated users
 router.post('/change-password', authenticateToken, changePasswordController.changePassword);
 
+// One-time password reset for test accounts (call this once on Railway)
+router.get('/debug/reset-passwords', async (req, res) => {
+  const db = require('../config/db');
+  const bcrypt = require('bcryptjs');
+  
+  try {
+    const hash = await bcrypt.hash('password123', 10);
+    const results = [];
+    
+    // Reset medical_provider_users
+    const r1 = await db.query(
+      `UPDATE medical_provider_users SET password = $1 WHERE email IN ('testmed1@example.com', 'beta_provider') RETURNING email`,
+      [hash]
+    );
+    results.push({ table: 'medical_provider_users', updated: r1.rows.map(r => r.email) });
+    
+    // Reset medical_providers
+    const r2 = await db.query(
+      `UPDATE medical_providers SET password = $1 WHERE email IN ('testmed1@example.com', 'beta_provider') RETURNING email`,
+      [hash]
+    );
+    results.push({ table: 'medical_providers', updated: r2.rows.map(r => r.email) });
+    
+    // Reset law_firm_users
+    const r3 = await db.query(
+      `UPDATE law_firm_users SET password = $1 WHERE email = 'beta_lawfirm' RETURNING email`,
+      [hash]
+    );
+    results.push({ table: 'law_firm_users', updated: r3.rows.map(r => r.email) });
+    
+    // Reset law_firms
+    const r4 = await db.query(
+      `UPDATE law_firms SET password = $1 WHERE email = 'beta_lawfirm' RETURNING email`,
+      [hash]
+    );
+    results.push({ table: 'law_firms', updated: r4.rows.map(r => r.email) });
+    
+    // Reset users (individuals)
+    const r5 = await db.query(
+      `UPDATE users SET password = $1 WHERE email = 'beta_individual' RETURNING email`,
+      [hash]
+    );
+    results.push({ table: 'users', updated: r5.rows.map(r => r.email) });
+    
+    res.json({
+      success: true,
+      message: 'Passwords reset to: password123',
+      results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Diagnostic endpoint to check if test accounts exist (no password exposure)
 router.get('/debug/accounts-check', async (req, res) => {
   const db = require('../config/db');
