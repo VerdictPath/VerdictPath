@@ -240,6 +240,7 @@ const RegisterScreen = ({
             <TextInput
               style={commonStyles.input}
               placeholder="First Name"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={firstName}
               onChangeText={setFirstName}
               autoCapitalize="words"
@@ -247,6 +248,7 @@ const RegisterScreen = ({
             <TextInput
               style={commonStyles.input}
               placeholder="Last Name"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={lastName}
               onChangeText={setLastName}
               autoCapitalize="words"
@@ -254,6 +256,7 @@ const RegisterScreen = ({
             <TextInput
               style={commonStyles.input}
               placeholder="Cell Phone Number"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
               keyboardType="phone-pad"
@@ -266,6 +269,7 @@ const RegisterScreen = ({
           <TextInput
             style={commonStyles.input}
             placeholder="Law Firm Name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={firmName}
             onChangeText={setFirmName}
             autoCapitalize="words"
@@ -276,6 +280,7 @@ const RegisterScreen = ({
           <TextInput
             style={commonStyles.input}
             placeholder="Medical Provider/Practice Name"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={providerName}
             onChangeText={setProviderName}
             autoCapitalize="words"
@@ -285,6 +290,7 @@ const RegisterScreen = ({
         <TextInput
           style={commonStyles.input}
           placeholder="Email Address"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -295,6 +301,7 @@ const RegisterScreen = ({
         <TextInput
           style={commonStyles.input}
           placeholder="Password"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -304,6 +311,7 @@ const RegisterScreen = ({
         <TextInput
           style={commonStyles.input}
           placeholder="Confirm Password"
+          placeholderTextColor="rgba(255, 255, 255, 0.5)"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -315,12 +323,14 @@ const RegisterScreen = ({
             <TextInput
               style={commonStyles.input}
               placeholder="Law Firm or Provider Code (Optional)"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={firmCode}
               onChangeText={setFirmCode}
             />
             <TextInput
               style={commonStyles.input}
               placeholder="Friend's Invite Code (Optional)"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={inviteCode}
               onChangeText={(text) => setInviteCode(text.toUpperCase())}
               autoCapitalize="characters"
@@ -339,6 +349,7 @@ const RegisterScreen = ({
             <TextInput
               style={commonStyles.input}
               placeholder="Referral/Invite Code (Optional)"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={inviteCode}
               onChangeText={(text) => setInviteCode(text.toUpperCase())}
               autoCapitalize="characters"

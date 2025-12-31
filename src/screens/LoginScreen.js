@@ -257,6 +257,7 @@ const LoginScreen = ({
           <TextInput
             style={commonStyles.input}
             placeholder="Email Address"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -266,6 +267,7 @@ const LoginScreen = ({
           <TextInput
             style={commonStyles.input}
             placeholder="Password"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
