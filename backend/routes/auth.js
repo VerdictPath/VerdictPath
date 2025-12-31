@@ -23,6 +23,98 @@ router.post('/change-password/first-login', authLimiter, changePasswordControlle
 // Password change endpoint for authenticated users
 router.post('/change-password', authenticateToken, changePasswordController.changePassword);
 
+// One-time account creation for test accounts (call this once on Railway)
+router.get('/debug/create-test-accounts', async (req, res) => {
+  const db = require('../config/db');
+  const bcrypt = require('bcryptjs');
+  
+  try {
+    const hash = await bcrypt.hash('password123', 10);
+    const results = [];
+    
+    // Create individual user if not exists
+    const userCheck = await db.query(`SELECT id FROM users WHERE email = 'beta_individual'`);
+    if (userCheck.rows.length === 0) {
+      await db.query(`
+        INSERT INTO users (first_name, last_name, email, password, user_type, subscription_tier, privacy_accepted_at)
+        VALUES ('Beta', 'Individual', 'beta_individual', $1, 'individual', 'Free', NOW())
+      `, [hash]);
+      results.push('Created: beta_individual (individual user)');
+    } else {
+      await db.query(`UPDATE users SET password = $1 WHERE email = 'beta_individual'`, [hash]);
+      results.push('Updated password: beta_individual');
+    }
+    
+    // Create law firm if not exists
+    const lfCheck = await db.query(`SELECT id FROM law_firms WHERE email = 'beta_lawfirm'`);
+    let lawFirmId;
+    if (lfCheck.rows.length === 0) {
+      const lfResult = await db.query(`
+        INSERT INTO law_firms (firm_name, firm_code, email, password, subscription_tier, plan_type, privacy_accepted_at)
+        VALUES ('Beta Test Law Firm', 'LAW-BETA01', 'beta_lawfirm', $1, 'Premium', 'premium', NOW())
+        RETURNING id
+      `, [hash]);
+      lawFirmId = lfResult.rows[0].id;
+      results.push('Created: beta_lawfirm (law firm)');
+    } else {
+      lawFirmId = lfCheck.rows[0].id;
+      await db.query(`UPDATE law_firms SET password = $1 WHERE email = 'beta_lawfirm'`, [hash]);
+      results.push('Updated password: beta_lawfirm');
+    }
+    
+    // Create law firm user if not exists
+    const lfuCheck = await db.query(`SELECT id FROM law_firm_users WHERE email = 'beta_lawfirm'`);
+    if (lfuCheck.rows.length === 0) {
+      await db.query(`
+        INSERT INTO law_firm_users (law_firm_id, first_name, last_name, email, password, user_code, role, status, can_manage_users, can_manage_clients, can_manage_disbursements, can_manage_settings)
+        VALUES ($1, 'Beta', 'Admin', 'beta_lawfirm', $2, 'LAW-BETA01-ADMIN', 'admin', 'active', true, true, true, true)
+      `, [lawFirmId, hash]);
+      results.push('Created: beta_lawfirm (law firm user)');
+    } else {
+      await db.query(`UPDATE law_firm_users SET password = $1 WHERE email = 'beta_lawfirm'`, [hash]);
+      results.push('Updated password: beta_lawfirm (law firm user)');
+    }
+    
+    // Create medical provider if not exists
+    const mpCheck = await db.query(`SELECT id FROM medical_providers WHERE email = 'testmed1@example.com'`);
+    let medProviderId;
+    if (mpCheck.rows.length === 0) {
+      const mpResult = await db.query(`
+        INSERT INTO medical_providers (provider_name, provider_code, email, password, subscription_tier, privacy_accepted_at)
+        VALUES ('Test Medical Center', 'TESTMED1', 'testmed1@example.com', $1, 'Premium', NOW())
+        RETURNING id
+      `, [hash]);
+      medProviderId = mpResult.rows[0].id;
+      results.push('Created: testmed1@example.com (medical provider)');
+    } else {
+      medProviderId = mpCheck.rows[0].id;
+      await db.query(`UPDATE medical_providers SET password = $1 WHERE email = 'testmed1@example.com'`, [hash]);
+      results.push('Updated password: testmed1@example.com');
+    }
+    
+    // Create medical provider user if not exists
+    const mpuCheck = await db.query(`SELECT id FROM medical_provider_users WHERE email = 'testmed1@example.com'`);
+    if (mpuCheck.rows.length === 0) {
+      await db.query(`
+        INSERT INTO medical_provider_users (medical_provider_id, first_name, last_name, email, password, user_code, role, status, can_manage_users, can_manage_patients, can_manage_billing, can_manage_settings)
+        VALUES ($1, 'Test', 'Medical', 'testmed1@example.com', $2, 'TESTMED1-ADMIN', 'admin', 'active', true, true, true, true)
+      `, [medProviderId, hash]);
+      results.push('Created: testmed1@example.com (medical provider user)');
+    } else {
+      await db.query(`UPDATE medical_provider_users SET password = $1 WHERE email = 'testmed1@example.com'`, [hash]);
+      results.push('Updated password: testmed1@example.com (medical provider user)');
+    }
+    
+    res.json({
+      success: true,
+      message: 'Test accounts created/updated. Password: password123',
+      results
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // One-time password reset for test accounts (call this once on Railway)
 router.get('/debug/reset-passwords', async (req, res) => {
   const db = require('../config/db');
