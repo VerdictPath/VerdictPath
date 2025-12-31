@@ -15,14 +15,14 @@ const getApiBaseUrl = () => {
     return process.env.EXPO_PUBLIC_API_BASE_URL;
   }
 
-  // Priority 2: Use relative URL (works on all deployments)
+  // Priority 2: Use relative URL (works on web deployments)
   // This uses the same origin as the frontend, which is served by the backend
-  if (typeof window !== 'undefined' && window.location) {
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
     return window.location.origin;
   }
 
-  // Priority 3: Fallback for SSR or build-time
-  return '';
+  // Priority 3: Production Railway URL for native mobile apps (iOS/Android)
+  return 'https://verdictpath.up.railway.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
