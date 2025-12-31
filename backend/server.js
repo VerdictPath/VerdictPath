@@ -40,6 +40,7 @@ const smsTestRoutes = require('./routes/smsTestRoutes');
 const bankInfoRoutes = require('./routes/bankInfo');
 const { startReminderScheduler } = require('./services/taskReminderService');
 const { startCleanupScheduler } = require('./services/notificationCleanupService');
+const { ensureTablesExist } = require('./services/databaseMigrationService');
 // Coin purchase routes merged into coins.js
 
 const app = express();
@@ -494,10 +495,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`VerdictPath Backend Server running on port ${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api`);
   console.log(`Web portal available at http://localhost:${PORT}/portal`);
+  
+  // Ensure all required database tables exist
+  await ensureTablesExist();
   
   // Start task reminder scheduler
   startReminderScheduler();
