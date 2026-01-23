@@ -8,7 +8,7 @@ const { sendDocumentUploadedEmail } = require('../services/emailService');
 const path = require('path');
 const fs = require('fs');
 
-// Mapping of document types to litigation substage IDs
+// Mapping of document types to litigation substage IDs (includes all substage IDs from RoadmapScreen)
 const DOCUMENT_TO_SUBSTAGE_MAP = {
   // Medical uploads
   'Medical Record': 'pre-9',
@@ -27,29 +27,119 @@ const DOCUMENT_TO_SUBSTAGE_MAP = {
   'Health Insurance': 'pre-5',
   'Insurance Card': 'pre-5',
   
-  // Direct substage ID mappings (sent from RoadmapScreen)
-  'pre-1': 'pre-1',
-  'pre-2': 'pre-2',
-  'pre-3': 'pre-3',
-  'pre-4': 'pre-4',
-  'pre-5': 'pre-5',
-  'pre-8': 'pre-8',
-  'pre-9': 'pre-9',
-  'pre-10': 'pre-10',
-  'pre-11': 'pre-11'
+  // Pre-Litigation substages
+  'pre-1': 'pre-1', 'pre-2': 'pre-2', 'pre-3': 'pre-3', 'pre-4': 'pre-4', 'pre-5': 'pre-5',
+  'pre-6': 'pre-6', 'pre-7': 'pre-7', 'pre-8': 'pre-8', 'pre-9': 'pre-9', 'pre-10': 'pre-10', 'pre-11': 'pre-11',
+  
+  // Complaint Filed substages
+  'cf-1': 'cf-1', 'cf-2': 'cf-2', 'cf-3': 'cf-3', 'cf-4': 'cf-4',
+  
+  // Discovery substages
+  'disc-1': 'disc-1', 'disc-2': 'disc-2', 'disc-3': 'disc-3', 'disc-4': 'disc-4', 'disc-5': 'disc-5',
+  
+  // Depositions substages
+  'dep-1': 'dep-1', 'dep-2': 'dep-2', 'dep-3': 'dep-3', 'dep-4': 'dep-4',
+  
+  // Mediation substages
+  'med-1': 'med-1', 'med-2': 'med-2', 'med-3': 'med-3',
+  
+  // Trial Prep substages
+  'tp-1': 'tp-1', 'tp-2': 'tp-2', 'tp-3': 'tp-3', 'tp-4': 'tp-4', 'tp-5': 'tp-5',
+  
+  // Trial substages
+  'trial-1': 'trial-1', 'trial-2': 'trial-2', 'trial-3': 'trial-3', 'trial-4': 'trial-4',
+  'trial-5': 'trial-5', 'trial-6': 'trial-6', 'trial-7': 'trial-7', 'trial-8': 'trial-8',
+  'trial-9': 'trial-9', 'trial-10': 'trial-10', 'trial-11': 'trial-11', 'trial-12': 'trial-12',
+  'trial-13': 'trial-13', 'trial-14': 'trial-14', 'trial-15': 'trial-15', 'trial-16': 'trial-16',
+  
+  // Settlement substages
+  'settle-1': 'settle-1', 'settle-2': 'settle-2', 'settle-3': 'settle-3', 'settle-4': 'settle-4',
+  'settle-5': 'settle-5', 'settle-6': 'settle-6', 'settle-7': 'settle-7', 'settle-8': 'settle-8',
+  'settle-9': 'settle-9', 'settle-10': 'settle-10',
+  
+  // Case Resolved substages
+  'cr-1': 'cr-1', 'cr-2': 'cr-2'
 };
 
-// Substage metadata for auto-completion (includes stage info and names)
+// Complete substage metadata for all 60 substages across 9 stages
 const SUBSTAGE_METADATA = {
+  // Stage 1: Pre-Litigation (11 substages)
   'pre-1': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Police Report', substageType: 'upload' },
   'pre-2': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Body Cam Footage', substageType: 'upload' },
   'pre-3': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Dash Cam Footage', substageType: 'upload' },
   'pre-4': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Pictures', substageType: 'upload' },
   'pre-5': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Health Insurance Card', substageType: 'upload' },
+  'pre-6': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Auto Insurance Company', substageType: 'data_entry' },
+  'pre-7': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Auto Insurance Policy Number', substageType: 'data_entry' },
   'pre-8': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Medical Bills', substageType: 'upload' },
   'pre-9': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Medical Records', substageType: 'upload' },
   'pre-10': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Demand Sent', substageType: 'upload' },
-  'pre-11': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Demand Rejected', substageType: 'upload' }
+  'pre-11': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Demand Rejected', substageType: 'upload' },
+  
+  // Stage 2: Complaint Filed (4 substages)
+  'cf-1': { stageId: 2, stageName: 'Complaint Filed', substageName: 'Draft Complaint', substageType: 'task' },
+  'cf-2': { stageId: 2, stageName: 'Complaint Filed', substageName: 'File with Court', substageType: 'task' },
+  'cf-3': { stageId: 2, stageName: 'Complaint Filed', substageName: 'Serve Defendant', substageType: 'task' },
+  'cf-4': { stageId: 2, stageName: 'Complaint Filed', substageName: 'Answer Filed', substageType: 'task' },
+  
+  // Stage 3: Discovery Begins (5 substages)
+  'disc-1': { stageId: 3, stageName: 'Discovery Begins', substageName: 'Interrogatories', substageType: 'task' },
+  'disc-2': { stageId: 3, stageName: 'Discovery Begins', substageName: 'Request for Production of Documents', substageType: 'task' },
+  'disc-3': { stageId: 3, stageName: 'Discovery Begins', substageName: 'Request for Admissions', substageType: 'task' },
+  'disc-4': { stageId: 3, stageName: 'Discovery Begins', substageName: 'Entry Upon Land for Inspection', substageType: 'task' },
+  'disc-5': { stageId: 3, stageName: 'Discovery Begins', substageName: 'Experts', substageType: 'task' },
+  
+  // Stage 4: Depositions (4 substages)
+  'dep-1': { stageId: 4, stageName: 'Depositions', substageName: 'Plaintiff Deposition', substageType: 'task' },
+  'dep-2': { stageId: 4, stageName: 'Depositions', substageName: 'Defendant Deposition', substageType: 'task' },
+  'dep-3': { stageId: 4, stageName: 'Depositions', substageName: 'Witness Depositions', substageType: 'task' },
+  'dep-4': { stageId: 4, stageName: 'Depositions', substageName: 'Expert Depositions', substageType: 'task' },
+  
+  // Stage 5: Mediation (3 substages)
+  'med-1': { stageId: 5, stageName: 'Mediation', substageName: 'Schedule Mediation', substageType: 'task' },
+  'med-2': { stageId: 5, stageName: 'Mediation', substageName: 'Attend Mediation', substageType: 'task' },
+  'med-3': { stageId: 5, stageName: 'Mediation', substageName: 'Mediation Outcome', substageType: 'task' },
+  
+  // Stage 6: Trial Prep (5 substages)
+  'tp-1': { stageId: 6, stageName: 'Trial Prep', substageName: 'Pre-trial Conference', substageType: 'task' },
+  'tp-2': { stageId: 6, stageName: 'Trial Prep', substageName: 'Exhibit Preparation', substageType: 'task' },
+  'tp-3': { stageId: 6, stageName: 'Trial Prep', substageName: 'Witness Preparation', substageType: 'task' },
+  'tp-4': { stageId: 6, stageName: 'Trial Prep', substageName: 'Motions in Limine', substageType: 'task' },
+  'tp-5': { stageId: 6, stageName: 'Trial Prep', substageName: 'Trial Briefs', substageType: 'task' },
+  
+  // Stage 7: Trial (16 substages)
+  'trial-1': { stageId: 7, stageName: 'Trial', substageName: 'Jury selection', substageType: 'task' },
+  'trial-2': { stageId: 7, stageName: 'Trial', substageName: 'Jury seated', substageType: 'task' },
+  'trial-3': { stageId: 7, stageName: 'Trial', substageName: 'Opening statements', substageType: 'task' },
+  'trial-4': { stageId: 7, stageName: 'Trial', substageName: 'Plaintiff witness testimony', substageType: 'task' },
+  'trial-5': { stageId: 7, stageName: 'Trial', substageName: 'Plaintiff evidence', substageType: 'task' },
+  'trial-6': { stageId: 7, stageName: 'Trial', substageName: 'Plaintiff rests', substageType: 'task' },
+  'trial-7': { stageId: 7, stageName: 'Trial', substageName: 'Motions', substageType: 'task' },
+  'trial-8': { stageId: 7, stageName: 'Trial', substageName: 'Defense witness testimony', substageType: 'task' },
+  'trial-9': { stageId: 7, stageName: 'Trial', substageName: 'Defense evidence', substageType: 'task' },
+  'trial-10': { stageId: 7, stageName: 'Trial', substageName: 'Defense rests', substageType: 'task' },
+  'trial-11': { stageId: 7, stageName: 'Trial', substageName: 'Motions after defense', substageType: 'task' },
+  'trial-12': { stageId: 7, stageName: 'Trial', substageName: 'Closing arguments', substageType: 'task' },
+  'trial-13': { stageId: 7, stageName: 'Trial', substageName: 'Jury instructions', substageType: 'task' },
+  'trial-14': { stageId: 7, stageName: 'Trial', substageName: 'Jury deliberations', substageType: 'task' },
+  'trial-15': { stageId: 7, stageName: 'Trial', substageName: 'Jury questions', substageType: 'task' },
+  'trial-16': { stageId: 7, stageName: 'Trial', substageName: 'Verdict', substageType: 'task' },
+  
+  // Stage 8: Settlement (10 substages)
+  'settle-1': { stageId: 8, stageName: 'Settlement', substageName: 'Negotiations', substageType: 'task' },
+  'settle-2': { stageId: 8, stageName: 'Settlement', substageName: 'Agreement to settle', substageType: 'task' },
+  'settle-3': { stageId: 8, stageName: 'Settlement', substageName: 'Settlement release', substageType: 'task' },
+  'settle-4': { stageId: 8, stageName: 'Settlement', substageName: 'Lien affidavit', substageType: 'task' },
+  'settle-5': { stageId: 8, stageName: 'Settlement', substageName: 'Settlement statement', substageType: 'task' },
+  'settle-6': { stageId: 8, stageName: 'Settlement', substageName: 'Check received', substageType: 'task' },
+  'settle-7': { stageId: 8, stageName: 'Settlement', substageName: 'Check deposited', substageType: 'task' },
+  'settle-8': { stageId: 8, stageName: 'Settlement', substageName: 'Funds cleared', substageType: 'task' },
+  'settle-9': { stageId: 8, stageName: 'Settlement', substageName: 'Liens paid', substageType: 'task' },
+  'settle-10': { stageId: 8, stageName: 'Settlement', substageName: 'Disbursement', substageType: 'task' },
+  
+  // Stage 9: Case Resolved (2 substages)
+  'cr-1': { stageId: 9, stageName: 'Case Resolved', substageName: 'Case Closed', substageType: 'task' },
+  'cr-2': { stageId: 9, stageName: 'Case Resolved', substageName: 'Final Documentation', substageType: 'task' }
 };
 
 // Helper function to auto-complete substages when documents are uploaded
