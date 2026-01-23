@@ -207,7 +207,11 @@ const tasksController = {
         (async () => {
           try {
             const clientResult = await pool.query(
-              'SELECT first_name, last_name, email, email_notifications_enabled FROM users WHERE id = $1',
+              `SELECT u.first_name, u.last_name, u.email, 
+                      COALESCE(np.email_notifications_enabled, true) as email_notifications_enabled 
+               FROM users u 
+               LEFT JOIN notification_preferences np ON np.user_id = u.id 
+               WHERE u.id = $1`,
               [clientId]
             );
             const client = clientResult.rows[0];

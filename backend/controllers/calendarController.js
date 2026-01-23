@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const { syncNotificationToFirebase, updateUnreadCount } = require('../services/firebaseSync');
 const { sendCalendarEventEmail } = require('../services/emailService');
 const { sendNotificationSMS } = require('../services/smsService');
+const encryptionService = require('../services/encryption');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -280,9 +281,14 @@ const calendarController = {
 
             console.log(`📬 Push notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
 
-            // Get client details for email and SMS
+            // Get client details for email and SMS (join with notification_preferences for SMS settings)
             const clientResult = await pool.query(
-              'SELECT email, phone_number, first_name, last_name, sms_notifications_enabled, email_notifications_enabled FROM users WHERE id = $1',
+              `SELECT u.email, u.phone_encrypted, u.first_name, u.last_name, 
+                      COALESCE(np.sms_notifications_enabled, false) as sms_notifications_enabled, 
+                      COALESCE(np.email_notifications_enabled, true) as email_notifications_enabled 
+               FROM users u 
+               LEFT JOIN notification_preferences np ON np.user_id = u.id 
+               WHERE u.id = $1`,
               [clientToShareWith]
             );
 
@@ -307,17 +313,20 @@ const calendarController = {
                 }
               }
 
-              // Send SMS notification if enabled and phone number exists
-              if (client.phone_number && client.sms_notifications_enabled === true) {
+              // Send SMS notification if enabled and phone number exists (decrypt phone_encrypted)
+              if (client.phone_encrypted && client.sms_notifications_enabled === true) {
                 try {
-                  await sendNotificationSMS(
-                    client.phone_number,
-                    'calendar_event',
-                    `📅 New Event from ${senderName}`,
-                    `${title} scheduled for ${formattedDate} at ${formattedTime}${location ? ` at ${location}` : ''}`,
-                    'normal'
-                  );
-                  console.log(`📱 SMS notification sent to ${client.phone_number.slice(-4)} for event ${createdEvent.id}`);
+                  const phoneNumber = encryptionService.decrypt(client.phone_encrypted);
+                  if (phoneNumber) {
+                    await sendNotificationSMS(
+                      phoneNumber,
+                      'calendar_event',
+                      `📅 New Event from ${senderName}`,
+                      `${title} scheduled for ${formattedDate} at ${formattedTime}${location ? ` at ${location}` : ''}`,
+                      'normal'
+                    );
+                    console.log(`📱 SMS notification sent to ****${phoneNumber.slice(-4)} for event ${createdEvent.id}`);
+                  }
                 } catch (smsError) {
                   console.error('Error sending calendar event SMS:', smsError);
                 }
