@@ -283,10 +283,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   formContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    backgroundColor: "rgba(20, 30, 50, 0.9)",
     borderRadius: 16,
     padding: 24,
     maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   title: {
     fontSize: 28,
@@ -318,13 +320,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "rgba(30, 30, 50, 0.8)",
     alignItems: "center",
   },
   userTypeButtonActive: {
-    backgroundColor: "#d4af37",
+    backgroundColor: "rgba(212, 175, 55, 0.9)",
     borderColor: "#d4af37",
   },
   userTypeText: {

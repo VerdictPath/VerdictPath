@@ -298,11 +298,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   formContainer: {
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    backgroundColor: "rgba(20, 30, 50, 0.9)",
     borderRadius: 16,
     padding: 24,
     maxWidth: 400,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   title: {
     fontSize: 28,

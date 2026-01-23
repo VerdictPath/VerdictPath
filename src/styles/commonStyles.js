@@ -42,11 +42,11 @@ export const commonStyles = StyleSheet.create({
     fontWeight: '600',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(30, 30, 50, 0.85)',
     padding: 15,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
     marginBottom: 15,
     fontSize: 16,
     color: '#FFFFFF',

@@ -859,12 +859,12 @@ const styles = StyleSheet.create({
   roleButton: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(17, 94, 89, 0.85)',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   roleButtonActive: {
     backgroundColor: '#28A745',

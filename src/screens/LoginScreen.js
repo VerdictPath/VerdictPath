@@ -376,12 +376,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.4)",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255, 255, 255, 0.6)",
+    backgroundColor: "rgba(30, 30, 50, 0.8)",
     alignItems: "center",
   },
   userTypeButtonActive: {
-    backgroundColor: "rgba(212, 165, 116, 0.7)",
+    backgroundColor: "rgba(212, 165, 116, 0.9)",
     borderColor: "#d4a574",
   },
   userTypeText: {

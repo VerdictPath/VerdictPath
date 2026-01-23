@@ -739,13 +739,13 @@ const styles = StyleSheet.create({
   },
   roleButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(30, 58, 95, 0.85)',
     borderRadius: 8,
     padding: 12,
     marginHorizontal: 4,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   roleButtonActive: {
     backgroundColor: theme.colors.primary,

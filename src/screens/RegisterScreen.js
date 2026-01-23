@@ -461,15 +461,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+    backgroundColor: 'rgba(30, 30, 50, 0.8)',
     marginHorizontal: 5,
     borderRadius: 8,
     alignItems: 'center',
   },
   toggleButtonActive: {
     borderColor: '#3498db',
-    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+    backgroundColor: 'rgba(52, 152, 219, 0.9)',
   },
   toggleText: {
     fontSize: 12,
