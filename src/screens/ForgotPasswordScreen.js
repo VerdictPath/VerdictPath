@@ -43,9 +43,16 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
     player.muted = true;
     player.playbackRate = 0.95;
 
-    const timer = setTimeout(() => {
-      if (player && !player.playing) {
-        player.play().catch(() => {});
+    const timer = setTimeout(async () => {
+      try {
+        if (player && !player.playing) {
+          const playPromise = player.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {});
+          }
+        }
+      } catch (error) {
+        // Silently handle video play errors
       }
     }, 800);
 
@@ -274,6 +281,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "rgba(30, 58, 95, 0.7)",
     zIndex: 1,
+    pointerEvents: "none",
   },
   scrollContent: {
     flexGrow: 1,
