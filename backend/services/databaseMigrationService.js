@@ -108,6 +108,31 @@ async function ensureTablesExist() {
       console.log('✅ medical_provider_users table created');
     }
     
+    const passwordResetCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'password_reset_tokens'
+      );
+    `);
+    
+    if (!passwordResetCheck.rows[0].exists) {
+      console.log('📦 Creating password_reset_tokens table...');
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255) NOT NULL,
+          token VARCHAR(255) NOT NULL UNIQUE,
+          user_type VARCHAR(50) NOT NULL,
+          expires_at TIMESTAMP NOT NULL,
+          used BOOLEAN DEFAULT false,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_email ON password_reset_tokens(email);`);
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);`);
+      console.log('✅ password_reset_tokens table created');
+    }
+    
     console.log('✅ Database schema check complete');
     
   } catch (error) {

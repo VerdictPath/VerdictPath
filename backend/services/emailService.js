@@ -1301,6 +1301,100 @@ ${body}
   return sendEmail(toEmail, subject, html);
 }
 
+async function sendPasswordResetEmail(toEmail, resetToken, userType) {
+  const baseUrl = getBaseUrl();
+  const resetLink = `${baseUrl}/reset-password?token=${resetToken}&type=${userType}`;
+  
+  const userTypeLabel = {
+    individual: 'Individual User',
+    lawfirm: 'Law Firm',
+    medicalprovider: 'Medical Provider'
+  }[userType] || 'User';
+  
+  const subject = 'Password Reset Request - Verdict Path';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><style>${baseStyles}</style></head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Password Reset Request</h1>
+          <p>Verdict Path - Legal Case Management</p>
+        </div>
+        <div class="content">
+          <p>Hello,</p>
+          <p>We received a request to reset the password for your <strong>${userTypeLabel}</strong> account.</p>
+          
+          <div class="warning-box">
+            <strong>Important:</strong> This link will expire in 1 hour for security purposes.
+          </div>
+          
+          <p style="text-align: center;">
+            <a href="${resetLink}" class="button">Reset My Password</a>
+          </p>
+          
+          <p>Or copy and paste this link into your browser:</p>
+          <div class="info-box">
+            <code style="word-break: break-all;">${resetLink}</code>
+          </div>
+          
+          <div class="info-blue-box">
+            <strong>Didn't request this?</strong><br>
+            If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+          </div>
+          
+          ${emailFooter}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return sendEmail(toEmail, subject, html);
+}
+
+async function sendPasswordResetConfirmationEmail(toEmail, userType) {
+  const userTypeLabel = {
+    individual: 'Individual User',
+    lawfirm: 'Law Firm',
+    medicalprovider: 'Medical Provider'
+  }[userType] || 'User';
+  
+  const subject = 'Password Changed Successfully - Verdict Path';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><style>${baseStyles}</style></head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Password Changed</h1>
+          <p>Verdict Path - Legal Case Management</p>
+        </div>
+        <div class="content">
+          <p>Hello,</p>
+          
+          <div class="success-box">
+            <strong>Success!</strong> Your password has been changed successfully.
+          </div>
+          
+          <p>Your <strong>${userTypeLabel}</strong> account password was just changed. You can now log in with your new password.</p>
+          
+          <div class="alert-box">
+            <strong>Security Alert:</strong> If you did not make this change, please contact support immediately.
+          </div>
+          
+          ${emailFooter}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return sendEmail(toEmail, subject, html);
+}
+
 module.exports = {
   sendCredentialEmail,
   sendPasswordChangeConfirmation,
@@ -1325,5 +1419,7 @@ module.exports = {
   sendAdminNewRegistrationEmail,
   sendAdminSecurityAlertEmail,
   sendHIPAAAuditAlertEmail,
-  sendNotificationCCEmail
+  sendNotificationCCEmail,
+  sendPasswordResetEmail,
+  sendPasswordResetConfirmationEmail
 };

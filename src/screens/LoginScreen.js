@@ -280,6 +280,10 @@ const LoginScreen = ({
             <Text style={commonStyles.buttonText}>Sign In</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity onPress={() => onNavigate("forgotPassword")}>
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={() => onNavigate("register")}>
             <Text style={commonStyles.linkText}>
               Don't have an account? Sign Up
@@ -388,6 +392,14 @@ const styles = StyleSheet.create({
   },
   userTypeTextActive: {
     color: "#FFFFFF",
+  },
+  forgotPasswordText: {
+    color: "#d4af37",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 12,
+    marginBottom: 8,
+    textDecorationLine: "underline",
   },
 });
 

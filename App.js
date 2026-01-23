@@ -62,6 +62,8 @@ import MedicalProviderEventRequestsScreen from './src/screens/MedicalProviderEve
 import MedicalProviderBillingScreen from './src/screens/MedicalProviderBillingScreen';
 import ClientEventRequestsScreen from './src/screens/ClientEventRequestsScreen';
 import TreasureChestScreen from './src/screens/TreasureChestScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
@@ -125,6 +127,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [selectedNotificationId, setSelectedNotificationId] = useState(null);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const [resetToken, setResetToken] = useState(null);
   const [lawFirmReturnTab, setLawFirmReturnTab] = useState('clients');
   const [medicalProviderReturnTab, setMedicalProviderReturnTab] = useState('patients');
   const [currentLawFirmUser, setCurrentLawFirmUser] = useState(null);
@@ -162,6 +165,21 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
+
+  // Handle reset-password URL on page load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const type = urlParams.get('type');
+      const path = window.location.pathname;
+      
+      if (path === '/reset-password' && token) {
+        setResetToken(token);
+        setCurrentScreen('resetPassword');
+      }
+    }
+  }, []);
 
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
@@ -1474,6 +1492,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           setUserType={setUserType}
           firmCode={firmCode}
           setFirmCode={setFirmCode}
+        />
+      )}
+
+      {currentScreen === 'forgotPassword' && (
+        <ForgotPasswordScreen onNavigate={handleNavigateInternal} />
+      )}
+
+      {currentScreen === 'resetPassword' && (
+        <ResetPasswordScreen 
+          onNavigate={handleNavigateInternal} 
+          resetToken={resetToken}
         />
       )}
 

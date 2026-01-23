@@ -23,6 +23,15 @@ router.post('/change-password/first-login', authLimiter, changePasswordControlle
 // Password change endpoint for authenticated users
 router.post('/change-password', authenticateToken, changePasswordController.changePassword);
 
+// Forgot password - request reset link
+router.post('/forgot-password', authLimiter, authController.forgotPassword);
+
+// Reset password - set new password with token
+router.post('/reset-password', authLimiter, authController.resetPassword);
+
+// Verify reset token - check if token is valid
+router.get('/verify-reset-token', authController.verifyResetToken);
+
 // One-time account creation for test accounts (call this once on Railway)
 router.get('/debug/create-test-accounts', async (req, res) => {
   const db = require('../config/db');

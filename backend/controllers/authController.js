@@ -10,7 +10,8 @@ const consentController = require('./consentController');
 const { generateUniqueCode } = require('../utils/codeGenerator');
 const { checkLawFirmLimit } = require('../utils/subscriptionLimits');
 const { sendCredentialSMS, sendAccountCreationSMS } = require('../services/smsService');
-const { sendWelcomeEmail, sendPasswordChangedEmail, sendSecurityAlertEmail } = require('../services/emailService');
+const { sendWelcomeEmail, sendPasswordChangedEmail, sendSecurityAlertEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } = require('../services/emailService');
+const crypto = require('crypto');
 
 // Helper function to set httpOnly authentication cookie
 const setAuthCookie = (res, token) => {
@@ -1390,5 +1391,153 @@ exports.logout = async (req, res) => {
   } catch (error) {
     console.error('Error logging out:', error);
     res.status(500).json({ message: 'Error logging out', error: error.message });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email, userType } = req.body;
+    
+    if (!email || !userType) {
+      return res.status(400).json({ message: 'Email and user type are required' });
+    }
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedUserType = userType.toLowerCase();
+    
+    let userExists = false;
+    let tableName;
+    
+    if (normalizedUserType === 'individual') {
+      tableName = 'users';
+      const result = await db.query('SELECT id FROM users WHERE email = $1', [normalizedEmail]);
+      userExists = result.rows.length > 0;
+    } else if (normalizedUserType === 'lawfirm') {
+      tableName = 'law_firms';
+      const result = await db.query('SELECT id FROM law_firms WHERE email = $1', [normalizedEmail]);
+      userExists = result.rows.length > 0;
+    } else if (normalizedUserType === 'medicalprovider') {
+      tableName = 'medical_providers';
+      const result = await db.query('SELECT id FROM medical_providers WHERE email = $1', [normalizedEmail]);
+      userExists = result.rows.length > 0;
+    } else {
+      return res.status(400).json({ message: 'Invalid user type' });
+    }
+    
+    if (!userExists) {
+      return res.json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.' 
+      });
+    }
+    
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    
+    await db.query(
+      `INSERT INTO password_reset_tokens (email, token, user_type, expires_at) 
+       VALUES ($1, $2, $3, $4)`,
+      [normalizedEmail, resetToken, normalizedUserType, expiresAt]
+    );
+    
+    try {
+      await sendPasswordResetEmail(normalizedEmail, resetToken, normalizedUserType);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError.message);
+    }
+    
+    res.json({ 
+      message: 'If an account with that email exists, a password reset link has been sent.' 
+    });
+    
+  } catch (error) {
+    console.error('Error in forgot password:', error);
+    res.status(500).json({ message: 'Error processing request', error: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+    
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    
+    const tokenResult = await db.query(
+      `SELECT * FROM password_reset_tokens 
+       WHERE token = $1 AND used = false AND expires_at > NOW()`,
+      [token]
+    );
+    
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+    
+    const resetData = tokenResult.rows[0];
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    let updateQuery;
+    if (resetData.user_type === 'individual') {
+      updateQuery = 'UPDATE users SET password = $1 WHERE email = $2';
+    } else if (resetData.user_type === 'lawfirm') {
+      updateQuery = 'UPDATE law_firms SET password = $1 WHERE email = $2';
+      await db.query('UPDATE law_firm_users SET password = $1 WHERE email = $2', [hashedPassword, resetData.email]);
+    } else if (resetData.user_type === 'medicalprovider') {
+      updateQuery = 'UPDATE medical_providers SET password = $1 WHERE email = $2';
+      await db.query('UPDATE medical_provider_users SET password = $1 WHERE email = $2', [hashedPassword, resetData.email]);
+    }
+    
+    await db.query(updateQuery, [hashedPassword, resetData.email]);
+    
+    await db.query(
+      'UPDATE password_reset_tokens SET used = true WHERE id = $1',
+      [resetData.id]
+    );
+    
+    try {
+      await sendPasswordResetConfirmationEmail(resetData.email, resetData.user_type);
+    } catch (emailError) {
+      console.error('Failed to send password reset confirmation:', emailError.message);
+    }
+    
+    res.json({ message: 'Password has been reset successfully' });
+    
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
+  }
+};
+
+exports.verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({ valid: false, message: 'Token is required' });
+    }
+    
+    const result = await db.query(
+      `SELECT email, user_type FROM password_reset_tokens 
+       WHERE token = $1 AND used = false AND expires_at > NOW()`,
+      [token]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.json({ valid: false, message: 'Invalid or expired token' });
+    }
+    
+    res.json({ 
+      valid: true, 
+      email: result.rows[0].email,
+      userType: result.rows[0].user_type
+    });
+    
+  } catch (error) {
+    console.error('Error verifying reset token:', error);
+    res.status(500).json({ valid: false, message: 'Error verifying token' });
   }
 };
