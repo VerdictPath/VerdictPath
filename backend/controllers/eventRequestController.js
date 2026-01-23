@@ -679,10 +679,10 @@ const eventRequestController = {
 
         // Also create a personal calendar event for the individual
         await pool.query(
-          `INSERT INTO user_calendar_events (
+          `INSERT INTO calendar_events (
             user_id, event_type, title, description, location,
-            start_time, end_time, all_day, reminder_enabled
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true)`,
+            start_time, end_time, all_day, reminder_enabled, created_by_type, created_by_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 'individual', $1)`,
           [
             userId,
             eventRequest.event_type,
