@@ -52,10 +52,13 @@ export const commonStyles = StyleSheet.create({
     color: '#FFFFFF',
   },
   linkText: {
-    color: theme.colors.primary,
+    color: '#FFFFFF',
     textAlign: 'center',
     marginTop: 15,
     fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   header: {
     backgroundColor: theme.colors.surface,
