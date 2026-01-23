@@ -25,7 +25,31 @@ const DOCUMENT_TO_SUBSTAGE_MAP = {
   'Pictures': 'pre-4',
   'Accident Photos': 'pre-4',
   'Health Insurance': 'pre-5',
-  'Insurance Card': 'pre-5'
+  'Insurance Card': 'pre-5',
+  
+  // Direct substage ID mappings (sent from RoadmapScreen)
+  'pre-1': 'pre-1',
+  'pre-2': 'pre-2',
+  'pre-3': 'pre-3',
+  'pre-4': 'pre-4',
+  'pre-5': 'pre-5',
+  'pre-8': 'pre-8',
+  'pre-9': 'pre-9',
+  'pre-10': 'pre-10',
+  'pre-11': 'pre-11'
+};
+
+// Substage metadata for auto-completion (includes stage info and names)
+const SUBSTAGE_METADATA = {
+  'pre-1': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Police Report', substageType: 'upload' },
+  'pre-2': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Body Cam Footage', substageType: 'upload' },
+  'pre-3': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Dash Cam Footage', substageType: 'upload' },
+  'pre-4': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Pictures', substageType: 'upload' },
+  'pre-5': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Health Insurance Card', substageType: 'upload' },
+  'pre-8': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Medical Bills', substageType: 'upload' },
+  'pre-9': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Medical Records', substageType: 'upload' },
+  'pre-10': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Demand Sent', substageType: 'upload' },
+  'pre-11': { stageId: 1, stageName: 'Pre-Litigation', substageName: 'Demand Rejected', substageType: 'upload' }
 };
 
 // Helper function to auto-complete substages when documents are uploaded
@@ -38,13 +62,20 @@ const autoCompleteSubstage = async (userId, documentType) => {
       return;
     }
     
-    // Call the litigation substage completion API internally
+    const metadata = SUBSTAGE_METADATA[substageId];
+    if (!metadata) {
+      console.log(`No metadata found for substage ${substageId}`);
+      return;
+    }
+    
+    // Insert with all required NOT NULL columns
     const result = await pool.query(
-      `INSERT INTO litigation_substage_completions (user_id, substage_id, completed_at)
-       VALUES ($1, $2, NOW())
+      `INSERT INTO litigation_substage_completions 
+       (user_id, stage_id, stage_name, substage_id, substage_name, substage_type, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())
        ON CONFLICT (user_id, substage_id) DO NOTHING
        RETURNING *`,
-      [userId, substageId]
+      [userId, metadata.stageId, metadata.stageName, substageId, metadata.substageName, metadata.substageType]
     );
     
     if (result.rows.length > 0) {
