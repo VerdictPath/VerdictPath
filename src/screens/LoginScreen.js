@@ -394,12 +394,15 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   forgotPasswordText: {
-    color: "#d4af37",
+    color: "#FFFFFF",
     fontSize: 14,
     textAlign: "center",
     marginTop: 12,
     marginBottom: 8,
     textDecorationLine: "underline",
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
 });
 

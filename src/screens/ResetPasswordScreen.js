@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   requirements: {
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(255, 255, 255, 0.9)",
     fontSize: 12,
     marginBottom: 16,
     textAlign: "center",

@@ -491,11 +491,14 @@ const styles = StyleSheet.create({
   },
   inviteHint: {
     fontSize: 14,
-    color: '#27ae60',
+    color: '#5dff7f',
     fontWeight: '600',
     marginTop: -10,
     marginBottom: 10,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
 });
 
