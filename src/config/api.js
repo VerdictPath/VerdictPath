@@ -525,7 +525,6 @@ try {
 } catch (error) {
   // Handle specific error types
   if (isAuthError(error)) {
-    console.log('Invalid credentials');
   } else if (isNetworkError(error)) {
     console.log('Network error');
   } else {

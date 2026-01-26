@@ -134,7 +134,6 @@ const LandingScreen = ({ onNavigate }) => {
     };
   }, [player, enableVideo]);
 
-
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer}>
