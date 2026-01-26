@@ -14,17 +14,14 @@ const encryption = require('../services/encryption');
  */
 
 async function migratePHI() {
-  console.log('\n🔐 Starting HIPAA PHI Encryption Migration...\n');
   
   try {
     // Verify encryption service is working
-    console.log('✓ Testing encryption service...');
     const testEncrypt = encryption.encrypt('test');
     const testDecrypt = encryption.decrypt(testEncrypt);
     if (testDecrypt !== 'test') {
       throw new Error('Encryption service test failed!');
     }
-    console.log('✓ Encryption service is working\n');
     
     // Migrate Users table
     await migrateUsers();
@@ -35,22 +32,13 @@ async function migratePHI() {
     // Migrate Medical Billing
     await migrateMedicalBilling();
     
-    console.log('\n✅ Migration completed successfully!\n');
-    console.log('NEXT STEPS:');
-    console.log('1. Verify encrypted data with: SELECT id, first_name_encrypted FROM users LIMIT 5;');
-    console.log('2. Test decryption in your controllers');
-    console.log('3. After verification, you can drop plaintext columns (CAREFUL!)');
-    console.log('4. Update controllers to use encrypted fields\n');
     
   } catch (error) {
-    console.error('\n❌ Migration failed:', error.message);
-    console.error(error);
     throw error;
   }
 }
 
 async function migrateUsers() {
-  console.log('📋 Migrating Users table...');
   
   // Get all user data including potential PHI fields
   const query = `
@@ -64,11 +52,9 @@ async function migrateUsers() {
   const users = result.rows;
   
   if (users.length === 0) {
-    console.log('  ℹ️  No users need encryption (already encrypted or no data)');
     return;
   }
   
-  console.log(`  Found ${users.length} users to encrypt`);
   
   let encrypted = 0;
   let failed = 0;
@@ -104,19 +90,15 @@ async function migrateUsers() {
       
       // Progress indicator
       if (encrypted % 10 === 0) {
-        console.log(`  Encrypted ${encrypted}/${users.length} users...`);
       }
     } catch (error) {
-      console.error(`  ⚠️  Failed to encrypt user ${user.id}:`, error.message);
       failed++;
     }
   }
   
-  console.log(`  ✓ Encrypted ${encrypted} users (${failed} failed)\n`);
 }
 
 async function migrateMedicalRecords() {
-  console.log('📋 Migrating Medical Records table...');
   
   // Check which columns actually exist in the table
   const schemaQuery = `
@@ -133,7 +115,6 @@ async function migrateMedicalRecords() {
   
   // Only process if encrypted columns exist
   if (!columns.includes('description_encrypted')) {
-    console.log('  ℹ️  Medical records encrypted columns not yet added to schema\n');
     return;
   }
   
@@ -142,7 +123,6 @@ async function migrateMedicalRecords() {
   const encryptedColumns = columns.filter(c => c.includes('_encrypted'));
   
   if (plaintextColumns.length === 0) {
-    console.log('  ℹ️  No plaintext columns to migrate (schema already uses encrypted-only columns)\n');
     return;
   }
   
@@ -161,11 +141,9 @@ async function migrateMedicalRecords() {
   const records = result.rows;
   
   if (records.length === 0) {
-    console.log('  ℹ️  No medical records need encryption\n');
     return;
   }
   
-  console.log(`  Found ${records.length} medical records to encrypt`);
   
   let encrypted = 0;
   let failed = 0;
@@ -214,19 +192,15 @@ async function migrateMedicalRecords() {
       encrypted++;
       
       if (encrypted % 10 === 0) {
-        console.log(`  Encrypted ${encrypted}/${records.length} records...`);
       }
     } catch (error) {
-      console.error(`  ⚠️  Failed to encrypt record ${record.id}:`, error.message);
       failed++;
     }
   }
   
-  console.log(`  ✓ Encrypted ${encrypted} medical records (${failed} failed)\n`);
 }
 
 async function migrateMedicalBilling() {
-  console.log('📋 Migrating Medical Billing table...');
   
   // Check which columns exist
   const schemaQuery = `
@@ -243,7 +217,6 @@ async function migrateMedicalBilling() {
   
   // Only process if encrypted columns exist
   if (!columns.includes('description_encrypted')) {
-    console.log('  ℹ️  Medical billing encrypted columns not yet added to schema\n');
     return;
   }
   
@@ -252,7 +225,6 @@ async function migrateMedicalBilling() {
   const encryptedColumns = columns.filter(c => c.includes('_encrypted') || c.includes('_details'));
   
   if (plaintextColumns.length === 0) {
-    console.log('  ℹ️  No plaintext columns to migrate (schema already uses encrypted-only columns)\n');
     return;
   }
   
@@ -271,11 +243,9 @@ async function migrateMedicalBilling() {
   const records = result.rows;
   
   if (records.length === 0) {
-    console.log('  ℹ️  No billing records need encryption\n');
     return;
   }
   
-  console.log(`  Found ${records.length} billing records to encrypt`);
   
   let encrypted = 0;
   let failed = 0;
@@ -320,26 +290,21 @@ async function migrateMedicalBilling() {
       encrypted++;
       
       if (encrypted % 10 === 0) {
-        console.log(`  Encrypted ${encrypted}/${records.length} records...`);
       }
     } catch (error) {
-      console.error(`  ⚠️  Failed to encrypt record ${record.id}:`, error.message);
       failed++;
     }
   }
   
-  console.log(`  ✓ Encrypted ${encrypted} billing records (${failed} failed)\n`);
 }
 
 // Run migration
 if (require.main === module) {
   migratePHI()
     .then(() => {
-      console.log('Migration completed successfully');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('Migration failed:', error);
       process.exit(1);
     });
 }

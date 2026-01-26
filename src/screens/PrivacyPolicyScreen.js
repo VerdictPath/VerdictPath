@@ -15,7 +15,6 @@ const PrivacyPolicyScreen = ({ onBack, onNavigate }) => {
       const policy = require('../../assets/privacy-policy.txt');
       setPrivacyText(policy.default || policy);
     } catch (error) {
-      console.error('Error loading privacy policy:', error);
       setPrivacyText(PRIVACY_POLICY_TEXT);
     }
   };

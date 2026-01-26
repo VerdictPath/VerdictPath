@@ -63,9 +63,7 @@ const ActionVideoModal = ({
           volume: 0.7,
         });
         
-        console.log('[ActionVideoModal] Playing action video');
       } catch (error) {
-        console.error('[ActionVideoModal] Video error:', error);
       }
     }
   };
@@ -110,7 +108,6 @@ const ActionVideoModal = ({
   };
 
   const handlePlaybackComplete = () => {
-    console.log('[ActionVideoModal] Playback complete');
     handleClose();
   };
 

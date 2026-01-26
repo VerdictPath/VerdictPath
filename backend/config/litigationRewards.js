@@ -97,7 +97,6 @@ const SUBSTAGE_COINS = {
 function getStageCoins(stageId) {
   const coins = STAGE_COINS[stageId];
   if (coins === undefined) {
-    console.warn(`[LitigationRewards] Unknown stage ID: ${stageId}, defaulting to 0 coins`);
     return 0;
   }
   return coins;
@@ -107,10 +106,8 @@ function getStageCoins(stageId) {
 function getSubstageCoins(substageId) {
   const coins = SUBSTAGE_COINS[substageId];
   if (coins === undefined) {
-    console.warn(`[LitigationRewards] Unknown substage ID: ${substageId}, defaulting to 0 coins`);
     return 0;
   }
-  console.log(`[LitigationRewards] Substage ${substageId} rewards ${coins} coins`);
   return coins;
 }
 

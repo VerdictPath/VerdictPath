@@ -108,9 +108,7 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
             volume: 0.8,
           }
         );
-        console.log('[CelebrationAnimation] Playing raining coins celebration video');
       } catch (error) {
-        console.error('[CelebrationAnimation] Video error:', error);
       }
     }
   };

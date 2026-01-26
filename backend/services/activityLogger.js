@@ -51,7 +51,6 @@ class ActivityLogger {
       );
       
       if (firmCheck.rows.length === 0) {
-        console.warn(`Law firm ${lawFirmId} not found for activity logging`);
         return null;
       }
       
@@ -93,7 +92,6 @@ class ActivityLogger {
       return result.rows[0];
     } catch (error) {
       // Activity logging failures should not block user actions
-      console.error('Activity logging failed:', {
         error: error.message,
         action,
         lawFirmId,
@@ -184,7 +182,6 @@ class ActivityLogger {
       const result = await db.query(query, values);
       return result.rows;
     } catch (error) {
-      console.error('Failed to retrieve activity logs:', error);
       throw error;
     }
   }
@@ -232,7 +229,6 @@ class ActivityLogger {
       const result = await db.query(query, values);
       return result.rows;
     } catch (error) {
-      console.error('Failed to retrieve activity statistics:', error);
       throw error;
     }
   }
@@ -286,7 +282,6 @@ class ActivityLogger {
       const result = await db.query(query, values);
       return result.rows;
     } catch (error) {
-      console.error('Failed to retrieve most active users:', error);
       throw error;
     }
   }
@@ -323,7 +318,6 @@ class ActivityLogger {
       const result = await db.query(query, [lawFirmId, limit]);
       return result.rows;
     } catch (error) {
-      console.error('Failed to retrieve failed activities:', error);
       throw error;
     }
   }

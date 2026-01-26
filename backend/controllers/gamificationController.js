@@ -59,7 +59,6 @@ const gamificationController = {
         achievements
       });
     } catch (error) {
-      console.error('Error fetching achievements:', error);
       res.status(500).json({
         error: 'Failed to fetch achievements',
         details: error.message
@@ -172,7 +171,6 @@ const gamificationController = {
         }
       });
     } catch (error) {
-      console.error('Error tracking achievement progress:', error);
       res.status(500).json({
         error: 'Failed to track achievement progress',
         details: error.message
@@ -224,7 +222,6 @@ const gamificationController = {
         badges
       });
     } catch (error) {
-      console.error('Error fetching badges:', error);
       res.status(500).json({
         error: 'Failed to fetch badges',
         details: error.message
@@ -277,7 +274,6 @@ const gamificationController = {
         challenges
       });
     } catch (error) {
-      console.error('Error fetching daily challenges:', error);
       res.status(500).json({
         error: 'Failed to fetch daily challenges',
         details: error.message
@@ -364,7 +360,6 @@ const gamificationController = {
         period
       });
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
       res.status(500).json({
         error: 'Failed to fetch leaderboard',
         details: error.message
@@ -413,7 +408,6 @@ const gamificationController = {
         }
       });
     } catch (error) {
-      console.error('Error fetching user stats:', error);
       res.status(500).json({
         error: 'Failed to fetch user stats',
         details: error.message

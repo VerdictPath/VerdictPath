@@ -33,7 +33,6 @@ const selectAvatar = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`[Avatar] User ${userId} selected avatar: ${avatarType}`);
 
     res.json({
       success: true,
@@ -42,7 +41,6 @@ const selectAvatar = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Avatar] Error selecting avatar:', error);
     res.status(500).json({ error: 'Failed to update avatar' });
   }
 };
@@ -78,7 +76,6 @@ const getCurrentAvatar = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Avatar] Error getting current avatar:', error);
     res.status(500).json({ error: 'Failed to get avatar' });
   }
 };

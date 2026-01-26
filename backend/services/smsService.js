@@ -60,31 +60,18 @@ function logSmsOperation(operation, status, details) {
   const statusEmoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : '⚠️';
   const statusText = status === 'success' ? 'SUCCESS' : status === 'failed' ? 'FAILED' : 'WARNING';
   
-  console.log('');
-  console.log('═══════════════════════════════════════════════════════════════');
-  console.log(`${statusEmoji} SMS SERVICE - ${operation.toUpperCase()}`);
-  console.log('═══════════════════════════════════════════════════════════════');
-  console.log(`📅 Timestamp: ${timestamp}`);
-  console.log(`📊 Status: ${statusText}`);
   
   if (details.recipient) {
-    console.log(`📱 Recipient: ${details.recipient} (HIPAA redacted)`);
   }
   if (details.messageSid) {
-    console.log(`🆔 Message SID: ${details.messageSid}`);
   }
   if (details.error) {
-    console.log(`❗ Error: ${details.error}`);
   }
   if (details.twilioErrorCode) {
-    console.log(`🔢 Twilio Error Code: ${details.twilioErrorCode}`);
   }
   if (details.additionalInfo) {
-    console.log(`📝 Info: ${details.additionalInfo}`);
   }
   
-  console.log('═══════════════════════════════════════════════════════════════');
-  console.log('');
 }
 
 function initializeTwilio() {

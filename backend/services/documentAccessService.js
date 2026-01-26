@@ -336,7 +336,6 @@ async function logDocumentAccess(accessDetails) {
       ]
     );
   } catch (error) {
-    console.error('Failed to log document access:', error);
   }
 }
 

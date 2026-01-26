@@ -2,7 +2,6 @@ const db = require('../config/db');
 
 async function ensureTablesExist() {
   try {
-    console.log('🔍 Checking database schema...');
     
     const lawFirmUsersCheck = await db.query(`
       SELECT EXISTS (
@@ -12,7 +11,6 @@ async function ensureTablesExist() {
     `);
     
     if (!lawFirmUsersCheck.rows[0].exists) {
-      console.log('📦 Creating law_firm_users table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS law_firm_users (
           id SERIAL PRIMARY KEY,
@@ -52,7 +50,6 @@ async function ensureTablesExist() {
       await db.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_law_firm_id ON law_firm_users(law_firm_id);`);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_email ON law_firm_users(email);`);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_status ON law_firm_users(status);`);
-      console.log('✅ law_firm_users table created');
     }
     
     const medProviderUsersCheck = await db.query(`
@@ -63,7 +60,6 @@ async function ensureTablesExist() {
     `);
     
     if (!medProviderUsersCheck.rows[0].exists) {
-      console.log('📦 Creating medical_provider_users table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS medical_provider_users (
           id SERIAL PRIMARY KEY,
@@ -105,7 +101,6 @@ async function ensureTablesExist() {
       await db.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_provider_id ON medical_provider_users(medical_provider_id);`);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_email ON medical_provider_users(email);`);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_status ON medical_provider_users(status);`);
-      console.log('✅ medical_provider_users table created');
     }
     
     const passwordResetCheck = await db.query(`
@@ -116,7 +111,6 @@ async function ensureTablesExist() {
     `);
     
     if (!passwordResetCheck.rows[0].exists) {
-      console.log('📦 Creating password_reset_tokens table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
@@ -130,13 +124,10 @@ async function ensureTablesExist() {
       `);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_email ON password_reset_tokens(email);`);
       await db.query(`CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);`);
-      console.log('✅ password_reset_tokens table created');
     }
     
-    console.log('✅ Database schema check complete');
     
   } catch (error) {
-    console.error('⚠️ Database migration warning:', error.message);
   }
 }
 

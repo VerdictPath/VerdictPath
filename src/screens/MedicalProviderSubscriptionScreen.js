@@ -142,7 +142,6 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       });
       setCurrentSubscription(response.subscription);
     } catch (error) {
-      console.error('Error fetching subscription:', error);
       if (Platform.OS === 'web') {
         alert('Failed to load subscription details');
       } else {
@@ -212,10 +211,8 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       try {
         await fetchSubscriptionDetails();
       } catch (refreshError) {
-        console.log('Could not refresh subscription details after update:', refreshError);
       }
     } catch (error) {
-      console.error('Error updating subscription:', error);
       if (Platform.OS === 'web') {
         alert(error.message || 'Failed to update subscription');
       } else {
@@ -272,7 +269,6 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
         onRegistrationComplete(userData);
       }
     } catch (error) {
-      console.error('Error registering medical provider:', error);
       const errorMsg = error.message || 'Failed to create account. Please try again.';
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);

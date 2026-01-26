@@ -139,7 +139,6 @@ exports.changePasswordFirstLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error changing password:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Error changing password', 
@@ -260,7 +259,6 @@ exports.changePassword = async (req, res) => {
       message: 'Password changed successfully'
     });
   } catch (error) {
-    console.error('Error changing password:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Error changing password', 

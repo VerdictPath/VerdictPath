@@ -15,10 +15,8 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is required');
 }
 if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
-  console.error('WARNING: ADMIN_USERNAME and ADMIN_PASSWORD should be set for admin portal access');
 }
 
 const adminLoginLimiter = rateLimit({
@@ -88,7 +86,6 @@ router.post('/login', adminLoginLimiter, async (req, res) => {
     
     res.render('admin/login', { error: 'Invalid credentials' });
   } catch (error) {
-    console.error('Admin login error:', error);
     res.render('admin/login', { error: 'Login failed' });
   }
 });
@@ -152,7 +149,6 @@ router.get('/dashboard', async (req, res) => {
       recentActivity: recentActivityResult.rows
     });
   } catch (error) {
-    console.error('Admin dashboard error:', error);
     res.redirect('/portal/admin');
   }
 });
@@ -277,7 +273,6 @@ router.get('/users', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin users error:', error);
     res.redirect('/portal/admin/dashboard');
   }
 });
@@ -425,7 +420,6 @@ router.get('/user/:type/:id', async (req, res) => {
       activities: activities || []
     });
   } catch (error) {
-    console.error('Admin user detail error:', error);
     res.redirect('/portal/admin/users');
   }
 });
@@ -454,7 +448,6 @@ router.post('/user/:type/:id/toggle', async (req, res) => {
     
     res.redirect(`/portal/admin/user/${type}/${id}`);
   } catch (error) {
-    console.error('Admin toggle user error:', error);
     res.redirect('/portal/admin/users');
   }
 });
@@ -582,7 +575,6 @@ router.get('/activity', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin activity error:', error);
     res.redirect('/portal/admin/dashboard');
   }
 });
@@ -647,7 +639,6 @@ router.get('/audit', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin audit error:', error);
     res.redirect('/portal/admin/dashboard');
   }
 });
@@ -755,7 +746,6 @@ router.get('/services-status', async (req, res) => {
       user: hasSmtpUser ? process.env.SMTP_USER : 'Not configured'
     };
   } catch (error) {
-    console.error('Error checking email status:', error);
   }
   
   res.json({

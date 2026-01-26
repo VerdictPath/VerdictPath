@@ -35,7 +35,6 @@ exports.getFirebaseCustomToken = async (req, res) => {
       userType
     });
   } catch (error) {
-    console.error('Error creating Firebase custom token:', error);
     // If Firebase is not configured, return a more helpful error
     if (error.code === 'app/no-app') {
       return res.status(503).json({ 

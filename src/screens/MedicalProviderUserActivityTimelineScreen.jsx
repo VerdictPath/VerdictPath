@@ -72,7 +72,6 @@ const MedicalProviderUserActivityTimelineScreen = ({
       failedPageRef.current = null;
       lastRequestedPageRef.current = currentPage;
     } catch (error) {
-      console.error('[MedicalUserTimeline] Load error:', error);
       // Error - clear pending and mark page as failed for retry
       pendingPageRef.current = null;
       failedPageRef.current = currentPage; // Track failed page for direct retry

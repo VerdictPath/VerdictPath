@@ -14,7 +14,6 @@ let isRunning = false;
 async function sendTaskReminders() {
   // Prevent concurrent executions
   if (isRunning) {
-    console.log('⏩ Task Reminder Service already running, skipping this cycle');
     return { success: false, skipped: true };
   }
   
@@ -28,7 +27,6 @@ async function sendTaskReminders() {
 }
 
 async function _sendTaskRemindersInternal() {
-  console.log('🔔 Task Reminder Service: Checking for upcoming tasks...');
   
   try {
     // First check if the law_firm_tasks table exists
@@ -41,7 +39,6 @@ async function _sendTaskRemindersInternal() {
     `);
     
     if (!tableCheck.rows[0].exists) {
-      console.log('📋 Task Reminder Service: law_firm_tasks table not found, skipping reminders');
       return { success: true, tasksProcessed: 0, smsSent: 0, notificationsSent: 0, skipped: true };
     }
     
@@ -78,7 +75,6 @@ async function _sendTaskRemindersInternal() {
     
     const result = await pool.query(tasksQuery, [now, tomorrow]);
     
-    console.log(`📋 Found ${result.rows.length} tasks with upcoming due dates`);
     
     let smsCount = 0;
     let notificationCount = 0;
@@ -103,7 +99,6 @@ async function _sendTaskRemindersInternal() {
           
           if (smsResult.success) {
             smsCount++;
-            console.log(`✅ SMS reminder sent for task "${task.task_title}" to client ${task.client_id} (phone redacted for HIPAA)`);
           }
         }
       }
@@ -132,7 +127,6 @@ async function _sendTaskRemindersInternal() {
         );
         notificationCount++;
       } catch (notifError) {
-        console.error('Error creating reminder notification:', notifError);
       }
       
       // Record that we sent this reminder
@@ -144,7 +138,6 @@ async function _sendTaskRemindersInternal() {
       );
     }
     
-    console.log(`✅ Task Reminder Service: Sent ${smsCount} SMS reminders and ${notificationCount} in-app notifications`);
     
     return {
       success: true,
@@ -153,7 +146,6 @@ async function _sendTaskRemindersInternal() {
       notificationsSent: notificationCount
     };
   } catch (error) {
-    console.error('❌ Task Reminder Service error:', error);
     return {
       success: false,
       error: error.message
@@ -174,7 +166,6 @@ async function initializeReminderTable() {
     `);
     
     if (!tableCheck.rows[0].exists) {
-      console.log('⚠️ Task reminders: law_firm_tasks table not found, skipping initialization');
       return;
     }
     
@@ -188,9 +179,7 @@ async function initializeReminderTable() {
         UNIQUE(task_id, reminder_type)
       )
     `);
-    console.log('✅ Task reminders table initialized');
   } catch (error) {
-    console.error('Error initializing task_reminders table:', error);
   }
 }
 
@@ -206,7 +195,6 @@ function startReminderScheduler() {
   const HOUR_IN_MS = 60 * 60 * 1000;
   setInterval(sendTaskReminders, HOUR_IN_MS);
   
-  console.log('✅ Task Reminder Scheduler started (runs hourly)');
 }
 
 module.exports = {

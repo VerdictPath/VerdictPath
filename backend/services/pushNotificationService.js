@@ -35,7 +35,6 @@ async function sendPushNotification({ expoPushToken, title, body, data = {}, pri
 
     return result;
   } catch (error) {
-    console.error('Push notification error:', error);
     throw error;
   }
 }
@@ -62,7 +61,6 @@ async function sendBulkPushNotifications(messages) {
       const result = await response.json();
       results.push(...result.data);
     } catch (error) {
-      console.error('Bulk push notification error:', error);
       throw error;
     }
   }
@@ -96,7 +94,6 @@ async function getPushNotificationReceipts(receiptIds) {
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error('Get push receipts error:', error);
     throw error;
   }
 }

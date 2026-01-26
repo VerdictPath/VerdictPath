@@ -25,9 +25,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const fetchPatientDetails = async () => {
     try {
       const url = API_ENDPOINTS.MEDICALPROVIDER.PATIENT_DETAILS(patientId);
-      console.log('[PatientDetails] Fetching patient details for patientId:', patientId);
-      console.log('[PatientDetails] API URL:', url);
-      console.log('[PatientDetails] Token:', user?.token ? 'Present' : 'Missing');
       
       const response = await fetch(url, {
         headers: {
@@ -35,11 +32,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         }
       });
 
-      console.log('[PatientDetails] Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[PatientDetails] Data received:', data);
         setPatient(data.patient);
         setLitigationProgress(data.litigationProgress);
         
@@ -49,10 +44,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         setEvidence(data.evidence || []);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[PatientDetails] Failed response:', response.status, errorData);
       }
     } catch (error) {
-      console.error('Error fetching patient details:', error);
     } finally {
       setLoading(false);
     }
@@ -206,7 +199,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         circleColor = '#f39c12'; // Yellow/Amber
       }
       
-      console.log(`Stage ${index} (${stage.name}): isComplete=${isComplete}, isInProgress=${isInProgress}, hasAnyCompleted=${hasAnyCompleted}, color=${circleColor}`);
       
       const circleIcon = isComplete ? '✓' : stage.icon;
 

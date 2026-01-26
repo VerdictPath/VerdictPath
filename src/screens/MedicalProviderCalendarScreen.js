@@ -167,7 +167,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchPatients()
       ]);
     } catch (error) {
-      console.error('Error fetching calendar data:', error);
     } finally {
       setLoading(false);
     }
@@ -184,7 +183,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         setPatients(data.patients || []);
       }
     } catch (error) {
-      console.error('Error fetching patients:', error);
     }
   };
 
@@ -199,7 +197,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         setAvailability(data.availability || []);
       }
     } catch (error) {
-      console.error('Error fetching availability:', error);
     }
   };
 
@@ -215,7 +212,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         updateMarkedDates(appointments, data.blockedTimes || []);
       }
     } catch (error) {
-      console.error('Error fetching blocked times:', error);
     }
   };
 
@@ -233,7 +229,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         updateMarkedDates(data.appointments || [], blockedTimes);
       }
     } catch (error) {
-      console.error('Error fetching appointments:', error);
     }
   };
 
@@ -248,7 +243,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         setSettings(data.settings);
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
     }
   };
 
@@ -522,7 +516,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         Alert.alert('Error', data.error || 'Failed to create event');
       }
     } catch (error) {
-      console.error('Error creating event:', error);
       Alert.alert('Error', 'Failed to create event');
     }
   };

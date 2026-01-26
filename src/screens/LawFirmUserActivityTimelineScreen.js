@@ -54,7 +54,6 @@ const LawFirmUserActivityTimelineScreen = ({
 
       setHasMore(response.currentPage < response.totalPages);
     } catch (error) {
-      console.error('[UserTimeline] Load error:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

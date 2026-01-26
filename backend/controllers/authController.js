@@ -98,7 +98,6 @@ exports.registerClient = async (req, res) => {
       try {
         await consentController.autoGrantConsentToFirm(user.id, connectedLawFirmId);
       } catch (consentError) {
-        console.error('Error auto-granting consent:', consentError);
         // Don't fail registration if consent grant fails
       }
     }
@@ -108,7 +107,6 @@ exports.registerClient = async (req, res) => {
       const permissionService = require('../services/permissionService');
       await permissionService.assignRole(user.id, 'CLIENT');
     } catch (roleError) {
-      console.error('Error assigning CLIENT role:', roleError);
       // Don't fail registration if role assignment fails
     }
     
@@ -130,7 +128,6 @@ exports.registerClient = async (req, res) => {
           await sendAccountCreationSMS(decryptedPhone, firstName);
         }
       } catch (smsError) {
-        console.error('Error sending account creation SMS (non-fatal):', smsError);
         // Don't fail registration if SMS fails
       }
     }
@@ -160,16 +157,13 @@ exports.registerClient = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[Register Client] Error:', error);
-    console.error('[Register Client] Error stack:', error.stack);
-    console.error('[Register Client] Error code:', error.code);
     
     if (error.code === '23505') {
       return res.status(400).json({ message: 'Email already exists' });
     }
     
     // Log detailed error for debugging
-    console.error('[Register Client] Full error details:', {
+    console.error('Registration error:', {
       message: error.message,
       code: error.code,
       detail: error.detail,
@@ -337,9 +331,7 @@ exports.registerLawFirm = async (req, res) => {
           password,  // Send the original password (not hashed)
           'lawfirm'
         );
-        console.log(`📱 Law firm registration SMS result:`, smsResult);
       } catch (smsError) {
-        console.error('❌ Error sending registration SMS:', smsError);
         // Don't fail registration if SMS fails
       }
     }
@@ -688,7 +680,6 @@ exports.joinMedicalProvider = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error joining medical provider:', error);
     if (error.code === '23505') {
       return res.status(400).json({ message: 'An account with this email already exists' });
     }
@@ -1225,7 +1216,6 @@ exports.loginLawFirmUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error logging in law firm user:', error);
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
@@ -1364,7 +1354,6 @@ exports.loginMedicalProviderUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error logging in medical provider user:', error);
     res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
@@ -1389,7 +1378,6 @@ exports.logout = async (req, res) => {
     
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
-    console.error('Error logging out:', error);
     res.status(500).json({ message: 'Error logging out', error: error.message });
   }
 };
@@ -1442,7 +1430,6 @@ exports.forgotPassword = async (req, res) => {
     try {
       await sendPasswordResetEmail(normalizedEmail, resetToken, normalizedUserType);
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError.message);
     }
     
     res.json({ 
@@ -1450,7 +1437,6 @@ exports.forgotPassword = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error in forgot password:', error);
     res.status(500).json({ message: 'Error processing request', error: error.message });
   }
 };
@@ -1501,13 +1487,11 @@ exports.resetPassword = async (req, res) => {
     try {
       await sendPasswordResetConfirmationEmail(resetData.email, resetData.user_type);
     } catch (emailError) {
-      console.error('Failed to send password reset confirmation:', emailError.message);
     }
     
     res.json({ message: 'Password has been reset successfully' });
     
   } catch (error) {
-    console.error('Error resetting password:', error);
     res.status(500).json({ message: 'Error resetting password', error: error.message });
   }
 };
@@ -1537,7 +1521,6 @@ exports.verifyResetToken = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error verifying reset token:', error);
     res.status(500).json({ valid: false, message: 'Error verifying token' });
   }
 };

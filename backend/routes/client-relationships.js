@@ -95,7 +95,6 @@ router.post('/link-medical-provider', authenticateToken, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error linking client to medical provider:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to link client to medical provider' 
@@ -152,7 +151,6 @@ router.get('/clients/:clientId/medical-providers', authenticateToken, async (req
     });
     
   } catch (error) {
-    console.error('Error fetching medical providers for client:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch medical providers' 
@@ -198,7 +196,6 @@ router.delete('/clients/:clientId/medical-providers/:providerId', authenticateTo
     });
     
   } catch (error) {
-    console.error('Error removing medical provider:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to remove medical provider' 

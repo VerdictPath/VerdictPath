@@ -22,7 +22,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
   const isMedicalProvider = user.userType === 'medical_provider' || user.userType === 'medical_provider_user';
   const isIndividual = user.userType === 'individual' || user.userType === 'client';
 
-  console.log('[StripeOnboarding] User type:', user.userType, 'isLawFirm:', isLawFirm);
 
   useEffect(() => {
     checkAccountStatus();
@@ -40,7 +39,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
 
       setAccountStatus(response);
     } catch (error) {
-      console.error('Error checking account status:', error);
       Alert.alert('Error', 'Failed to check payment account status');
     } finally {
       setLoading(false);
@@ -99,7 +97,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         }
       }
     } catch (error) {
-      console.error('Error setting up payment:', error);
       Alert.alert('Error', error.message || 'Failed to set up payment method');
     } finally {
       setSettingUpAccount(false);
@@ -152,7 +149,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         }
       }
     } catch (error) {
-      console.error('Error setting up account:', error);
       Alert.alert('Error', error.message || 'Failed to set up payment account');
     } finally {
       setSettingUpAccount(false);
@@ -198,7 +194,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         }
       }
     } catch (error) {
-      console.error('Error resuming onboarding:', error);
       Alert.alert('Error', error.message || 'Failed to resume setup');
     } finally {
       setSettingUpAccount(false);
@@ -239,7 +234,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
         }
       }
     } catch (error) {
-      console.error('Error accessing dashboard:', error);
       Alert.alert('Error', 'Failed to access payment dashboard');
     }
   };

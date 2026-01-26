@@ -53,7 +53,6 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching negotiations:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch negotiations' 
@@ -83,10 +82,6 @@ router.post('/initiate', authenticateToken, async (req, res) => {
     } = req.body;
 
     // Debug logging
-    console.log('📋 Negotiation initiate request:');
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    console.log('Parsed fields:', {
       clientId,
       medicalProviderId,
       billDescription,
@@ -98,7 +93,6 @@ router.post('/initiate', authenticateToken, async (req, res) => {
 
     // Validation
     if (!clientId || !billDescription || !billAmount || initialOffer === undefined) {
-      console.log('❌ Validation failed:', {
         hasClientId: !!clientId,
         hasBillDescription: !!billDescription,
         hasBillAmount: !!billAmount,
@@ -224,7 +218,6 @@ router.post('/initiate', authenticateToken, async (req, res) => {
     // Sync to Firebase for real-time updates
     if (fullNegotiationQuery.rows.length > 0) {
       syncNegotiationToFirebase(fullNegotiationQuery.rows[0]).catch(err => {
-        console.error('Firebase sync failed for new negotiation:', err);
       });
     }
 
@@ -239,7 +232,6 @@ router.post('/initiate', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error initiating negotiation:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to initiate negotiation',
@@ -331,7 +323,6 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
     
     if (updatedNegotiationQuery.rows.length > 0) {
       syncNegotiationToFirebase(updatedNegotiationQuery.rows[0]).catch(err => {
-        console.error('Firebase sync failed for counter offer:', err);
       });
     }
 
@@ -347,7 +338,6 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error sending counter offer:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to send counter offer' 
@@ -448,7 +438,6 @@ router.post('/accept', authenticateToken, async (req, res) => {
     
     if (acceptedNegotiationQuery.rows.length > 0) {
       syncNegotiationToFirebase(acceptedNegotiationQuery.rows[0]).catch(err => {
-        console.error('Firebase sync failed for accepted offer:', err);
       });
     }
 
@@ -464,7 +453,6 @@ router.post('/accept', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error accepting offer:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to accept offer' 
@@ -547,7 +535,6 @@ router.post('/request-call', authenticateToken, async (req, res) => {
     
     if (stalledNegotiationQuery.rows.length > 0) {
       syncNegotiationToFirebase(stalledNegotiationQuery.rows[0]).catch(err => {
-        console.error('Firebase sync failed for call request:', err);
       });
     }
 
@@ -563,7 +550,6 @@ router.post('/request-call', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error requesting call:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to send call request' 
@@ -635,7 +621,6 @@ router.get('/:id/log', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching negotiation log:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch negotiation log' 

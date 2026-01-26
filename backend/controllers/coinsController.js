@@ -149,7 +149,6 @@ const updateCoins = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error updating coins:', error);
     res.status(500).json({ message: 'Failed to update coins' });
   }
 };
@@ -313,7 +312,6 @@ const convertCoinsToCredits = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error converting coins:', error);
     res.status(500).json({ message: 'Failed to convert coins' });
   }
 };
@@ -388,7 +386,6 @@ const getBalance = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting coin balance:', error);
     res.status(500).json({ message: 'Failed to get coin balance' });
   }
 };
@@ -426,7 +423,6 @@ const getConversionHistory = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting conversion history:', error);
     res.status(500).json({ message: 'Failed to get conversion history' });
   }
 };
@@ -593,7 +589,6 @@ const claimDailyReward = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error claiming daily reward:', error);
     res.status(500).json({ message: 'Failed to claim daily reward' });
   }
 };

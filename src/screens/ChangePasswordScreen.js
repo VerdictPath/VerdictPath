@@ -217,7 +217,6 @@ const ChangePasswordScreen = ({ route, navigation }) => {
         showToast(data.message || 'Failed to change password', 'error');
       }
     } catch (error) {
-      console.error('Error changing password:', error);
       showToast('Network error. Please try again.', 'error');
     } finally {
       setLoading(false);

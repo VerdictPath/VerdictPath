@@ -54,7 +54,6 @@ const ActionDashboardScreen = ({ user, onNavigate, onSelectTask }) => {
       setTasks(data.tasks);
       setSummary(data.summary);
     } catch (error) {
-      console.error('Error fetching tasks:', error);
       alert('Error', 'Failed to load tasks');
     } finally {
       setLoading(false);
@@ -119,7 +118,6 @@ const ActionDashboardScreen = ({ user, onNavigate, onSelectTask }) => {
       alert('Success', data.message);
       fetchTasks();
     } catch (error) {
-      console.error('Error updating task:', error);
       alert('Error', 'Failed to update task status');
     }
   };

@@ -135,7 +135,6 @@ const RoadmapScreen = ({
         setUploadedFiles(filesMap);
       }
     } catch (error) {
-      console.error('Error fetching uploaded evidence:', error);
     }
   };
 
@@ -207,7 +206,6 @@ const RoadmapScreen = ({
         await uploadEvidenceFile(asset, stageId, subStageId, substageName);
       }
     } catch (error) {
-      console.error('Error picking image:', error);
       alert('Error', 'Failed to pick image. Please try again.');
     }
   };
@@ -256,7 +254,6 @@ const RoadmapScreen = ({
         await uploadEvidenceFile(asset, stageId, subStageId, substageName);
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
       alert('Error', 'Failed to take photo. Please try again.');
     }
   };
@@ -278,7 +275,6 @@ const RoadmapScreen = ({
         await uploadEvidenceFile(asset, stageId, subStageId, substageName);
       }
     } catch (error) {
-      console.error('Error picking document:', error);
       alert('Error', 'Failed to pick document. Please try again.');
     }
   };
@@ -321,8 +317,6 @@ const RoadmapScreen = ({
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 30 }));
 
-      console.log('[Upload] Sending request to:', `${API_BASE_URL}/api/uploads/evidence`);
-      console.log('[Upload] File details:', { fileName, fileType, fileUri: fileUri?.substring(0, 50) });
       
       const uploadResponse = await fetch(`${API_BASE_URL}/api/uploads/evidence`, {
         method: 'POST',
@@ -336,11 +330,9 @@ const RoadmapScreen = ({
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 80 }));
 
-      console.log('[Upload] Response status:', uploadResponse.status);
       
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({}));
-        console.error('[Upload] Error response:', errorData);
         const errorMessage = errorData.details 
           ? `${errorData.error}: ${Array.isArray(errorData.details) ? errorData.details.join(', ') : errorData.details}`
           : (errorData.error || 'Upload failed');
@@ -367,7 +359,6 @@ const RoadmapScreen = ({
       }
 
     } catch (error) {
-      console.error('Upload error:', error);
       alert('Upload Failed', error.message || 'Failed to upload file. Please try again.');
     } finally {
       setUploadingSubstage(null);
@@ -437,11 +428,8 @@ const RoadmapScreen = ({
 
   const handleSubStageComplete = async (subStageId, subStageCoins) => {
     // VERSION 2.0 - NO UPLOAD REQUIREMENTS - MANUAL COMPLETION ENABLED
-    console.log('[RoadmapScreen] handleSubStageComplete v2.0 - NO UPLOAD VALIDATION');
-    console.log('[RoadmapScreen] SubstageId:', subStageId, 'Coins:', subStageCoins);
     
     if (!authToken) {
-      console.error('[RoadmapScreen] No auth token - user not logged in');
       alert('Error', 'You must be logged in to complete tasks.');
       return;
     }
@@ -451,7 +439,6 @@ const RoadmapScreen = ({
   };
 
   const completeSubstageOnBackend = async (subStageId, subStageCoins) => {
-    console.log('[RoadmapScreen] completeSubstageOnBackend started');
     try {
       const currentStage = litigationStages.find(s => s.id === selectedStage.id);
       const subStage = currentStage.subStages.find(s => s.id === subStageId);
@@ -471,9 +458,6 @@ const RoadmapScreen = ({
         coinsEarned: subStageCoins
       };
 
-      console.log('[RoadmapScreen] Making API request to:', `${API_BASE_URL}/api/litigation/substage/complete`);
-      console.log('[RoadmapScreen] Request body:', requestBody);
-      console.log('[RoadmapScreen] Auth token present:', !!authToken);
 
       const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
         method: 'POST',
@@ -484,13 +468,9 @@ const RoadmapScreen = ({
         body: JSON.stringify(requestBody),
       });
 
-      console.log('[RoadmapScreen] Response status:', response.status);
       const data = await response.json();
-      console.log('[RoadmapScreen] Response data:', data);
 
       if (response.ok) {
-        console.log('[RoadmapScreen] Success! Updating local state...');
-        console.log('[RoadmapScreen] Coins earned from backend:', data.coinsEarned);
         
         // Update local state with ACTUAL coins earned (may be 0 if already earned before)
         const actualCoinsEarned = data.coinsEarned || 0;
@@ -514,7 +494,6 @@ const RoadmapScreen = ({
           // The UI update (checkmark appearing) is feedback enough
         }
       } else {
-        console.error('[RoadmapScreen] API error:', data.error);
         // Handle duplicate completion gracefully
         if (data.error && data.error.includes('already completed')) {
           // Silently update UI to reflect that it's already completed - no annoying alerts!
@@ -525,7 +504,6 @@ const RoadmapScreen = ({
         }
       }
     } catch (error) {
-      console.error('[RoadmapScreen] Exception in completeSubstageOnBackend:', error);
       alert('Error', 'Failed to complete task. Please try again.');
     }
   };

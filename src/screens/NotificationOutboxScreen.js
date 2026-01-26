@@ -1099,7 +1099,6 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         setTotal(data.total || 0);
       }
     } catch (error) {
-      console.error('Error fetching sent notifications:', error);
     } finally {
       setIsLoading(false);
     }

@@ -53,7 +53,6 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
       setUsers(response.users || []);
     } catch (error) {
-      console.error('[UserManagement] Load error:', error);
       showAlert('Error', 'Failed to load users');
     } finally {
       setLoading(false);
@@ -86,9 +85,7 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   const deactivateUser = async (userId) => {
     try {
-      console.log('[LawFirm UserManagement] Deactivating user:', userId);
       const url = API_ENDPOINTS.LAWFIRM_USERS.DEACTIVATE(userId);
-      console.log('[LawFirm UserManagement] Deactivate URL:', url);
       
       const response = await apiRequest(url, {
         method: 'POST',
@@ -101,7 +98,6 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
         }),
       });
 
-      console.log('[LawFirm UserManagement] Deactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User deactivated successfully');
@@ -110,20 +106,17 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
         showAlert('Error', response.message || 'Failed to deactivate user');
       }
     } catch (error) {
-      console.error('[LawFirm UserManagement] Deactivate error:', error);
       showAlert('Error', error.message || 'Failed to deactivate user');
     }
   };
 
   const reactivateUser = async (userId) => {
     try {
-      console.log('[LawFirm UserManagement] Reactivating user:', userId);
       const response = await apiRequest(API_ENDPOINTS.LAWFIRM_USERS.REACTIVATE(userId), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
 
-      console.log('[LawFirm UserManagement] Reactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User reactivated successfully');
@@ -132,7 +125,6 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
         showAlert('Error', response.message || 'Failed to reactivate user');
       }
     } catch (error) {
-      console.error('[LawFirm UserManagement] Reactivate error:', error);
       showAlert('Error', error.message || 'Failed to reactivate user');
     }
   };
@@ -362,7 +354,6 @@ const AddUserModal = ({ visible, onClose, onUserAdded, lawFirmToken }) => {
         onUserAdded();
       }
     } catch (error) {
-      console.error('[AddUser] Error:', error);
       showAlert('Error', error.message || 'Failed to create user');
     } finally {
       setLoading(false);

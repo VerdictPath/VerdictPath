@@ -58,7 +58,6 @@ router.get('/providers/:providerId/availability', authenticateToken, async (req,
     
     res.json({ success: true, availability: result.rows });
   } catch (error) {
-    console.error('Error fetching availability:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch availability' });
   }
 });
@@ -83,7 +82,6 @@ router.post('/providers/:providerId/availability', authenticateToken, async (req
     
     res.json({ success: true, availability: result.rows[0] });
   } catch (error) {
-    console.error('Error setting availability:', error);
     res.status(500).json({ success: false, error: 'Failed to set availability' });
   }
 });
@@ -104,7 +102,6 @@ router.delete('/providers/:providerId/availability/:availabilityId', authenticat
     
     res.json({ success: true, message: 'Availability removed' });
   } catch (error) {
-    console.error('Error deleting availability:', error);
     res.status(500).json({ success: false, error: 'Failed to delete availability' });
   }
 });
@@ -129,7 +126,6 @@ router.post('/providers/:providerId/block-time', authenticateToken, async (req, 
     
     res.json({ success: true, blockedTime: result.rows[0] });
   } catch (error) {
-    console.error('Error blocking time:', error);
     res.status(500).json({ success: false, error: 'Failed to block time' });
   }
 });
@@ -148,7 +144,6 @@ router.get('/providers/:providerId/blocked-times', authenticateToken, async (req
     
     res.json({ success: true, blockedTimes: result.rows });
   } catch (error) {
-    console.error('Error fetching blocked times:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch blocked times' });
   }
 });
@@ -169,7 +164,6 @@ router.delete('/providers/:providerId/blocked-times/:blockId', authenticateToken
     
     res.json({ success: true, message: 'Blocked time removed' });
   } catch (error) {
-    console.error('Error deleting blocked time:', error);
     res.status(500).json({ success: false, error: 'Failed to delete blocked time' });
   }
 });
@@ -267,7 +261,6 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
     
     res.json({ success: true, date, slots, multiBookingEnabled: settings.allow_multi_booking });
   } catch (error) {
-    console.error('Error fetching available slots:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch available slots' });
   }
 });
@@ -371,7 +364,6 @@ router.post('/appointments', authenticateToken, async (req, res) => {
     
     res.json({ success: true, appointment, message: 'Appointment booked successfully!' });
   } catch (error) {
-    console.error('Error creating appointment:', error);
     res.status(500).json({ success: false, error: 'Failed to create appointment' });
   }
 });
@@ -405,7 +397,6 @@ router.get('/patients/:patientId/appointments', authenticateToken, async (req, r
     
     res.json({ success: true, appointments: result.rows });
   } catch (error) {
-    console.error('Error fetching patient appointments:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch appointments' });
   }
 });
@@ -452,7 +443,6 @@ router.get('/providers/:providerId/appointments', authenticateToken, async (req,
     
     res.json({ success: true, appointments: result.rows });
   } catch (error) {
-    console.error('Error fetching provider appointments:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch appointments' });
   }
 });
@@ -500,7 +490,6 @@ router.get('/law-firms/:lawFirmId/client-appointments', authenticateToken, async
     
     res.json({ success: true, appointments: result.rows });
   } catch (error) {
-    console.error('Error fetching law firm appointments:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch appointments' });
   }
 });
@@ -534,7 +523,6 @@ router.patch('/appointments/:appointmentId/confirm', authenticateToken, async (r
     
     res.json({ success: true, appointment: result.rows[0], message: 'Appointment confirmed!' });
   } catch (error) {
-    console.error('Error confirming appointment:', error);
     res.status(500).json({ success: false, error: 'Failed to confirm appointment' });
   }
 });
@@ -564,7 +552,6 @@ router.patch('/appointments/:appointmentId/cancel', authenticateToken, async (re
     
     res.json({ success: true, appointment: result.rows[0], message: 'Appointment cancelled' });
   } catch (error) {
-    console.error('Error cancelling appointment:', error);
     res.status(500).json({ success: false, error: 'Failed to cancel appointment' });
   }
 });
@@ -589,7 +576,6 @@ router.patch('/appointments/:appointmentId/complete', authenticateToken, async (
     
     res.json({ success: true, appointment: result.rows[0], message: 'Appointment marked as completed' });
   } catch (error) {
-    console.error('Error completing appointment:', error);
     res.status(500).json({ success: false, error: 'Failed to complete appointment' });
   }
 });
@@ -614,7 +600,6 @@ router.get('/providers/:providerId/calendar-settings', authenticateToken, async 
     
     res.json({ success: true, settings: result.rows[0] });
   } catch (error) {
-    console.error('Error fetching calendar settings:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch calendar settings' });
   }
 });
@@ -645,7 +630,6 @@ router.patch('/providers/:providerId/calendar-settings', authenticateToken, asyn
     
     res.json({ success: true, settings: result.rows[0] });
   } catch (error) {
-    console.error('Error updating calendar settings:', error);
     res.status(500).json({ success: false, error: 'Failed to update calendar settings' });
   }
 });
@@ -670,7 +654,6 @@ router.get('/patients/:patientId/connected-providers', authenticateToken, async 
     
     res.json({ success: true, providers: result.rows });
   } catch (error) {
-    console.error('Error fetching connected providers:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch providers' });
   }
 });

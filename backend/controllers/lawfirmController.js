@@ -34,7 +34,6 @@ exports.getClients = async (req, res) => {
     
     res.json({ clients });
   } catch (error) {
-    console.error('Error fetching clients:', error);
     res.status(500).json({ message: 'Error fetching clients', error: error.message });
   }
 };
@@ -42,7 +41,6 @@ exports.getClients = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
-    console.log('[LawFirm Dashboard] Fetching dashboard for law firm ID:', lawFirmId);
     
     const lawFirmResult = await db.query(
       'SELECT id, firm_name, firm_code FROM law_firms WHERE id = $1',
@@ -50,12 +48,10 @@ exports.getDashboard = async (req, res) => {
     );
     
     if (lawFirmResult.rows.length === 0) {
-      console.error('[LawFirm Dashboard] Law firm not found:', lawFirmId);
       return res.status(404).json({ message: 'Law firm not found' });
     }
     
     const lawFirm = lawFirmResult.rows[0];
-    console.log('[LawFirm Dashboard] Firm found:', lawFirm.firm_name, 'Code:', lawFirm.firm_code);
     
     const clientsResult = await db.query(
       `SELECT u.id, u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted, 
@@ -736,7 +732,6 @@ exports.getAllClientDocuments = async (req, res) => {
       evidence
     });
   } catch (error) {
-    console.error('Error fetching all client documents:', error);
     res.status(500).json({ message: 'Error fetching documents', error: error.message });
   }
 };

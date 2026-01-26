@@ -86,7 +86,6 @@ const tasksController = {
 
       res.json({ tasks, summary });
     } catch (error) {
-      console.error('Error fetching user tasks:', error);
       res.status(500).json({ error: 'Failed to fetch tasks' });
     }
   },
@@ -230,7 +229,6 @@ const tasksController = {
               }).catch(err => console.error('Error sending task assignment email:', err));
             }
           } catch (emailError) {
-            console.error('Error preparing task assignment email:', emailError);
           }
         })();
       }
@@ -253,7 +251,6 @@ const tasksController = {
         }
       });
     } catch (error) {
-      console.error('Error creating task:', error);
       res.status(500).json({ error: 'Failed to create task' });
     }
   },
@@ -458,13 +455,11 @@ const tasksController = {
                     ).catch(err => console.error('Error sending task completion email:', err));
                   }
                 } catch (emailError) {
-                  console.error('Error preparing task completion email:', emailError);
                 }
               })();
             }
           }
         } catch (notifError) {
-          console.error('Error sending task update notification:', notifError);
         }
       }
 
@@ -477,7 +472,6 @@ const tasksController = {
         maxCoins: MAX_TOTAL_COINS
       });
     } catch (error) {
-      console.error('Error updating task status:', error);
       res.status(500).json({ error: 'Failed to update task status' });
     }
   },
@@ -536,7 +530,6 @@ const tasksController = {
 
       res.json({ tasks });
     } catch (error) {
-      console.error('Error fetching client tasks:', error);
       res.status(500).json({ error: 'Failed to fetch client tasks' });
     }
   },
@@ -583,7 +576,6 @@ const tasksController = {
 
       res.json({ success: true, message: 'Task deleted successfully' });
     } catch (error) {
-      console.error('Error deleting task:', error);
       res.status(500).json({ error: 'Failed to delete task' });
     }
   },
@@ -622,7 +614,6 @@ const tasksController = {
 
       res.json({ templates });
     } catch (error) {
-      console.error('Error fetching task templates:', error);
       res.status(500).json({ error: 'Failed to fetch task templates' });
     }
   }

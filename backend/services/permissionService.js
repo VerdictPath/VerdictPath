@@ -64,7 +64,6 @@ class PermissionService {
       const result = await db.query(query, [userId, permissionName]);
       return result.rows[0]?.has_permission || false;
     } catch (error) {
-      console.error(`Error checking permission ${permissionName} for user ${userId}:`, error);
       return false;
     }
   }
@@ -92,7 +91,6 @@ class PermissionService {
       const result = await db.query(query, [userId, permissionNames]);
       return result.rows[0]?.has_permission || false;
     } catch (error) {
-      console.error(`Error checking permissions for user ${userId}:`, error);
       return false;
     }
   }
@@ -113,7 +111,6 @@ class PermissionService {
       }
       return true;
     } catch (error) {
-      console.error(`Error checking all permissions for user ${userId}:`, error);
       return false;
     }
   }
@@ -143,7 +140,6 @@ class PermissionService {
       const result = await db.query(query, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting permissions for user ${userId}:`, error);
       return [];
     }
   }
@@ -172,7 +168,6 @@ class PermissionService {
       const result = await db.query(query, [userId]);
       return result.rows;
     } catch (error) {
-      console.error(`Error getting roles for user ${userId}:`, error);
       return [];
     }
   }
@@ -208,7 +203,6 @@ class PermissionService {
       const result = await db.query(query, [userId, roleId, assignedBy, expiresAt]);
       return result.rows[0];
     } catch (error) {
-      console.error(`Error assigning role ${roleName} to user ${userId}:`, error);
       throw error;
     }
   }
@@ -230,7 +224,6 @@ class PermissionService {
       const result = await db.query(query, [userId, roleName]);
       return result.rowCount > 0;
     } catch (error) {
-      console.error(`Error removing role ${roleName} from user ${userId}:`, error);
       return false;
     }
   }
@@ -246,7 +239,6 @@ class PermissionService {
       const result = await db.query(query, [permissionName]);
       return result.rows[0]?.is_sensitive || false;
     } catch (error) {
-      console.error(`Error checking if permission ${permissionName} is sensitive:`, error);
       return false;
     }
   }
@@ -281,7 +273,6 @@ class PermissionService {
       
       return grouped;
     } catch (error) {
-      console.error('Error getting all permissions:', error);
       return {};
     }
   }

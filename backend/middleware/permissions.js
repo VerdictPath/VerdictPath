@@ -73,7 +73,6 @@ const requirePermission = (permissionName) => {
       
       next();
     } catch (error) {
-      console.error('Permission check error:', error);
       res.status(500).json({ message: 'Error checking permissions' });
     }
   };
@@ -120,7 +119,6 @@ const requireAnyPermission = (permissionNames) => {
       
       next();
     } catch (error) {
-      console.error('Permission check error:', error);
       res.status(500).json({ message: 'Error checking permissions' });
     }
   };
@@ -167,7 +165,6 @@ const requireAllPermissions = (permissionNames) => {
       
       next();
     } catch (error) {
-      console.error('Permission check error:', error);
       res.status(500).json({ message: 'Error checking permissions' });
     }
   };
@@ -188,7 +185,6 @@ const attachPermissions = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Error attaching permissions:', error);
     next(); // Continue even if this fails
   }
 };

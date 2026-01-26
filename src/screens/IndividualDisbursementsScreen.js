@@ -52,7 +52,6 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
       });
       setDisbursements(response.disbursements || []);
     } catch (error) {
-      console.error('Error loading disbursements:', error);
     }
   };
 
@@ -66,7 +65,6 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
       });
       setBankInfo(response.bankInfo);
     } catch (error) {
-      console.error('Error loading bank info:', error);
     }
   };
 
@@ -107,7 +105,6 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
       setBankForm({ bankName: '', accountHolder: '', routingNumber: '', accountNumber: '', accountType: 'checking' });
       Alert.alert('Success', 'Bank information saved securely.');
     } catch (error) {
-      console.error('Error saving bank info:', error);
       Alert.alert('Error', 'Failed to save bank information. Please try again.');
     } finally {
       setSavingBank(false);

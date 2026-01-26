@@ -78,7 +78,6 @@ const NotificationAnalyticsScreen = ({ user, onBack }) => {
         setError(data.error || 'Failed to load analytics');
       }
     } catch (err) {
-      console.error('Error fetching analytics:', err);
       setError('Failed to load analytics');
     } finally {
       setLoading(false);

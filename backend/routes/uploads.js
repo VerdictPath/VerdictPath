@@ -44,7 +44,6 @@ router.get('/stream/*', async (req, res) => {
     const filePath = path.join(uploadsDir, localKey);
 
     if (!fs.existsSync(filePath)) {
-      console.error(`[Stream] File not found: ${filePath}`);
       return res.status(404).json({ error: 'File not found' });
     }
 
@@ -69,7 +68,6 @@ router.get('/stream/*', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(filePath);
   } catch (error) {
-    console.error('Error streaming local file:', error);
     res.status(500).json({ error: 'Failed to stream file' });
   }
 });
@@ -116,7 +114,6 @@ router.get('/my-evidence', async (req, res) => {
     
     res.json({ evidence: result.rows });
   } catch (error) {
-    console.error('Error fetching user evidence:', error);
     res.status(500).json({ error: 'Failed to fetch evidence' });
   }
 });
@@ -159,7 +156,6 @@ router.get('/download/*', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     res.sendFile(filePath);
   } catch (error) {
-    console.error('Error serving local file:', error);
     res.status(500).json({ error: 'Failed to serve file' });
   }
 });

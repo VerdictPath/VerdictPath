@@ -234,7 +234,6 @@ class FormsService {
       try {
         submission.form_data = JSON.parse(decrypt(submission.form_data_encrypted));
       } catch (error) {
-        console.error('Error decrypting form data:', error);
       }
     }
     

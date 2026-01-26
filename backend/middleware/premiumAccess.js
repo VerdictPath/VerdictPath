@@ -48,7 +48,6 @@ const requirePremiumLawFirm = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Error checking premium access:', error);
     res.status(500).json({ error: 'Failed to verify subscription access' });
   }
 };

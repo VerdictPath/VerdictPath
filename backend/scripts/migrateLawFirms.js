@@ -8,7 +8,6 @@ require('dotenv').config();
 
 async function migrateLawFirms() {
   try {
-    console.log('🚀 Starting law firm migration...\n');
 
     // Find all existing law firms
     const lawFirmsResult = await db.query(`
@@ -18,13 +17,11 @@ async function migrateLawFirms() {
     `);
 
     const lawFirms = lawFirmsResult.rows;
-    console.log(`📊 Found ${lawFirms.length} law firms to migrate\n`);
 
     let migrated = 0;
     let skipped = 0;
 
     for (const firm of lawFirms) {
-      console.log(`\n🏢 Processing: ${firm.firm_name} (${firm.firm_code})`);
 
       // Check if admin user already exists
       const existingAdminResult = await db.query(
@@ -35,7 +32,6 @@ async function migrateLawFirms() {
       );
 
       if (existingAdminResult.rows.length > 0) {
-        console.log(`   ⏭️  Admin already exists, skipping...`);
         skipped++;
         continue;
       }
@@ -97,23 +93,12 @@ async function migrateLawFirms() {
         [maxUsers, firm.id]
       );
 
-      console.log(`   ✅ Created admin user: ${adminUser.user_code}`);
-      console.log(`   📧 Email: ${firm.email}`);
-      console.log(`   👥 Max users: ${maxUsers}`);
       migrated++;
     }
 
-    console.log('\n' + '='.repeat(60));
-    console.log(`✅ Migration complete!`);
-    console.log(`   📊 Total firms: ${lawFirms.length}`);
-    console.log(`   ✅ Migrated: ${migrated}`);
-    console.log(`   ⏭️  Skipped: ${skipped}`);
-    console.log('='.repeat(60) + '\n');
 
     process.exit(0);
   } catch (error) {
-    console.error('\n❌ Migration error:', error);
-    console.error(error.stack);
     process.exit(1);
   }
 }
@@ -129,9 +114,5 @@ function getMaxUsersByTier(tier) {
 }
 
 // Run migration
-console.log('\n' + '='.repeat(60));
-console.log('🔄 Law Firm Multi-User Migration Script');
-console.log('   Converting law firms to multi-user system');
-console.log('='.repeat(60) + '\n');
 
 migrateLawFirms();

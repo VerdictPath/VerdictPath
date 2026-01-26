@@ -89,7 +89,6 @@ const corsOptions = {
       callback(null, true);
     } else {
       // SECURITY: Reject unauthorized origins
-      console.warn(`⚠️  CORS blocked request from unauthorized origin: ${origin}`);
       callback(new Error('Not allowed by CORS'), false);
     }
   },
@@ -100,7 +99,6 @@ const corsOptions = {
 const corsMiddleware = (req, res, next) => {
   cors(corsOptions)(req, res, err => {
     if (err) {
-      console.warn(`⚠️  CORS rejected: ${req.headers.origin}`);
       return res.status(403).json({
         message: 'CORS policy: Origin not allowed',
         origin: req.headers.origin
@@ -486,7 +484,6 @@ app.get('*', (req, res) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('❌ ERROR:', err.stack);
   res.status(500).json({ 
     message: 'Something went wrong!',
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
@@ -496,9 +493,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`VerdictPath Backend Server running on port ${PORT}`);
-  console.log(`API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`Web portal available at http://localhost:${PORT}/portal`);
   
   // Ensure all required database tables exist
   await ensureTablesExist();

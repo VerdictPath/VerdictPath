@@ -91,7 +91,6 @@ const getUserProgress = async (req, res) => {
       videoProgress: videosResult.rows
     });
   } catch (error) {
-    console.error('Error getting user progress:', error);
     res.status(500).json({ error: 'Failed to get litigation progress' });
   }
 };
@@ -126,7 +125,6 @@ const completeSubstage = async (req, res) => {
 
     // SECURITY: Get canonical coin value from server (NEVER trust client)
     const canonicalCoins = getSubstageCoins(substageId);
-    console.log(`[Security] Substage ${substageId} canonical coins: ${canonicalCoins}`);
 
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
@@ -148,7 +146,6 @@ const completeSubstage = async (req, res) => {
            RETURNING *`,
           [dataValue, existing.rows[0].id]
         );
-        console.log(`[Litigation] Updated data_value for substage ${substageId}: ${dataValue}`);
         return res.json({
           message: 'Data entry updated successfully',
           completion: updateResult.rows[0],
@@ -248,7 +245,6 @@ const completeSubstage = async (req, res) => {
       maxCoins: MAX_TOTAL_COINS
     });
   } catch (error) {
-    console.error('Error completing substage:', error);
     res.status(500).json({ error: 'Failed to complete substage' });
   }
 };
@@ -275,7 +271,6 @@ const completeStage = async (req, res) => {
 
     // SECURITY: Get canonical coin value from server (NEVER trust client)
     const canonicalCoins = getStageCoins(stageId);
-    console.log(`[Security] Stage ${stageId} canonical coins: ${canonicalCoins}`);
 
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
@@ -399,7 +394,6 @@ const completeStage = async (req, res) => {
       maxCoins: MAX_TOTAL_COINS
     });
   } catch (error) {
-    console.error('Error completing stage:', error);
     res.status(500).json({ error: 'Failed to complete stage' });
   }
 };
@@ -438,7 +432,6 @@ const updateVideoProgress = async (req, res) => {
       videoProgress: result.rows[0]
     });
   } catch (error) {
-    console.error('Error updating video progress:', error);
     res.status(500).json({ error: 'Failed to update video progress' });
   }
 };
@@ -481,7 +474,6 @@ const getClientProgress = async (req, res) => {
       completedStages: stagesResult.rows
     });
   } catch (error) {
-    console.error('Error getting client progress:', error);
     res.status(500).json({ error: 'Failed to get client progress' });
   }
 };
@@ -533,7 +525,6 @@ const revertSubstage = async (req, res) => {
       coinsNotRefunded: true
     });
   } catch (error) {
-    console.error('Error reverting substage:', error);
     res.status(500).json({ error: 'Failed to revert substage' });
   }
 };
@@ -610,7 +601,6 @@ const revertStage = async (req, res) => {
       );
     }
 
-    console.log(`[Revert] Stage ${stageId} reverted for user ${userId}: ${substagesReverted} substages, explicit record: ${stageRecordReverted}`);
 
     res.json({
       message: 'Stage reverted successfully (coins preserved to prevent farming)',
@@ -620,7 +610,6 @@ const revertStage = async (req, res) => {
       coinsNotRefunded: true
     });
   } catch (error) {
-    console.error('Error reverting stage:', error);
     res.status(500).json({ error: 'Failed to revert stage' });
   }
 };

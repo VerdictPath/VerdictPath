@@ -75,7 +75,6 @@ router.get('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req,
       }))
     });
   } catch (error) {
-    console.error('Error fetching settlements:', error);
     res.status(500).json({ error: 'Failed to fetch settlements' });
   }
 });
@@ -159,7 +158,6 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
         }).catch(err => console.error('Error sending settlement created email:', err));
       }
     } catch (emailError) {
-      console.error('Error sending settlement email:', emailError);
     }
 
     res.status(201).json({
@@ -177,7 +175,6 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
       }
     });
   } catch (error) {
-    console.error('Error creating settlement:', error);
     res.status(500).json({ error: 'Failed to create settlement' });
   }
 });
@@ -286,7 +283,6 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Error fetching settlement details:', error);
     res.status(500).json({ error: 'Failed to fetch settlement details' });
   }
 });
@@ -321,7 +317,6 @@ router.put('/:id/mark-settled', authenticateToken, isLawFirm, requirePremiumLawF
       settlement: result.rows[0]
     });
   } catch (error) {
-    console.error('Error marking case as settled:', error);
     res.status(500).json({ error: 'Failed to update settlement status' });
   }
 });
@@ -373,7 +368,6 @@ router.put('/:id/record-iolta-deposit', authenticateToken, isLawFirm, requirePre
       }
     });
   } catch (error) {
-    console.error('Error recording IOLTA deposit:', error);
     res.status(500).json({ error: 'Failed to record IOLTA deposit' });
   }
 });
@@ -452,7 +446,6 @@ router.post('/:id/liens', authenticateToken, isLawFirm, requirePremiumLawFirm, a
       }
     });
   } catch (error) {
-    console.error('Error adding medical lien:', error);
     res.status(500).json({ error: 'Failed to add medical lien' });
   }
 });
@@ -491,7 +484,6 @@ router.put('/:settlementId/liens/:lienId/negotiate', authenticateToken, isLawFir
       lien: result.rows[0]
     });
   } catch (error) {
-    console.error('Error updating lien negotiation:', error);
     res.status(500).json({ error: 'Failed to update lien' });
   }
 });
@@ -530,7 +522,6 @@ router.put('/:settlementId/liens/:lienId/finalize', authenticateToken, isLawFirm
       lien: result.rows[0]
     });
   } catch (error) {
-    console.error('Error finalizing lien:', error);
     res.status(500).json({ error: 'Failed to finalize lien' });
   }
 });
@@ -628,7 +619,6 @@ router.post('/:settlementId/liens/:lienId/pay', authenticateToken, isLawFirm, re
         stripeTransferId = transfer.id;
       } catch (stripeError) {
         await client.query('ROLLBACK');
-        console.error('Stripe transfer error:', stripeError);
         return res.status(500).json({ 
           error: 'Failed to process Stripe transfer',
           details: stripeError.message
@@ -682,7 +672,6 @@ router.post('/:settlementId/liens/:lienId/pay', authenticateToken, isLawFirm, re
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error paying lien:', error);
     res.status(500).json({ error: 'Failed to process lien payment' });
   } finally {
     client.release();
@@ -797,12 +786,10 @@ router.post('/:id/disburse-to-client', authenticateToken, isLawFirm, requirePrem
         stripeTransferId = transfer.id;
 
         if (platformFee > 0) {
-          console.log(`Platform fee of $${platformFee} charged for disbursement ${id}`);
         }
 
       } catch (stripeError) {
         await client.query('ROLLBACK');
-        console.error('Stripe transfer error:', stripeError);
         return res.status(500).json({ 
           error: 'Failed to process Stripe transfer',
           details: stripeError.message
@@ -879,7 +866,6 @@ router.post('/:id/disburse-to-client', authenticateToken, isLawFirm, requirePrem
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error disbursing to client:', error);
     res.status(500).json({ error: 'Failed to process disbursement' });
   } finally {
     client.release();
@@ -915,7 +901,6 @@ router.put('/:id/close', authenticateToken, isLawFirm, requirePremiumLawFirm, as
       settlement: result.rows[0]
     });
   } catch (error) {
-    console.error('Error closing settlement:', error);
     res.status(500).json({ error: 'Failed to close settlement' });
   }
 });
@@ -977,7 +962,6 @@ router.put('/:id/calculate-distribution', authenticateToken, isLawFirm, requireP
       }
     });
   } catch (error) {
-    console.error('Error calculating distribution:', error);
     res.status(500).json({ error: 'Failed to calculate distribution' });
   }
 });

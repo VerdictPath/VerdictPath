@@ -20,8 +20,6 @@ async function createUser() {
         'UPDATE users SET password = $1 WHERE email = $2',
         [hashedPassword, email.toLowerCase()]
       );
-      console.log('✅ User exists - Password updated');
-      console.log('   User ID:', checkResult.rows[0].id);
     } else {
       // Get column names first
       const columnsResult = await db.query(`
@@ -31,7 +29,6 @@ async function createUser() {
         ORDER BY ordinal_position
       `);
       const columns = columnsResult.rows.map(r => r.column_name);
-      console.log('Available columns:', columns.join(', '));
       
       // Create new user with minimal required fields
       const result = await db.query(
@@ -40,19 +37,11 @@ async function createUser() {
          RETURNING id, email, user_type`,
         ['Abdullah', 'User', email.toLowerCase(), hashedPassword, 'client', 'free']
       );
-      console.log('✅ User created:', result.rows[0]);
     }
     
-    console.log('\n📧 Login credentials for Postman:');
-    console.log('   Email:', email);
-    console.log('   Password:', password);
-    console.log('   URL: http://localhost:5000/api/auth/login');
-    console.log('\n✅ Ready to test!');
     
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error.message);
-    console.error('Stack:', error.stack);
     process.exit(1);
   }
 }

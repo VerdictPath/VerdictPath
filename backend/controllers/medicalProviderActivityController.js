@@ -152,7 +152,6 @@ exports.getActivitySummary = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Activity summary error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve activity summary'
@@ -256,7 +255,6 @@ exports.getActivityLogs = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get activity logs error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve activity logs'
@@ -353,7 +351,6 @@ exports.getUserActivityTimeline = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user timeline error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve user timeline'
@@ -431,7 +428,6 @@ exports.getActivityStatistics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get statistics error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve statistics'
@@ -589,7 +585,6 @@ exports.getHIPAAComplianceReport = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('HIPAA compliance report error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate HIPAA compliance report'
@@ -745,7 +740,6 @@ exports.getPatientAccessAudit = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Patient access audit error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve patient access audit'

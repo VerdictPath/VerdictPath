@@ -107,7 +107,6 @@ router.get('/firebase-listener', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Firebase diagnostic error:', error);
     res.status(500).json({ 
       error: 'Firebase diagnostic failed',
       details: error.message 

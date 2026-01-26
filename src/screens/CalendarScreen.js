@@ -48,7 +48,6 @@ const CalendarScreen = ({ user, onBack }) => {
       const fetchedEvents = await CalendarService.fetchEvents(user.token, options);
       setEvents(fetchedEvents);
     } catch (error) {
-      console.error('Error loading events:', error);
       Alert.alert('Error', 'Failed to load calendar events');
     } finally {
       setLoading(false);
@@ -76,7 +75,6 @@ const CalendarScreen = ({ user, onBack }) => {
       
       Alert.alert('Success', 'Event created successfully!');
     } catch (error) {
-      console.error('Error creating event:', error);
       Alert.alert('Error', 'Failed to create event');
     }
   };
@@ -105,7 +103,6 @@ const CalendarScreen = ({ user, onBack }) => {
       Alert.alert('Success', 'Event synced to your device calendar!');
       loadEvents();
     } catch (error) {
-      console.error('Error syncing event:', error);
       Alert.alert('Error', 'Failed to sync event to device calendar');
     }
   };
@@ -125,7 +122,6 @@ const CalendarScreen = ({ user, onBack }) => {
       Alert.alert('Success', 'Event removed from device calendar');
       loadEvents();
     } catch (error) {
-      console.error('Error unsyncing event:', error);
       Alert.alert('Error', 'Failed to remove event from device calendar');
     }
   };
@@ -149,7 +145,6 @@ const CalendarScreen = ({ user, onBack }) => {
               setEvents(prev => prev.filter(e => e.id !== event.id));
               Alert.alert('Success', 'Event deleted');
             } catch (error) {
-              console.error('Error deleting event:', error);
               Alert.alert('Error', 'Failed to delete event');
             }
           }

@@ -98,7 +98,6 @@ const MedicalProviderRegistrationScreen = ({
         onRegistrationComplete(userData);
       }
     } catch (error) {
-      console.error('Error registering medical provider:', error);
       const errorMsg = error.message || 'Failed to create account. Please try again.';
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);
@@ -169,7 +168,6 @@ const MedicalProviderRegistrationScreen = ({
         onRegistrationComplete(userData);
       }
     } catch (error) {
-      console.error('Error joining medical provider:', error);
       const errorMsg = error.message || 'Failed to join provider. Please check the provider code and try again.';
       if (Platform.OS === 'web') {
         alert('Join Error: ' + errorMsg);

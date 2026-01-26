@@ -14,10 +14,6 @@ async function migrateMedicalProviders() {
   const client = await pool.connect();
   
   try {
-    console.log('\n' + '='.repeat(60));
-    console.log('🔄 Medical Provider Multi-User Migration Script');
-    console.log('   Converting providers to multi-user system');
-    console.log('='.repeat(60) + '\n');
 
     await client.query('BEGIN');
 
@@ -36,14 +32,11 @@ async function migrateMedicalProviders() {
     `);
 
     const providers = providersResult.rows;
-    console.log(`🚀 Starting medical provider migration...\n`);
-    console.log(`📊 Found ${providers.length} medical providers to migrate\n\n`);
 
     let migrated = 0;
     let skipped = 0;
 
     for (const provider of providers) {
-      console.log(`🏥 Processing: ${provider.provider_name} (${provider.provider_code})`);
 
       // Check if admin user already exists
       const existingAdmin = await client.query(`
@@ -53,7 +46,6 @@ async function migrateMedicalProviders() {
       `, [provider.id]);
 
       if (existingAdmin.rows.length > 0) {
-        console.log(`   ⏭️  Admin already exists, skipping...\n`);
         skipped++;
         continue;
       }
@@ -131,26 +123,14 @@ async function migrateMedicalProviders() {
         WHERE id = $2
       `, [maxUsers, provider.id]);
 
-      console.log(`   ✅ Admin created: ${userCode}`);
-      console.log(`   📊 Max users set to: ${maxUsers}`);
-      console.log(`   🏥 HIPAA training set (expires in 1 year)`);
-      console.log(`   📋 Data retention: 2555 days (7 years HIPAA compliant)\n`);
       migrated++;
     }
 
     await client.query('COMMIT');
 
-    console.log('\n' + '='.repeat(60));
-    console.log('✅ Migration complete!');
-    console.log(`   📊 Total providers: ${providers.length}`);
-    console.log(`   ✅ Migrated: ${migrated}`);
-    console.log(`   ⏭️  Skipped: ${skipped}`);
-    console.log('='.repeat(60) + '\n');
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('\n❌ Migration failed:', error.message);
-    console.error('Stack trace:', error.stack);
     process.exit(1);
   } finally {
     client.release();
@@ -160,6 +140,5 @@ async function migrateMedicalProviders() {
 
 // Run migration
 migrateMedicalProviders().catch(error => {
-  console.error('Fatal error:', error);
   process.exit(1);
 });

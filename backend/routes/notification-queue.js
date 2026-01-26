@@ -27,7 +27,6 @@ router.post('/process', async (req, res) => {
       ...result
     });
   } catch (error) {
-    console.error('Error processing notification queue:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to process notification queue',
@@ -103,7 +102,6 @@ router.get('/status', async (req, res) => {
       queue_status: stats.rows[0]
     });
   } catch (error) {
-    console.error('Error fetching queue status:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch queue status'

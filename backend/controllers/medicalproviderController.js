@@ -51,7 +51,6 @@ exports.getPatients = async (req, res) => {
     
     res.json({ patients });
   } catch (error) {
-    console.error('Error fetching patients list:', error);
     res.status(500).json({ message: 'Error fetching patients', error: error.message });
   }
 };
@@ -243,7 +242,6 @@ exports.getDashboard = async (req, res) => {
       analytics: analytics
     });
   } catch (error) {
-    console.error('Error fetching provider dashboard:', error);
     res.status(500).json({ message: 'Error fetching dashboard', error: error.message });
   }
 };
@@ -373,7 +371,6 @@ exports.getPatientDetails = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching patient details:', error);
     res.status(500).json({ message: 'Error fetching patient details', error: error.message });
   }
 };

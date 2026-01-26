@@ -10,7 +10,6 @@ let isRunning = false;
 
 async function cleanupExpiredNotifications() {
   if (isRunning) {
-    console.log('⏩ Notification Cleanup Service already running, skipping this cycle');
     return { success: false, skipped: true };
   }
   
@@ -24,7 +23,6 @@ async function cleanupExpiredNotifications() {
 }
 
 async function _cleanupNotificationsInternal() {
-  console.log('🧹 Notification Cleanup Service: Checking for expired notifications...');
   
   try {
     const tableCheck = await pool.query(`
@@ -36,7 +34,6 @@ async function _cleanupNotificationsInternal() {
     `);
     
     if (!tableCheck.rows[0].exists) {
-      console.log('📋 Notification Cleanup Service: notifications table not found, skipping cleanup');
       return { success: true, deletedCount: 0, skipped: true };
     }
 
@@ -50,7 +47,6 @@ async function _cleanupNotificationsInternal() {
     `);
     
     if (!columnCheck.rows[0].exists) {
-      console.log('📋 Notification Cleanup Service: auto_delete_at column not found, skipping cleanup');
       return { success: true, deletedCount: 0, skipped: true };
     }
 
@@ -66,29 +62,23 @@ async function _cleanupNotificationsInternal() {
     const deletedCount = deleteResult.rowCount;
     
     if (deletedCount > 0) {
-      console.log(`🗑️ Notification Cleanup Service: Deleted ${deletedCount} expired notifications`);
       
       deleteResult.rows.slice(0, 5).forEach(notification => {
-        console.log(`   - Deleted notification ${notification.id}: "${notification.title?.substring(0, 30) || 'No title'}..."`);
       });
       
       if (deletedCount > 5) {
-        console.log(`   ... and ${deletedCount - 5} more`);
       }
     } else {
-      console.log('✅ Notification Cleanup Service: No expired notifications to delete');
     }
     
     return { success: true, deletedCount };
     
   } catch (error) {
-    console.error('❌ Notification Cleanup Service Error:', error.message);
     return { success: false, error: error.message };
   }
 }
 
 function startCleanupScheduler() {
-  console.log('🧹 Starting Notification Cleanup Scheduler...');
   
   cleanupExpiredNotifications();
   
@@ -97,7 +87,6 @@ function startCleanupScheduler() {
   midnight.setHours(24, 0, 0, 0);
   const msUntilMidnight = midnight.getTime() - now.getTime();
   
-  console.log(`⏰ Next cleanup scheduled in ${Math.round(msUntilMidnight / 1000 / 60)} minutes (at midnight)`);
   
   setTimeout(() => {
     cleanupExpiredNotifications();
@@ -108,7 +97,6 @@ function startCleanupScheduler() {
     
   }, msUntilMidnight);
   
-  console.log('✅ Notification Cleanup Scheduler started (runs daily at midnight)');
 }
 
 module.exports = {

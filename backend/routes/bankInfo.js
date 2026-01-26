@@ -27,7 +27,6 @@ function decrypt(text) {
     decrypted += decipher.final('utf8');
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
     return null;
   }
 }
@@ -74,7 +73,6 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching bank info:', error);
     res.status(500).json({ error: 'Failed to fetch bank information' });
   }
 });
@@ -143,7 +141,6 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error saving bank info:', error);
     res.status(500).json({ error: 'Failed to save bank information' });
   }
 });
@@ -156,7 +153,6 @@ router.delete('/', authenticateToken, async (req, res) => {
 
     res.json({ success: true, message: 'Bank information deleted' });
   } catch (error) {
-    console.error('Error deleting bank info:', error);
     res.status(500).json({ error: 'Failed to delete bank information' });
   }
 });

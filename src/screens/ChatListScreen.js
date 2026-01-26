@@ -34,36 +34,28 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
       try {
         const db = getFirebaseDatabase();
         if (!db) {
-          console.warn('⚠️ Firebase not available for chat list, falling back to manual refresh');
           return;
         }
 
         // Authenticate with Firebase using backend token
         if (user.token) {
-          console.log('🔐 Authenticating with Firebase for chat list...');
           const authResult = await authenticateWithBackend(user.token);
           if (!authResult || !authResult.success) {
             const errorMsg = authResult?.error || 'Unknown authentication error';
-            console.error('❌ Firebase authentication failed for chat list:', errorMsg);
             setError('Real-time updates unavailable. Please refresh manually.');
             setFirebaseConnected(false);
             return;
           }
-          console.log('✅ Firebase authentication successful for chat list');
           
           // Wait for auth state to be fully ready before setting up listener
-          console.log('⏳ Waiting for Firebase auth state to be ready...');
           const authStateResult = await waitForAuthReady(5000);
           if (!authStateResult || !authStateResult.success) {
             const errorMsg = authStateResult?.error || 'Auth state not ready';
-            console.error('❌ Firebase auth state not ready for chat list:', errorMsg);
             setError('Real-time updates unavailable. Please refresh manually.');
             setFirebaseConnected(false);
             return;
           }
-          console.log('✅ Firebase auth state confirmed, proceeding with listener setup');
         } else {
-          console.warn('⚠️ No user token available, skipping Firebase authentication');
           setFirebaseConnected(false);
           return;
         }
@@ -80,40 +72,32 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
         }
 
         if (!basePath) {
-          console.error('❌ Unknown user type for Firebase listener:', userType);
           return;
         }
 
         const unreadCountsPath = `chat/${basePath}/${user.id}/unread_counts`;
         const unreadCountsRef = ref(db, unreadCountsPath);
 
-        console.log(`💬 Setting up Firebase listener for unread counts: ${unreadCountsPath}`);
 
         unreadListenerRef.current = onValue(
           unreadCountsRef,
           (snapshot) => {
             const data = snapshot.val();
-            console.log('💬 Firebase unread counts update detected:', data ? Object.keys(data).length : 0, 'conversations');
             
             // Refetch conversation list when unread counts change
             // This ensures we show latest messages and counts
             if (data && !loading && !refreshing) {
-              console.log('🔄 Refreshing conversation list due to Firebase update...');
               fetchConversations();
             }
           },
           (error) => {
-            console.error('❌ Firebase unread counts listener error:', error);
-            console.error('Error details:', error.code, error.message);
             setError('Real-time updates failed. Please refresh manually.');
             setFirebaseConnected(false);
           }
         );
 
         setFirebaseConnected(true);
-        console.log('✅ Firebase listener connected for chat list');
       } catch (error) {
-        console.error('❌ Error setting up Firebase listener:', error);
         setError('Failed to setup real-time updates. Please refresh manually.');
         setFirebaseConnected(false);
       }
@@ -131,7 +115,6 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
           const unreadCountsPath = `chat/${basePath}/${user.id}/unread_counts`;
           const unreadCountsRef = ref(db, unreadCountsPath);
           off(unreadCountsRef);
-          console.log('🔕 Cleaned up Firebase listener for chat list');
         }
       }
     };
@@ -145,7 +128,6 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
       });
       setConversations(response.conversations || []);
     } catch (err) {
-      console.error('Error fetching conversations:', err);
       setError(err.message || 'Failed to load conversations');
     } finally {
       setLoading(false);

@@ -47,7 +47,6 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
         fetchClients()
       ]);
     } catch (error) {
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -69,7 +68,6 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
         setAppointments(data.appointments || []);
       }
     } catch (error) {
-      console.error('Error fetching appointments:', error);
     }
   };
 
@@ -84,7 +82,6 @@ const LawFirmClientAppointmentsScreen = ({ user, onNavigate, onBack }) => {
         setClients(data.clients || []);
       }
     } catch (error) {
-      console.error('Error fetching clients:', error);
     }
   };
 

@@ -10,16 +10,11 @@ async function checkUser() {
     );
     
     if (result.rows.length === 0) {
-      console.log('❌ User NOT found in database');
-      console.log('Email:', email);
     } else {
-      console.log('✅ User found:');
-      console.log(JSON.stringify(result.rows[0], null, 2));
     }
     
     process.exit(0);
   } catch (error) {
-    console.error('Error:', error.message);
     process.exit(1);
   }
 }

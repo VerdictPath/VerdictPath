@@ -15,7 +15,6 @@ async function createMissingTables() {
   const client = await pool.connect();
   
   try {
-    console.log('🔍 Checking for missing tables...\n');
     
     // Check if law_firm_users exists
     const lawFirmUsersCheck = await client.query(`
@@ -26,7 +25,6 @@ async function createMissingTables() {
     `);
     
     if (!lawFirmUsersCheck.rows[0].exists) {
-      console.log('📦 Creating law_firm_users table...');
       await client.query(`
         CREATE TABLE IF NOT EXISTS law_firm_users (
           id SERIAL PRIMARY KEY,
@@ -63,15 +61,12 @@ async function createMissingTables() {
           notification_preference VARCHAR(20) DEFAULT 'email'
         );
       `);
-      console.log('✅ law_firm_users table created');
       
       // Create indexes
       await client.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_law_firm_id ON law_firm_users(law_firm_id);`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_email ON law_firm_users(email);`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_law_firm_users_status ON law_firm_users(status);`);
-      console.log('✅ Indexes created for law_firm_users');
     } else {
-      console.log('✓ law_firm_users table already exists');
     }
     
     // Check if medical_provider_users exists
@@ -83,7 +78,6 @@ async function createMissingTables() {
     `);
     
     if (!medProviderUsersCheck.rows[0].exists) {
-      console.log('📦 Creating medical_provider_users table...');
       await client.query(`
         CREATE TABLE IF NOT EXISTS medical_provider_users (
           id SERIAL PRIMARY KEY,
@@ -122,21 +116,16 @@ async function createMissingTables() {
           notification_preference VARCHAR(20) DEFAULT 'email'
         );
       `);
-      console.log('✅ medical_provider_users table created');
       
       // Create indexes
       await client.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_provider_id ON medical_provider_users(medical_provider_id);`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_email ON medical_provider_users(email);`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_medical_provider_users_status ON medical_provider_users(status);`);
-      console.log('✅ Indexes created for medical_provider_users');
     } else {
-      console.log('✓ medical_provider_users table already exists');
     }
     
-    console.log('\n✨ Database check complete!');
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
     throw error;
   } finally {
     client.release();

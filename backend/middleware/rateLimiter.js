@@ -31,7 +31,6 @@ const authLimiter = rateLimit({
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   keyGenerator: getClientIdentifier,
   handler: (req, res) => {
-    console.warn(`⚠️  Rate limit exceeded for ${getClientIdentifier(req)} on ${req.path}`);
     res.status(429).json({
       message: 'Too many authentication attempts. Please try again in 15 minutes.',
       retryAfter: '15 minutes'

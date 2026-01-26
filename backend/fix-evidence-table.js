@@ -3,7 +3,6 @@ const db = require('./config/db');
 
 async function fixEvidenceTable() {
   try {
-    console.log('🔧 Adding missing columns to evidence table...\n');
     
     await db.query(`
       ALTER TABLE evidence 
@@ -17,7 +16,6 @@ async function fixEvidenceTable() {
       ADD COLUMN IF NOT EXISTS storage_type VARCHAR(20) DEFAULT 'local'
     `);
     
-    console.log('✅ Added missing columns');
     
     const result = await db.query(`
       SELECT column_name 
@@ -26,13 +24,10 @@ async function fixEvidenceTable() {
       ORDER BY ordinal_position
     `);
     
-    console.log('\n📋 Evidence table columns:');
     result.rows.forEach(col => console.log('  -', col.column_name));
     
-    console.log('\n✅ Evidence table is now ready for uploads!');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error:', error.message);
     process.exit(1);
   }
 }

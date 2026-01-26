@@ -61,7 +61,6 @@ const LandingScreen = ({ onNavigate }) => {
         }
 
         if (!waitForVideoLoad()) {
-          console.warn('[LandingScreen] Video did not load after waiting, attempting to play anyway');
         }
 
         if (player && !player.playing) {
@@ -77,13 +76,10 @@ const LandingScreen = ({ onNavigate }) => {
           
           // If still not playing, try again (Android sometimes needs this)
           if (!player.playing && Platform.OS !== 'web') {
-            console.log('[LandingScreen] Play did not start, retrying...');
             await player.play();
             await new Promise(resolve => setTimeout(resolve, 200));
           }
           
-          console.log('[LandingScreen] Video playback started on', Platform.OS);
-          console.log('[LandingScreen] Player state:', {
             playing: player.playing,
             currentTime: player.currentTime,
             duration: player.duration,
@@ -91,19 +87,15 @@ const LandingScreen = ({ onNavigate }) => {
           
           // If still not playing after retry, try once more with a delay
           if (!player.playing && Platform.OS !== 'web') {
-            console.log('[LandingScreen] Still not playing, final retry...');
             setTimeout(async () => {
               try {
                 await player.play();
-                console.log('[LandingScreen] Final retry - playing:', player.playing);
               } catch (e) {
-                console.error('[LandingScreen] Final retry error:', e);
               }
             }, 500);
           }
         }
       } catch (error) {
-        console.error('[LandingScreen] Play error:', error);
         // Retry once on mobile if it fails
         if (Platform.OS !== 'web') {
           setTimeout(async () => {
@@ -112,12 +104,9 @@ const LandingScreen = ({ onNavigate }) => {
               await new Promise(resolve => setTimeout(resolve, 500));
               if (player && !player.playing && waitForVideoLoad()) {
                 await player.play();
-                console.log('[LandingScreen] Video playback retry successful');
               } else {
-                console.warn('[LandingScreen] Video still not loaded on retry');
               }
             } catch (retryError) {
-              console.error('[LandingScreen] Retry failed:', retryError);
               setEnableVideo(false);
             }
           }, 1000);

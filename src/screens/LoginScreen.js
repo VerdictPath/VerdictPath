@@ -81,7 +81,6 @@ const LoginScreen = ({
         }
 
         if (!waitForVideoLoad()) {
-          console.warn('[LoginScreen] Video did not load after waiting, attempting to play anyway');
         }
 
         if (player && !player.playing) {
@@ -97,13 +96,10 @@ const LoginScreen = ({
           
           // If still not playing, try again (Android sometimes needs this)
           if (!player.playing && Platform.OS !== 'web') {
-            console.log('[LoginScreen] Play did not start, retrying...');
             await player.play();
             await new Promise(resolve => setTimeout(resolve, 200));
           }
           
-          console.log('[LoginScreen] Video playback started on', Platform.OS);
-          console.log('[LoginScreen] Player state:', {
             playing: player.playing,
             currentTime: player.currentTime,
             duration: player.duration,
@@ -111,19 +107,15 @@ const LoginScreen = ({
           
           // If still not playing after retry, try once more with a delay
           if (!player.playing && Platform.OS !== 'web') {
-            console.log('[LoginScreen] Still not playing, final retry...');
             setTimeout(async () => {
               try {
                 await player.play();
-                console.log('[LoginScreen] Final retry - playing:', player.playing);
               } catch (e) {
-                console.error('[LoginScreen] Final retry error:', e);
               }
             }, 500);
           }
         }
       } catch (error) {
-        console.error("[LoginScreen] Play error:", error);
         // Retry once on mobile if it fails
         if (Platform.OS !== 'web') {
           setTimeout(async () => {
@@ -132,12 +124,9 @@ const LoginScreen = ({
               await new Promise(resolve => setTimeout(resolve, 500));
               if (player && !player.playing && waitForVideoLoad()) {
                 await player.play();
-                console.log('[LoginScreen] Video playback retry successful');
               } else {
-                console.warn('[LoginScreen] Video still not loaded on retry');
               }
             } catch (retryError) {
-              console.error("[LoginScreen] Retry failed:", retryError);
               setEnableVideo(false);
             }
           }, 1000);

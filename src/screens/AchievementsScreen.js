@@ -52,7 +52,6 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
         setStats(statsData.stats);
       }
     } catch (error) {
-      console.error('Error loading achievements:', error);
       Alert.alert('Error', 'Failed to load achievements');
     } finally {
       setLoading(false);

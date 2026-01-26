@@ -20,8 +20,6 @@ class EncryptionService {
     const keyString = process.env.ENCRYPTION_KEY;
     
     if (!keyString) {
-      console.error('CRITICAL: ENCRYPTION_KEY not set in environment variables!');
-      console.error('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"');
       throw new Error('ENCRYPTION_KEY environment variable is required for HIPAA compliance');
     }
     
@@ -79,7 +77,6 @@ class EncryptionService {
       // This ensures we can decrypt later and verify data hasn't been tampered with
       return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
     } catch (error) {
-      console.error('Encryption error:', error);
       throw new Error('Failed to encrypt PHI data - this is a HIPAA compliance failure');
     }
   }
@@ -122,11 +119,9 @@ class EncryptionService {
       
       return decrypted;
     } catch (error) {
-      console.error('Decryption error:', error);
       
       // If auth tag verification fails, data was tampered with - this is a security incident!
       if (error.message && error.message.includes('Unsupported state or unable to authenticate data')) {
-        console.error('SECURITY ALERT: PHI data integrity check failed - possible tampering detected!');
         throw new Error('PHI data integrity verification failed - this is a potential HIPAA breach');
       }
       

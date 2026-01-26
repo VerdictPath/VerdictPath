@@ -262,12 +262,10 @@ export async function apiRequest(url, options = {}) {
   };
 
   try {
-    console.log(`[API] ${config.method || 'GET'} ${url}`);
     
     const response = await fetch(url, config);
     
     // Log response status
-    console.log(`[API] Response: ${response.status} ${response.statusText}`);
 
     // Handle non-JSON responses (like for file downloads)
     const contentType = response.headers.get('content-type');
@@ -286,7 +284,6 @@ export async function apiRequest(url, options = {}) {
       const errorMessage = data?.message || data?.error || response.statusText || 'Request failed';
       
       // Log for debugging
-      console.error('[API] Error:', {
         status: response.status,
         message: errorMessage,
         url: url
@@ -304,18 +301,15 @@ export async function apiRequest(url, options = {}) {
   } catch (error) {
     // Network errors or other fetch errors
     if (error.message === 'Network request failed' || error.message === 'Failed to fetch') {
-      console.error('[API] Network Error - Check your internet connection');
       throw new Error('Network error. Please check your internet connection.');
     }
 
     // Timeout errors
     if (error.name === 'AbortError') {
-      console.error('[API] Request Timeout');
       throw new Error('Request timeout. Please try again.');
     }
 
     // Re-throw the error with context
-    console.error('[API] Request failed:', error);
     throw error;
   }
 }
@@ -339,14 +333,11 @@ export async function checkBackendHealth() {
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Backend is healthy:', data);
       return true;
     }
     
-    console.warn('⚠️ Backend responded but not OK:', response.status);
     return false;
   } catch (error) {
-    console.error('❌ Backend is unreachable:', error);
     return false;
   }
 }
@@ -451,21 +442,15 @@ export function isNetworkError(error) {
 
 // Validate API_BASE_URL on module load
 if (API_BASE_URL.includes('your-replit-username')) {
-  console.warn('⚠️ WARNING: API_BASE_URL is not configured!');
-  console.warn('Please update API_BASE_URL in /src/config/api.js with your actual Replit URL');
 }
 
 // Log API configuration on app start
-console.log('🔧 API Configuration:');
-console.log('Base URL:', API_BASE_URL);
 
 // Test backend connection on app start (optional - comment out if not needed)
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
   checkBackendHealth().then(isHealthy => {
     if (isHealthy) {
-      console.log('✅ Backend connection successful!');
     } else {
-      console.error('❌ Backend connection failed! Please check API_BASE_URL');
     }
   });
 }
@@ -508,7 +493,6 @@ const result = await uploadFileWithProgress(
   file,
   token,
   (progress) => {
-    console.log(`Upload progress: ${progress}%`);
   },
   'medical_bill',
   'medical'
@@ -521,15 +505,11 @@ try {
     body: JSON.stringify({ email, password, userType: 'individual' })
   });
   // Success
-  console.log('Login successful:', data);
 } catch (error) {
   // Handle specific error types
   if (isAuthError(error)) {
-    console.log('Invalid credentials');
   } else if (isNetworkError(error)) {
-    console.log('Network error');
   } else {
-    console.log('Error:', getErrorMessage(error));
   }
 }
 */

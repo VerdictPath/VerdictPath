@@ -34,7 +34,6 @@ class NotificationService {
     
     try {
       if (!Device.isDevice) {
-        console.log('Notifications only work on physical devices');
         return false;
       }
 
@@ -47,7 +46,6 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
-        console.log('Notification permission not granted');
         return false;
       }
 
@@ -62,7 +60,6 @@ class NotificationService {
 
       return true;
     } catch (error) {
-      console.error('Error requesting notification permissions:', error);
       return false;
     }
   }
@@ -81,7 +78,6 @@ class NotificationService {
       const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
       
       if (!projectId) {
-        console.warn('⚠️ No Expo project ID found - push notifications disabled');
         return null;
       }
       
@@ -90,15 +86,12 @@ class NotificationService {
       });
 
       this.expoPushToken = token.data;
-      console.log('Expo Push Token:', this.expoPushToken);
 
       return this.expoPushToken;
     } catch (error) {
       // Don't block app initialization - just log and continue
       if (error.message?.includes('EXPERIENCE_NOT_FOUND')) {
-        console.warn('⚠️ Expo project not found - push notifications disabled. This is OK for local development.');
       } else {
-        console.warn('⚠️ Error getting push token (non-blocking):', error.message || error);
       }
       return null;
     }
@@ -111,7 +104,6 @@ class NotificationService {
     
     try {
       if (!this.expoPushToken) {
-        console.log('No push token available');
         return false;
       }
 
@@ -140,10 +132,8 @@ class NotificationService {
       if (userId) {
         await AsyncStorage.setItem(`deviceRegistered_${userId}`, 'true');
       }
-      console.log('Device registered with backend:', data);
       return true;
     } catch (error) {
-      console.error('Error registering device with backend:', error);
       return false;
     }
   }
@@ -178,10 +168,8 @@ class NotificationService {
       if (userId) {
         await AsyncStorage.removeItem(`deviceRegistered_${userId}`);
       }
-      console.log('Device unregistered from backend');
       return true;
     } catch (error) {
-      console.error('Error unregistering device:', error);
       return false;
     }
   }
@@ -192,14 +180,12 @@ class NotificationService {
     }
     
     this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
       if (onNotificationReceived) {
         onNotificationReceived(notification);
       }
     });
 
     this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification tapped:', response);
       if (onNotificationTapped) {
         onNotificationTapped(response);
       }
@@ -223,7 +209,6 @@ class NotificationService {
     try {
       await Notifications.setBadgeCountAsync(count);
     } catch (error) {
-      console.error('Error setting badge count:', error);
     }
   }
 
@@ -235,7 +220,6 @@ class NotificationService {
     try {
       return await Notifications.getBadgeCountAsync();
     } catch (error) {
-      console.error('Error getting badge count:', error);
       return 0;
     }
   }
@@ -248,7 +232,6 @@ class NotificationService {
     try {
       await Notifications.setBadgeCountAsync(0);
     } catch (error) {
-      console.error('Error clearing badge:', error);
     }
   }
 
@@ -260,7 +243,6 @@ class NotificationService {
     try {
       await Notifications.dismissAllNotificationsAsync();
     } catch (error) {
-      console.error('Error dismissing notifications:', error);
     }
   }
 
@@ -282,7 +264,6 @@ class NotificationService {
 
       return true;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
       return false;
     }
   }
@@ -305,7 +286,6 @@ class NotificationService {
 
       return true;
     } catch (error) {
-      console.error('Error marking notification as clicked:', error);
       return false;
     }
   }
@@ -329,7 +309,6 @@ class NotificationService {
 
       return { success: true, count: data.count };
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
       return { success: false, error: error.message };
     }
   }
@@ -352,7 +331,6 @@ class NotificationService {
 
       return data.unreadCount || 0;
     } catch (error) {
-      console.error('Error fetching unread count:', error);
       return 0;
     }
   }
@@ -388,7 +366,6 @@ class NotificationService {
 
       return data.notifications || [];
     } catch (error) {
-      console.error('Error fetching notifications:', error);
       return [];
     }
   }
@@ -411,7 +388,6 @@ class NotificationService {
 
       return data;
     } catch (error) {
-      console.error('Error fetching notification preferences:', error);
       throw error;
     }
   }
@@ -435,7 +411,6 @@ class NotificationService {
 
       return data.preferences;
     } catch (error) {
-      console.error('Error updating notification preferences:', error);
       throw error;
     }
   }

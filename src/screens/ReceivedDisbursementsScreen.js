@@ -63,7 +63,6 @@ const ReceivedDisbursementsScreen = ({ user, onBack, userType, hideHeader = fals
 
       setDisbursements(response.disbursements || []);
     } catch (error) {
-      console.error('Error loading disbursements:', error);
     } finally {
       setLoading(false);
     }

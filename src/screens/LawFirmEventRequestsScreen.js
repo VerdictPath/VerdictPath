@@ -80,19 +80,16 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const requestsData = await requestsResponse.json();
-      console.log('[EventRequests] Requests response:', requestsData);
       
       // Fetch clients
       const clientsResponse = await fetch(`${API_BASE_URL}/api/lawfirm/clients`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const clientsData = await clientsResponse.json();
-      console.log('[EventRequests] Clients response:', clientsData);
       
       setEventRequests(requestsData.eventRequests || []);
       setClients(clientsData.clients || []);
     } catch (error) {
-      console.error('Error fetching data:', error);
       Alert.alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
@@ -158,7 +155,6 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to create event request');
       }
     } catch (error) {
-      console.error('Error creating event request:', error);
       Alert.alert('Error', 'Failed to create event request');
     }
   };
@@ -211,7 +207,6 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
         setShowDetailModal(true);
       }
     } catch (error) {
-      console.error('Error fetching request details:', error);
       Alert.alert('Error', 'Failed to load request details');
     }
   };
@@ -241,7 +236,6 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to confirm event');
       }
     } catch (error) {
-      console.error('Error confirming date:', error);
       Alert.alert('Error', 'Failed to confirm event');
     }
   };
