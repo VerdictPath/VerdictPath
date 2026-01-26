@@ -91,6 +91,7 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
         onNavigate('actions');
       }
     } catch (error) {
+      console.error('Error updating task:', error);
       alert('Error', 'Failed to update task status. Please try again.');
     } finally {
       setLoading(false);
@@ -116,6 +117,7 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
       }
       onNavigate('actions');
     } catch (error) {
+      console.error('Error reverting task:', error);
       alert('Error', 'Failed to revert task. Please try again.');
     } finally {
       setLoading(false);

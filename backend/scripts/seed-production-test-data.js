@@ -3,10 +3,12 @@ const bcrypt = require('bcryptjs');
 
 const seedProductionTestData = async () => {
   try {
+    console.log('🌱 Seeding production test data...\n');
     
     const password = bcrypt.hashSync('VerdictPath2025!', 10);
     
     // Step 1: Create test individual users
+    console.log('Step 1: Creating individual user accounts...');
     
     const users = [
       { email: 'john.doe@email.com', firstName: 'John', lastName: 'Doe', tier: 'free' },
@@ -32,9 +34,11 @@ const seedProductionTestData = async () => {
         [user.email, password, user.firstName, user.lastName, user.tier]
       );
       userIds[user.email] = result.rows[0].id;
+      console.log(`  ✅ ${user.email} (${user.tier})`);
     }
     
     // Step 2: Get law firm IDs
+    console.log('\nStep 2: Getting law firm IDs...');
     const lawFirmResult = await db.query(
       `SELECT id, email FROM law_firms WHERE email IN ('lawfirm@test.com', 'admin@testlegal.com')`
     );
@@ -42,9 +46,11 @@ const seedProductionTestData = async () => {
     const lawFirms = {};
     lawFirmResult.rows.forEach(lf => {
       lawFirms[lf.email] = lf.id;
+      console.log(`  ✅ ${lf.email} (ID: ${lf.id})`);
     });
     
     // Step 3: Connect clients to law firms
+    console.log('\nStep 3: Connecting clients to law firms...');
     
     // lawfirm@test.com connections
     const smithClients = [
@@ -62,6 +68,7 @@ const seedProductionTestData = async () => {
            ON CONFLICT DO NOTHING`,
           [lawFirms['lawfirm@test.com'], userIds[email]]
         );
+        console.log(`  ✅ Connected ${email} to Smith & Associates`);
       }
     }
     
@@ -82,16 +89,19 @@ const seedProductionTestData = async () => {
            ON CONFLICT DO NOTHING`,
           [lawFirms['admin@testlegal.com'], userIds[email]]
         );
+        console.log(`  ✅ Connected ${email} to Test Legal Group`);
       }
     }
     
     // Step 4: Get medical provider ID and connect patients
+    console.log('\nStep 4: Getting medical provider and connecting patients...');
     const providerResult = await db.query(
       `SELECT id FROM medical_providers WHERE email = 'testmed1@example.com'`
     );
     
     if (providerResult.rows.length > 0) {
       const providerId = providerResult.rows[0].id;
+      console.log(`  ✅ Test Medical Center (ID: ${providerId})`);
       
       const patients = [
         'testclient@example.com',
@@ -107,11 +117,13 @@ const seedProductionTestData = async () => {
              ON CONFLICT DO NOTHING`,
             [providerId, userIds[email]]
           );
+          console.log(`  ✅ Connected ${email} as patient`);
         }
       }
     }
     
     // Step 5: Add litigation progress for testclient@example.com
+    console.log('\nStep 5: Adding litigation progress...');
     if (userIds['testclient@example.com']) {
       const userId = userIds['testclient@example.com'];
       
@@ -122,11 +134,21 @@ const seedProductionTestData = async () => {
          SET current_stage_id = 1, current_stage_name = 'Pre-Litigation', total_coins_earned = 753, total_substages_completed = 20, progress_percentage = 10.00`,
         [userId]
       );
+      console.log(`  ✅ Added progress for testclient@example.com`);
     }
     
+    console.log('\n🎉 Production test data seeded successfully!');
+    console.log('\n📋 Summary:');
+    console.log(`   • ${Object.keys(userIds).length} individual users created`);
+    console.log(`   • lawfirm@test.com: 4 clients connected`);
+    console.log(`   • admin@testlegal.com: 5 clients connected`);
+    console.log(`   • testmed1@example.com: 3 patients connected`);
+    console.log(`   • testclient@example.com: Litigation progress added`);
+    console.log('\n🔑 All accounts use password: VerdictPath2025!');
     
     process.exit(0);
   } catch (error) {
+    console.error('❌ Error seeding data:', error);
     process.exit(1);
   }
 };

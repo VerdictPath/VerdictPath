@@ -114,6 +114,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
         setClients(response.clients);
       }
     } catch (error) {
+      console.error('Error fetching clients:', error);
       Alert.alert('Error', 'Failed to load clients');
     } finally {
       setIsLoading(false);
@@ -239,6 +240,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
         Alert.alert('Error', response.error || 'Failed to send notification');
       }
     } catch (error) {
+      console.error('Error sending notification:', error);
       Alert.alert('Error', 'Failed to send notification. Please try again.');
     } finally {
       setIsSending(false);

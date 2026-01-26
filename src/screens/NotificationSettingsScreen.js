@@ -105,6 +105,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         setCCEmailInput(data.cc_email_address ?? '');
       }
     } catch (error) {
+      console.error('Error fetching email CC preferences:', error);
     }
   };
 
@@ -133,6 +134,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         Alert.alert('Error', 'Failed to update email CC settings');
       }
     } catch (error) {
+      console.error('Error updating email CC preferences:', error);
       Alert.alert('Error', 'Failed to save email CC settings');
     } finally {
       setSaving(false);
@@ -186,6 +188,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         Alert.alert('Error', data.error || 'Failed to load notification preferences');
       }
     } catch (error) {
+      console.error('Error fetching preferences:', error);
       Alert.alert('Error', 'Failed to load notification preferences');
     } finally {
       setLoading(false);
@@ -236,6 +239,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         Alert.alert('Error', data.error || 'Failed to update preferences');
       }
     } catch (error) {
+      console.error('Error updating preferences:', error);
       Alert.alert('Error', 'Failed to update preferences');
     } finally {
       setSaving(false);

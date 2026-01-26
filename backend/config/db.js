@@ -11,6 +11,7 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
   // Don't exit process on pool errors in production
   if (process.env.NODE_ENV !== 'production') {
     process.exit(-1);

@@ -125,6 +125,7 @@ const requireConsent = (options = {}) => {
       
       next();
     } catch (error) {
+      console.error('Consent check error:', error);
       res.status(500).json({ message: 'Error checking consent' });
     }
   };
@@ -181,6 +182,7 @@ const checkConsent = (options = {}) => {
       
       next();
     } catch (error) {
+      console.error('Consent check error:', error);
       req.consent = { verified: false, error: true };
       next();
     }
@@ -213,6 +215,7 @@ const attachConsents = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Error attaching consents:', error);
     next(); // Continue even if this fails
   }
 };

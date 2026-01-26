@@ -9,6 +9,7 @@ function initializeFirebase() {
   }
 
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON not configured - Firebase features disabled');
     firebaseEnabled = false;
     return null;
   }
@@ -21,9 +22,11 @@ function initializeFirebase() {
       databaseURL: process.env.FIREBASE_DATABASE_URL
     });
 
+    console.log('✅ Firebase Admin SDK initialized successfully');
     firebaseEnabled = true;
     return firebaseApp;
   } catch (error) {
+    console.error('❌ Error initializing Firebase Admin SDK:', error);
     firebaseEnabled = false;
     return null;
   }
@@ -59,6 +62,7 @@ async function syncNotificationToFirebase(notification) {
   try {
     const db = getDatabase();
     if (!db) {
+      console.log('⚠️ Firebase not available - skipping notification sync');
       return { success: false, error: 'Firebase not configured' };
     }
     const path = getNotificationPath(
@@ -100,6 +104,7 @@ async function syncNotificationToFirebase(notification) {
 
     await db.ref(path).set(firebaseData);
     
+    console.log(`✅ Synced notification ${notification.id} to Firebase at ${path}`, {
       title: firebaseData.title,
       body: firebaseData.body,
       created_at: firebaseData.created_at,
@@ -107,6 +112,7 @@ async function syncNotificationToFirebase(notification) {
     });
     return { success: true, path };
   } catch (error) {
+    console.error('❌ Error syncing notification to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -138,8 +144,10 @@ async function syncStatusUpdateToFirebase(recipientType, recipientId, notificati
 
     await db.ref(path).update(firebaseUpdates);
     
+    console.log(`✅ Synced status update for notification ${notificationId} to Firebase`);
     return { success: true, path };
   } catch (error) {
+    console.error('❌ Error syncing status update to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -154,8 +162,10 @@ async function deleteNotificationFromFirebase(recipientType, recipientId, notifi
 
     await db.ref(path).remove();
     
+    console.log(`✅ Deleted notification ${notificationId} from Firebase`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error deleting notification from Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -178,8 +188,10 @@ async function syncUnreadCountToFirebase(recipientType, recipientId, count) {
 
     await db.ref(path).set(count);
     
+    console.log(`✅ Synced unread count (${count}) to Firebase for ${recipientType} ${recipientId}`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing unread count to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -224,13 +236,16 @@ async function batchSyncNotifications(notifications) {
         synced_at: new Date().toISOString()
       };
     } catch (error) {
+      console.error(`Error preparing notification ${notification.id} for batch sync:`, error);
     }
   }
 
   try {
     await db.ref().update(updates);
+    console.log(`✅ Batch synced ${Object.keys(updates).length} notifications to Firebase`);
     return { success: true, count: Object.keys(updates).length };
   } catch (error) {
+    console.error('❌ Error batch syncing notifications to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -248,6 +263,7 @@ async function syncNewMessageToFirebase(message, encrypted) {
     const conversationPath = `/chat/conversations/${message.conversation_id}`;
     
     if (!encrypted || !encrypted.iv || !encrypted.authTag || !encrypted.ciphertext) {
+      console.error('❌ Firebase sync failed: Invalid encryption components', {
         messageId: message.id,
         hasIv: !!encrypted?.iv,
         hasAuthTag: !!encrypted?.authTag,
@@ -278,8 +294,10 @@ async function syncNewMessageToFirebase(message, encrypted) {
       updated_at: new Date().toISOString()
     });
 
+    console.log(`✅ Synced message ${message.id} to Firebase for conversation ${message.conversation_id}`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing message to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -305,8 +323,10 @@ async function syncConversationToFirebase(conversation) {
 
     await db.ref(path).set(conversationData);
     
+    console.log(`✅ Synced conversation ${conversation.id} to Firebase`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing conversation to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -329,8 +349,10 @@ async function syncTypingIndicator(conversationId, participantType, participantI
       await db.ref(path).remove();
     }
 
+    console.log(`✅ Synced typing indicator for ${participantKey} in conversation ${conversationId}`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing typing indicator to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -350,8 +372,10 @@ async function syncChatUnreadCounts(participantType, participantId, unreadCounts
 
     await db.ref(path).set(countsObject);
     
+    console.log(`✅ Synced chat unread counts to Firebase for ${participantType} ${participantId}`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing chat unread counts to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -379,6 +403,7 @@ async function syncNegotiationToFirebase(negotiation) {
   try {
     const db = getDatabase();
     if (!db) {
+      console.log('⚠️ Firebase not available - skipping negotiation sync');
       return { success: false, error: 'Firebase not configured' };
     }
     
@@ -436,8 +461,10 @@ async function syncNegotiationToFirebase(negotiation) {
       db.ref(providerPath).set(negotiationData)
     ]);
 
+    console.log(`✅ Synced negotiation ${negotiation.id} to Firebase for both parties`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing negotiation to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -471,8 +498,10 @@ async function syncNegotiationUpdateToFirebase(negotiation, updates) {
       db.ref(providerPath).update(firebaseUpdates)
     ]);
 
+    console.log(`✅ Synced negotiation update ${negotiation.id} to Firebase`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error syncing negotiation update to Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -492,8 +521,10 @@ async function deleteNegotiationFromFirebase(lawFirmId, medicalProviderId, negot
       db.ref(providerPath).remove()
     ]);
 
+    console.log(`✅ Deleted negotiation ${negotiationId} from Firebase`);
     return { success: true };
   } catch (error) {
+    console.error('❌ Error deleting negotiation from Firebase:', error);
     return { success: false, error: error.message };
   }
 }
@@ -561,8 +592,10 @@ async function batchSyncNegotiations(negotiations) {
     }
 
     await db.ref().update(updates);
+    console.log(`✅ Batch synced ${negotiations.length} negotiations to Firebase`);
     return { success: true, count: negotiations.length };
   } catch (error) {
+    console.error('❌ Error batch syncing negotiations to Firebase:', error);
     return { success: false, error: error.message };
   }
 }

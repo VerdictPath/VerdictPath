@@ -11,6 +11,7 @@ const pool = new Pool({
  * This ensures old notifications get their complete data (title, body, etc.)
  */
 async function syncAllNotificationsToFirebase() {
+  console.log('🔄 Starting full notification sync to Firebase...\n');
   
   try {
     // Fetch ALL notifications from PostgreSQL
@@ -22,8 +23,10 @@ async function syncAllNotificationsToFirebase() {
     const result = await pool.query(query);
     const notifications = result.rows;
     
+    console.log(`📊 Found ${notifications.length} notifications in PostgreSQL\n`);
     
     if (notifications.length === 0) {
+      console.log('✅ No notifications to sync');
       return;
     }
     
@@ -44,14 +47,21 @@ async function syncAllNotificationsToFirebase() {
         
         // Log progress every 10 notifications
         if (synced % 10 === 0) {
+          console.log(`✅ Synced ${synced}/${notifications.length} notifications...`);
         }
       } catch (error) {
+        console.error(`❌ Failed to sync notification ${notification.id}:`, error.message);
         failed++;
       }
     }
     
+    console.log(`\n📊 Sync Complete:`);
+    console.log(`   ✅ Synced: ${synced}`);
+    console.log(`   ❌ Failed: ${failed}`);
+    console.log(`   📝 Total: ${notifications.length}\n`);
     
   } catch (error) {
+    console.error('❌ Fatal error during sync:', error);
     throw error;
   } finally {
     await pool.end();
@@ -62,9 +72,11 @@ async function syncAllNotificationsToFirebase() {
 if (require.main === module) {
   syncAllNotificationsToFirebase()
     .then(() => {
+      console.log('✅ Script completed successfully');
       process.exit(0);
     })
     .catch((error) => {
+      console.error('❌ Script failed:', error);
       process.exit(1);
     });
 }

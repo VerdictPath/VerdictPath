@@ -128,6 +128,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
       const clientList = response.clients || response.patients || [];
       setClients(clientList);
     } catch (error) {
+      console.error('Error fetching clients/patients:', error);
     }
   };
 
@@ -150,6 +151,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
         setAnalytics(response.analytics);
       }
     } catch (error) {
+      console.error('Error fetching analytics:', error);
     } finally {
       setIsLoading(false);
     }

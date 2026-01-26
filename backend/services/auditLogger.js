@@ -65,6 +65,7 @@ class AuditLogger {
       return result.rows[0];
     } catch (error) {
       // Audit logging failures are CRITICAL - they should never fail silently
+      console.error('CRITICAL: Audit logging failed!', {
         error: error.message,
         action,
         actorId,
@@ -189,6 +190,7 @@ class AuditLogger {
       const result = await db.query(query, values);
       return result.rows;
     } catch (error) {
+      console.error('Failed to retrieve audit logs:', error);
       throw error;
     }
   }
@@ -222,6 +224,7 @@ class AuditLogger {
       const result = await db.query(query, [since, limit]);
       return result.rows;
     } catch (error) {
+      console.error('Failed to retrieve failed login attempts:', error);
       throw error;
     }
   }
@@ -254,6 +257,7 @@ class AuditLogger {
       const result = await db.query(query, [since, threshold]);
       return result.rows;
     } catch (error) {
+      console.error('Failed to detect suspicious activity:', error);
       throw error;
     }
   }

@@ -92,6 +92,7 @@ async function checkNotificationPreferences(recipientType, recipientId, notifica
 
     return { allowed: true, reason: null };
   } catch (error) {
+    console.error('Error checking notification preferences:', error);
     return { allowed: true, reason: null };
   }
 }
@@ -119,6 +120,7 @@ function checkIfQuietHours(startTime, endTime, timezone) {
       return currentTimeMinutes >= startTimeMinutes || currentTimeMinutes < endTimeMinutes;
     }
   } catch (error) {
+    console.error('Error checking quiet hours:', error);
     return false;
   }
 }
@@ -151,6 +153,7 @@ async function syncNewNotificationToFirebase(notification) {
   try {
     await syncNotificationToFirebase(notification);
   } catch (error) {
+    console.error('Error syncing notification to Firebase (non-fatal):', error);
   }
 }
 
@@ -165,6 +168,7 @@ async function getUnreadCountForUser(recipientType, recipientId) {
     const result = await pool.query(query, [recipientType, recipientId]);
     return parseInt(result.rows[0].count) || 0;
   } catch (error) {
+    console.error('Error getting unread count:', error);
     return 0;
   }
 }
@@ -225,6 +229,7 @@ exports.registerDevice = async (req, res) => {
       device: result.rows[0]
     });
   } catch (error) {
+    console.error('Device registration error:', error);
     res.status(500).json({ error: 'Failed to register device' });
   }
 };
@@ -262,6 +267,7 @@ exports.unregisterDevice = async (req, res) => {
       device: result.rows[0]
     });
   } catch (error) {
+    console.error('Device unregistration error:', error);
     res.status(500).json({ error: 'Failed to unregister device' });
   }
 };
@@ -288,6 +294,7 @@ exports.getMyDevices = async (req, res) => {
       devices: result.rows
     });
   } catch (error) {
+    console.error('Get devices error:', error);
     res.status(500).json({ error: 'Failed to fetch devices' });
   }
 };
@@ -431,6 +438,7 @@ exports.sendNotification = async (req, res) => {
         ['sent', notification.id]
       );
       notification.status = 'sent';
+      console.log(`ℹ️  No Expo devices for ${recipientType} ${recipientId}, notification will sync to Firebase only`);
     }
 
     // Send SMS notification if user has SMS enabled and phone number
@@ -482,6 +490,7 @@ exports.sendNotification = async (req, res) => {
                 smsSent = smsResult.success;
                 
                 if (smsSent) {
+                  console.log(`📱 SMS notification sent to user ${recipientId} (phone number redacted for HIPAA)`);
                 }
               }
             }
@@ -489,6 +498,7 @@ exports.sendNotification = async (req, res) => {
         }
       }
     } catch (smsError) {
+      console.error('SMS notification error (non-fatal):', smsError);
     }
 
     // Send Email CC if recipient has email CC enabled
@@ -556,18 +566,22 @@ exports.sendNotification = async (req, res) => {
               
               emailCCSent = emailResult.success;
               if (emailCCSent) {
+                console.log(`📧 Email CC sent to ${ccEmail} for notification ${notification.id}`);
               }
             }
         }
       }
     } catch (emailCCError) {
+      console.error('Email CC error (non-fatal):', emailCCError);
     }
 
     syncNewNotificationToFirebase(notification).catch(err => 
+      console.error('Firebase sync error (non-fatal):', err)
     );
 
     const unreadCount = await getUnreadCountForUser(recipientType, recipientId);
     syncUnreadCountToFirebase(recipientType, recipientId, unreadCount).catch(err =>
+      console.error('Firebase unread count sync error (non-fatal):', err)
     );
 
     res.status(200).json({
@@ -582,6 +596,7 @@ exports.sendNotification = async (req, res) => {
       firebaseSynced: true
     });
   } catch (error) {
+    console.error('Send notification error:', error);
     res.status(500).json({ error: 'Failed to send notification' });
   }
 };
@@ -694,6 +709,7 @@ exports.getMyNotifications = async (req, res) => {
       );
       // Don't await - let syncing happen in background
       Promise.allSettled(syncPromises).catch(err => 
+        console.error('Firebase batch sync error (non-fatal):', err)
       );
     }
 
@@ -704,6 +720,7 @@ exports.getMyNotifications = async (req, res) => {
       offset: parseInt(offset)
     });
   } catch (error) {
+    console.error('Get notifications error:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 };
@@ -742,6 +759,7 @@ exports.getNotificationById = async (req, res) => {
       notification
     });
   } catch (error) {
+    console.error('Get notification error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch notification' });
   }
 };
@@ -786,6 +804,7 @@ exports.markAsRead = async (req, res) => {
       notification
     });
   } catch (error) {
+    console.error('Mark as read error:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 };
@@ -828,6 +847,7 @@ exports.markAllAsRead = async (req, res) => {
       count: markedCount
     });
   } catch (error) {
+    console.error('Mark all as read error:', error);
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 };
@@ -868,6 +888,7 @@ exports.markAsClicked = async (req, res) => {
       notification
     });
   } catch (error) {
+    console.error('Mark as clicked error:', error);
     res.status(500).json({ error: 'Failed to mark notification as clicked' });
   }
 };
@@ -893,6 +914,7 @@ exports.getUnreadCount = async (req, res) => {
       unreadCount: parseInt(result.rows[0].unread_count)
     });
   } catch (error) {
+    console.error('Get unread count error:', error);
     res.status(500).json({ error: 'Failed to get unread count' });
   }
 };
@@ -937,6 +959,7 @@ exports.sendToAllClients = async (req, res) => {
         // Check user preferences for this client
         const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
         if (!prefCheck.allowed) {
+          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
           return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1001,10 +1024,12 @@ exports.sendToAllClients = async (req, res) => {
           const unreadCount = await getUnreadCountForUser('user', client.id);
           await syncUnreadCountToFirebase('user', client.id, unreadCount);
         } catch (err) {
+          console.error(`Firebase sync error for client ${client.id} (non-fatal):`, err);
         }
 
         return { success: true, clientId: client.id };
       } catch (error) {
+        console.error(`Failed to send notification to client ${client.id}:`, error);
         return { success: false, clientId: client.id, error: error.message };
       }
     });
@@ -1018,6 +1043,7 @@ exports.sendToAllClients = async (req, res) => {
       successCount
     });
   } catch (error) {
+    console.error('Send to all clients error:', error);
     res.status(500).json({ error: 'Failed to send notifications' });
   }
 };
@@ -1072,6 +1098,7 @@ exports.sendToClients = async (req, res) => {
         // Check user preferences for this client
         const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
         if (!prefCheck.allowed) {
+          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
           return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1136,10 +1163,12 @@ exports.sendToClients = async (req, res) => {
           const unreadCount = await getUnreadCountForUser('user', client.id);
           await syncUnreadCountToFirebase('user', client.id, unreadCount);
         } catch (err) {
+          console.error(`Firebase sync error for client ${client.id} (non-fatal):`, err);
         }
 
         return { success: true, clientId: client.id };
       } catch (error) {
+        console.error(`Failed to send notification to client ${client.id}:`, error);
         return { success: false, clientId: client.id, error: error.message };
       }
     });
@@ -1154,6 +1183,7 @@ exports.sendToClients = async (req, res) => {
       successCount
     });
   } catch (error) {
+    console.error('Send to clients error:', error);
     res.status(500).json({ error: 'Failed to send notifications' });
   }
 };
@@ -1280,15 +1310,21 @@ exports.sendToClient = async (req, res) => {
     }
 
     // Sync to Firebase for real-time updates
+    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
     try {
       await syncNewNotificationToFirebase(notification);
+      console.log('✅ Notification synced to Firebase successfully');
     } catch (err) {
+      console.error('❌ Firebase sync error (non-fatal):', err);
     }
     
     const unreadCount = await getUnreadCountForUser('user', clientId);
+    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
     try {
       await syncUnreadCountToFirebase('user', clientId, unreadCount);
+      console.log('✅ Unread count synced to Firebase successfully');
     } catch (err) {
+      console.error('❌ Firebase unread count sync error (non-fatal):', err);
     }
 
     res.status(200).json({
@@ -1297,6 +1333,7 @@ exports.sendToClient = async (req, res) => {
       devicesReached: pushResults.filter(r => r.status === 'fulfilled').length
     });
   } catch (error) {
+    console.error('Send to client error:', error);
     res.status(500).json({ error: 'Failed to send notification' });
   }
 };
@@ -1341,6 +1378,7 @@ exports.sendToAllPatients = async (req, res) => {
         // Check user preferences for this patient
         const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
         if (!prefCheck.allowed) {
+          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
           return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1405,10 +1443,12 @@ exports.sendToAllPatients = async (req, res) => {
           const unreadCount = await getUnreadCountForUser('user', patient.id);
           await syncUnreadCountToFirebase('user', patient.id, unreadCount);
         } catch (err) {
+          console.error(`Firebase sync error for patient ${patient.id} (non-fatal):`, err);
         }
 
         return { success: true, patientId: patient.id };
       } catch (error) {
+        console.error(`Failed to send notification to patient ${patient.id}:`, error);
         return { success: false, patientId: patient.id, error: error.message };
       }
     });
@@ -1422,6 +1462,7 @@ exports.sendToAllPatients = async (req, res) => {
       successCount
     });
   } catch (error) {
+    console.error('Send to all patients error:', error);
     res.status(500).json({ error: 'Failed to send notifications' });
   }
 };
@@ -1476,6 +1517,7 @@ exports.sendToPatients = async (req, res) => {
         // Check user preferences for this patient
         const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
         if (!prefCheck.allowed) {
+          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
           return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1540,10 +1582,12 @@ exports.sendToPatients = async (req, res) => {
           const unreadCount = await getUnreadCountForUser('user', patient.id);
           await syncUnreadCountToFirebase('user', patient.id, unreadCount);
         } catch (err) {
+          console.error(`Firebase sync error for patient ${patient.id} (non-fatal):`, err);
         }
 
         return { success: true, patientId: patient.id };
       } catch (error) {
+        console.error(`Failed to send notification to patient ${patient.id}:`, error);
         return { success: false, patientId: patient.id, error: error.message };
       }
     });
@@ -1558,6 +1602,7 @@ exports.sendToPatients = async (req, res) => {
       successCount
     });
   } catch (error) {
+    console.error('Send to patients error:', error);
     res.status(500).json({ error: 'Failed to send notifications' });
   }
 };
@@ -1684,15 +1729,21 @@ exports.sendToPatient = async (req, res) => {
     }
 
     // Sync to Firebase for real-time updates
+    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
     try {
       await syncNewNotificationToFirebase(notification);
+      console.log('✅ Notification synced to Firebase successfully');
     } catch (err) {
+      console.error('❌ Firebase sync error (non-fatal):', err);
     }
     
     const unreadCount = await getUnreadCountForUser('user', patientId);
+    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
     try {
       await syncUnreadCountToFirebase('user', patientId, unreadCount);
+      console.log('✅ Unread count synced to Firebase successfully');
     } catch (err) {
+      console.error('❌ Firebase unread count sync error (non-fatal):', err);
     }
 
     res.status(200).json({
@@ -1701,6 +1752,7 @@ exports.sendToPatient = async (req, res) => {
       devicesReached: pushResults.filter(r => r.status === 'fulfilled').length
     });
   } catch (error) {
+    console.error('Send to patient error:', error);
     res.status(500).json({ error: 'Failed to send notification' });
   }
 };
@@ -1795,6 +1847,7 @@ exports.getMyNotificationStats = async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Get notification stats error:', error);
     res.status(500).json({ error: 'Failed to get notification statistics' });
   }
 };
@@ -1882,6 +1935,7 @@ exports.getNotificationHistory = async (req, res) => {
       notifications: historyResult.rows
     });
   } catch (error) {
+    console.error('Get notification history error:', error);
     res.status(500).json({ error: 'Failed to get notification history' });
   }
 };
@@ -1933,6 +1987,7 @@ exports.getPreferences = async (req, res) => {
       marketing_notifications: prefs.marketing_notifications
     });
   } catch (error) {
+    console.error('Error fetching preferences:', error);
     res.status(500).json({ error: 'Failed to fetch notification preferences' });
   }
 };
@@ -2088,6 +2143,7 @@ exports.updatePreferences = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error updating preferences:', error);
     res.status(500).json({ error: 'Failed to update notification preferences' });
   }
 };
@@ -2311,6 +2367,7 @@ exports.getNotificationAnalytics = async (req, res) => {
       clientId: clientId || null
     });
   } catch (error) {
+    console.error('Error fetching notification analytics:', error);
     res.status(500).json({ error: 'Failed to fetch notification analytics' });
   }
 };
@@ -2464,6 +2521,7 @@ exports.sendToConnection = async (req, res) => {
         created_at: new Date().toISOString()
       });
     } catch (firebaseError) {
+      console.error('Error syncing notification to Firebase:', firebaseError);
       // Continue even if Firebase sync fails
     }
 
@@ -2473,6 +2531,7 @@ exports.sendToConnection = async (req, res) => {
       notificationId
     });
   } catch (error) {
+    console.error('Error sending notification to connection:', error);
     res.status(500).json({ error: 'Failed to send notification' });
   }
 };
@@ -2513,6 +2572,7 @@ exports.getMyConnectionsForNotification = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching connections for notification:', error);
     res.status(500).json({ error: 'Failed to fetch connections' });
   }
 };
@@ -2631,6 +2691,7 @@ exports.getSentNotifications = async (req, res) => {
       notifications
     });
   } catch (error) {
+    console.error('Error fetching sent notifications:', error);
     res.status(500).json({ error: 'Failed to fetch sent notifications' });
   }
 };
@@ -2684,6 +2745,7 @@ exports.getEmailCCPreferences = async (req, res) => {
       cc_system_alerts: prefs.cc_system_alerts
     });
   } catch (error) {
+    console.error('Error fetching email CC preferences:', error);
     res.status(500).json({ error: 'Failed to fetch email CC preferences' });
   }
 };
@@ -2789,6 +2851,7 @@ exports.updateEmailCCPreferences = async (req, res) => {
       preferences: result?.rows[0] || {}
     });
   } catch (error) {
+    console.error('Error updating email CC preferences:', error);
     res.status(500).json({ error: 'Failed to update email CC preferences' });
   }
 };
@@ -2830,6 +2893,7 @@ exports.archiveNotification = async (req, res) => {
       message: 'Notification archived successfully'
     });
   } catch (error) {
+    console.error('Error archiving notification:', error);
     res.status(500).json({ error: 'Failed to archive notification' });
   }
 };

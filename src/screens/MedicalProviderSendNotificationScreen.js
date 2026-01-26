@@ -87,6 +87,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
   const fetchPatients = async () => {
     try {
       setIsLoading(true);
+      console.log('[SendNotification] Fetching patients with token:', user?.token ? 'Present' : 'Missing');
       
       const response = await apiRequest(API_ENDPOINTS.MEDICALPROVIDER.PATIENTS, {
         method: 'GET',
@@ -95,13 +96,19 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
         },
       });
 
+      console.log('[SendNotification] Full API response:', JSON.stringify(response, null, 2));
+      console.log('[SendNotification] Patients array:', response.patients);
       
       if (response.patients && response.patients.length > 0) {
+        console.log('[SendNotification] First patient data:', JSON.stringify(response.patients[0], null, 2));
+        console.log('[SendNotification] Patient fields available:', Object.keys(response.patients[0]));
         setPatients(response.patients);
       } else {
+        console.log('[SendNotification] No patients in response');
         setPatients([]);
       }
     } catch (error) {
+      console.error('[SendNotification] Error fetching patients:', error);
       Alert.alert('Error', 'Failed to load patients');
     } finally {
       setIsLoading(false);
@@ -190,6 +197,7 @@ const MedicalProviderSendNotificationScreen = ({ user, onBack }) => {
         Alert.alert('Error', response.error || 'Failed to send notification');
       }
     } catch (error) {
+      console.error('Error sending notification:', error);
       Alert.alert('Error', 'Failed to send notification. Please try again.');
     } finally {
       setIsSending(false);

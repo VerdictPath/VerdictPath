@@ -42,6 +42,7 @@ const LawFirmActivityDashboardScreen = ({ user, onBack, onNavigateToUser }) => {
 
       setSummary(response.summary);
     } catch (error) {
+      console.error('[ActivityDashboard] Load error:', error);
     } finally {
       setLoading(false);
     }

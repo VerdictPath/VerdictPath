@@ -49,6 +49,7 @@ const getMyConnections = async (req, res) => {
 
     res.json(connections);
   } catch (error) {
+    console.error('Error fetching connections:', error);
     res.status(500).json({ error: 'Failed to fetch connections' });
   }
 };
@@ -174,6 +175,7 @@ const updateLawFirm = async (req, res) => {
             'accepted'
           ).catch(err => console.error('Error sending connection notification email:', err));
         } catch (emailError) {
+          console.error('Error preparing connection email:', emailError);
         }
       }
     }
@@ -188,6 +190,7 @@ const updateLawFirm = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error updating law firm connection:', error);
     res.status(500).json({ error: 'Failed to update law firm connection' });
   }
 };
@@ -281,6 +284,7 @@ const addMedicalProvider = async (req, res) => {
           'accepted'
         ).catch(err => console.error('Error sending provider connection email:', err));
       } catch (emailError) {
+        console.error('Error preparing provider connection email:', emailError);
       }
     }
 
@@ -295,6 +299,7 @@ const addMedicalProvider = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error adding medical provider connection:', error);
     res.status(500).json({ error: 'Failed to add medical provider connection' });
   }
 };
@@ -348,6 +353,7 @@ const disconnectLawFirm = async (req, res) => {
       message: 'Successfully disconnected from law firm. You can now connect with a different law firm if you have their code.'
     });
   } catch (error) {
+    console.error('Error disconnecting from law firm:', error);
     res.status(500).json({ error: 'Failed to disconnect from law firm' });
   }
 };
@@ -391,6 +397,7 @@ const removeMedicalProvider = async (req, res) => {
       message: 'Successfully removed medical provider from your connections.'
     });
   } catch (error) {
+    console.error('Error removing medical provider:', error);
     res.status(500).json({ error: 'Failed to remove medical provider' });
   }
 };
@@ -431,6 +438,7 @@ const getMedicalProviderLawFirms = async (req, res) => {
       lawFirms: result.rows
     });
   } catch (error) {
+    console.error('Error fetching law firm connections:', error);
     res.status(500).json({ error: 'Failed to fetch law firm connections' });
   }
 };
@@ -495,6 +503,7 @@ const addLawFirmConnection = async (req, res) => {
       lawFirm: lawFirm
     });
   } catch (error) {
+    console.error('Error adding law firm connection:', error);
     res.status(500).json({ error: 'Failed to add law firm connection' });
   }
 };
@@ -545,6 +554,7 @@ const removeLawFirmConnection = async (req, res) => {
       message: 'Successfully removed law firm connection.'
     });
   } catch (error) {
+    console.error('Error removing law firm connection:', error);
     res.status(500).json({ error: 'Failed to remove law firm connection' });
   }
 };
@@ -585,6 +595,7 @@ const getLawFirmMedicalProviders = async (req, res) => {
       medicalProviders: result.rows
     });
   } catch (error) {
+    console.error('Error fetching medical provider connections:', error);
     res.status(500).json({ error: 'Failed to fetch medical provider connections' });
   }
 };
@@ -649,6 +660,7 @@ const addMedicalProviderConnection = async (req, res) => {
       medicalProvider: provider
     });
   } catch (error) {
+    console.error('Error adding medical provider connection:', error);
     res.status(500).json({ error: 'Failed to add medical provider connection' });
   }
 };
@@ -699,6 +711,7 @@ const removeMedicalProviderConnection = async (req, res) => {
       message: 'Successfully removed medical provider connection.'
     });
   } catch (error) {
+    console.error('Error removing medical provider connection:', error);
     res.status(500).json({ error: 'Failed to remove medical provider connection' });
   }
 };

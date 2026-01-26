@@ -52,6 +52,7 @@ const DashboardScreen = ({
         });
       }
     } catch (error) {
+      console.error('Error fetching connections:', error);
     } finally {
       setLoadingConnections(false);
     }
@@ -66,6 +67,7 @@ const DashboardScreen = ({
     try {
       setCheckingStripeStatus(true);
       if (!user?.token) {
+        console.error('No user token available');
         return;
       }
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS}`, {
@@ -79,6 +81,7 @@ const DashboardScreen = ({
         setStripeAccountStatus(data);
       }
     } catch (error) {
+      console.error('Error checking Stripe account status:', error);
     } finally {
       setCheckingStripeStatus(false);
     }

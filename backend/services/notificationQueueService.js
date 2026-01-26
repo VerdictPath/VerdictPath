@@ -32,6 +32,7 @@ function calculateQuietHoursEnd(endTime, timezone) {
     // Force Z normalization by explicitly converting to UTC ISO string
     return quietEndInUserTz.toUTC().toISO({ suppressMilliseconds: false, includeOffset: false });
   } catch (error) {
+    console.error('Error calculating quiet hours end:', error);
     // Default to 1 hour from now as fallback with Z normalization
     const fallback = DateTime.now().plus({ hours: 1 }).toUTC().toISO({ suppressMilliseconds: false, includeOffset: false });
     return fallback;

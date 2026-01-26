@@ -39,6 +39,7 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         });
         setIsReady(true);
       } catch (error) {
+        console.error('[AvatarVideoBackground] Load error:', error);
       }
     }
   };
@@ -152,9 +153,11 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         resizeMode={ResizeMode.COVER}
         style={[styles.video, getVideoStyle()]}
         onLoad={() => {
+          console.log('[AvatarVideoBackground] Video loaded');
           setIsReady(true);
         }}
         onError={(error) => {
+          console.error('[AvatarVideoBackground] Error:', error);
         }}
         posterStyle={styles.poster}
         usePoster={!isReady}

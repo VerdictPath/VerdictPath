@@ -354,6 +354,7 @@ exports.createUser = async (req, res) => {
       notificationResults: credentialResults
     });
   } catch (error) {
+    console.error('Create user error:', error);
     
     await auditLogger.log({
       actorId: req.medicalProviderUser?.id || null,
@@ -453,6 +454,7 @@ exports.getAllUsers = async (req, res) => {
       count: users.length
     });
   } catch (error) {
+    console.error('Get users error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve users'
@@ -530,6 +532,7 @@ exports.getUserById = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Get user error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve user'
@@ -748,6 +751,7 @@ exports.updateUser = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Update user error:', error);
     
     await auditLogger.log({
       actorId: req.medicalProviderUser?.id || null,
@@ -864,6 +868,7 @@ exports.deactivateUser = async (req, res) => {
       message: 'User deactivated successfully'
     });
   } catch (error) {
+    console.error('Deactivate user error:', error);
     
     await auditLogger.log({
       actorId: req.medicalProviderUser?.id || null,
@@ -969,6 +974,7 @@ exports.reactivateUser = async (req, res) => {
       message: 'User reactivated successfully'
     });
   } catch (error) {
+    console.error('Reactivate user error:', error);
     
     await auditLogger.log({
       actorId: req.medicalProviderUser?.id || null,

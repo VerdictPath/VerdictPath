@@ -19,7 +19,9 @@ const router = express.Router();
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe configured successfully');
 } else {
+  console.warn('⚠️  STRIPE_SECRET_KEY not found - payment routes will be disabled');
 }
 
 router.post('/create-payment-intent', authenticateToken, async (req, res) => {
@@ -52,6 +54,7 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
       paymentIntentId: paymentIntent.id
     });
   } catch (error) {
+    console.error('Error creating payment intent:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -120,6 +123,7 @@ router.post('/create-subscription', authenticateToken, async (req, res) => {
       clientSecret: subscription.latest_invoice.payment_intent.client_secret
     });
   } catch (error) {
+    console.error('Error creating subscription:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -161,6 +165,7 @@ router.post('/cancel-subscription', authenticateToken, async (req, res) => {
       subscription: subscription
     });
   } catch (error) {
+    console.error('Error cancelling subscription:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -203,6 +208,7 @@ router.get('/subscription-status', authenticateToken, async (req, res) => {
       cancelAtPeriodEnd: subscription.cancel_at_period_end
     });
   } catch (error) {
+    console.error('Error fetching subscription status:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -212,6 +218,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
+    console.warn('Stripe webhook secret not configured');
     return res.status(400).send('Webhook secret not configured');
   }
 
@@ -220,6 +227,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -227,6 +235,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
+        console.log('PaymentIntent succeeded:', paymentIntent.id);
         break;
 
       case 'customer.subscription.created':
@@ -240,6 +249,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             'UPDATE users SET subscription_tier = $1, stripe_subscription_id = $2 WHERE id = $3',
             [tier, subscription.id, userId]
           );
+          console.log(`Updated user ${userId} to ${tier} tier`);
         }
         break;
 
@@ -252,14 +262,17 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             'UPDATE users SET subscription_tier = $1, stripe_subscription_id = NULL WHERE id = $2',
             ['Free', deletedUserId]
           );
+          console.log(`Downgraded user ${deletedUserId} to Free tier`);
         }
         break;
 
       default:
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
     res.json({ received: true });
   } catch (error) {
+    console.error('Error processing webhook:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
@@ -273,6 +286,7 @@ router.get('/prices', async (req, res) => {
 
     res.json({ prices: prices.data });
   } catch (error) {
+    console.error('Error fetching prices:', error);
     res.status(500).json({ error: error.message });
   }
 });

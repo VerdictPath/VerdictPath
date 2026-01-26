@@ -34,6 +34,7 @@ class S3Service {
     this.region = process.env.AWS_REGION;
     this.initialized = true;
 
+    console.log(`[S3 Service] Initialized with bucket: ${this.bucketName}, region: ${this.region}`);
   }
 
   generateS3Key(userId, fileType, originalFilename) {
@@ -50,6 +51,7 @@ class S3Service {
     try {
       const s3Key = this.generateS3Key(userId, fileType, originalFilename);
 
+      console.log(`[S3 Upload] Starting multipart upload for ${originalFilename} (${fileBuffer.length} bytes) to ${s3Key}`);
 
       const upload = new Upload({
         client: this.s3Client,
@@ -72,10 +74,12 @@ class S3Service {
 
       upload.on('httpUploadProgress', (progress) => {
         const percentComplete = Math.round((progress.loaded / progress.total) * 100);
+        console.log(`[S3 Upload Progress] ${originalFilename}: ${percentComplete}% (${progress.loaded}/${progress.total} bytes)`);
       });
 
       const result = await upload.done();
 
+      console.log(`[S3 Upload] Successfully uploaded ${originalFilename} to ${s3Key}`);
 
       return {
         success: true,
@@ -90,6 +94,7 @@ class S3Service {
         uploadedAt: new Date().toISOString()
       };
     } catch (error) {
+      console.error('[S3 Upload] Multipart upload failed:', error);
       throw new Error(`S3 upload failed: ${error.message}`);
     }
   }
@@ -110,6 +115,7 @@ class S3Service {
         expiresIn: expiresInSeconds
       });
 
+      console.log(`[S3 Presigned URL] Generated URL for ${s3Key} (expires in ${expiresInSeconds}s)`);
 
       return {
         url: presignedUrl,
@@ -117,6 +123,7 @@ class S3Service {
         expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString()
       };
     } catch (error) {
+      console.error('[S3 Presigned URL] Generation failed:', error);
       throw new Error(`Failed to generate presigned URL: ${error.message}`);
     }
   }
@@ -131,9 +138,11 @@ class S3Service {
       });
 
       await this.s3Client.send(command);
+      console.log(`[S3 Delete] Successfully deleted ${s3Key}`);
 
       return { success: true, key: s3Key };
     } catch (error) {
+      console.error('[S3 Delete] Failed:', error);
       throw new Error(`Failed to delete file: ${error.message}`);
     }
   }
@@ -184,6 +193,7 @@ class S3Service {
         serverSideEncryption: response.ServerSideEncryption
       };
     } catch (error) {
+      console.error('[S3 Metadata] Failed to retrieve metadata:', error);
       throw new Error(`Failed to get file metadata: ${error.message}`);
     }
   }

@@ -64,6 +64,7 @@ async function sendEmail(toEmail, subject, htmlContent) {
 
   try {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      console.warn('SMTP not configured, skipping email send');
       return { success: false, error: 'Email service not configured' };
     }
     
@@ -73,8 +74,10 @@ async function sendEmail(toEmail, subject, htmlContent) {
     );
     
     const info = await Promise.race([sendEmailPromise, timeoutPromise]);
+    console.log(`Email sent to ${toEmail}: ${subject}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
+    console.error(`Failed to send email to ${toEmail}:`, error.message);
     return { success: false, error: error.message };
   }
 }

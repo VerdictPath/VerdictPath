@@ -51,6 +51,7 @@ router.get('/history', authenticateToken, isLawFirm, requirePremiumLawFirm, asyn
       }))
     });
   } catch (error) {
+    console.error('Error fetching disbursement history:', error);
     res.status(500).json({ error: 'Failed to fetch disbursement history' });
   }
 });
@@ -100,6 +101,7 @@ router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawF
       }))
     });
   } catch (error) {
+    console.error('Error fetching client providers:', error);
     res.status(500).json({ error: 'Failed to fetch medical providers' });
   }
 });
@@ -364,8 +366,19 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
             : retrievedIntent.latest_charge?.id;
         }
 
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`💳 PAYMENT INTENT CREATED & CONFIRMED`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+        console.log(`🆔 PaymentIntent ID: ${paymentIntentId}`);
+        console.log(`🔗 Charge ID: ${chargeId}`);
+        console.log(`💵 Amount: $${totalAmount}`);
+        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
+        console.log(`📝 Settlement: ${settlement.case_name || settlementId}`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
 
       } catch (stripeError) {
+        console.error('PaymentIntent creation failed:', stripeError);
         await client.query('ROLLBACK');
         return res.status(500).json({ 
           error: 'Failed to charge law firm for disbursement',
@@ -425,6 +438,7 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
             stripeTransferId: transfer.id
           });
         } catch (stripeError) {
+          console.error(`Stripe transfer failed for provider ${provider.provider_name}:`, stripeError);
           medicalTransferResults.push({
             providerId: payment.providerId,
             providerName: provider.provider_name,
@@ -454,6 +468,7 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
         });
         clientTransferId = transfer.id;
       } catch (stripeError) {
+        console.error('Stripe transfer to client failed:', stripeError);
         await client.query('ROLLBACK');
         return res.status(500).json({ 
           error: 'Failed to transfer funds to client',
@@ -463,6 +478,16 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
 
       // Log platform fee collection
       if (platformFee > 0) {
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`💰 PLATFORM FEE COLLECTED`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
+        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+        console.log(`💵 Amount: $${platformFee}`);
+        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
+        console.log(`👤 Client: ${settlement.client_first_name} ${settlement.client_last_name}`);
+        console.log(`📝 Settlement ID: ${settlementId}`);
+        console.log(`🆔 PaymentIntent: ${paymentIntentId}`);
+        console.log(`═══════════════════════════════════════════════════════════════`);
       }
     }
 
@@ -642,12 +667,14 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
         }
       }
     } catch (emailError) {
+      console.error('Error sending disbursement emails:', emailError);
     }
 
     res.json(response);
 
   } catch (error) {
     await client.query('ROLLBACK');
+    console.error('Disbursement processing error:', error);
     res.status(500).json({ 
       error: error.message || 'Failed to process disbursement' 
     });
@@ -718,6 +745,7 @@ router.get('/received', authenticateToken, async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Error fetching received disbursements:', error);
     res.status(500).json({ error: 'Failed to fetch received disbursements' });
   }
 });
@@ -782,6 +810,7 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching disbursement details:', error);
     res.status(500).json({ error: 'Failed to fetch disbursement details' });
   }
 });
@@ -857,6 +886,7 @@ router.put('/:id/confirm-manual', authenticateToken, isLawFirm, requirePremiumLa
 
   } catch (error) {
     await client.query('ROLLBACK');
+    console.error('Error confirming manual disbursement:', error);
     res.status(500).json({ error: 'Failed to confirm disbursement' });
   } finally {
     client.release();

@@ -47,6 +47,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       const data = await response.json();
       setEventRequests(data.eventRequests || []);
     } catch (error) {
+      console.error('Error fetching event requests:', error);
       Alert.alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
@@ -83,6 +84,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
         setShowDetailModal(true);
       }
     } catch (error) {
+      console.error('Error fetching request details:', error);
       Alert.alert('Error', 'Failed to load request details');
     }
   };
@@ -165,6 +167,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to submit dates');
       }
     } catch (error) {
+      console.error('Error submitting dates:', error);
       Alert.alert('Error', 'Failed to submit dates');
     }
   };
@@ -194,6 +197,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to select date');
       }
     } catch (error) {
+      console.error('Error selecting date:', error);
       Alert.alert('Error', 'Failed to select date');
     }
   };

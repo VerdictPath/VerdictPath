@@ -71,6 +71,7 @@ exports.grantConsent = async (req, res) => {
       consent
     });
   } catch (error) {
+    console.error('Error granting consent:', error);
     res.status(500).json({ message: 'Error granting consent', error: error.message });
   }
 };
@@ -120,6 +121,7 @@ exports.revokeConsent = async (req, res) => {
       consent: revokedConsent
     });
   } catch (error) {
+    console.error('Error revoking consent:', error);
     res.status(500).json({ message: 'Error revoking consent', error: error.message });
   }
 };
@@ -142,6 +144,7 @@ exports.getMyConsents = async (req, res) => {
       consents
     });
   } catch (error) {
+    console.error('Error getting patient consents:', error);
     res.status(500).json({ message: 'Error retrieving consents', error: error.message });
   }
 };
@@ -166,6 +169,7 @@ exports.getConsentDetails = async (req, res) => {
     
     res.json({ consent });
   } catch (error) {
+    console.error('Error getting consent details:', error);
     res.status(500).json({ message: 'Error retrieving consent', error: error.message });
   }
 };
@@ -207,6 +211,7 @@ exports.checkConsentStatus = async (req, res) => {
       grantedToId
     });
   } catch (error) {
+    console.error('Error checking consent status:', error);
     res.status(500).json({ message: 'Error checking consent', error: error.message });
   }
 };
@@ -243,6 +248,7 @@ exports.getGrantedConsents = async (req, res) => {
       consents
     });
   } catch (error) {
+    console.error('Error getting granted consents:', error);
     res.status(500).json({ message: 'Error retrieving consents', error: error.message });
   }
 };
@@ -283,6 +289,7 @@ exports.autoGrantConsentToFirm = async (clientId, firmId) => {
     
     return consent;
   } catch (error) {
+    console.error('Error auto-granting consent:', error);
     throw error;
   }
 };

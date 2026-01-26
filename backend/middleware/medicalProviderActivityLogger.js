@@ -200,6 +200,7 @@ async function logActivity({
       deviceInfo
     ]);
   } catch (error) {
+    console.error('Activity logging error:', error);
   }
 }
 
@@ -248,6 +249,7 @@ const logActivityMiddleware = (action, options = {}) => {
         };
 
         logActivity(logData).catch(err => {
+          console.error('Failed to log activity:', err);
         });
       }
       

@@ -32,10 +32,12 @@ const MedicalProviderActivityDashboardScreen = ({
   const loadActivitySummary = async () => {
     try {
       setLoading(true);
+      console.log('[MedicalActivityDashboard] Loading summary with token:', user?.token ? 'Present' : 'Missing');
       
       const dateFilters = getDateFilters(timeFilter);
       const queryString = new URLSearchParams(dateFilters).toString();
       const url = `${API_ENDPOINTS.MEDICAL_PROVIDER_ACTIVITY.GET_SUMMARY}?${queryString}`;
+      console.log('[MedicalActivityDashboard] API URL:', url);
       
       const response = await apiRequest(url, {
         method: 'GET',
@@ -44,8 +46,10 @@ const MedicalProviderActivityDashboardScreen = ({
         },
       });
 
+      console.log('[MedicalActivityDashboard] Summary loaded successfully:', response);
       setSummary(response.summary);
     } catch (error) {
+      console.error('[MedicalActivityDashboard] Load error:', error);
     } finally {
       setLoading(false);
     }

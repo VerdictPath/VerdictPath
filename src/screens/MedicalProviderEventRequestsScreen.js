@@ -54,6 +54,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
       setEventRequests(requestsData.eventRequests || []);
       setPatients(patientsData.patients || []);
     } catch (error) {
+      console.error('Error fetching data:', error);
       Alert.alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
@@ -96,6 +97,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to create event request');
       }
     } catch (error) {
+      console.error('Error creating event request:', error);
       Alert.alert('Error', 'Failed to create event request');
     }
   };
@@ -114,6 +116,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
         setShowDetailModal(true);
       }
     } catch (error) {
+      console.error('Error fetching request details:', error);
       Alert.alert('Error', 'Failed to load request details');
     }
   };
@@ -143,6 +146,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
         Alert.alert('Error', error.error || 'Failed to confirm event');
       }
     } catch (error) {
+      console.error('Error confirming date:', error);
       Alert.alert('Error', 'Failed to confirm event');
     }
   };

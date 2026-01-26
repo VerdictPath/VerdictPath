@@ -20,6 +20,11 @@ router.post('/test-all', async (req, res) => {
     return res.status(400).json({ error: 'Phone number is required' });
   }
   
+  console.log('');
+  console.log('🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪');
+  console.log('       COMPREHENSIVE SMS SERVICE TEST - ALL MOBILE APP FLOWS');
+  console.log('🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪🧪');
+  console.log('');
   
   const results = {
     totalTests: 0,
@@ -30,20 +35,25 @@ router.post('/test-all', async (req, res) => {
   
   const runTest = async (name, testFn) => {
     results.totalTests++;
+    console.log(`\n📍 TEST ${results.totalTests}: ${name}`);
+    console.log('─'.repeat(60));
     
     try {
       const result = await testFn();
       if (result.success) {
         results.passed++;
         results.tests.push({ name, status: 'PASSED', messageSid: result.messageSid });
+        console.log(`   ✅ PASSED - SID: ${result.messageSid}`);
       } else {
         results.failed++;
         results.tests.push({ name, status: 'FAILED', error: result.error });
+        console.log(`   ❌ FAILED - Error: ${result.error}`);
       }
       return result;
     } catch (error) {
       results.failed++;
       results.tests.push({ name, status: 'ERROR', error: error.message });
+      console.log(`   ❌ ERROR - ${error.message}`);
       return { success: false, error: error.message };
     }
   };
@@ -139,6 +149,16 @@ router.post('/test-all', async (req, res) => {
     );
   });
   
+  console.log('');
+  console.log('═'.repeat(60));
+  console.log('                    TEST SUMMARY');
+  console.log('═'.repeat(60));
+  console.log(`   Total Tests: ${results.totalTests}`);
+  console.log(`   ✅ Passed: ${results.passed}`);
+  console.log(`   ❌ Failed: ${results.failed}`);
+  console.log(`   Success Rate: ${((results.passed / results.totalTests) * 100).toFixed(1)}%`);
+  console.log('═'.repeat(60));
+  console.log('');
   
   res.json(results);
 });

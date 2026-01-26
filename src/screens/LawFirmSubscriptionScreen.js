@@ -275,6 +275,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         setPlanType(response.subscription.planType);
       }
     } catch (error) {
+      console.error('Error fetching subscription:', error);
       if (Platform.OS === 'web') {
         alert('Failed to load subscription details');
       } else {
@@ -394,6 +395,8 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
             planType: effectivePlanType
           }
         };
+        console.log('[LawFirm Subscription] Sending update request:', requestBody);
+        console.log('[LawFirm Subscription] Stringified body:', JSON.stringify(requestBody));
         
         const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_UPDATE, {
           method: 'PUT',
@@ -409,6 +412,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         try {
           await fetchSubscriptionDetails();
         } catch (fetchError) {
+          console.error('Error refreshing subscription details:', fetchError);
           // Silently fail - update was successful, just couldn't refresh
         }
 
@@ -418,6 +422,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           Alert.alert('Success', 'Subscription updated successfully!');
         }
       } catch (error) {
+        console.error('Error updating subscription:', error);
         if (Platform.OS === 'web') {
           alert(error.message || 'Failed to update subscription');
         } else {
@@ -481,6 +486,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         onRegistrationComplete(userData);
       }
     } catch (error) {
+      console.error('Error registering law firm:', error);
       const errorMsg = error.message || 'Failed to create account. Please try again.';
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);

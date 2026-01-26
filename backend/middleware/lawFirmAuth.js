@@ -40,6 +40,7 @@ exports.verifyLawFirmUser = async (req, res, next) => {
       );
       
       if (parseInt(userCount.rows[0].count) > 0) {
+        console.error(`⚠️  SECURITY: Bootstrap token used but ${userCount.rows[0].count} users exist for law firm ${decoded.id}`);
         return res.status(403).json({
           success: false,
           message: 'Bootstrap scenario no longer valid. Users already exist. Please login with your user credentials.',
@@ -122,6 +123,7 @@ exports.verifyLawFirmUser = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('[LawFirmAuth] Verification error:', error);
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token',

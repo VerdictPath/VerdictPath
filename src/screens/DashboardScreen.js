@@ -47,6 +47,7 @@ const DashboardScreen = ({
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
+    console.log('[Dashboard] Videos loaded:', videosLoaded);
   }, [videosLoaded]);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ const DashboardScreen = ({
         });
       }
     } catch (error) {
+      console.error('Error fetching connections:', error);
     } finally {
       setLoadingConnections(false);
     }
@@ -88,10 +90,12 @@ const DashboardScreen = ({
       
       triggerActionVideo('Daily Bonus Claimed! 🎉', 50, true);
     } catch (error) {
+      console.error('[Dashboard] Claim bonus error:', error);
     }
   };
 
   const triggerActionVideo = (message, coinsEarned = 0, celebrationMode = false) => {
+    console.log('[Dashboard] Triggering action video:', message, 'celebration:', celebrationMode);
     setActionMessage(message);
     setActionCoins(coinsEarned);
     setUseCelebrationVideo(celebrationMode);

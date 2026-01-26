@@ -14,6 +14,8 @@ const updateLawFirmSubscription = async (req, res) => {
     const { subscriptionTier, firmSize, planType: topLevelPlanType } = req.body;
 
     if (!subscriptionTier) {
+      console.log('[Subscription Update] ERROR: subscriptionTier is missing or undefined');
+      console.log('[Subscription Update] Received keys:', Object.keys(req.body));
       return res.status(400).json({ 
         error: 'Subscription tier is required',
         receivedBody: req.body,
@@ -40,6 +42,7 @@ const updateLawFirmSubscription = async (req, res) => {
       });
     }
 
+    console.log(`[Subscription Update] Law firm ${lawFirmId} updating to planType: ${planType}`);
 
     const lawFirmResult = await db.query(
       'SELECT id, subscription_tier, firm_size, plan_type FROM law_firms WHERE id = $1',
@@ -135,6 +138,7 @@ const updateLawFirmSubscription = async (req, res) => {
       [canonicalTier, canonicalSize, planType, lawFirmId]
     );
 
+    console.log(`[Subscription Update] Law firm ${lawFirmId} successfully updated to ${planType} plan`);
 
     res.json({
       success: true,
@@ -148,6 +152,7 @@ const updateLawFirmSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error updating law firm subscription:', error);
     res.status(500).json({ error: 'Failed to update subscription' });
   }
 };
@@ -221,6 +226,7 @@ const updateMedicalProviderSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error updating medical provider subscription:', error);
     res.status(500).json({ error: 'Failed to update subscription' });
   }
 };
@@ -278,6 +284,7 @@ const getLawFirmSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching law firm subscription:', error);
     res.status(500).json({ error: 'Failed to fetch subscription details' });
   }
 };
@@ -316,6 +323,7 @@ const getMedicalProviderSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching medical provider subscription:', error);
     res.status(500).json({ error: 'Failed to fetch subscription details' });
   }
 };
@@ -347,6 +355,7 @@ const getIndividualSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error fetching individual subscription:', error);
     res.status(500).json({ error: 'Failed to fetch subscription details' });
   }
 };
@@ -399,6 +408,7 @@ const updateIndividualSubscription = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Error updating individual subscription:', error);
     res.status(500).json({ error: 'Failed to update subscription' });
   }
 };

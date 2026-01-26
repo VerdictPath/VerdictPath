@@ -320,6 +320,7 @@ async function getMessages(conversationId, participantType, participantId, optio
         body_auth_tag: undefined
       };
     } catch (error) {
+      console.error('Error decrypting message:', error);
       return {
         ...msg,
         body: '[Encrypted message - decryption failed]'

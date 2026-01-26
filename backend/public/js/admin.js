@@ -143,6 +143,7 @@ function initExistingFeatures() {
     }
   });
   
+  console.log('VerdictPath Admin Portal loaded');
 }
 
 document.addEventListener('keydown', function(e) {

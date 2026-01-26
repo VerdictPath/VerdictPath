@@ -83,6 +83,7 @@ const calendarController = {
         events: result.rows
       });
     } catch (error) {
+      console.error('Error fetching calendar events:', error);
       res.status(500).json({
         error: 'Failed to fetch calendar events',
         details: error.message
@@ -213,6 +214,7 @@ const calendarController = {
             userType,
             userId
           ]);
+          console.log(`Event ${createdEvent.id} shared with user ${clientToShareWith}`);
 
           // Send notification to the patient about the new calendar event
           try {
@@ -277,6 +279,7 @@ const calendarController = {
             await syncNotificationToFirebase(notification);
             await updateUnreadCount('user', clientToShareWith);
 
+            console.log(`📬 Push notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
 
             // Get client details for email and SMS (join with notification_preferences for SMS settings)
             const clientResult = await pool.query(
@@ -304,7 +307,9 @@ const calendarController = {
                     description: description || '',
                     senderName: senderName
                   });
+                  console.log(`📧 Email notification sent to ${client.email} for event ${createdEvent.id}`);
                 } catch (emailError) {
+                  console.error('Error sending calendar event email:', emailError);
                 }
               }
 
@@ -320,15 +325,19 @@ const calendarController = {
                       `${title} scheduled for ${formattedDate} at ${formattedTime}${location ? ` at ${location}` : ''}`,
                       'normal'
                     );
+                    console.log(`📱 SMS notification sent to ****${phoneNumber.slice(-4)} for event ${createdEvent.id}`);
                   }
                 } catch (smsError) {
+                  console.error('Error sending calendar event SMS:', smsError);
                 }
               }
             }
           } catch (notifyError) {
+            console.error('Error sending event notification:', notifyError);
             // Don't fail if notification fails
           }
         } catch (shareError) {
+          console.error('Error sharing event:', shareError);
           // Don't fail the whole request if sharing fails
         }
       }
@@ -340,6 +349,7 @@ const calendarController = {
         sharedWithClient: clientToShareWith ? true : false
       });
     } catch (error) {
+      console.error('Error creating calendar event:', error);
       res.status(500).json({
         error: 'Failed to create calendar event',
         details: error.message
@@ -410,6 +420,7 @@ const calendarController = {
         event: result.rows[0]
       });
     } catch (error) {
+      console.error('Error updating calendar event:', error);
       res.status(500).json({
         error: 'Failed to update calendar event',
         details: error.message
@@ -441,6 +452,7 @@ const calendarController = {
         (userType === 'medical_provider' && String(event.medical_provider_id) === String(userId));
 
       if (!isOwner) {
+        console.log('Delete unauthorized - userType:', userType, 'userId:', userId, 'event.user_id:', event.user_id);
         return res.status(403).json({ error: 'Unauthorized to delete this event' });
       }
 
@@ -455,6 +467,7 @@ const calendarController = {
         message: 'Event deleted successfully and removed from all shared calendars'
       });
     } catch (error) {
+      console.error('Error deleting calendar event:', error);
       res.status(500).json({
         error: 'Failed to delete calendar event',
         details: error.message
@@ -510,6 +523,7 @@ const calendarController = {
         event: result.rows[0]
       });
     } catch (error) {
+      console.error('Error updating sync status:', error);
       res.status(500).json({
         error: 'Failed to update sync status',
         details: error.message

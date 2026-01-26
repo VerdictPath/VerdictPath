@@ -29,6 +29,7 @@ class CalendarService {
 
       return true;
     } catch (error) {
+      console.error('Error requesting calendar permissions:', error);
       return false;
     }
   }
@@ -70,6 +71,7 @@ class CalendarService {
 
       return null;
     } catch (error) {
+      console.error('Error getting default calendar:', error);
       return null;
     }
   }
@@ -104,6 +106,7 @@ class CalendarService {
 
       return eventId;
     } catch (error) {
+      console.error('Error creating calendar event:', error);
       throw error;
     }
   }
@@ -132,6 +135,7 @@ class CalendarService {
 
       return true;
     } catch (error) {
+      console.error('Error updating calendar event:', error);
       throw error;
     }
   }
@@ -141,6 +145,7 @@ class CalendarService {
       await Calendar.deleteEventAsync(deviceEventId);
       return true;
     } catch (error) {
+      console.error('Error deleting calendar event:', error);
       throw error;
     }
   }
@@ -168,6 +173,7 @@ class CalendarService {
 
       return deviceEventId;
     } catch (error) {
+      console.error('Error syncing event to device:', error);
       throw error;
     }
   }
@@ -182,6 +188,7 @@ class CalendarService {
       
       return true;
     } catch (error) {
+      console.error('Error unsyncing event from device:', error);
       throw error;
     }
   }
@@ -209,6 +216,7 @@ class CalendarService {
 
       return data;
     } catch (error) {
+      console.error('Error updating backend sync status:', error);
       throw error;
     }
   }
@@ -241,6 +249,7 @@ class CalendarService {
 
       return data.events || [];
     } catch (error) {
+      console.error('Error fetching calendar events:', error);
       return [];
     }
   }
@@ -264,6 +273,7 @@ class CalendarService {
 
       return data.event;
     } catch (error) {
+      console.error('Error creating event in backend:', error);
       throw error;
     }
   }
@@ -286,6 +296,7 @@ class CalendarService {
 
       return true;
     } catch (error) {
+      console.error('Error deleting event from backend:', error);
       throw error;
     }
   }

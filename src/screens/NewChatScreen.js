@@ -24,14 +24,17 @@ const NewChatScreen = ({ onBack, onChatStarted, user }) => {
   const fetchConnections = async () => {
     try {
       setError(null);
+      console.log('📡 Fetching available connections for user:', user.userType);
       const response = await apiRequest(`${API_BASE_URL}/api/chat/available-connections`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
       });
+      console.log('📥 Received connections:', response.connections);
       setConnections(response.connections || []);
     } catch (err) {
+      console.error('❌ Error fetching connections:', err);
       setError(err.message || 'Failed to load connections');
     } finally {
       setLoading(false);
@@ -54,6 +57,7 @@ const NewChatScreen = ({ onBack, onChatStarted, user }) => {
 
       onChatStarted(response.conversation.id);
     } catch (err) {
+      console.error('Error creating conversation:', err);
       alert(err.message || 'Failed to start conversation');
     } finally {
       setCreating(false);

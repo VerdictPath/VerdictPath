@@ -64,6 +64,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
         );
       }
     } catch (error) {
+      console.error('[AvatarSelection] Save error:', error);
       Alert.alert('Error', 'Failed to save avatar. Please try again.');
     } finally {
       setIsSaving(false);

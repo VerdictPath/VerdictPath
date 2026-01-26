@@ -230,6 +230,7 @@ exports.createLawFirmUser = async (req, res) => {
       notificationResults: credentialResults
     });
   } catch (error) {
+    console.error('Error creating law firm user:', error);
     res.status(500).json({ success: false, message: 'Error creating user', error: error.message });
   }
 };
@@ -295,6 +296,7 @@ exports.getLawFirmUsers = async (req, res) => {
 
     res.json({ success: true, users });
   } catch (error) {
+    console.error('Error fetching law firm users:', error);
     res.status(500).json({ success: false, message: 'Error fetching users', error: error.message });
   }
 };
@@ -417,6 +419,7 @@ exports.updateLawFirmUser = async (req, res) => {
       user: updatedUser
     });
   } catch (error) {
+    console.error('Error updating law firm user:', error);
     res.status(500).json({ success: false, message: 'Error updating user', error: error.message });
   }
 };
@@ -494,6 +497,7 @@ exports.deactivateLawFirmUser = async (req, res) => {
 
     res.json({ success: true, message: 'User deactivated successfully' });
   } catch (error) {
+    console.error('Error deactivating law firm user:', error);
     res.status(500).json({ success: false, message: 'Error deactivating user', error: error.message });
   }
 };
@@ -564,6 +568,7 @@ exports.reactivateLawFirmUser = async (req, res) => {
 
     res.json({ success: true, message: 'User reactivated successfully' });
   } catch (error) {
+    console.error('Error reactivating law firm user:', error);
     res.status(500).json({ success: false, message: 'Error reactivating user', error: error.message });
   }
 };

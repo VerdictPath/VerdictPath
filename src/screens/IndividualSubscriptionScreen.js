@@ -55,12 +55,14 @@ const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged 
       
       setStripeAccountStatus(response);
     } catch (error) {
+      console.error('Error checking Stripe account status:', error);
     }
   };
 
   const fetchCurrentSubscription = async () => {
     try {
       if (!user?.token) {
+        console.log('No auth token available, setting default free subscription');
         setCurrentSubscription({
           tier: 'free',
           price: 0
@@ -84,6 +86,7 @@ const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged 
         setCurrentSubscription(response.subscription);
       }
     } catch (error) {
+      console.error('Error fetching subscription:', error);
       // Set default free subscription instead of showing error
       setCurrentSubscription({
         tier: 'free',
@@ -144,6 +147,7 @@ const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged 
         alert('Error', response.error || 'Failed to update subscription');
       }
     } catch (error) {
+      console.error('Error updating subscription:', error);
       alert('Error', 'Failed to update subscription. Please try again.');
     } finally {
       setUpdating(false);

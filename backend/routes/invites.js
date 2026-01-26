@@ -87,6 +87,7 @@ router.get('/my-code', authenticateToken, async (req, res) => {
       shareUrl: `${baseUrl}/?invite=${inviteCode}`
     });
   } catch (error) {
+    console.error('Error generating invite code:', error);
     res.status(500).json({ error: 'Failed to generate invite code' });
   }
 });
@@ -128,6 +129,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
       recentInvites: recentInvites.rows
     });
   } catch (error) {
+    console.error('Error fetching invite stats:', error);
     res.status(500).json({ error: 'Failed to fetch invite statistics' });
   }
 });
@@ -160,6 +162,7 @@ router.get('/validate/:code', async (req, res) => {
       referrerName: `${invite.first_name} ${invite.last_name}`
     });
   } catch (error) {
+    console.error('Error validating invite code:', error);
     res.status(500).json({ error: 'Failed to validate invite code' });
   }
 });
@@ -227,8 +230,11 @@ router.post('/process', async (req, res) => {
         'UPDATE users SET total_coins = total_coins + $1 WHERE id = $2',
         [coinsToAward, invite.referrer_user_id]
       );
+      console.log(`✅ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. ${coinsToAward} coins awarded.`);
     } else if (shouldAwardCoins && coinsToAward === 0) {
+      console.log(`⚠️ Invite processed: User ${newUserId} accepted invite from User ${invite.referrer_user_id}. No coins awarded - treasure chest is full!`);
     } else {
+      console.log(`✅ Invite processed: User ${newUserId} accepted invite from ${invite.user_type} User ${invite.referrer_user_id}. No coins awarded (business account).`);
     }
 
     let message = shouldAwardCoins 
@@ -245,6 +251,7 @@ router.post('/process', async (req, res) => {
       message: message
     });
   } catch (error) {
+    console.error('Error processing invite:', error);
     res.status(500).json({ error: 'Failed to process invite' });
   }
 });

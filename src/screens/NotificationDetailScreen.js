@@ -72,6 +72,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
         }
       }
     } catch (error) {
+      console.error('Error loading notification detail:', error);
       Alert.alert('Error', 'Failed to load notification details');
     } finally {
       setIsLoading(false);
@@ -107,6 +108,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                 ]);
               }
             } catch (error) {
+              console.error('Error archiving notification:', error);
               Alert.alert('Error', 'Failed to archive notification');
             } finally {
               setIsArchiving(false);
@@ -147,6 +149,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                 ]);
               }
             } catch (error) {
+              console.error('Error deleting notification:', error);
               Alert.alert('Error', 'Failed to delete notification');
             } finally {
               setIsArchiving(false);

@@ -68,8 +68,10 @@ const InviteModal = ({ visible, onClose, user }) => {
         const data = await response.json();
         setInviteData(data);
       } else {
+        console.error('Failed to fetch invite code');
       }
     } catch (error) {
+      console.error('Error fetching invite code:', error);
     } finally {
       setLoading(false);
     }
@@ -103,6 +105,7 @@ const InviteModal = ({ visible, onClose, user }) => {
             url: inviteData.shareUrl
           });
         } catch (error) {
+          console.log('Share cancelled or failed:', error);
         }
       } else {
         await handleCopyLink();
@@ -113,6 +116,7 @@ const InviteModal = ({ visible, onClose, user }) => {
           message: `${inviteData.shareText}\n\n${inviteData.shareUrl}`
         });
       } catch (error) {
+        console.error('Error sharing:', error);
       }
     }
   };

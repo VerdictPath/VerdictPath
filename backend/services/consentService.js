@@ -76,6 +76,7 @@ class ConsentService {
       
       return false;
     } catch (error) {
+      console.error('Error checking consent:', error);
       return false;
     }
   }
@@ -139,6 +140,7 @@ class ConsentService {
       
       return consent;
     } catch (error) {
+      console.error('Error granting consent:', error);
       throw error;
     }
   }
@@ -164,6 +166,7 @@ class ConsentService {
       const result = await db.query(query, [consentId, reason]);
       return result.rows[0];
     } catch (error) {
+      console.error('Error revoking consent:', error);
       throw error;
     }
   }
@@ -201,6 +204,7 @@ class ConsentService {
       const result = await db.query(query, params);
       return result.rows;
     } catch (error) {
+      console.error('Error getting patient consents:', error);
       return [];
     }
   }
@@ -249,6 +253,7 @@ class ConsentService {
           encryption.decrypt(consent.last_name_encrypted) : consent.last_name
       }));
     } catch (error) {
+      console.error('Error getting granted consents:', error);
       return [];
     }
   }
@@ -272,6 +277,7 @@ class ConsentService {
       const result = await db.query(query);
       return result.rowCount;
     } catch (error) {
+      console.error('Error expiring old consents:', error);
       return 0;
     }
   }
@@ -318,6 +324,7 @@ class ConsentService {
       
       return consent;
     } catch (error) {
+      console.error('Error getting consent details:', error);
       return null;
     }
   }

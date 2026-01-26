@@ -43,6 +43,7 @@ const verifyMedicalProviderUser = async (req, res, next) => {
       );
       
       if (parseInt(userCount.rows[0].count) > 0) {
+        console.error(`⚠️  SECURITY: Bootstrap token used but ${userCount.rows[0].count} users exist for medical provider ${decoded.id}`);
         return res.status(403).json({
           success: false,
           message: 'Bootstrap scenario no longer valid. Users already exist. Please login with your user credentials.'
@@ -125,6 +126,7 @@ const verifyMedicalProviderUser = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Medical provider auth error:', error);
     res.status(401).json({
       success: false,
       message: 'Invalid or expired token'
@@ -158,6 +160,7 @@ const checkPermission = (permission) => {
 
       next();
     } catch (error) {
+      console.error('Permission check error:', error);
       res.status(500).json({
         success: false,
         message: 'Permission check failed'
@@ -185,6 +188,7 @@ const requireAdmin = async (req, res, next) => {
 
     next();
   } catch (error) {
+    console.error('Admin check error:', error);
     res.status(500).json({
       success: false,
       message: 'Authorization error'

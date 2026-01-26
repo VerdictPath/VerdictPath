@@ -47,6 +47,7 @@ const checkAccountLockout = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Account lockout check failed:', error);
     next(); // Don't block on error
   }
 };
@@ -86,6 +87,7 @@ const handleFailedLogin = async (userId, userType) => {
       [userId, userType, newAttempts, lockUntil]
     );
   } catch (error) {
+    console.error('Failed to handle login attempt:', error);
   }
 };
 
@@ -110,6 +112,7 @@ const handleSuccessfulLogin = async (userId, userType, ipAddress) => {
     
     await db.query(query, [userId, userType, ipAddress]);
   } catch (error) {
+    console.error('Failed to handle successful login:', error);
   }
 };
 
@@ -144,6 +147,7 @@ const checkPasswordExpiry = async (req, res, next) => {
     
     next();
   } catch (error) {
+    console.error('Password expiry check failed:', error);
     next(); // Don't block on error
   }
 };

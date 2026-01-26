@@ -75,6 +75,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
       setSubscription(response.subscription);
     } catch (error) {
+      console.error('Error loading subscription:', error);
     } finally {
       setLoadingSubscription(false);
     }
@@ -94,6 +95,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       const eligibleClients = response.clients.filter(c => !c.disbursementCompleted);
       setClients(eligibleClients);
     } catch (error) {
+      console.error('Error loading clients:', error);
       Alert.alert('Error', 'Failed to load clients');
     } finally {
       setLoading(false);
@@ -111,6 +113,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
       setDisbursementHistory(response.disbursements || []);
     } catch (error) {
+      console.error('Error loading disbursement history:', error);
     }
   };
 
@@ -126,6 +129,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
       setStripeAccountStatus(response);
     } catch (error) {
+      console.error('Error checking Stripe account status:', error);
     } finally {
       setCheckingStripeStatus(false);
     }
@@ -151,6 +155,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
       return response.providers || [];
     } catch (error) {
+      console.error('Error loading medical providers:', error);
       return [];
     }
   };
@@ -315,6 +320,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         );
       }
     } catch (error) {
+      console.error('Disbursement error:', error);
       Alert.alert(
         'Payment Failed',
         error.message || 'Failed to process disbursement. Please try again.'

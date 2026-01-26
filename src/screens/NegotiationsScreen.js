@@ -123,10 +123,12 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
   // Setup Firebase real-time listeners for negotiations
   const setupFirebaseListeners = useCallback(async () => {
     if (!user?.token) {
+      console.log('⚠️ No user token, skipping Firebase setup for negotiations');
       return;
     }
     
     try {
+      console.log('🔥 Setting up Firebase real-time listeners for negotiations...', {
         userId: user.id,
         userType: user.type || user.userType,
         isLawFirm,
@@ -139,6 +141,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       // Authenticate with backend to get Firebase custom token
       const authResult = await authenticateWithBackend(user.token);
       if (!authResult || !authResult.success) {
+        console.warn('⚠️ Firebase auth failed, falling back to polling');
         return;
       }
       
@@ -146,10 +149,13 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       const userType = isLawFirm ? 'law_firm' : 'medical_provider';
       const userId = user.id;
       
+      console.log('📡 Firebase subscription details:', { userType, userId, path: `negotiations/${userType}s/${userId}` });
       
       // Subscribe to negotiations updates
       const unsubscribe = await subscribeToNegotiations(userType, userId, (updatedNegotiations) => {
+        console.log(`🔔 Firebase negotiations update received for ${userType}:`, updatedNegotiations?.length || 0);
         if (updatedNegotiations?.length > 0) {
+          console.log('📋 Latest negotiation update:', {
             id: updatedNegotiations[0]?.id,
             status: updatedNegotiations[0]?.status,
             lastRespondedBy: updatedNegotiations[0]?.last_responded_by,
@@ -206,6 +212,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
           if (currentSelectedNegotiation) {
             const updatedSelected = updatedNegotiations.find(n => n.id === currentSelectedNegotiation.id);
             if (updatedSelected) {
+              console.log('🔄 Real-time update for selected negotiation:', {
                 id: updatedSelected.id,
                 status: updatedSelected.status,
                 lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
@@ -251,8 +258,10 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       
       firebaseUnsubscribeRef.current = unsubscribe;
       setFirebaseConnected(true);
+      console.log('✅ Firebase negotiations listeners active');
       
     } catch (error) {
+      console.error('❌ Firebase negotiations setup failed:', error);
       setFirebaseConnected(false);
     }
   }, [user?.token, user?.id, isLawFirm]);
@@ -271,6 +280,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     // Cleanup on unmount
     return () => {
       if (firebaseUnsubscribeRef.current && typeof firebaseUnsubscribeRef.current === 'function') {
+        console.log('🔥 Cleaning up Firebase negotiations listeners');
         firebaseUnsubscribeRef.current();
         firebaseUnsubscribeRef.current = null;
       }
@@ -319,6 +329,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       });
       setNegotiations(sortedNegotiations);
     } catch (error) {
+      console.error('Error loading negotiations:', error);
       showAlert('Error', 'Failed to load negotiations');
     } finally {
       setLoading(false);
@@ -335,6 +346,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       });
       setClients(response.clients || []);
     } catch (error) {
+      console.error('Error loading clients:', error);
     }
   };
 
@@ -348,6 +360,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       });
       setClients(response.patients || []);
     } catch (error) {
+      console.error('Error loading patients:', error);
     }
   };
 
@@ -373,6 +386,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         setSelectedMedicalProviderId(null);
       }
     } catch (error) {
+      console.error('Error loading medical providers:', error);
       setMedicalProviders([]);
     }
   };
@@ -418,6 +432,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         requestBody.medicalProviderId = selectedMedicalProviderId;
       }
 
+      console.log('📤 Sending negotiation request:', requestBody);
 
       const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.INITIATE, {
         method: 'POST',
@@ -427,6 +442,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         body: JSON.stringify(requestBody)
       });
 
+      console.log('📥 Negotiation response:', response);
 
       showAlert(
         'Success',
@@ -438,6 +454,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         }}]
       );
     } catch (error) {
+      console.error('Error initiating negotiation:', error);
       showAlert('Error', error.message || 'Failed to initiate negotiation');
     } finally {
       setLoading(false);
@@ -509,6 +526,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         }}]
       );
     } catch (error) {
+      console.error('Error sending counter offer:', error);
       showAlert('Error', error.message || 'Failed to send counter offer');
     } finally {
       setLoading(false);
@@ -545,6 +563,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
                 }}]
               );
             } catch (error) {
+              console.error('Error accepting offer:', error);
               showAlert('Error', error.message || 'Failed to accept offer');
             } finally {
               setLoading(false);
@@ -556,6 +575,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
   };
 
   const handleRequestCall = async () => {
+    console.log('📞 handleRequestCall called', { phoneNumber, callNotes, selectedNegotiation: selectedNegotiation?.id });
     
     if (!phoneNumber) {
       showAlert('Error', 'Please enter a phone number');
@@ -594,6 +614,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         }}]
       );
     } catch (error) {
+      console.error('Error requesting call:', error);
       showAlert('Error', error.message || 'Failed to send call request');
     } finally {
       setLoading(false);
@@ -616,6 +637,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         [{ text: 'OK' }]
       );
     } catch (error) {
+      console.error('Error downloading log:', error);
       showAlert('Error', 'Failed to download negotiation log');
     }
   };
@@ -901,6 +923,7 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
                 <TouchableOpacity
                   style={styles.callButton}
                   onPress={() => {
+                    console.log('📞 Request Call button pressed');
                     setShowCallRequestModal(true);
                   }}
                 >

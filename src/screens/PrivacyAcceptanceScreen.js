@@ -66,6 +66,7 @@ const PrivacyAcceptanceScreen = ({ onAccept, onDecline, onNavigate }) => {
           <TouchableOpacity 
             style={styles.checkboxContainer}
             onPress={() => {
+              console.log('Checkbox toggled! New value:', !accepted);
               setAccepted(!accepted);
             }}
           >

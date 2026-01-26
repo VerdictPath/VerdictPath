@@ -49,6 +49,7 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
 
       setReport(response.report);
     } catch (error) {
+      console.error('[HIPAADashboard] Load error:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

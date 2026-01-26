@@ -29,6 +29,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
   }, []);
 
   const handleTimeout = useCallback(() => {
+    console.log('[SessionTimeout] Session expired due to inactivity');
     clearTimers();
     setShowWarning(false);
     
@@ -48,6 +49,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
   }, [onLogout, clearTimers]);
 
   const showTimeoutWarning = useCallback(() => {
+    console.log('[SessionTimeout] Showing timeout warning');
     setShowWarning(true);
     
     let remaining = WARNING_BEFORE_TIMEOUT / 1000;
@@ -84,6 +86,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
   }, [isLoggedIn, clearTimers, showTimeoutWarning, handleTimeout]);
 
   const extendSession = useCallback(() => {
+    console.log('[SessionTimeout] Session extended by user');
     setShowWarning(false);
     clearTimers();
     resetTimer();
@@ -120,6 +123,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
     } else {
       const handleAppStateChange = (nextAppState) => {
         if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+          console.log('[SessionTimeout] App returned to foreground');
           const inactiveTime = Date.now() - lastActivityRef.current;
           if (inactiveTime >= INACTIVITY_TIMEOUT) {
             handleTimeout();

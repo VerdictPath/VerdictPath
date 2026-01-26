@@ -49,6 +49,9 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
 
   const fetchDashboardData = async () => {
     try {
+      console.log('[MedProvider Dashboard] Fetching dashboard data...');
+      console.log('[MedProvider Dashboard] Token:', user.token ? 'Present' : 'Missing');
+      console.log('[MedProvider Dashboard] API URL:', API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD);
       
       const response = await fetch(API_ENDPOINTS.MEDICALPROVIDER.DASHBOARD, {
         headers: {
@@ -56,9 +59,12 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         }
       });
       
+      console.log('[MedProvider Dashboard] Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('[MedProvider Dashboard] Data received:', data);
+        console.log('[MedProvider Dashboard] Patients count:', data.patients?.length || 0);
         
         setProviderData(data);
         setPatients(data.patients || []);
@@ -85,6 +91,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         });
       }
     } catch (error) {
+      console.error('Error fetching dashboard:', error);
       // Fallback data
       setProviderData({
         providerName: user.providerName || 'Medical Provider',
@@ -112,6 +119,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
       });
       setLawFirms(response.lawFirms || []);
     } catch (error) {
+      console.error('Error fetching law firms:', error);
     }
   };
 
@@ -138,6 +146,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         fetchLawFirms();
       }
     } catch (error) {
+      console.error('Error adding law firm:', error);
       Alert.alert('Error', error.response?.error || 'Failed to add law firm connection');
     } finally {
       setAddingFirm(false);
@@ -172,6 +181,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
                 fetchLawFirms();
               }
             } catch (error) {
+              console.error('Error removing law firm:', error);
               Alert.alert('Error', error.response?.error || 'Failed to remove law firm connection');
             }
           }
@@ -184,6 +194,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     try {
       setCheckingStripeStatus(true);
       if (!user?.token) {
+        console.error('No user token available');
         return;
       }
       const response = await fetch(API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS, {
@@ -197,6 +208,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
         setStripeAccountStatus(data);
       }
     } catch (error) {
+      console.error('Error checking Stripe account status:', error);
     } finally {
       setCheckingStripeStatus(false);
     }
@@ -245,8 +257,11 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
 
   // Filter patients based on search query
   const getFilteredPatients = () => {
+    console.log('[MedProvider Search] Query:', searchQuery);
+    console.log('[MedProvider Search] Total patients:', patients.length);
     
     if (!searchQuery.trim()) {
+      console.log('[MedProvider Search] No query, returning all patients');
       return patients;
     }
     
@@ -259,6 +274,8 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
       patient.phone?.toLowerCase().includes(query)
     );
     
+    console.log('[MedProvider Search] Filtered results:', filtered.length);
+    console.log('[MedProvider Search] Filtered patients:', filtered.map(p => p.displayName));
     
     return filtered;
   };

@@ -34,6 +34,7 @@ const BadgeCollectionScreen = ({ user, onBack }) => {
         setBadges(data.badges);
       }
     } catch (error) {
+      console.error('Error loading badges:', error);
       Alert.alert('Error', 'Failed to load badges');
     } finally {
       setLoading(false);

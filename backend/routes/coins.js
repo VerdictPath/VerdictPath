@@ -49,6 +49,7 @@ router.get('/packages', authenticateToken, (req, res) => {
     }));
     res.json({ packages });
   } catch (error) {
+    console.error('Error fetching coin packages:', error);
     res.status(500).json({ message: 'Error fetching coin packages' });
   }
 });
@@ -101,6 +102,7 @@ router.post('/create-payment-intent', purchaseLimiter, authenticateToken, async 
       coins: package.coins
     });
   } catch (error) {
+    console.error('Error creating coin purchase payment intent:', error);
     res.status(500).json({ message: 'Error creating payment intent' });
   }
 });
@@ -140,6 +142,7 @@ router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) =>
     try {
       paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     } catch (stripeError) {
+      console.error('Error retrieving payment intent from Stripe:', stripeError);
       return res.status(400).json({ 
         message: 'Invalid payment intent ID' 
       });
@@ -156,6 +159,7 @@ router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) =>
 
     // Verify payment belongs to this user
     if (paymentIntent.metadata.userId !== userId.toString()) {
+      console.error(`Payment verification failed: userId mismatch. Payment userId: ${paymentIntent.metadata.userId}, Request userId: ${userId}`);
       return res.status(403).json({ 
         message: 'Payment verification failed. This payment does not belong to your account.' 
       });
@@ -176,6 +180,7 @@ router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) =>
     // Verify package details match expected values (double-check)
     const expectedPackage = COIN_PACKAGES[packageId];
     if (expectedPackage.coins !== coins || expectedPackage.price !== amountPaid) {
+      console.error(`Package mismatch: expected ${expectedPackage.coins} coins / ${expectedPackage.price} cents, got ${coins} / ${amountPaid}`);
       return res.status(400).json({ 
         message: 'Payment amount does not match package price' 
       });
@@ -221,6 +226,7 @@ router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) =>
 
     await client.query('COMMIT');
 
+    console.log(`✅ Coin purchase verified and completed: User ${userId} received ${coins} coins from payment ${paymentIntentId}`);
 
     res.json({
       success: true,
@@ -232,6 +238,7 @@ router.post('/purchase', purchaseLimiter, authenticateToken, async (req, res) =>
     });
   } catch (error) {
     await client.query('ROLLBACK');
+    console.error('Error processing coin purchase:', error);
     res.status(500).json({ message: 'Error processing coin purchase' });
   } finally {
     client.release();
@@ -261,6 +268,7 @@ router.get('/purchase-history', authenticateToken, async (req, res) => {
 
     res.json({ purchases: result.rows });
   } catch (error) {
+    console.error('Error fetching coin purchase history:', error);
     res.status(500).json({ message: 'Error fetching purchase history' });
   }
 });

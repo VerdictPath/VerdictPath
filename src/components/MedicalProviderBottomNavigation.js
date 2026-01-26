@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 
 const MedicalProviderBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
+  console.log('[MedicalProviderBottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'medicalprovider-dashboard' },

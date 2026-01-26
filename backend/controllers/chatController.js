@@ -113,6 +113,7 @@ exports.getAvailableConnections = async (req, res) => {
 
     res.json({ connections });
   } catch (error) {
+    console.error('Error fetching available connections:', error);
     res.status(500).json({ error: 'Failed to fetch connections' });
   }
 };
@@ -186,6 +187,7 @@ exports.getConversations = async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Error fetching conversations:', error);
     res.status(500).json({ error: 'Failed to fetch conversations' });
   }
 };
@@ -233,6 +235,7 @@ exports.createConversation = async (req, res) => {
       created: result.created
     });
   } catch (error) {
+    console.error('Error creating conversation:', error);
     res.status(error.message.includes('No connection') ? 403 : 500).json({ 
       error: error.message 
     });
@@ -264,6 +267,7 @@ exports.getMessages = async (req, res) => {
 
     res.json({ messages });
   } catch (error) {
+    console.error('Error fetching messages:', error);
     res.status(error.message.includes('Access denied') ? 403 : 500).json({ 
       error: error.message 
     });
@@ -373,13 +377,16 @@ exports.sendMessage = async (req, res) => {
               .catch(err => console.error('Error sending message notification email:', err));
           }
         } catch (emailError) {
+          console.error('Error getting recipient info for email:', emailError);
         }
       }
     } catch (notifError) {
+      console.error('Error sending message notifications:', notifError);
     }
 
     res.status(201).json({ message });
   } catch (error) {
+    console.error('Error sending message:', error);
     res.status(error.message.includes('not a participant') ? 403 : 500).json({ 
       error: error.message 
     });
@@ -419,6 +426,7 @@ exports.markAsRead = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
+    console.error('Error marking as read:', error);
     res.status(error.message.includes('not found') ? 404 : 500).json({ 
       error: error.message 
     });
@@ -450,6 +458,7 @@ exports.sendTypingIndicator = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
+    console.error('Error sending typing indicator:', error);
     res.status(error.message.includes('Access denied') ? 403 : 500).json({ 
       error: error.message 
     });
@@ -473,6 +482,7 @@ exports.getUnreadCounts = async (req, res) => {
 
     res.json({ unreadCounts });
   } catch (error) {
+    console.error('Error fetching unread counts:', error);
     res.status(500).json({ error: 'Failed to fetch unread counts' });
   }
 };

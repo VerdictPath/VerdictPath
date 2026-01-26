@@ -105,6 +105,7 @@ exports.logActivity = (action, actionCategory, options = {}) => {
               status: 'success'
             });
           } catch (error) {
+            console.error('[ActivityLogger Middleware] Failed to log activity:', {
               error: error.message,
               action,
               lawFirmId,
@@ -114,6 +115,7 @@ exports.logActivity = (action, actionCategory, options = {}) => {
         });
 
       } catch (error) {
+        console.error('[ActivityLogger Middleware] Error in logging wrapper:', error);
       }
     };
 
@@ -168,5 +170,6 @@ exports.createActivityLog = async (data) => {
   try {
     await activityLogger.log(data);
   } catch (error) {
+    console.error('[ActivityLogger] Failed to create manual log:', error);
   }
 };

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
 import { firebaseConfig } from '../config/firebase';
 
+console.log('🔥 Firebase Service Loaded - Config:', {
   hasApiKey: !!firebaseConfig.apiKey,
   hasDatabaseURL: !!firebaseConfig.databaseURL,
   projectId: firebaseConfig.projectId
@@ -20,6 +21,7 @@ let activeListeners = new Map();
 export const initializeFirebase = () => {
   try {
     if (!isInitialized) {
+      console.log('🔥 Initializing Firebase with config:', {
         apiKey: firebaseConfig.apiKey ? '✓ Set' : '✗ Missing',
         authDomain: firebaseConfig.authDomain ? '✓ Set' : '✗ Missing',
         databaseURL: firebaseConfig.databaseURL ? '✓ Set' : '✗ Missing',
@@ -29,9 +31,11 @@ export const initializeFirebase = () => {
       database = getDatabase(app);
       auth = getAuth(app);
       isInitialized = true;
+      console.log('✅ Firebase initialized successfully');
     }
     return { success: true, database, auth };
   } catch (error) {
+    console.error('❌ Firebase initialization error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -43,9 +47,14 @@ export const authenticateWithBackend = async (authToken) => {
     }
 
     if (isAuthenticated) {
+      console.log('✓ Already authenticated to Firebase');
       return { success: true };
     }
 
+    console.log('🔑 Requesting Firebase custom token from backend...');
+    console.log('🔑 Auth token present:', !!authToken);
+    console.log('🔑 Auth token value (first 20 chars):', authToken?.substring(0, 20) + '...');
+    console.log('🔑 Request URL:', `${API_BASE_URL}/api/notifications/firebase-token`);
     
     let response;
     try {
@@ -57,7 +66,9 @@ export const authenticateWithBackend = async (authToken) => {
         },
         credentials: 'include'
       });
+      console.log('🔑 Fetch completed successfully');
     } catch (fetchError) {
+      console.error('❌ Fetch request failed:', {
         message: fetchError?.message || 'No message',
         name: fetchError?.name || 'No name',
         type: typeof fetchError,
@@ -66,31 +77,41 @@ export const authenticateWithBackend = async (authToken) => {
       throw new Error(`Network error fetching Firebase token: ${fetchError?.message || 'Unknown error'}`);
     }
 
+    console.log('🔑 Response status:', response.status);
+    console.log('🔑 Response content-type:', response.headers.get('content-type'));
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('❌ Failed to get Firebase token:', response.status, errorText);
       throw new Error(`Failed to get Firebase token: ${response.status} - ${errorText}`);
     }
 
     let responseData;
     try {
       responseData = await response.json();
+      console.log('✓ Parsed JSON response:', { hasToken: !!responseData.token, uid: responseData.uid, keys: Object.keys(responseData) });
     } catch (jsonError) {
       const responseText = await response.text();
+      console.error('❌ Failed to parse JSON response:', responseText);
       throw new Error(`Invalid JSON response from Firebase token endpoint: ${responseText.substring(0, 100)}`);
     }
 
     if (!responseData || !responseData.token) {
+      console.error('❌ Response missing token field:', responseData);
       throw new Error('Firebase token endpoint did not return a token');
     }
 
+    console.log('✓ Received Firebase custom token response:', { hasToken: !!responseData.token, uid: responseData.uid });
 
     try {
+      console.log('🔐 Attempting to sign in to Firebase with custom token...');
       const userCredential = await signInWithCustomToken(auth, responseData.token);
       
       isAuthenticated = true;
+      console.log('✅ Successfully authenticated to Firebase, UID:', userCredential.user.uid);
       return { success: true };
     } catch (firebaseError) {
+      console.error('❌ Firebase signInWithCustomToken failed:', {
         message: firebaseError?.message || 'No message',
         code: firebaseError?.code || 'No code',
         name: firebaseError?.name || 'No name',
@@ -110,6 +131,7 @@ export const authenticateWithBackend = async (authToken) => {
       stringified: JSON.stringify(error),
       error: error
     };
+    console.error('❌ Firebase authentication error details:', errorDetails);
     isAuthenticated = false;
     return { success: false, error: error?.message || 'Firebase authentication failed' };
   }
@@ -136,8 +158,10 @@ export const waitForAuthReady = async (timeoutMs = 5000) => {
       clearTimeout(timeout);
       unsubscribe();
       if (user) {
+        console.log('✅ Firebase auth state confirmed, user:', user.uid);
         resolve({ success: true, user });
       } else {
+        console.warn('⚠️ Firebase auth state ready but no user authenticated');
         resolve({ success: false, error: 'No authenticated user' });
       }
     });
@@ -146,15 +170,19 @@ export const waitForAuthReady = async (timeoutMs = 5000) => {
 
 export const subscribeToNotifications = async (userType, userId, onNotificationsUpdate, onUnreadCountUpdate, authToken) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return null;
   }
 
   if (!isAuthenticated && authToken) {
+    console.log('🔐 Authenticating to Firebase before subscribing...');
     const authResult = await authenticateWithBackend(authToken);
     if (!authResult.success) {
+      console.error('❌ Failed to authenticate to Firebase, cannot subscribe');
       return null;
     }
   } else if (!isAuthenticated) {
+    console.error('❌ No auth token provided for Firebase authentication');
     return null;
   }
 
@@ -166,12 +194,14 @@ export const subscribeToNotifications = async (userType, userId, onNotifications
   } else if (userType === 'medical_provider') {
     basePath = 'providers';
   } else {
+    console.error('⚠️ Unknown userType:', userType, '- defaulting to users');
     basePath = 'users';
   }
   
   const notificationsPath = `${basePath}/${userId}/notifications`;
   const unreadCountPath = `${basePath}/${userId}/unread_count`;
 
+  console.log(`📡 Setting up Firebase listeners for path: ${notificationsPath}`);
 
   const notificationsRef = ref(database, notificationsPath);
   const unreadCountRef = ref(database, unreadCountPath);
@@ -181,10 +211,12 @@ export const subscribeToNotifications = async (userType, userId, onNotifications
     (snapshot) => {
       try {
         const data = snapshot.val();
+        console.log(`🔔 Firebase notifications update received:`, data ? Object.keys(data).length : 0, 'notifications');
         if (data) {
           // Log a sample notification to debug
           const firstKey = Object.keys(data)[0];
           if (firstKey) {
+            console.log('📋 Sample notification from Firebase:', {
               id: firstKey,
               hasTitle: !!data[firstKey].title,
               hasBody: !!data[firstKey].body,
@@ -208,9 +240,11 @@ export const subscribeToNotifications = async (userType, userId, onNotifications
           onNotificationsUpdate([]);
         }
       } catch (error) {
+        console.error('❌ Error processing Firebase notifications:', error);
       }
     },
     (error) => {
+      console.error('❌ Firebase notifications listener error:', error);
     }
   );
 
@@ -219,14 +253,18 @@ export const subscribeToNotifications = async (userType, userId, onNotifications
     (snapshot) => {
       try {
         const count = snapshot.val() || 0;
+        console.log(`🔢 Firebase unread count update received:`, count);
         onUnreadCountUpdate(count);
       } catch (error) {
+        console.error('❌ Error processing Firebase unread count:', error);
       }
     },
     (error) => {
+      console.error('❌ Firebase unread count listener error:', error);
     }
   );
 
+  console.log(`✅ Firebase listeners setup complete for ${userType} ${userId}`);
 
   const listenerId = `${userType}_${userId}`;
   activeListeners.set(listenerId, {
@@ -265,6 +303,7 @@ export const unsubscribeAll = () => {
 
 export const getNotificationsOnce = async (userType, userId) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return null;
   }
 
@@ -276,6 +315,7 @@ export const getNotificationsOnce = async (userType, userId) => {
   } else if (userType === 'medical_provider') {
     basePath = 'providers';
   } else {
+    console.error('⚠️ Unknown userType:', userType, '- defaulting to users');
     basePath = 'users';
   }
 
@@ -300,12 +340,14 @@ export const getNotificationsOnce = async (userType, userId) => {
     
     return [];
   } catch (error) {
+    console.error('Error fetching notifications from Firebase:', error);
     return null;
   }
 };
 
 export const getUnreadCountOnce = async (userType, userId) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return 0;
   }
 
@@ -317,6 +359,7 @@ export const getUnreadCountOnce = async (userType, userId) => {
   } else if (userType === 'medical_provider') {
     basePath = 'providers';
   } else {
+    console.error('⚠️ Unknown userType:', userType, '- defaulting to users');
     basePath = 'users';
   }
 
@@ -327,6 +370,7 @@ export const getUnreadCountOnce = async (userType, userId) => {
     const snapshot = await get(unreadCountRef);
     return snapshot.val() || 0;
   } catch (error) {
+    console.error('Error fetching unread count from Firebase:', error);
     return 0;
   }
 };
@@ -340,27 +384,33 @@ export const isFirebaseAvailable = () => {
  */
 export const subscribeToChatMessages = async (conversationId, onMessagesUpdate, authToken) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return null;
   }
 
   if (!isAuthenticated && authToken) {
+    console.log('🔐 Authenticating to Firebase before subscribing to chat...');
     const authResult = await authenticateWithBackend(authToken);
     if (!authResult.success) {
+      console.error('❌ Failed to authenticate to Firebase, cannot subscribe to chat');
       return null;
     }
   } else if (!isAuthenticated) {
+    console.error('❌ No auth token provided for Firebase authentication');
     return null;
   }
 
   const messagesPath = `chat/conversations/${conversationId}/messages`;
   const messagesRef = ref(database, messagesPath);
 
+  console.log(`💬 Setting up Firebase listener for chat messages: ${messagesPath}`);
 
   const messagesUnsubscribe = onValue(
     messagesRef,
     (snapshot) => {
       try {
         const data = snapshot.val();
+        console.log(`💬 Firebase messages update received for conversation ${conversationId}:`, 
           data ? Object.keys(data).length : 0, 'messages');
         
         if (data) {
@@ -375,14 +425,17 @@ export const subscribeToChatMessages = async (conversationId, onMessagesUpdate, 
           // Sort by sent_at timestamp
           messages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
           
+          console.log(`💬 Processed ${messages.length} messages from Firebase`);
           onMessagesUpdate(messages);
         } else {
           onMessagesUpdate([]);
         }
       } catch (error) {
+        console.error('❌ Error processing Firebase chat messages:', error);
       }
     },
     (error) => {
+      console.error('❌ Firebase chat messages listener error:', error);
     }
   );
 
@@ -392,6 +445,7 @@ export const subscribeToChatMessages = async (conversationId, onMessagesUpdate, 
     messagesUnsubscribe
   });
 
+  console.log(`✅ Firebase chat listener setup complete for conversation ${conversationId}`);
 
   return () => {
     off(messagesRef);
@@ -409,6 +463,7 @@ export const unsubscribeFromChatMessages = (conversationId) => {
   if (listener) {
     off(listener.messagesRef);
     activeListeners.delete(listenerId);
+    console.log(`🔕 Unsubscribed from chat conversation ${conversationId}`);
   }
 };
 
@@ -417,15 +472,19 @@ export const unsubscribeFromChatMessages = (conversationId) => {
  */
 export const subscribeToChatConversations = async (userType, userId, onConversationsUpdate, authToken) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return null;
   }
 
   if (!isAuthenticated && authToken) {
+    console.log('🔐 Authenticating to Firebase before subscribing to conversations...');
     const authResult = await authenticateWithBackend(authToken);
     if (!authResult.success) {
+      console.error('❌ Failed to authenticate to Firebase, cannot subscribe to conversations');
       return null;
     }
   } else if (!isAuthenticated) {
+    console.error('❌ No auth token provided for Firebase authentication');
     return null;
   }
 
@@ -437,18 +496,21 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
   } else if (userType === 'medical_provider') {
     basePath = 'providers';
   } else {
+    console.error('⚠️ Unknown userType:', userType, '- defaulting to users');
     basePath = 'users';
   }
 
   const conversationsPath = `chat/${basePath}/${userId}/conversations`;
   const conversationsRef = ref(database, conversationsPath);
 
+  console.log(`💬 Setting up Firebase listener for conversations: ${conversationsPath}`);
 
   const conversationsUnsubscribe = onValue(
     conversationsRef,
     (snapshot) => {
       try {
         const data = snapshot.val();
+        console.log(`💬 Firebase conversations update received:`, 
           data ? Object.keys(data).length : 0, 'conversations');
         
         if (data) {
@@ -465,9 +527,11 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
           onConversationsUpdate([]);
         }
       } catch (error) {
+        console.error('❌ Error processing Firebase conversations:', error);
       }
     },
     (error) => {
+      console.error('❌ Firebase conversations listener error:', error);
     }
   );
 
@@ -477,6 +541,7 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
     conversationsUnsubscribe
   });
 
+  console.log(`✅ Firebase conversations listener setup complete for ${userType} ${userId}`);
 
   return () => {
     off(conversationsRef);
@@ -490,15 +555,19 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
  */
 export const subscribeToNegotiations = async (userType, userId, onNegotiationsUpdate, authToken) => {
   if (!database) {
+    console.error('Firebase database not initialized');
     return null;
   }
 
   if (!isAuthenticated && authToken) {
+    console.log('🔐 Authenticating to Firebase before subscribing to negotiations...');
     const authResult = await authenticateWithBackend(authToken);
     if (!authResult.success) {
+      console.error('❌ Failed to authenticate to Firebase, cannot subscribe to negotiations');
       return null;
     }
   } else if (!isAuthenticated) {
+    console.error('❌ No auth token provided for Firebase authentication');
     return null;
   }
 
@@ -508,18 +577,21 @@ export const subscribeToNegotiations = async (userType, userId, onNegotiationsUp
   } else if (userType === 'medical_provider') {
     basePath = 'medical_providers';
   } else {
+    console.error('⚠️ Unknown userType for negotiations:', userType);
     return null;
   }
 
   const negotiationsPath = `negotiations/${basePath}/${userId}`;
   const negotiationsRef = ref(database, negotiationsPath);
 
+  console.log(`💰 Setting up Firebase listener for negotiations: ${negotiationsPath}`);
 
   const negotiationsUnsubscribe = onValue(
     negotiationsRef,
     (snapshot) => {
       try {
         const data = snapshot.val();
+        console.log(`💰 Firebase negotiations update received:`, 
           data ? Object.keys(data).length : 0, 'negotiations');
         
         if (data) {
@@ -535,14 +607,17 @@ export const subscribeToNegotiations = async (userType, userId, onNegotiationsUp
             return dateB - dateA;
           });
           
+          console.log(`💰 Processed ${negotiations.length} negotiations from Firebase`);
           onNegotiationsUpdate(negotiations);
         } else {
           onNegotiationsUpdate([]);
         }
       } catch (error) {
+        console.error('❌ Error processing Firebase negotiations:', error);
       }
     },
     (error) => {
+      console.error('❌ Firebase negotiations listener error:', error);
     }
   );
 
@@ -552,10 +627,12 @@ export const subscribeToNegotiations = async (userType, userId, onNegotiationsUp
     negotiationsUnsubscribe
   });
 
+  console.log(`✅ Firebase negotiations listener setup complete for ${userType} ${userId}`);
 
   return () => {
     off(negotiationsRef);
     activeListeners.delete(listenerId);
+    console.log(`🔕 Unsubscribed from negotiations for ${userType} ${userId}`);
   };
 };
 
@@ -569,6 +646,7 @@ export const unsubscribeFromNegotiations = (userType, userId) => {
   if (listener) {
     off(listener.negotiationsRef);
     activeListeners.delete(listenerId);
+    console.log(`🔕 Unsubscribed from negotiations for ${userType} ${userId}`);
   }
 };
 

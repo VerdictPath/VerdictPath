@@ -16,6 +16,7 @@ export const useVideoPreloader = (avatarType = 'captain') => {
     if (!avatar) return;
 
     try {
+      console.log('[VideoPreloader] Starting preload for', avatarType);
 
       const { sound: calmVideo } = await Video.createAsync(
         avatar.calmVideo,
@@ -34,7 +35,9 @@ export const useVideoPreloader = (avatarType = 'captain') => {
       setActionVideoRef(actionVideo);
 
       setVideosLoaded(true);
+      console.log('[VideoPreloader] ✓ Videos preloaded successfully');
     } catch (error) {
+      console.error('[VideoPreloader] Error preloading videos:', error);
       setVideosLoaded(true);
     }
   };

@@ -44,6 +44,7 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
         Alert.alert('Error', 'Failed to load forms');
       }
     } catch (error) {
+      console.error('Error loading forms:', error);
       Alert.alert('Error', 'Failed to load forms');
     } finally {
       setLoading(false);
@@ -72,6 +73,7 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
         Alert.alert('Error', 'Failed to load form details');
       }
     } catch (error) {
+      console.error('Error loading form:', error);
       Alert.alert('Error', 'Failed to load form details');
     }
   };
@@ -110,6 +112,7 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
         Alert.alert('Error', error.message || 'Failed to sign form');
       }
     } catch (error) {
+      console.error('Error signing form:', error);
       Alert.alert('Error', 'Failed to sign form');
     }
   };

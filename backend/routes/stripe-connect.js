@@ -10,6 +10,7 @@ const db = require('../config/db');
 
 // Warn if Stripe is not configured
 if (!stripe) {
+  console.warn('⚠️  STRIPE_SECRET_KEY not found - Stripe Connect routes will be disabled');
 }
 
 // Get base URL for redirects
@@ -105,6 +106,7 @@ router.post('/create-customer', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating Stripe customer:', error);
     res.status(500).json({ error: 'Failed to create customer account' });
   }
 });
@@ -171,6 +173,7 @@ router.post('/create-setup-intent', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating setup intent:', error);
     res.status(500).json({ error: 'Failed to create payment setup' });
   }
 });
@@ -217,6 +220,7 @@ router.post('/create-billing-portal', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating billing portal:', error);
     res.status(500).json({ error: 'Failed to access billing portal' });
   }
 });
@@ -280,6 +284,7 @@ router.get('/customer-status', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error checking customer status:', error);
     res.status(500).json({ error: 'Failed to check payment status' });
   }
 });
@@ -323,6 +328,7 @@ router.post('/set-default-payment-method', authenticateToken, async (req, res) =
     res.json({ success: true });
 
   } catch (error) {
+    console.error('Error setting default payment method:', error);
     res.status(500).json({ error: 'Failed to set default payment method' });
   }
 });
@@ -415,6 +421,7 @@ router.post('/create-account', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating Stripe Connect account:', error);
     res.status(500).json({ error: 'Failed to create payment account' });
   }
 });
@@ -428,6 +435,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
+    console.log('[account-status] Checking for userId:', userId, 'userType:', userType);
 
     // For law firms and law firm users, check customer status
     if (isLawFirmRole(userType)) {
@@ -515,6 +523,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error checking account status:', error);
     res.status(500).json({ error: 'Failed to check account status' });
   }
 });
@@ -559,6 +568,7 @@ router.post('/create-dashboard-link', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating dashboard link:', error);
     res.status(500).json({ error: 'Failed to create dashboard link' });
   }
 });
@@ -610,6 +620,7 @@ router.post('/create-onboarding-link', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    console.error('Error creating onboarding link:', error);
     res.status(500).json({ error: 'Failed to create onboarding link' });
   }
 });

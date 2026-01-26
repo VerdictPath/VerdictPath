@@ -144,6 +144,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setProviders(data.providers || []);
       }
     } catch (error) {
+      console.error('Error loading providers:', error);
     } finally {
       setLoading(false);
     }
@@ -161,6 +162,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setMyAppointments(appointments);
       }
     } catch (error) {
+      console.error('Error loading appointments:', error);
     }
   };
 
@@ -174,6 +176,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       const fetchedEvents = await CalendarService.fetchEvents(user.token, options);
       setPersonalEvents(fetchedEvents);
     } catch (error) {
+      console.error('Error loading personal events:', error);
     } finally {
       setLoadingEvents(false);
     }
@@ -282,6 +285,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setAvailableSlots(data.slots || []);
       }
     } catch (error) {
+      console.error('Error loading slots:', error);
       Alert.alert('Error', 'Failed to load available slots');
     } finally {
       setLoadingSlots(false);
@@ -304,6 +308,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setLawFirms(data.lawFirms || []);
       }
     } catch (error) {
+      console.error('Error loading law firms:', error);
     }
   };
 
@@ -318,6 +323,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setLawFirmAppointments(data.appointments || []);
       }
     } catch (error) {
+      console.error('Error loading law firm appointments:', error);
     }
   };
 
@@ -335,6 +341,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         setLawFirmSlots(data.slots || []);
       }
     } catch (error) {
+      console.error('Error loading law firm slots:', error);
       Alert.alert('Error', 'Failed to load available slots');
     } finally {
       setLoadingLawFirmSlots(false);
@@ -396,6 +403,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         Alert.alert('Error', data.error || 'Failed to book appointment');
       }
     } catch (error) {
+      console.error('Error booking law firm appointment:', error);
       Alert.alert('Error', 'Failed to book appointment');
     } finally {
       setBookingLawFirm(false);
@@ -487,6 +495,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         Alert.alert('Error', data.error || 'Failed to book appointment');
       }
     } catch (error) {
+      console.error('Error booking appointment:', error);
       Alert.alert('Error', 'Failed to book appointment');
     } finally {
       setBooking(false);
@@ -576,6 +585,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       
       Alert.alert('Success', 'Event created successfully!');
     } catch (error) {
+      console.error('Error creating event:', error);
       Alert.alert('Error', error.message || 'Failed to create event. Please try again.');
     }
   };
@@ -612,6 +622,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       Alert.alert('Success', 'Event synced to your device calendar!');
       loadPersonalEvents();
     } catch (error) {
+      console.error('Error syncing event:', error);
       Alert.alert('Error', 'Failed to sync event to device calendar');
     }
   };
@@ -631,6 +642,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       Alert.alert('Success', 'Event removed from device calendar');
       loadPersonalEvents();
     } catch (error) {
+      console.error('Error unsyncing event:', error);
       Alert.alert('Error', 'Failed to remove event from device calendar');
     }
   };
@@ -654,6 +666,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
               setPersonalEvents(prev => prev.filter(e => e.id !== event.id));
               Alert.alert('Success', 'Event deleted');
             } catch (error) {
+              console.error('Error deleting event:', error);
               Alert.alert('Error', 'Failed to delete event');
             }
           }

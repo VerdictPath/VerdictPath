@@ -51,6 +51,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         }
       }
     } catch (error) {
+      console.error('Error fetching connections:', error);
     } finally {
       setLoading(false);
     }
@@ -83,6 +84,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         Alert.alert('Error', data.error || 'Failed to update law firm connection');
       }
     } catch (error) {
+      console.error('Error updating law firm:', error);
       Alert.alert('Error', 'Failed to update law firm connection');
     } finally {
       setSaving(false);
@@ -123,6 +125,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         Alert.alert('Error', data.error || 'Failed to add medical provider');
       }
     } catch (error) {
+      console.error('Error adding medical provider:', error);
       Alert.alert('Error', 'Failed to add medical provider');
     } finally {
       setSaving(false);
@@ -157,6 +160,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         Alert.alert('Error', data.error || 'Failed to remove medical provider');
       }
     } catch (error) {
+      console.error('Error removing medical provider:', error);
       Alert.alert('Error', 'Failed to remove medical provider');
     } finally {
       setSaving(false);

@@ -36,6 +36,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         setConnectedProviders(data.medicalProviders || []);
       }
     } catch (error) {
+      console.error('Error fetching connected providers:', error);
     } finally {
       setFetchingProviders(false);
     }
@@ -80,6 +81,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         );
       }
     } catch (error) {
+      console.error('Error connecting to medical provider:', error);
       alert(
         '🏴‍☠️ Stormy Seas!',
         'The connection be lost in a storm! Please check yer internet and try again.'
@@ -117,6 +119,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                 alert('🏴‍☠️ Error!', data.error || 'Failed to remove provider.');
               }
             } catch (error) {
+              console.error('Error removing provider:', error);
               alert('🏴‍☠️ Error!', 'Failed to remove provider. Please try again.');
             }
           }

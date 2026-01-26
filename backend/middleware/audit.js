@@ -31,6 +31,7 @@ const logPhiAccess = (action, entityType) => {
         userAgent: req.get('user-agent'),
         success: success
       }).catch(err => {
+        console.error('Audit logging failed:', err);
       });
       
       // Call original send
@@ -62,6 +63,7 @@ const logAuthEvent = async (req, res, next) => {
       success: success,
       failureReason: success ? null : data.message
     }).catch(err => {
+      console.error('Auth audit logging failed:', err);
     });
     
     originalJson.call(this, data);
@@ -116,6 +118,7 @@ const logAction = (action, getEntityInfo) => {
           ...entityInfo.metadata
         }
       }).catch(err => {
+        console.error('Audit logging failed:', err);
       });
       
       originalSend.call(this, data);

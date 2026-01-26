@@ -154,6 +154,7 @@ const autoCompleteSubstage = async (userId, documentType) => {
     
     const metadata = SUBSTAGE_METADATA[substageId];
     if (!metadata) {
+      console.log(`No metadata found for substage ${substageId}`);
       return;
     }
     
@@ -168,6 +169,7 @@ const autoCompleteSubstage = async (userId, documentType) => {
     );
     
     if (result.rows.length > 0) {
+      console.log(`Auto-completed substage ${substageId} for user ${userId} after uploading ${documentType}`);
       
       // Award coins for completing this substage
       const substageCoins = getSubstageCoins(substageId);
@@ -185,6 +187,7 @@ const autoCompleteSubstage = async (userId, documentType) => {
       await recalculateLitigationProgress(userId);
     }
   } catch (error) {
+    console.error('Error auto-completing substage:', error);
     // Don't throw - document upload should succeed even if substage completion fails
   }
 };
@@ -272,7 +275,9 @@ const recalculateLitigationProgress = async (userId) => {
       [userId, currentStageId, currentStageName, progressPercentage, totalCoinsEarned, totalCompleted]
     );
     
+    console.log(`Recalculated litigation progress for user ${userId}: Stage ${currentStageId} (${currentStageName}), ${progressPercentage}% complete, ${totalCompleted}/${totalSubstages} substages`);
   } catch (error) {
+    console.error('Error recalculating litigation progress:', error);
   }
 };
 
@@ -420,6 +425,7 @@ const uploadMedicalRecord = async (req, res) => {
       substageCompleted: true
     });
   } catch (error) {
+    console.error('Error uploading medical record:', error);
     res.status(500).json({ error: 'Failed to upload medical record' });
   }
 };
@@ -548,6 +554,7 @@ const uploadMedicalBill = async (req, res) => {
       substageCompleted: true
     });
   } catch (error) {
+    console.error('Error uploading medical bill:', error);
     res.status(500).json({ error: 'Failed to upload medical bill' });
   }
 };
@@ -555,17 +562,22 @@ const uploadMedicalBill = async (req, res) => {
 // Upload evidence document
 const uploadEvidence = async (req, res) => {
   try {
+    console.log('[Upload Evidence] Request received');
+    console.log('[Upload Evidence] Headers:', {
       'content-type': req.get('content-type'),
       'authorization': req.get('authorization') ? 'present' : 'missing'
     });
+    console.log('[Upload Evidence] Body keys:', Object.keys(req.body));
     
     const userId = req.user.id;
     const file = req.file;
 
     if (!file) {
+      console.error('[Upload Evidence] No file in request');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    console.log('[Upload Evidence] File received:', {
       originalname: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
@@ -573,6 +585,7 @@ const uploadEvidence = async (req, res) => {
     });
 
     const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    console.log('[Upload Evidence] Validation result:', {
       valid: validation.valid,
       errors: validation.errors
     });
@@ -694,6 +707,7 @@ const uploadEvidence = async (req, res) => {
       substageCompleted: true
     });
   } catch (error) {
+    console.error('Error uploading evidence:', error);
     res.status(500).json({ error: 'Failed to upload evidence' });
   }
 };
@@ -859,6 +873,7 @@ const downloadFile = async (req, res) => {
       const filePath = path.resolve(__dirname, '..', 'uploads', fileKey);
       
       if (!fs.existsSync(filePath)) {
+        console.error(`[Download] File not found: ${filePath}`);
         return res.status(404).json({ error: 'File not found on server' });
       }
 
@@ -944,6 +959,7 @@ const downloadFile = async (req, res) => {
       expiresAt: presignedUrlData.expiresAt
     });
   } catch (error) {
+    console.error('Error downloading file:', error);
     res.status(500).json({ error: 'Failed to download file' });
   }
 };

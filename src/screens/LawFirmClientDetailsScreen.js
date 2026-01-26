@@ -24,6 +24,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const fetchClientDetails = async () => {
     try {
+      console.log('[ClientDetails] Fetching client details for clientId:', clientId);
+      console.log('[ClientDetails] Token:', user?.token ? 'Present' : 'Missing');
+      console.log('[ClientDetails] API URL:', API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId));
       
       const response = await fetch(
         API_ENDPOINTS.LAWFIRM.CLIENT_DETAILS(clientId),
@@ -34,14 +37,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
       
+      console.log('[ClientDetails] Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('[ClientDetails] Data received:', data);
         setClientData(data);
       } else {
         const errorData = await response.json();
+        console.error('[ClientDetails] Failed response:', response.status, errorData);
       }
     } catch (error) {
+      console.error('[ClientDetails] Error fetching client details:', error);
     } finally {
       setLoading(false);
     }
@@ -49,6 +56,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const fetchClientLitigationProgress = async () => {
     try {
+      console.log('[ClientDetails] Fetching litigation progress for clientId:', clientId);
       
       const response = await fetch(
         `${API_BASE_URL}/api/litigation/client/${clientId}/progress`,
@@ -59,14 +67,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
       
+      console.log('[ClientDetails] Litigation progress response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
+        console.log('[ClientDetails] Litigation progress data:', data);
         setLitigationProgress(data);
       } else {
         const errorData = await response.json();
+        console.error('[ClientDetails] Failed litigation progress response:', response.status, errorData);
       }
     } catch (error) {
+      console.error('[ClientDetails] Error fetching client litigation progress:', error);
     }
   };
 
@@ -110,6 +122,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[View Document] Response data:', data);
         
         // Make sure presignedUrl is absolute
         let imageUrl = data.presignedUrl;
@@ -118,12 +131,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           imageUrl = `${API_BASE_URL}${imageUrl}`;
         }
         
+        console.log('[View Document] Final image URL:', imageUrl);
+        console.log('[View Document] Storage type:', data.storageType);
         
         if (isImageFile(doc.mime_type)) {
           // For S3 presigned URLs, use them directly (they're already authenticated)
           // For local storage URLs, we need to handle authentication
           if (data.storageType === 's3' || imageUrl.includes('amazonaws.com') || imageUrl.includes('s3.')) {
             // S3 presigned URL - use directly, no token needed
+            console.log('[View Document] Using S3 presigned URL directly');
             setViewingDocument({
               ...doc,
               presignedUrl: imageUrl
@@ -151,6 +167,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 };
                 
                 reader.onerror = (error) => {
+                  console.error('[View Document] Error reading blob:', error);
                   // Fallback to original URL with token in query
                   const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
                   setViewingDocument({
@@ -169,6 +186,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 });
               }
             } catch (fetchError) {
+              console.error('[View Document] Error fetching image:', fetchError);
               // Fallback: add token to URL
               const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
               setViewingDocument({
@@ -186,9 +204,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       } else {
         const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
         alert('Failed to load document. Please try again.');
       }
     } catch (error) {
+      console.error('Error viewing document:', error);
       alert('Failed to load document. Please try again.');
     } finally {
       setDocumentLoading(false);
@@ -237,9 +257,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       } else {
         const errorData = await response.json();
+        console.error('Error fetching document URL:', errorData);
         Alert.alert('Error', 'Failed to download document. Please try again.');
       }
     } catch (error) {
+      console.error('Error downloading document:', error);
       Alert.alert('Error', 'Failed to download document. Please try again.');
     } finally {
       setDocumentLoading(false);
@@ -762,9 +784,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                   style={[styles.evidenceImage, imageLoading && styles.imageHidden]}
                   resizeMode="contain"
                   onError={(error) => {
+                    console.error('[View Document] Image load error:', error);
+                    console.error('[View Document] Failed URL:', viewingDocument.presignedUrl);
                     setImageLoading(false);
                   }}
                   onLoad={() => {
+                    console.log('[View Document] Image loaded successfully');
                     setImageLoading(false);
                   }}
                 />

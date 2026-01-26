@@ -34,6 +34,7 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
 
     const setupFirebaseListener = async () => {
       try {
+        console.log('💬 Setting up Firebase listener for conversation:', conversationId);
         unsubscribe = await subscribeToChatMessages(
           conversationId,
           handleFirebaseMessages,
@@ -42,9 +43,12 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
         
         if (unsubscribe) {
           setFirebaseConnected(true);
+          console.log('✅ Firebase listener connected for conversation:', conversationId);
         } else {
+          console.warn('⚠️ Firebase listener failed to connect, falling back to polling');
         }
       } catch (error) {
+        console.error('❌ Error setting up Firebase listener:', error);
       }
     };
 
@@ -52,6 +56,7 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
 
     return () => {
       if (unsubscribe) {
+        console.log('🔕 Cleaning up Firebase listener for conversation:', conversationId);
         unsubscribe();
       }
     };
@@ -71,20 +76,24 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
         await markAsRead(lastMessage.id);
       }
     } catch (err) {
+      console.error('Error fetching messages:', err);
       setLoading(false);
     }
   };
 
   const handleFirebaseMessages = async (firebaseMessages) => {
     try {
+      console.log('💬 Firebase real-time update detected:', firebaseMessages.length, 'messages');
       
       // Firebase contains encrypted messages only
       // Fetch decrypted messages from API
+      console.log('🔄 Fetching decrypted messages from API...');
       const response = await apiRequest(`${API_BASE_URL}/api/chat/conversations/${conversationId}/messages`, {
         method: 'GET',
       });
 
       if (response && response.messages) {
+        console.log('✅ Received', response.messages.length, 'decrypted messages from API');
         setMessages(response.messages);
         setLoading(false);
 
@@ -100,6 +109,7 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
         }
       }
     } catch (error) {
+      console.error('Error handling Firebase messages:', error);
     }
   };
 
@@ -110,6 +120,7 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
         body: JSON.stringify({ lastReadMessageId }),
       });
     } catch (err) {
+      console.error('Error marking as read:', err);
     }
   };
 
@@ -142,9 +153,11 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
       } else {
+        console.error('Invalid message response:', response);
         throw new Error('Invalid message response from server');
       }
     } catch (err) {
+      console.error('Error sending message:', err);
       // Restore input text on error
       setInputText(messageText);
       alert('Failed to send message. Please try again.');

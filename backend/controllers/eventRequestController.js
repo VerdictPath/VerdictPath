@@ -147,6 +147,7 @@ const eventRequestController = {
           ]
         );
       } catch (notifError) {
+        console.error('Error sending notification:', notifError);
       }
 
       res.status(201).json({
@@ -173,6 +174,8 @@ const eventRequestController = {
         }
       });
     } catch (error) {
+      console.error('Error creating event request:', error.message);
+      console.error('Error stack:', error.stack);
       res.status(500).json({ error: 'Failed to create event request', details: error.message });
     }
   },
@@ -274,6 +277,7 @@ const eventRequestController = {
 
       res.json({ eventRequests });
     } catch (error) {
+      console.error('Error fetching event requests:', error);
       res.status(500).json({ error: 'Failed to fetch event requests' });
     }
   },
@@ -347,6 +351,7 @@ const eventRequestController = {
         }))
       });
     } catch (error) {
+      console.error('Error fetching event request:', error);
       res.status(500).json({ error: 'Failed to fetch event request' });
     }
   },
@@ -445,6 +450,7 @@ const eventRequestController = {
         throw error;
       }
     } catch (error) {
+      console.error('Error submitting proposed dates:', error);
       res.status(500).json({ error: error.message || 'Failed to submit proposed dates' });
     }
   },
@@ -564,6 +570,7 @@ const eventRequestController = {
         throw error;
       }
     } catch (error) {
+      console.error('Error confirming proposed date:', error);
       res.status(500).json({ error: 'Failed to confirm proposed date' });
     }
   },
@@ -728,6 +735,7 @@ const eventRequestController = {
         throw error;
       }
     } catch (error) {
+      console.error('Error selecting offered date:', error);
       res.status(500).json({ error: 'Failed to select date' });
     }
   },
@@ -783,6 +791,7 @@ const eventRequestController = {
         message: 'Event request cancelled'
       });
     } catch (error) {
+      console.error('Error cancelling event request:', error);
       res.status(500).json({ error: 'Failed to cancel event request' });
     }
   }
