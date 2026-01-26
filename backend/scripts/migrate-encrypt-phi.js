@@ -36,7 +36,6 @@ async function migratePHI() {
     await migrateMedicalBilling();
     
     console.log('\n✅ Migration completed successfully!\n');
-    console.log('NEXT STEPS:');
     console.log('1. Verify encrypted data with: SELECT id, first_name_encrypted FROM users LIMIT 5;');
     console.log('2. Test decryption in your controllers');
     console.log('3. After verification, you can drop plaintext columns (CAREFUL!)');

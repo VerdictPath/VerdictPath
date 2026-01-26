@@ -13,7 +13,6 @@ async function checkUser() {
       console.log('❌ User NOT found in database');
       console.log('Email:', email);
     } else {
-      console.log('✅ User found:');
       console.log(JSON.stringify(result.rows[0], null, 2));
     }
     

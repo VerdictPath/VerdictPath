@@ -412,17 +412,14 @@ async function main() {
     console.log('1️⃣  INDIVIDUAL USER:');
     console.log('   Username: beta_individual');
     console.log('   Password: password123');
-    console.log('   Features:');
     console.log('   • 44% roadmap completion (18 completed substages)');
     console.log('   • 2 pending attorney-assigned tasks');
     console.log('   • 1 pending appointment with law firm');
     console.log('   • Linked to 4 medical providers');
     console.log('   • Free tier, 245 coins, 5-day login streak\n');
     
-    console.log('2️⃣  LAW FIRM:');
     console.log('   Username: beta_lawfirm');
     console.log('   Password: password123');
-    console.log('   Features:');
     console.log('   • 42 active clients (varied tiers)');
     console.log('   • 10 active bill negotiations (various stages)');
     console.log('   • Premium plan with disbursement access');
@@ -431,7 +428,6 @@ async function main() {
     console.log('3️⃣  MEDICAL PROVIDER:');
     console.log('   Username: beta_provider');
     console.log('   Password: password123');
-    console.log('   Features:');
     console.log('   • 23 active patients');
     console.log('   • 15 notifications (10 unread)');
     console.log('   • Multiple active negotiations with law firms');
@@ -444,8 +440,6 @@ async function main() {
     console.log(`   • ${additionalProviders.length + 1} medical provider accounts`);
     console.log('   • 10 bill negotiations with history');
     console.log('   • 18 litigation substage completions');
-    console.log('   • 2 pending tasks');
-    console.log('   • 1 appointment');
     console.log('   • 15 notifications\n');
     
     console.log('🏴‍☠️ Ready for comprehensive beta testing!');

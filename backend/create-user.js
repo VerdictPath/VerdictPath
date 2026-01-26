@@ -47,7 +47,6 @@ async function createUser() {
     console.log('   Email:', email);
     console.log('   Password:', password);
     console.log('   URL: http://localhost:5000/api/auth/login');
-    console.log('\n✅ Ready to test!');
     
     process.exit(0);
   } catch (error) {

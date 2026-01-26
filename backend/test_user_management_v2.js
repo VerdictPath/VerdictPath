@@ -44,7 +44,6 @@ async function testLawFirmUserManagement() {
     });
     const lawFirmToken = loginRes.data.token;
     const lawFirmId = loginRes.data.user.id;
-    console.log('✅ Login successful');
     console.log(`   Firm: ${loginRes.data.user.name}`);
     console.log(`   Token: ${lawFirmToken.substring(0, 20)}...`);
     
@@ -140,7 +139,6 @@ async function testMedicalProviderUserManagement() {
     });
     const medicalToken = loginRes.data.token;
     const medicalId = loginRes.data.user.id;
-    console.log('✅ Login successful');
     console.log(`   Provider: ${loginRes.data.user.name}`);
     console.log(`   Token: ${medicalToken.substring(0, 20)}...`);
     
@@ -252,7 +250,6 @@ async function runTests() {
     console.log('✅ Creator names shown');
     console.log('✅ Last activity tracked');
     console.log('✅ CamelCase responses confirmed');
-    console.log('✅ Routes aligned\n');
     process.exit(0);
   } else {
     console.log('\n⚠️  SOME TESTS FAILED. Review errors above.\n');

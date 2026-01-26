@@ -60,7 +60,6 @@ function logSmsOperation(operation, status, details) {
   const statusEmoji = status === 'success' ? '✅' : status === 'failed' ? '❌' : '⚠️';
   const statusText = status === 'success' ? 'SUCCESS' : status === 'failed' ? 'FAILED' : 'WARNING';
   
-  console.log('');
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(`${statusEmoji} SMS SERVICE - ${operation.toUpperCase()}`);
   console.log('═══════════════════════════════════════════════════════════════');
@@ -84,7 +83,6 @@ function logSmsOperation(operation, status, details) {
   }
   
   console.log('═══════════════════════════════════════════════════════════════');
-  console.log('');
 }
 
 function initializeTwilio() {
