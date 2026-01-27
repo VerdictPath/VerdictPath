@@ -1,4 +1,6 @@
-const fs = require('fs');
+Script 2: Safe Removal (Backend Only First)
+Create this file: cleanup-console-logs.js
+javascriptconst fs = require('fs');
 const path = require('path');
 
 // Patterns to remove (simple debug logs)
