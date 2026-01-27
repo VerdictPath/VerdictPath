@@ -681,13 +681,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       if (userType === USER_TYPES.LAW_FIRM) {
         apiUserType = 'lawfirm';
         targetScreen = 'lawfirm-dashboard';
-        loginEndpoint = API_ENDPOINTS.AUTH.LOGIN_LAWFIRM_USER;
-        requestBody = { email, password };
+        loginEndpoint = API_ENDPOINTS.AUTH.LOGIN;
+        requestBody = { email, password, userType: apiUserType };
       } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-        apiUserType = 'medical_provider';
+        apiUserType = 'medicalprovider';
         targetScreen = 'medicalprovider-dashboard';
-        loginEndpoint = API_ENDPOINTS.AUTH.LOGIN_MEDICALPROVIDER_USER;
-        requestBody = { email, password };
+        loginEndpoint = API_ENDPOINTS.AUTH.LOGIN;
+        requestBody = { email, password, userType: apiUserType };
       } else {
         apiUserType = 'individual';
         targetScreen = 'dashboard';
