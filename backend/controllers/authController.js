@@ -698,7 +698,9 @@ exports.joinMedicalProvider = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password, userType } = req.body;
+    const { email, password } = req.body;
+    // Normalize userType: accept both 'medicalprovider' and 'medical_provider'
+    const userType = req.body.userType === 'medicalprovider' ? 'medical_provider' : req.body.userType;
     
     let query, result;
     let isSubUser = false;
