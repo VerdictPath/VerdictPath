@@ -69,7 +69,8 @@
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
     "stripe": "^19.2.0",
-    "twilio": "^5.10.6"
+    "twilio": "^5.10.6",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.0"

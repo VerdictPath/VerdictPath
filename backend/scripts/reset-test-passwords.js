@@ -51,7 +51,6 @@ const resetTestPasswords = async () => {
     });
     
     console.log(`\n🎉 Password reset complete! New password for all test accounts: ${newPassword}`);
-    console.log('\n📋 Test Accounts:');
     console.log('   Individual: testclient@example.com');
     console.log('   Law Firm: lawfirm@test.com');
     console.log('   Medical Provider: testmed1@example.com');

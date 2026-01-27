@@ -1,0 +1,156 @@
+const fs = require('fs');
+const path = require('path');
+
+// Patterns to remove (simple debug logs)
+const REMOVE_PATTERNS = [
+  /console\.log\(['"]here['"]\);?\s*/g,
+  /console\.log\(['"]test['"]\);?\s*/g,
+  /console\.log\(['"]checking['"]\);?\s*/g,
+  /console\.log\(['"]debug['"]\);?\s*/g,
+  /console\.log\(['"]TODO['"]\);?\s*/g,
+  /console\.log\(['"]FIXME['"]\);?\s*/g,
+  /console\.log\(\);?\s*/g, // Empty console.logs
+];
+
+// Patterns to keep (important logs)
+const KEEP_PATTERNS = [
+  'error',
+  'Error',
+  'payment',
+  'Payment',
+  'settlement',
+  'Settlement',
+  'authentication',
+  'Authentication',
+  'HIPAA',
+  'audit',
+  'Audit',
+  'Server starting',
+  'Database connected',
+  'PORT',
+  'Environment:',
+];
+
+function shouldKeepLog(line) {
+  return KEEP_PATTERNS.some(pattern => line.includes(pattern));
+}
+
+function cleanFile(filePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
+  let originalContent = content;
+  let removedCount = 0;
+
+  // Remove simple debug patterns
+  REMOVE_PATTERNS.forEach(pattern => {
+    const matches = content.match(pattern);
+    if (matches) {
+      removedCount += matches.length;
+      content = content.replace(pattern, '');
+    }
+  });
+
+  // Remove standalone console.log statements (not in important contexts)
+  const lines = content.split('\n');
+  const cleanedLines = lines.filter(line => {
+    const trimmed = line.trim();
+    const isConsoleLog = trimmed.startsWith('console.log');
+    
+    if (!isConsoleLog) return true;
+    
+    // Keep important logs
+    if (shouldKeepLog(line)) return true;
+    
+    // Remove simple variable logs like: console.log(variable);
+    if (/console\.log\([a-zA-Z_][a-zA-Z0-9_]*\);?/.test(trimmed)) {
+      removedCount++;
+      return false;
+    }
+    
+    // Remove logs with simple strings
+    if (/console\.log\(['"][^'"]{0,20}['"]\);?/.test(trimmed)) {
+      removedCount++;
+      return false;
+    }
+    
+    return true;
+  });
+
+  content = cleanedLines.join('\n');
+
+  // Remove multiple consecutive blank lines (cleanup artifact)
+  content = content.replace(/\n\n\n+/g, '\n\n');
+
+  // Save if changes were made
+  if (content !== originalContent) {
+    fs.writeFileSync(filePath, content, 'utf8');
+    return removedCount;
+  }
+
+  return 0;
+}
+
+function processDirectory(dir, extensions = ['.js', '.jsx', '.ts', '.tsx']) {
+  let totalRemoved = 0;
+  let filesProcessed = 0;
+  const files = fs.readdirSync(dir);
+
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      // Skip node_modules and .git
+      if (file === 'node_modules' || file === '.git' || file === '.expo' || file === 'build' || file === 'dist') {
+        return;
+      }
+      const result = processDirectory(filePath, extensions);
+      totalRemoved += result.removed;
+      filesProcessed += result.filesProcessed;
+    } else if (extensions.includes(path.extname(file))) {
+      filesProcessed++;
+      const removed = cleanFile(filePath);
+      if (removed > 0) {
+        console.log(`✓ ${filePath}: Removed ${removed} console.logs`);
+        totalRemoved += removed;
+      }
+    }
+  });
+
+  return { removed: totalRemoved, filesProcessed };
+}
+
+// Main execution
+console.log('╔═══════════════════════════════════════════════════════════╗');
+console.log('║     Verdict Path - Console.log Cleanup Script            ║');
+console.log('╚═══════════════════════════════════════════════════════════╝\n');
+
+const targetDir = process.argv[2] || '.';
+console.log(`📁 Target directory: ${path.resolve(targetDir)}\n`);
+
+console.log('⚠️  SAFETY REMINDER:');
+console.log('   Make sure you have committed your current changes!');
+console.log('   Run: git status\n');
+
+console.log('🔍 Scanning for console.logs...\n');
+
+const result = processDirectory(targetDir);
+
+console.log('\n╔═══════════════════════════════════════════════════════════╗');
+console.log(`║  CLEANUP COMPLETE                                         ║`);
+console.log('╠═══════════════════════════════════════════════════════════╣');
+console.log(`║  Files Processed: ${result.filesProcessed.toString().padStart(42)}  ║`);
+console.log(`║  Console.logs Removed: ${result.removed.toString().padStart(38)}  ║`);
+console.log('╚═══════════════════════════════════════════════════════════╝\n');
+
+if (result.removed > 0) {
+  console.log('✅ Next steps:');
+  console.log('   1. Review changes: git diff');
+  console.log('   2. Test your app thoroughly');
+  console.log('   3. Commit: git add . && git commit -m "Remove debug console.logs"');
+} else {
+  console.log('ℹ️  No console.logs removed. Either they were already clean or');
+  console.log('   all logs matched KEEP_PATTERNS (important logs).');
+}
+
+console.log('\n💡 Tip: Keep logs that include:');
+KEEP_PATTERNS.forEach(pattern => console.log(`   - ${pattern}`));

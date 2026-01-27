@@ -138,7 +138,6 @@ const seedProductionTestData = async () => {
     }
     
     console.log('\n🎉 Production test data seeded successfully!');
-    console.log('\n📋 Summary:');
     console.log(`   • ${Object.keys(userIds).length} individual users created`);
     console.log(`   • lawfirm@test.com: 4 clients connected`);
     console.log(`   • admin@testlegal.com: 5 clients connected`);

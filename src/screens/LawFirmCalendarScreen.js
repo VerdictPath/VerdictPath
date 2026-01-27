@@ -956,7 +956,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     </View>
   );
 
-
   const renderMonthView = () => (
     <View style={styles.calendarContainer}>
       <Calendar

@@ -1,0 +1,106 @@
+const fs = require('fs');
+const path = require('path');
+
+// Patterns to remove (simple debug logs)
+const REMOVE_PATTERNS = [
+  /console\.log\(['"]here['"]\);?\s*/g,
+  /console\.log\(['"]test['"]\);?\s*/g,
+  /console\.log\(['"]checking['"]\);?\s*/g,
+  /console\.log\(['"]debug['"]\);?\s*/g,
+  /console\.log\(['"]TODO['"]\);?\s*/g,
+  /console\.log\(['"]FIXME['"]\);?\s*/g,
+  /console\.log\(\);?\s*/g, // Empty console.logs
+];
+
+// Patterns to keep (important logs)
+const KEEP_PATTERNS = [
+  'error',
+  'Error',
+  'payment',
+  'Payment',
+  'settlement',
+  'Settlement',
+  'authentication',
+  'Authentication',
+  'HIPAA',
+  'audit',
+  'Audit',
+];
+
+function shouldKeepLog(line) {
+  return KEEP_PATTERNS.some(pattern => line.includes(pattern));
+}
+
+function cleanFile(filePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
+  let originalContent = content;
+  let removedCount = 0;
+
+  // Remove simple debug patterns
+  REMOVE_PATTERNS.forEach(pattern => {
+    const matches = content.match(pattern);
+    if (matches) {
+      removedCount += matches.length;
+      content = content.replace(pattern, '');
+    }
+  });
+
+  // Remove standalone console.log statements (not in important contexts)
+  const lines = content.split('\n');
+  const cleanedLines = lines.filter(line => {
+    const isConsoleLog = line.trim().startsWith('console.log');
+    if (!isConsoleLog) return true;
+    
+    if (shouldKeepLog(line)) return true;
+    
+    // Check if it's a simple variable log
+    if (/console\.log\([a-zA-Z_][a-zA-Z0-9_]*\);?/.test(line.trim())) {
+      removedCount++;
+      return false;
+    }
+    
+    return true;
+  });
+
+  content = cleanedLines.join('\n');
+
+  // Save if changes were made
+  if (content !== originalContent) {
+    fs.writeFileSync(filePath, content, 'utf8');
+    return removedCount;
+  }
+
+  return 0;
+}
+
+function processDirectory(dir, extensions = ['.js', '.jsx', '.ts', '.tsx']) {
+  let totalRemoved = 0;
+  const files = fs.readdirSync(dir);
+
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      // Skip node_modules and .git
+      if (file === 'node_modules' || file === '.git' || file === '.expo') {
+        return;
+      }
+      totalRemoved += processDirectory(filePath, extensions);
+    } else if (extensions.includes(path.extname(file))) {
+      const removed = cleanFile(filePath);
+      if (removed > 0) {
+        console.log(`${filePath}: Removed ${removed} console.logs`);
+        totalRemoved += removed;
+      }
+    }
+  });
+
+  return totalRemoved;
+}
+
+// Start cleanup
+const targetDir = process.argv[2] || './server';
+console.log(`Starting cleanup in: ${targetDir}`);
+const total = processDirectory(targetDir);
+console.log(`\nTotal console.logs removed: ${total}`);
