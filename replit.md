@@ -51,8 +51,11 @@ Key technical features include:
 - Created `backend/utils/errorResponse.js` with standardized error response utilities (AppError, sendErrorResponse, sendSuccessResponse, handleDatabaseError, asyncHandler)
 - Created `backend/middleware/errorHandler.js` with global error handler middleware
 - API 404 handler returns JSON for /api/* routes instead of SPA HTML
-- authController.js fully migrated to standardized error handling - no error.message leakage in production
-- Future work: Migrate remaining controllers and validation error responses
+- Migrated controllers to standardized error handling (no error.message leakage in production):
+  - authController.js (11 endpoints)
+  - lawfirmController.js (13 handlers)
+  - medicalproviderController.js (3 handlers)
+- Remaining controllers can be migrated post-launch as needed
 
 ### expo-av to expo-video Migration (Deferred)
 - Both expo-av and expo-video coexist in the project
