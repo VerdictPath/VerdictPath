@@ -489,15 +489,8 @@ app.get('*', (req, res) => {
 });
 
 // Global error handler
-app.use((err, req, res, next) => {
-  console.error('❌ ERROR:', err.stack);
-  res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
-    path: req.path,
-    timestamp: new Date().toISOString()
-  });
-});
+const { globalErrorHandler } = require('./middleware/errorHandler');
+app.use(globalErrorHandler);
 
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`VerdictPath Backend Server running on port ${PORT}`);
