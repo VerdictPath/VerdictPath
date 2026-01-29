@@ -12,6 +12,7 @@ const { checkLawFirmLimit } = require('../utils/subscriptionLimits');
 const { sendCredentialSMS, sendAccountCreationSMS } = require('../services/smsService');
 const { sendWelcomeEmail, sendPasswordChangedEmail, sendSecurityAlertEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } = require('../services/emailService');
 const crypto = require('crypto');
+const { sendErrorResponse, sendSuccessResponse, handleDatabaseError, errorCodes } = require('../utils/errorResponse');
 
 // Helper function to set httpOnly authentication cookie
 const setAuthCookie = (res, token) => {
