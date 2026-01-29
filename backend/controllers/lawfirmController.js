@@ -2,6 +2,7 @@ const db = require('../config/db');
 const auditLogger = require('../services/auditLogger');
 const encryption = require('../services/encryption');
 const formsService = require('../services/formsService');
+const { sendErrorResponse, handleDatabaseError, errorCodes } = require('../utils/errorResponse');
 
 exports.getClients = async (req, res) => {
   try {
@@ -35,7 +36,7 @@ exports.getClients = async (req, res) => {
     res.json({ clients });
   } catch (error) {
     console.error('Error fetching clients:', error);
-    res.status(500).json({ message: 'Error fetching clients', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching clients', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -132,7 +133,7 @@ exports.getDashboard = async (req, res) => {
       analytics: analytics
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching dashboard', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching dashboard', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -315,7 +316,7 @@ exports.getClientDetails = async (req, res) => {
       litigationStage: litigationStageResult.rows[0] || null
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching client details', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching client details', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -393,7 +394,7 @@ exports.updateLitigationStage = async (req, res) => {
       litigationStage
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating litigation stage', error: error.message });
+    return sendErrorResponse(res, 500, 'Error updating litigation stage', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -431,7 +432,7 @@ exports.getLitigationHistory = async (req, res) => {
     
     res.json({ history: historyResult.rows });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching litigation history', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching litigation history', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -465,7 +466,7 @@ exports.getClientDocuments = async (req, res) => {
     
     res.json(result);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching client documents', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching client documents', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -479,7 +480,7 @@ exports.getDocumentNotifications = async (req, res) => {
     
     res.json({ notifications });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching notifications', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -497,7 +498,7 @@ exports.markNotificationAsRead = async (req, res) => {
     
     res.json({ message: 'Notification marked as read', notification });
   } catch (error) {
-    res.status(500).json({ message: 'Error marking notification as read', error: error.message });
+    return sendErrorResponse(res, 500, 'Error marking notification as read', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -510,7 +511,7 @@ exports.getUnreadNotificationCount = async (req, res) => {
     
     res.json({ unreadCount: count });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching notification count', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching notification count', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -533,7 +534,7 @@ exports.getClientForms = async (req, res) => {
     
     res.json({ forms: clientForms });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching client forms', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching client forms', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -564,7 +565,7 @@ exports.createClientForm = async (req, res) => {
     
     res.status(201).json({ message: 'Form created successfully', submission });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating form', error: error.message });
+    return sendErrorResponse(res, 500, 'Error creating form', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -574,7 +575,7 @@ exports.getAllLawFirmForms = async (req, res) => {
     const forms = await formsService.getLawFirmForms(lawFirmId);
     res.json({ forms });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching forms', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching forms', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -735,6 +736,6 @@ exports.getAllClientDocuments = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching all client documents:', error);
-    res.status(500).json({ message: 'Error fetching documents', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching documents', { code: errorCodes.INTERNAL_ERROR });
   }
 };

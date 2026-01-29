@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const encryption = require('../services/encryption');
+const { sendErrorResponse, errorCodes } = require('../utils/errorResponse');
 
 /**
  * Get Patients List (simplified for dropdowns/selection)
@@ -52,7 +53,7 @@ exports.getPatients = async (req, res) => {
     res.json({ patients });
   } catch (error) {
     console.error('Error fetching patients list:', error);
-    res.status(500).json({ message: 'Error fetching patients', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching patients', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -243,7 +244,7 @@ exports.getDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching provider dashboard:', error);
-    res.status(500).json({ message: 'Error fetching dashboard', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching dashboard', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
@@ -373,7 +374,7 @@ exports.getPatientDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching patient details:', error);
-    res.status(500).json({ message: 'Error fetching patient details', error: error.message });
+    return sendErrorResponse(res, 500, 'Error fetching patient details', { code: errorCodes.INTERNAL_ERROR });
   }
 };
 
