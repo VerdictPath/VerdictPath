@@ -45,6 +45,23 @@ Key technical features include:
 - **Calendar Event Requests**: Workflow for requesting event dates from clients/patients.
 - **Privacy Policy & Terms Acceptance**: Integration of legal documents.
 
+## Recent Implementation Notes
+
+### Standardized Error Handling (January 2026)
+- Created `backend/utils/errorResponse.js` with standardized error response utilities (AppError, sendErrorResponse, sendSuccessResponse, handleDatabaseError, asyncHandler)
+- Created `backend/middleware/errorHandler.js` with global error handler middleware
+- API 404 handler returns JSON for /api/* routes instead of SPA HTML
+- authController.js fully migrated to standardized error handling - no error.message leakage in production
+- Future work: Migrate remaining controllers and validation error responses
+
+### expo-av to expo-video Migration (Deferred)
+- Both expo-av and expo-video coexist in the project
+- Video functionality works correctly across all screens
+- Full migration deferred to post-launch due to complexity
+
+### AWS S3 Requirements
+- Medical Hub document upload requires AWS S3 credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION)
+
 ## External Dependencies
 - **Expo SDK**: Core framework for React Native development.
 - **React Native**: For building mobile applications.

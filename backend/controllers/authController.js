@@ -352,10 +352,13 @@ exports.registerLawFirm = async (req, res) => {
       smsSent: smsResult.success || false
     });
   } catch (error) {
-    if (error.code === '23505') {
-      return res.status(400).json({ message: 'Firm code or email already exists' });
+    console.error('[Register Law Firm] Error:', error.message);
+    if (error.code?.startsWith('23')) {
+      return handleDatabaseError(error, res);
     }
-    res.status(500).json({ message: 'Error registering law firm', error: error.message });
+    return sendErrorResponse(res, 500, 'Error registering law firm', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -494,10 +497,13 @@ exports.registerMedicalProvider = async (req, res) => {
       }
     });
   } catch (error) {
-    if (error.code === '23505') {
-      return res.status(400).json({ message: 'Provider code or email already exists' });
+    console.error('[Register Medical Provider] Error:', error.message);
+    if (error.code?.startsWith('23')) {
+      return handleDatabaseError(error, res);
     }
-    res.status(500).json({ message: 'Error registering medical provider', error: error.message });
+    return sendErrorResponse(res, 500, 'Error registering medical provider', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -674,11 +680,13 @@ exports.joinMedicalProvider = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error joining medical provider:', error);
-    if (error.code === '23505') {
-      return res.status(400).json({ message: 'An account with this email already exists' });
+    console.error('[Join Medical Provider] Error:', error.message);
+    if (error.code?.startsWith('23')) {
+      return handleDatabaseError(error, res);
     }
-    res.status(500).json({ message: 'Error joining medical provider', error: error.message });
+    return sendErrorResponse(res, 500, 'Error joining medical provider', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1075,7 +1083,10 @@ exports.login = async (req, res) => {
       user: responseData
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    console.error('[Login] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error logging in', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1213,8 +1224,10 @@ exports.loginLawFirmUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error logging in law firm user:', error);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    console.error('[Login Law Firm User] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error logging in', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1352,8 +1365,10 @@ exports.loginMedicalProviderUser = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error logging in medical provider user:', error);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    console.error('[Login Medical Provider User] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error logging in', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1377,8 +1392,10 @@ exports.logout = async (req, res) => {
     
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
-    console.error('Error logging out:', error);
-    res.status(500).json({ message: 'Error logging out', error: error.message });
+    console.error('[Logout] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error logging out', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1438,8 +1455,10 @@ exports.forgotPassword = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error in forgot password:', error);
-    res.status(500).json({ message: 'Error processing request', error: error.message });
+    console.error('[Forgot Password] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error processing request', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1495,8 +1514,10 @@ exports.resetPassword = async (req, res) => {
     res.json({ message: 'Password has been reset successfully' });
     
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({ message: 'Error resetting password', error: error.message });
+    console.error('[Reset Password] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error resetting password', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
 
@@ -1525,7 +1546,9 @@ exports.verifyResetToken = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error verifying reset token:', error);
-    res.status(500).json({ valid: false, message: 'Error verifying token' });
+    console.error('[Verify Reset Token] Error:', error.message);
+    return sendErrorResponse(res, 500, 'Error verifying token', {
+      code: errorCodes.INTERNAL_ERROR
+    });
   }
 };
