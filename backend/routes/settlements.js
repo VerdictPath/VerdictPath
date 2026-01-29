@@ -797,7 +797,6 @@ router.post('/:id/disburse-to-client', authenticateToken, isLawFirm, requirePrem
         stripeTransferId = transfer.id;
 
         if (platformFee > 0) {
-          console.log(`Platform fee of $${platformFee} charged for disbursement ${id}`);
         }
 
       } catch (stripeError) {

@@ -52,7 +52,6 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
           console.log('✅ Firebase authentication successful for chat list');
           
           // Wait for auth state to be fully ready before setting up listener
-          console.log('⏳ Waiting for Firebase auth state to be ready...');
           const authStateResult = await waitForAuthReady(5000);
           if (!authStateResult || !authStateResult.success) {
             const errorMsg = authStateResult?.error || 'Auth state not ready';
@@ -87,18 +86,14 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
         const unreadCountsPath = `chat/${basePath}/${user.id}/unread_counts`;
         const unreadCountsRef = ref(db, unreadCountsPath);
 
-        console.log(`💬 Setting up Firebase listener for unread counts: ${unreadCountsPath}`);
-
         unreadListenerRef.current = onValue(
           unreadCountsRef,
           (snapshot) => {
             const data = snapshot.val();
-            console.log('💬 Firebase unread counts update detected:', data ? Object.keys(data).length : 0, 'conversations');
             
             // Refetch conversation list when unread counts change
             // This ensures we show latest messages and counts
             if (data && !loading && !refreshing) {
-              console.log('🔄 Refreshing conversation list due to Firebase update...');
               fetchConversations();
             }
           },
@@ -131,7 +126,6 @@ const ChatListScreen = ({ onNavigateToConversation, onNavigateToNewChat, user })
           const unreadCountsPath = `chat/${basePath}/${user.id}/unread_counts`;
           const unreadCountsRef = ref(db, unreadCountsPath);
           off(unreadCountsRef);
-          console.log('🔕 Cleaned up Firebase listener for chat list');
         }
       }
     };

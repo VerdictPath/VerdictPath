@@ -154,7 +154,6 @@ const autoCompleteSubstage = async (userId, documentType) => {
     
     const metadata = SUBSTAGE_METADATA[substageId];
     if (!metadata) {
-      console.log(`No metadata found for substage ${substageId}`);
       return;
     }
     
@@ -169,7 +168,6 @@ const autoCompleteSubstage = async (userId, documentType) => {
     );
     
     if (result.rows.length > 0) {
-      console.log(`Auto-completed substage ${substageId} for user ${userId} after uploading ${documentType}`);
       
       // Award coins for completing this substage
       const substageCoins = getSubstageCoins(substageId);
@@ -275,7 +273,6 @@ const recalculateLitigationProgress = async (userId) => {
       [userId, currentStageId, currentStageName, progressPercentage, totalCoinsEarned, totalCompleted]
     );
     
-    console.log(`Recalculated litigation progress for user ${userId}: Stage ${currentStageId} (${currentStageName}), ${progressPercentage}% complete, ${totalCompleted}/${totalSubstages} substages`);
   } catch (error) {
     console.error('Error recalculating litigation progress:', error);
   }
@@ -562,13 +559,6 @@ const uploadMedicalBill = async (req, res) => {
 // Upload evidence document
 const uploadEvidence = async (req, res) => {
   try {
-    console.log('[Upload Evidence] Request received');
-    console.log('[Upload Evidence] Headers:', {
-      'content-type': req.get('content-type'),
-      'authorization': req.get('authorization') ? 'present' : 'missing'
-    });
-    console.log('[Upload Evidence] Body keys:', Object.keys(req.body));
-    
     const userId = req.user.id;
     const file = req.file;
 
@@ -577,18 +567,7 @@ const uploadEvidence = async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    console.log('[Upload Evidence] File received:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      bufferLength: file.buffer?.length
-    });
-
     const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
-    console.log('[Upload Evidence] Validation result:', {
-      valid: validation.valid,
-      errors: validation.errors
-    });
     
     if (!validation.valid) {
       await auditLogger.log({

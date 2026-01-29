@@ -86,9 +86,7 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   const deactivateUser = async (userId) => {
     try {
-      console.log('[LawFirm UserManagement] Deactivating user:', userId);
       const url = API_ENDPOINTS.LAWFIRM_USERS.DEACTIVATE(userId);
-      console.log('[LawFirm UserManagement] Deactivate URL:', url);
       
       const response = await apiRequest(url, {
         method: 'POST',
@@ -100,8 +98,6 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
           reason: 'Deactivated by admin',
         }),
       });
-
-      console.log('[LawFirm UserManagement] Deactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User deactivated successfully');
@@ -117,13 +113,10 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
 
   const reactivateUser = async (userId) => {
     try {
-      console.log('[LawFirm UserManagement] Reactivating user:', userId);
       const response = await apiRequest(API_ENDPOINTS.LAWFIRM_USERS.REACTIVATE(userId), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
-
-      console.log('[LawFirm UserManagement] Reactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User reactivated successfully');

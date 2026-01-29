@@ -650,7 +650,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleSendAvailabilityRequest = async () => {
-    console.log('[AvailabilityRequest] Starting submission...', newAvailabilityRequest);
     
     if (!newAvailabilityRequest.clientId) {
       showAlert('Error', 'Please select a client');
@@ -674,7 +673,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       { date: option3Date, time: option3Time, label: 'Option 3' }
     ];
     
-    console.log('[AvailabilityRequest] Options:', options);
     
     for (const opt of options) {
       if (!validateDateFormat(opt.date)) {
@@ -690,7 +688,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       const startTimeStr = `${isoDate}T${option.time}:00`;
       const startDate = new Date(startTimeStr);
       const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-      console.log('[AvailabilityRequest] Proposed date:', { isoDate, startTimeStr, startISO: startDate.toISOString() });
       return {
         startTime: startDate.toISOString(),
         endTime: endDate.toISOString()
@@ -716,10 +713,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           })
         }
       );
-      console.log('[AvailabilityRequest] Response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('[AvailabilityRequest] Success:', data);
         showAlert('Success', 'Availability request with 3 options sent to client!');
         setShowAvailabilityRequestModal(false);
         setShowDatePicker1(false);
@@ -744,7 +739,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         });
       } else {
         const data = await response.json();
-        console.log('[AvailabilityRequest] Error:', data);
         showAlert('Error', data.error || 'Failed to send request');
       }
     } catch (error) {

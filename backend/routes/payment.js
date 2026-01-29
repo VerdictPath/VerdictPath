@@ -218,7 +218,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    console.warn('Stripe webhook secret not configured');
     return res.status(400).send('Webhook secret not configured');
   }
 
@@ -235,7 +234,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
-        console.log('PaymentIntent succeeded:', paymentIntent.id);
         break;
 
       case 'customer.subscription.created':
@@ -249,7 +247,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             'UPDATE users SET subscription_tier = $1, stripe_subscription_id = $2 WHERE id = $3',
             [tier, subscription.id, userId]
           );
-          console.log(`Updated user ${userId} to ${tier} tier`);
         }
         break;
 
@@ -262,12 +259,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
             'UPDATE users SET subscription_tier = $1, stripe_subscription_id = NULL WHERE id = $2',
             ['Free', deletedUserId]
           );
-          console.log(`Downgraded user ${deletedUserId} to Free tier`);
         }
         break;
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     res.json({ received: true });

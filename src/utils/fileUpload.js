@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 export const pickDocumentForWeb = () => {
   return new Promise((resolve, reject) => {
     try {
-      console.log('[FileUpload] Creating file input for web');
       if (typeof document === 'undefined') {
         console.error('[FileUpload] document is undefined - not in browser context');
         reject(new Error('document is not available'));
@@ -19,7 +18,6 @@ export const pickDocumentForWeb = () => {
       input.style.display = 'none';
       
       input.onchange = (event) => {
-        console.log('[FileUpload] File selected:', event.target.files[0]?.name);
         const file = event.target.files[0];
         if (file) {
           const fileObject = {
@@ -38,13 +36,11 @@ export const pickDocumentForWeb = () => {
       };
       
       input.oncancel = () => {
-        console.log('[FileUpload] File selection cancelled');
         document.body.removeChild(input);
         resolve({ canceled: true });
       };
       
       document.body.appendChild(input);
-      console.log('[FileUpload] Triggering click on input');
       input.click();
     } catch (error) {
       console.error('[FileUpload] Error in pickDocumentForWeb:', error);
@@ -54,7 +50,6 @@ export const pickDocumentForWeb = () => {
 };
 
 export const pickDocument = async (options = {}) => {
-  console.log('[FileUpload] pickDocument called, Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     return await pickDocumentForWeb();
   } else {
@@ -69,7 +64,6 @@ export const pickDocument = async (options = {}) => {
 export const pickImageForWeb = (useCamera = false) => {
   return new Promise((resolve, reject) => {
     try {
-      console.log('[FileUpload] Creating image input for web, useCamera:', useCamera);
       if (typeof document === 'undefined') {
         console.error('[FileUpload] document is undefined - not in browser context');
         reject(new Error('document is not available'));
@@ -83,13 +77,11 @@ export const pickImageForWeb = (useCamera = false) => {
       // On mobile web browsers, capture="environment" opens the camera directly
       if (useCamera) {
         input.capture = 'environment';
-        console.log('[FileUpload] Camera capture enabled for mobile web');
       }
       
       input.style.display = 'none';
       
       input.onchange = (event) => {
-        console.log('[FileUpload] Image selected:', event.target.files[0]?.name);
         const file = event.target.files[0];
         if (file) {
           const fileObject = {
@@ -108,13 +100,11 @@ export const pickImageForWeb = (useCamera = false) => {
       };
       
       input.oncancel = () => {
-        console.log('[FileUpload] Image selection cancelled');
         document.body.removeChild(input);
         resolve({ canceled: true });
       };
       
       document.body.appendChild(input);
-      console.log('[FileUpload] Triggering click on image input');
       input.click();
     } catch (error) {
       console.error('[FileUpload] Error in pickImageForWeb:', error);
@@ -124,23 +114,19 @@ export const pickImageForWeb = (useCamera = false) => {
 };
 
 export const pickImage = async (options = {}) => {
-  console.log('[FileUpload] pickImage called (camera), Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     // On mobile web browsers, capture="environment" will open the camera
     // On desktop browsers, it will open file picker
     return await pickImageForWeb(true);
   } else {
-    console.log('[FileUpload] Requesting camera permissions...');
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
     
-    console.log('[FileUpload] Camera permission result:', permissionResult);
     
     if (permissionResult.granted === false) {
       console.error('[FileUpload] Camera permission denied');
       throw new Error('Camera permission is required to take photos. Please enable camera access in your device settings.');
     }
 
-    console.log('[FileUpload] Launching camera...');
     return await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -151,22 +137,18 @@ export const pickImage = async (options = {}) => {
 };
 
 export const pickImageFromLibrary = async (options = {}) => {
-  console.log('[FileUpload] pickImageFromLibrary called, Platform.OS:', Platform.OS);
   if (Platform.OS === 'web') {
     // On web browsers, this opens the regular file picker (no capture attribute)
     return await pickImageForWeb(false);
   } else {
-    console.log('[FileUpload] Requesting media library permissions...');
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
-    console.log('[FileUpload] Media library permission result:', permissionResult);
     
     if (permissionResult.granted === false) {
       console.error('[FileUpload] Media library permission denied');
       throw new Error('Photo library permission is required to select photos. Please enable photo access in your device settings.');
     }
 
-    console.log('[FileUpload] Launching image library...');
     return await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,

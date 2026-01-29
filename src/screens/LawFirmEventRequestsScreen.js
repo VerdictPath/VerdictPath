@@ -80,14 +80,12 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const requestsData = await requestsResponse.json();
-      console.log('[EventRequests] Requests response:', requestsData);
       
       // Fetch clients
       const clientsResponse = await fetch(`${API_BASE_URL}/api/lawfirm/clients`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const clientsData = await clientsResponse.json();
-      console.log('[EventRequests] Clients response:', clientsData);
       
       setEventRequests(requestsData.eventRequests || []);
       setClients(clientsData.clients || []);

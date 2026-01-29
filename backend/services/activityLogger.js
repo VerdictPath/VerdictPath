@@ -51,7 +51,6 @@ class ActivityLogger {
       );
       
       if (firmCheck.rows.length === 0) {
-        console.warn(`Law firm ${lawFirmId} not found for activity logging`);
         return null;
       }
       

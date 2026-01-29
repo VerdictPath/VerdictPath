@@ -337,7 +337,6 @@ exports.registerLawFirm = async (req, res) => {
           password,  // Send the original password (not hashed)
           'lawfirm'
         );
-        console.log(`📱 Law firm registration SMS result:`, smsResult);
       } catch (smsError) {
         console.error('❌ Error sending registration SMS:', smsError);
         // Don't fail registration if SMS fails

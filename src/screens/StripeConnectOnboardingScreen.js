@@ -22,8 +22,6 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
   const isMedicalProvider = user.userType === 'medical_provider' || user.userType === 'medical_provider_user';
   const isIndividual = user.userType === 'individual' || user.userType === 'client';
 
-  console.log('[StripeOnboarding] User type:', user.userType, 'isLawFirm:', isLawFirm);
-
   useEffect(() => {
     checkAccountStatus();
   }, []);

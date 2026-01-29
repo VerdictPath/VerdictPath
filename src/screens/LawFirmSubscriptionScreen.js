@@ -395,8 +395,6 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
             planType: effectivePlanType
           }
         };
-        console.log('[LawFirm Subscription] Sending update request:', requestBody);
-        console.log('[LawFirm Subscription] Stringified body:', JSON.stringify(requestBody));
         
         const response = await apiRequest(API_ENDPOINTS.SUBSCRIPTION.LAWFIRM_UPDATE, {
           method: 'PUT',

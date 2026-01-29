@@ -128,7 +128,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     }
     
     try {
-      console.log('🔥 Setting up Firebase real-time listeners for negotiations...', {
         userId: user.id,
         userType: user.type || user.userType,
         isLawFirm,
@@ -149,7 +148,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       const userType = isLawFirm ? 'law_firm' : 'medical_provider';
       const userId = user.id;
       
-      console.log('📡 Firebase subscription details:', { userType, userId, path: `negotiations/${userType}s/${userId}` });
       
       // Subscribe to negotiations updates
       const unsubscribe = await subscribeToNegotiations(userType, userId, (updatedNegotiations) => {
@@ -212,7 +210,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
           if (currentSelectedNegotiation) {
             const updatedSelected = updatedNegotiations.find(n => n.id === currentSelectedNegotiation.id);
             if (updatedSelected) {
-              console.log('🔄 Real-time update for selected negotiation:', {
                 id: updatedSelected.id,
                 status: updatedSelected.status,
                 lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
@@ -280,7 +277,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     // Cleanup on unmount
     return () => {
       if (firebaseUnsubscribeRef.current && typeof firebaseUnsubscribeRef.current === 'function') {
-        console.log('🔥 Cleaning up Firebase negotiations listeners');
         firebaseUnsubscribeRef.current();
         firebaseUnsubscribeRef.current = null;
       }
@@ -432,8 +428,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         requestBody.medicalProviderId = selectedMedicalProviderId;
       }
 
-      console.log('📤 Sending negotiation request:', requestBody);
-
       const response = await apiRequest(API_ENDPOINTS.NEGOTIATIONS.INITIATE, {
         method: 'POST',
         headers: {
@@ -441,8 +435,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
         },
         body: JSON.stringify(requestBody)
       });
-
-      console.log('📥 Negotiation response:', response);
 
       showAlert(
         'Success',
@@ -575,7 +567,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
   };
 
   const handleRequestCall = async () => {
-    console.log('📞 handleRequestCall called', { phoneNumber, callNotes, selectedNegotiation: selectedNegotiation?.id });
     
     if (!phoneNumber) {
       showAlert('Error', 'Please enter a phone number');
@@ -923,7 +914,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
                 <TouchableOpacity
                   style={styles.callButton}
                   onPress={() => {
-                    console.log('📞 Request Call button pressed');
                     setShowCallRequestModal(true);
                   }}
                 >

@@ -2,7 +2,6 @@ const db = require('../config/db');
 
 async function ensureTablesExist() {
   try {
-    console.log('🔍 Checking database schema...');
     
     const lawFirmUsersCheck = await db.query(`
       SELECT EXISTS (
@@ -12,7 +11,6 @@ async function ensureTablesExist() {
     `);
     
     if (!lawFirmUsersCheck.rows[0].exists) {
-      console.log('📦 Creating law_firm_users table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS law_firm_users (
           id SERIAL PRIMARY KEY,
@@ -63,7 +61,6 @@ async function ensureTablesExist() {
     `);
     
     if (!medProviderUsersCheck.rows[0].exists) {
-      console.log('📦 Creating medical_provider_users table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS medical_provider_users (
           id SERIAL PRIMARY KEY,
@@ -116,7 +113,6 @@ async function ensureTablesExist() {
     `);
     
     if (!passwordResetCheck.rows[0].exists) {
-      console.log('📦 Creating password_reset_tokens table...');
       await db.query(`
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,

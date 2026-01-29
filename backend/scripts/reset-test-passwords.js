@@ -9,7 +9,6 @@ const resetTestPasswords = async () => {
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
     
     // Update Individual Users
-    console.log('Updating individual user accounts...');
     const usersResult = await db.query(
       `UPDATE users 
        SET password = $1

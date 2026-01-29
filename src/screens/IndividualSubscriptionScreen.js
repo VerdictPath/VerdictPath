@@ -62,7 +62,6 @@ const IndividualSubscriptionScreen = ({ user, onNavigate, onSubscriptionChanged 
   const fetchCurrentSubscription = async () => {
     try {
       if (!user?.token) {
-        console.log('No auth token available, setting default free subscription');
         setCurrentSubscription({
           tier: 'free',
           price: 0

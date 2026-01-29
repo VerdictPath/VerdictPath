@@ -10,7 +10,6 @@ let isRunning = false;
 
 async function cleanupExpiredNotifications() {
   if (isRunning) {
-    console.log('⏩ Notification Cleanup Service already running, skipping this cycle');
     return { success: false, skipped: true };
   }
   
@@ -66,14 +65,11 @@ async function _cleanupNotificationsInternal() {
     const deletedCount = deleteResult.rowCount;
     
     if (deletedCount > 0) {
-      console.log(`🗑️ Notification Cleanup Service: Deleted ${deletedCount} expired notifications`);
       
       deleteResult.rows.slice(0, 5).forEach(notification => {
-        console.log(`   - Deleted notification ${notification.id}: "${notification.title?.substring(0, 30) || 'No title'}..."`);
       });
       
       if (deletedCount > 5) {
-        console.log(`   ... and ${deletedCount - 5} more`);
       }
     } else {
       console.log('✅ Notification Cleanup Service: No expired notifications to delete');

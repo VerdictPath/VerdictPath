@@ -33,8 +33,6 @@ const selectAvatar = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    console.log(`[Avatar] User ${userId} selected avatar: ${avatarType}`);
-
     res.json({
       success: true,
       avatarType: result.rows[0].avatar_type,

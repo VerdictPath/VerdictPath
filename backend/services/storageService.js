@@ -20,13 +20,10 @@ class StorageService {
       try {
         this.s3Service = require('./s3Service');
         this.useS3 = true;
-        console.log('[Storage Service] Using AWS S3 for file storage');
       } catch (error) {
-        console.log('[Storage Service] S3 initialization failed, falling back to local storage:', error.message);
         this.useS3 = false;
       }
     } else {
-      console.log('[Storage Service] AWS S3 not configured, using local file storage');
       this.useS3 = false;
     }
 
@@ -47,7 +44,6 @@ class StorageService {
     dirs.forEach(dir => {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
-        console.log(`[Storage Service] Created directory: ${dir}`);
       }
     });
   }
@@ -103,8 +99,6 @@ class StorageService {
       fs.writeFileSync(filePath, fileBuffer);
 
       const location = `/uploads/${localKey}`;
-
-      console.log(`[Storage Service] Local upload successful: ${localKey} (${fileBuffer.length} bytes)`);
 
       return {
         success: true,
@@ -170,7 +164,6 @@ class StorageService {
       const filePath = path.join(this.uploadsDir, localKey);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log(`[Storage Service] Deleted local file: ${localKey}`);
         return { success: true, key: localKey };
       }
       return { success: false, key: localKey, reason: 'File not found' };

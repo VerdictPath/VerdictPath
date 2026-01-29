@@ -435,8 +435,6 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    console.log('[account-status] Checking for userId:', userId, 'userType:', userType);
-
     // For law firms and law firm users, check customer status
     if (isLawFirmRole(userType)) {
       const lawFirmId = await getLawFirmId(userId, userType);

@@ -212,7 +212,6 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       try {
         await fetchSubscriptionDetails();
       } catch (refreshError) {
-        console.log('Could not refresh subscription details after update:', refreshError);
       }
     } catch (error) {
       console.error('Error updating subscription:', error);

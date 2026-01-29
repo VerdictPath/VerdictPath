@@ -150,7 +150,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   });
 
   const handleSessionLogout = async () => {
-    console.log('[SessionTimeout] Logging out user due to inactivity');
     try {
       if (user?.token && user?.id) {
         await NotificationService.unregisterDeviceFromBackend(user.token, user.id);
@@ -184,10 +183,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   // Increment treasure chest refresh key when navigating to it
   useEffect(() => {
     if (prevScreenRef.current !== 'treasure-chest' && currentScreen === 'treasure-chest') {
-      console.log('[TreasureChest] Navigating to treasure-chest from', prevScreenRef.current);
-      console.log('[TreasureChest] Incrementing refreshKey to trigger coin balance fetch');
       setTreasureChestRefreshKey(prev => {
-        console.log('[TreasureChest] RefreshKey:', prev, '→', prev + 1);
         return prev + 1;
       });
     }
@@ -201,7 +197,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     }
 
     try {
-      console.log('[App] Loading user litigation progress...');
       const progressData = await apiRequest(API_ENDPOINTS.LITIGATION.PROGRESS, {
         method: 'GET',
         headers: {
@@ -209,13 +204,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         }
       });
 
-      console.log('[App] Progress loaded:', progressData);
       
       // Merge backend progress with static LITIGATION_STAGES
       const mergedStages = mergeCompletedSubstages(progressData);
       setLitigationStages(mergedStages);
       
-      console.log('[App] Litigation stages updated with user progress');
     } catch (error) {
       console.error('[App] Error loading litigation progress:', error);
       // On error, keep using default LITIGATION_STAGES
@@ -227,7 +220,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     loadUserProgress();
   }, [user?.token, user?.id]);
 
-
   // Initialize push notifications (non-blocking)
   useEffect(() => {
     const initializeNotifications = async () => {
@@ -236,7 +228,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         try {
           const token = await NotificationService.registerForPushNotifications();
           if (token) {
-            console.log('Push token obtained:', token);
           }
         } catch (pushError) {
           // Push notifications are optional - don't block app
@@ -248,7 +239,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           try {
             const registered = await NotificationService.registerDeviceWithBackend(user.token, user.id);
             if (registered) {
-              console.log('Device registered with backend successfully');
               
               // Update badge count from server
               const unreadCount = await NotificationService.fetchUnreadCount(user.token);
@@ -323,7 +313,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   // Handle deep links
   const handleDeepLink = (url) => {
-    console.log('Deep link:', url);
     
     // Parse deep link URLs like "verdictpath://screen/action"
     if (typeof url === 'string') {
@@ -344,11 +333,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const handleRegister = () => {
-    console.log('[Registration] Button clicked - Starting registration...');
-    console.log('[Registration] Email:', email);
-    console.log('[Registration] Password exists:', !!password);
-    console.log('[Registration] Confirm password exists:', !!confirmPassword);
-    console.log('[Registration] User type:', userType);
     
     // Name validation based on user type
     if (userType === USER_TYPES.INDIVIDUAL && (!firstName || !lastName)) {
@@ -373,7 +357,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     }
     
     if (!email || !password) {
-      console.log('[Registration] ERROR: Missing email or password');
       alert('Error: Please fill in all required fields');
       return;
     }
@@ -381,31 +364,25 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log('[Registration] ERROR: Invalid email format');
       alert('Error: Please enter a valid email address');
       return;
     }
     
     if (password !== confirmPassword) {
-      console.log('[Registration] ERROR: Passwords do not match');
       alert('Error: Passwords do not match');
       return;
     }
     
     // Password strength validation
     if (password.length < 6) {
-      console.log('[Registration] ERROR: Password too short');
       alert('Error: Password must be at least 6 characters long');
       return;
     }
     
-    console.log('[Registration] ✓ Validation passed! Navigating to subscription screen...');
     setCurrentScreen('subscription');
   };
 
   const handleSelectSubscription = async (tier, size) => {
-    console.log('[SUBSCRIPTION] Privacy Accepted value:', privacyAccepted);
-    console.log('[SUBSCRIPTION] User type:', userType);
     
     setSubscriptionTier(tier);
     setFirmSize(size);
@@ -443,7 +420,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           
           setCurrentScreen('lawfirm-dashboard');
         } else if (userType === USER_TYPES.MEDICAL_PROVIDER) {
-          console.log('Registering medical provider:', { email });
           
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_MEDICALPROVIDER, {
             method: 'POST',
@@ -457,7 +433,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             })
           });
           
-          console.log('Medical provider registration response:', response);
           
           if (!response || !response.medicalProvider) {
             throw new Error('Invalid response from server. Please try again.');
@@ -477,7 +452,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           
           setCurrentScreen('medicalprovider-dashboard');
         } else {
-          console.log('[INDIVIDUAL] Sending registration with privacyAccepted:', privacyAccepted);
           
           response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_CLIENT, {
             method: 'POST',
@@ -670,7 +644,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       return;
     }
     
-    console.log('[Login] Attempting login with userType:', userType);
     
     try {
       let apiUserType;
@@ -695,17 +668,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         requestBody = { email, password, userType: apiUserType };
       }
       
-      console.log('[Login] API userType:', apiUserType, 'Target screen:', targetScreen, 'Endpoint:', loginEndpoint);
       
       const response = await apiRequest(loginEndpoint, {
         method: 'POST',
         body: JSON.stringify(requestBody)
       });
       
-      console.log('[Login] Login successful, response:', response);
       
       if (response.mustChangePassword) {
-        console.log('[Login] User must change password before accessing account');
         setChangePasswordData({
           changePasswordToken: response.changePasswordToken,
           email: response.user.email,
@@ -758,8 +728,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         };
       }
       
-      console.log('[Login] Setting user data:', userData);
-      console.log('[Login] Navigating to:', targetScreen);
       
       setUser(userData);
       setCoins(userData.coins);
@@ -789,12 +757,10 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   const refreshUserProfile = async () => {
     if (!user || !user.token || user.type !== USER_TYPES.INDIVIDUAL) {
-      console.log('[RefreshProfile] Skipping refresh - not an individual user');
       return;
     }
 
     try {
-      console.log('[RefreshProfile] Fetching latest subscription data...');
       const response = await apiRequest(
         API_ENDPOINTS.SUBSCRIPTION.INDIVIDUAL_CURRENT,
         {
@@ -811,7 +777,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           subscription: response.subscription.tier
         };
         
-        console.log('[RefreshProfile] Updated subscription from', user.subscription, 'to', response.subscription.tier);
         setUser(updatedUser);
         
         await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
@@ -822,7 +787,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const triggerActionVideo = (message, coinsEarned = 0) => {
-    console.log('[App] Triggering action video:', message, coinsEarned);
     setActionVideoData({ message, coinsEarned });
     setShowActionVideo(true);
   };
@@ -929,7 +893,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setCoins(prevCoins => prevCoins + stageCoins);
       
       // Trigger treasure chest refresh to show updated coin balance
-      console.log('[TreasureChest] Stage completed (offline), incrementing refreshKey to update coin balance');
       setTreasureChestRefreshKey(prev => prev + 1);
       
       triggerActionVideo('Stage Complete! 🏆', stageCoins);
@@ -965,9 +928,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setCoins(prevCoins => prevCoins + actualCoinsEarned);
       
       // Trigger treasure chest refresh to show updated coin balance
-      console.log('[TreasureChest] Stage completed, incrementing refreshKey to update coin balance');
       setTreasureChestRefreshKey(prev => {
-        console.log('[TreasureChest] RefreshKey after stage completion:', prev, '→', prev + 1);
         return prev + 1;
       });
       
@@ -986,12 +947,10 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     const currentStage = litigationStages.find(s => s.id === stageId);
     if (!currentStage || !currentStage.completed) return;
     
-    console.log('[Revert] Reverting stage:', stageId, 'Current stage:', currentStage);
     
     if (user && user.token) {
       try {
         const requestBody = { stageId: stageId };
-        console.log('[Revert] Request body:', JSON.stringify(requestBody));
         
         // Call backend to revert the stage
         const response = await apiRequest(API_ENDPOINTS.LITIGATION.REVERT_STAGE, {
@@ -1073,9 +1032,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               setCoins(prevCoins => prevCoins + subStageCoins);
               
               // Trigger treasure chest refresh to show updated coin balance
-              console.log('[TreasureChest] Substage completed, incrementing refreshKey to update coin balance');
               setTreasureChestRefreshKey(prev => {
-                console.log('[TreasureChest] RefreshKey after substage completion:', prev, '→', prev + 1);
                 return prev + 1;
               });
               
@@ -1166,7 +1123,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         const stage = LITIGATION_STAGES.find(s => s.id === stageId);
         const subStage = stage?.subStages?.find(s => s.id === subStageId);
         
-        console.log('[App] Saving data entry to backend:', { stageId, subStageId, data, stageName: stage?.name, substageName: subStage?.name });
         
         const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
           method: 'POST',
@@ -1186,7 +1142,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         });
         
         const responseData = await response.json();
-        console.log('[App] Data entry backend response:', response.status, responseData);
         
         if (!response.ok) {
           console.error('[App] Data entry save failed:', responseData);
@@ -1438,12 +1393,10 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'privacy-acceptance' && (
         <PrivacyAcceptanceScreen
           onAccept={() => {
-            console.log('[Privacy Acceptance] User accepted legal documents');
             setPrivacyAccepted(true);
             setCurrentScreen('subscription');
           }}
           onDecline={() => {
-            console.log('[Privacy Acceptance] User declined - returning to register');
             setPrivacyAccepted(false);
             setCurrentScreen('register');
           }}
@@ -2181,7 +2134,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         {(() => {
           const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-notifications', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-calendar-selection', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
-          console.log('[App.js] Law Firm Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
         })() && (
           <LawFirmBottomNavigation 
@@ -2195,7 +2147,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         {(() => {
           const medProviderScreens = ['medicalprovider-dashboard', 'medicalprovider-notifications', 'medicalprovider-send-notification', 'medicalprovider-user-management', 'medicalprovider-hipaa-dashboard', 'medicalprovider-activity-dashboard', 'medicalprovider-notification-analytics', 'medicalprovider-negotiations', 'medicalprovider-disbursements', 'medicalprovider-calendar', 'medicalprovider-profile'];
           const shouldShow = medProviderScreens.includes(currentScreen);
-          console.log('[App.js] Medical Provider Nav Check - Current screen:', currentScreen, 'Should show:', shouldShow);
           return shouldShow;
         })() && (
           <MedicalProviderBottomNavigation 

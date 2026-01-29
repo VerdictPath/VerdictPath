@@ -14,8 +14,6 @@ const updateLawFirmSubscription = async (req, res) => {
     const { subscriptionTier, firmSize, planType: topLevelPlanType } = req.body;
 
     if (!subscriptionTier) {
-      console.log('[Subscription Update] ERROR: subscriptionTier is missing or undefined');
-      console.log('[Subscription Update] Received keys:', Object.keys(req.body));
       return res.status(400).json({ 
         error: 'Subscription tier is required',
         receivedBody: req.body,
@@ -41,8 +39,6 @@ const updateLawFirmSubscription = async (req, res) => {
         received: planType
       });
     }
-
-    console.log(`[Subscription Update] Law firm ${lawFirmId} updating to planType: ${planType}`);
 
     const lawFirmResult = await db.query(
       'SELECT id, subscription_tier, firm_size, plan_type FROM law_firms WHERE id = $1',
@@ -137,8 +133,6 @@ const updateLawFirmSubscription = async (req, res) => {
       'UPDATE law_firms SET subscription_tier = $1, firm_size = $2, plan_type = $3 WHERE id = $4',
       [canonicalTier, canonicalSize, planType, lawFirmId]
     );
-
-    console.log(`[Subscription Update] Law firm ${lawFirmId} successfully updated to ${planType} plan`);
 
     res.json({
       success: true,

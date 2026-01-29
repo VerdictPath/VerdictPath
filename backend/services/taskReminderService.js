@@ -14,7 +14,6 @@ let isRunning = false;
 async function sendTaskReminders() {
   // Prevent concurrent executions
   if (isRunning) {
-    console.log('⏩ Task Reminder Service already running, skipping this cycle');
     return { success: false, skipped: true };
   }
   

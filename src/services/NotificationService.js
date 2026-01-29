@@ -34,7 +34,6 @@ class NotificationService {
     
     try {
       if (!Device.isDevice) {
-        console.log('Notifications only work on physical devices');
         return false;
       }
 
@@ -47,7 +46,6 @@ class NotificationService {
       }
 
       if (finalStatus !== 'granted') {
-        console.log('Notification permission not granted');
         return false;
       }
 
@@ -90,7 +88,6 @@ class NotificationService {
       });
 
       this.expoPushToken = token.data;
-      console.log('Expo Push Token:', this.expoPushToken);
 
       return this.expoPushToken;
     } catch (error) {
@@ -111,7 +108,6 @@ class NotificationService {
     
     try {
       if (!this.expoPushToken) {
-        console.log('No push token available');
         return false;
       }
 
@@ -140,7 +136,6 @@ class NotificationService {
       if (userId) {
         await AsyncStorage.setItem(`deviceRegistered_${userId}`, 'true');
       }
-      console.log('Device registered with backend:', data);
       return true;
     } catch (error) {
       console.error('Error registering device with backend:', error);
@@ -178,7 +173,6 @@ class NotificationService {
       if (userId) {
         await AsyncStorage.removeItem(`deviceRegistered_${userId}`);
       }
-      console.log('Device unregistered from backend');
       return true;
     } catch (error) {
       console.error('Error unregistering device:', error);
@@ -192,14 +186,12 @@ class NotificationService {
     }
     
     this.notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
       if (onNotificationReceived) {
         onNotificationReceived(notification);
       }
     });
 
     this.responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification tapped:', response);
       if (onNotificationTapped) {
         onNotificationTapped(response);
       }

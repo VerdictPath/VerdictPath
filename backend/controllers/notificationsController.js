@@ -438,7 +438,6 @@ exports.sendNotification = async (req, res) => {
         ['sent', notification.id]
       );
       notification.status = 'sent';
-      console.log(`ℹ️  No Expo devices for ${recipientType} ${recipientId}, notification will sync to Firebase only`);
     }
 
     // Send SMS notification if user has SMS enabled and phone number
@@ -490,7 +489,6 @@ exports.sendNotification = async (req, res) => {
                 smsSent = smsResult.success;
                 
                 if (smsSent) {
-                  console.log(`📱 SMS notification sent to user ${recipientId} (phone number redacted for HIPAA)`);
                 }
               }
             }
@@ -566,7 +564,6 @@ exports.sendNotification = async (req, res) => {
               
               emailCCSent = emailResult.success;
               if (emailCCSent) {
-                console.log(`📧 Email CC sent to ${ccEmail} for notification ${notification.id}`);
               }
             }
         }
@@ -959,7 +956,6 @@ exports.sendToAllClients = async (req, res) => {
         // Check user preferences for this client
         const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
         if (!prefCheck.allowed) {
-          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
           return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1098,7 +1094,6 @@ exports.sendToClients = async (req, res) => {
         // Check user preferences for this client
         const prefCheck = await checkNotificationPreferences('user', client.id, type, priority);
         if (!prefCheck.allowed) {
-          console.log(`Notification to client ${client.id} blocked:`, prefCheck.reason);
           return { success: false, clientId: client.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1310,7 +1305,6 @@ exports.sendToClient = async (req, res) => {
     }
 
     // Sync to Firebase for real-time updates
-    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
     try {
       await syncNewNotificationToFirebase(notification);
       console.log('✅ Notification synced to Firebase successfully');
@@ -1319,7 +1313,6 @@ exports.sendToClient = async (req, res) => {
     }
     
     const unreadCount = await getUnreadCountForUser('user', clientId);
-    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
     try {
       await syncUnreadCountToFirebase('user', clientId, unreadCount);
       console.log('✅ Unread count synced to Firebase successfully');
@@ -1378,7 +1371,6 @@ exports.sendToAllPatients = async (req, res) => {
         // Check user preferences for this patient
         const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
         if (!prefCheck.allowed) {
-          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
           return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1517,7 +1509,6 @@ exports.sendToPatients = async (req, res) => {
         // Check user preferences for this patient
         const prefCheck = await checkNotificationPreferences('user', patient.id, type, priority);
         if (!prefCheck.allowed) {
-          console.log(`Notification to patient ${patient.id} blocked:`, prefCheck.reason);
           return { success: false, patientId: patient.id, skipped: true, reason: prefCheck.reason };
         }
 
@@ -1729,7 +1720,6 @@ exports.sendToPatient = async (req, res) => {
     }
 
     // Sync to Firebase for real-time updates
-    console.log('📤 Attempting to sync notification to Firebase:', notification.id);
     try {
       await syncNewNotificationToFirebase(notification);
       console.log('✅ Notification synced to Firebase successfully');
@@ -1738,7 +1728,6 @@ exports.sendToPatient = async (req, res) => {
     }
     
     const unreadCount = await getUnreadCountForUser('user', patientId);
-    console.log('📤 Attempting to sync unread count to Firebase:', unreadCount);
     try {
       await syncUnreadCountToFirebase('user', patientId, unreadCount);
       console.log('✅ Unread count synced to Firebase successfully');

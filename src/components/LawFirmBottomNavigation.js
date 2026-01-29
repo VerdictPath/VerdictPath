@@ -3,7 +3,6 @@ import { View, TouchableOpacity, Text, StyleSheet, Platform, Image } from 'react
 import { theme } from '../styles/theme';
 
 const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount = 0 }) => {
-  console.log('[LawFirmBottomNavigation] Rendering for screen:', currentScreen);
   
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'lawfirm-dashboard' },

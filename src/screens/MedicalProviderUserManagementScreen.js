@@ -93,9 +93,7 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
 
   const deactivateUser = async (userId) => {
     try {
-      console.log('[MedProvider UserManagement] Deactivating user:', userId);
       const url = API_ENDPOINTS.MEDICAL_PROVIDER_USERS.DEACTIVATE(userId);
-      console.log('[MedProvider UserManagement] Deactivate URL:', url);
       
       const response = await apiRequest(url, {
         method: 'POST',
@@ -107,8 +105,6 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
           reason: 'Deactivated by admin',
         }),
       });
-
-      console.log('[MedProvider UserManagement] Deactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User deactivated successfully');
@@ -124,13 +120,10 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
 
   const reactivateUser = async (userId) => {
     try {
-      console.log('[MedProvider UserManagement] Reactivating user:', userId);
       const response = await apiRequest(API_ENDPOINTS.MEDICAL_PROVIDER_USERS.REACTIVATE(userId), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user.token}` },
       });
-
-      console.log('[MedProvider UserManagement] Reactivate response:', response);
 
       if (response.success) {
         showAlert('Success', 'User reactivated successfully');

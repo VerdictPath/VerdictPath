@@ -36,9 +36,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
 
   const fetchDashboardData = async () => {
     try {
-      console.log('[Dashboard] Fetching dashboard data...');
-      console.log('[Dashboard] Token:', user?.token ? 'Present' : 'Missing');
-      console.log('[Dashboard] API URL:', API_ENDPOINTS.LAWFIRM.DASHBOARD);
       
       const data = await apiRequest(API_ENDPOINTS.LAWFIRM.DASHBOARD, {
         method: 'GET',
@@ -47,8 +44,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         }
       });
       
-      console.log('[Dashboard] Data received:', data);
-      console.log('[Dashboard] Clients count:', data.clients?.length || 0);
       
       // Extract firm metadata only (not bulk data)
       setFirmData({

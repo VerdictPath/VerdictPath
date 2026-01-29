@@ -321,8 +321,6 @@ const RoadmapScreen = ({
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 30 }));
 
-      console.log('[Upload] Sending request to:', `${API_BASE_URL}/api/uploads/evidence`);
-      console.log('[Upload] File details:', { fileName, fileType, fileUri: fileUri?.substring(0, 50) });
       
       const uploadResponse = await fetch(`${API_BASE_URL}/api/uploads/evidence`, {
         method: 'POST',
@@ -336,7 +334,6 @@ const RoadmapScreen = ({
 
       setUploadProgress(prev => ({ ...prev, [subStageId]: 80 }));
 
-      console.log('[Upload] Response status:', uploadResponse.status);
       
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({}));
@@ -437,8 +434,6 @@ const RoadmapScreen = ({
 
   const handleSubStageComplete = async (subStageId, subStageCoins) => {
     // VERSION 2.0 - NO UPLOAD REQUIREMENTS - MANUAL COMPLETION ENABLED
-    console.log('[RoadmapScreen] handleSubStageComplete v2.0 - NO UPLOAD VALIDATION');
-    console.log('[RoadmapScreen] SubstageId:', subStageId, 'Coins:', subStageCoins);
     
     if (!authToken) {
       console.error('[RoadmapScreen] No auth token - user not logged in');
@@ -451,7 +446,6 @@ const RoadmapScreen = ({
   };
 
   const completeSubstageOnBackend = async (subStageId, subStageCoins) => {
-    console.log('[RoadmapScreen] completeSubstageOnBackend started');
     try {
       const currentStage = litigationStages.find(s => s.id === selectedStage.id);
       const subStage = currentStage.subStages.find(s => s.id === subStageId);
@@ -471,10 +465,6 @@ const RoadmapScreen = ({
         coinsEarned: subStageCoins
       };
 
-      console.log('[RoadmapScreen] Making API request to:', `${API_BASE_URL}/api/litigation/substage/complete`);
-      console.log('[RoadmapScreen] Request body:', requestBody);
-      console.log('[RoadmapScreen] Auth token present:', !!authToken);
-
       const response = await fetch(`${API_BASE_URL}/api/litigation/substage/complete`, {
         method: 'POST',
         headers: {
@@ -484,13 +474,9 @@ const RoadmapScreen = ({
         body: JSON.stringify(requestBody),
       });
 
-      console.log('[RoadmapScreen] Response status:', response.status);
       const data = await response.json();
-      console.log('[RoadmapScreen] Response data:', data);
 
       if (response.ok) {
-        console.log('[RoadmapScreen] Success! Updating local state...');
-        console.log('[RoadmapScreen] Coins earned from backend:', data.coinsEarned);
         
         // Update local state with ACTUAL coins earned (may be 0 if already earned before)
         const actualCoinsEarned = data.coinsEarned || 0;

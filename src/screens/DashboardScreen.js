@@ -47,7 +47,6 @@ const DashboardScreen = ({
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
-    console.log('[Dashboard] Videos loaded:', videosLoaded);
   }, [videosLoaded]);
 
   useEffect(() => {
@@ -95,7 +94,6 @@ const DashboardScreen = ({
   };
 
   const triggerActionVideo = (message, coinsEarned = 0, celebrationMode = false) => {
-    console.log('[Dashboard] Triggering action video:', message, 'celebration:', celebrationMode);
     setActionMessage(message);
     setActionCoins(coinsEarned);
     setUseCelebrationVideo(celebrationMode);

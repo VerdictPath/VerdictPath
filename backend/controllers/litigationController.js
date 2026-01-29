@@ -126,7 +126,6 @@ const completeSubstage = async (req, res) => {
 
     // SECURITY: Get canonical coin value from server (NEVER trust client)
     const canonicalCoins = getSubstageCoins(substageId);
-    console.log(`[Security] Substage ${substageId} canonical coins: ${canonicalCoins}`);
 
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
@@ -148,7 +147,6 @@ const completeSubstage = async (req, res) => {
            RETURNING *`,
           [dataValue, existing.rows[0].id]
         );
-        console.log(`[Litigation] Updated data_value for substage ${substageId}: ${dataValue}`);
         return res.json({
           message: 'Data entry updated successfully',
           completion: updateResult.rows[0],
@@ -275,7 +273,6 @@ const completeStage = async (req, res) => {
 
     // SECURITY: Get canonical coin value from server (NEVER trust client)
     const canonicalCoins = getStageCoins(stageId);
-    console.log(`[Security] Stage ${stageId} canonical coins: ${canonicalCoins}`);
 
     // Ensure progress record exists before any updates
     await ensureProgressRecord(userId);
@@ -609,8 +606,6 @@ const revertStage = async (req, res) => {
         [substagesReverted, userId]
       );
     }
-
-    console.log(`[Revert] Stage ${stageId} reverted for user ${userId}: ${substagesReverted} substages, explicit record: ${stageRecordReverted}`);
 
     res.json({
       message: 'Stage reverted successfully (coins preserved to prevent farming)',

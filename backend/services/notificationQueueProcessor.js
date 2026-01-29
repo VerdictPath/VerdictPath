@@ -31,11 +31,9 @@ async function processNotificationQueue() {
     `);
     
     if (queuedNotifications.rows.length === 0) {
-      console.log('[Queue Processor] No notifications ready to send');
       return { processed: 0, succeeded: 0, failed: 0 };
     }
     
-    console.log(`[Queue Processor] Processing ${queuedNotifications.rows.length} queued notifications`);
     
     let succeeded = 0;
     let failed = 0;
@@ -60,7 +58,6 @@ async function processNotificationQueue() {
       }
     }
     
-    console.log(`[Queue Processor] Processed ${succeeded + failed} notifications: ${succeeded} succeeded, ${failed} failed`);
     
     return { processed: succeeded + failed, succeeded, failed };
   } catch (error) {
@@ -88,7 +85,6 @@ async function processQueuedNotification(notification, client) {
   const deviceResult = await client.query(deviceQuery, [recipient_id]);
   
   if (deviceResult.rows.length === 0) {
-    console.log(`[Queue Processor] No active devices found for ${recipient_type} ${recipient_id}, marking as sent`);
     await markNotificationSent(id, client);
     return;
   }
@@ -137,7 +133,6 @@ async function processQueuedNotification(notification, client) {
   // Mark queued notification as sent
   await markNotificationSent(id, client);
   
-  console.log(`[Queue Processor] Successfully sent notification ${id} to ${recipient_type} ${recipient_id}`);
 }
 
 async function markNotificationSent(queueId, client) {
@@ -159,7 +154,6 @@ module.exports = {
 if (require.main === module) {
   processNotificationQueue()
     .then(result => {
-      console.log('[Queue Processor] Finished:', result);
       process.exit(0);
     })
     .catch(error => {

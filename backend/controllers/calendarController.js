@@ -214,7 +214,6 @@ const calendarController = {
             userType,
             userId
           ]);
-          console.log(`Event ${createdEvent.id} shared with user ${clientToShareWith}`);
 
           // Send notification to the patient about the new calendar event
           try {
@@ -279,8 +278,6 @@ const calendarController = {
             await syncNotificationToFirebase(notification);
             await updateUnreadCount('user', clientToShareWith);
 
-            console.log(`📬 Push notification sent to patient ${clientToShareWith} for event ${createdEvent.id}`);
-
             // Get client details for email and SMS (join with notification_preferences for SMS settings)
             const clientResult = await pool.query(
               `SELECT u.email, u.phone_encrypted, u.first_name, u.last_name, 
@@ -307,7 +304,6 @@ const calendarController = {
                     description: description || '',
                     senderName: senderName
                   });
-                  console.log(`📧 Email notification sent to ${client.email} for event ${createdEvent.id}`);
                 } catch (emailError) {
                   console.error('Error sending calendar event email:', emailError);
                 }
@@ -325,7 +321,6 @@ const calendarController = {
                       `${title} scheduled for ${formattedDate} at ${formattedTime}${location ? ` at ${location}` : ''}`,
                       'normal'
                     );
-                    console.log(`📱 SMS notification sent to ****${phoneNumber.slice(-4)} for event ${createdEvent.id}`);
                   }
                 } catch (smsError) {
                   console.error('Error sending calendar event SMS:', smsError);
@@ -452,7 +447,6 @@ const calendarController = {
         (userType === 'medical_provider' && String(event.medical_provider_id) === String(userId));
 
       if (!isOwner) {
-        console.log('Delete unauthorized - userType:', userType, 'userId:', userId, 'event.user_id:', event.user_id);
         return res.status(403).json({ error: 'Unauthorized to delete this event' });
       }
 

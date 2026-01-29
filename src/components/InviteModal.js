@@ -105,7 +105,6 @@ const InviteModal = ({ visible, onClose, user }) => {
             url: inviteData.shareUrl
           });
         } catch (error) {
-          console.log('Share cancelled or failed:', error);
         }
       } else {
         await handleCopyLink();

@@ -262,12 +262,10 @@ export async function apiRequest(url, options = {}) {
   };
 
   try {
-    console.log(`[API] ${config.method || 'GET'} ${url}`);
     
     const response = await fetch(url, config);
     
     // Log response status
-    console.log(`[API] Response: ${response.status} ${response.statusText}`);
 
     // Handle non-JSON responses (like for file downloads)
     const contentType = response.headers.get('content-type');
@@ -452,12 +450,9 @@ export function isNetworkError(error) {
 // Validate API_BASE_URL on module load
 if (API_BASE_URL.includes('your-replit-username')) {
   console.warn('⚠️ WARNING: API_BASE_URL is not configured!');
-  console.warn('Please update API_BASE_URL in /src/config/api.js with your actual Replit URL');
 }
 
 // Log API configuration on app start
-console.log('🔧 API Configuration:');
-console.log('Base URL:', API_BASE_URL);
 
 // Test backend connection on app start (optional - comment out if not needed)
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
@@ -508,7 +503,6 @@ const result = await uploadFileWithProgress(
   file,
   token,
   (progress) => {
-    console.log(`Upload progress: ${progress}%`);
   },
   'medical_bill',
   'medical'
@@ -521,14 +515,11 @@ try {
     body: JSON.stringify({ email, password, userType: 'individual' })
   });
   // Success
-  console.log('Login successful:', data);
 } catch (error) {
   // Handle specific error types
   if (isAuthError(error)) {
   } else if (isNetworkError(error)) {
-    console.log('Network error');
   } else {
-    console.log('Error:', getErrorMessage(error));
   }
 }
 */

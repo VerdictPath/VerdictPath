@@ -51,8 +51,6 @@ class S3Service {
     try {
       const s3Key = this.generateS3Key(userId, fileType, originalFilename);
 
-      console.log(`[S3 Upload] Starting multipart upload for ${originalFilename} (${fileBuffer.length} bytes) to ${s3Key}`);
-
       const upload = new Upload({
         client: this.s3Client,
         params: {
@@ -74,12 +72,9 @@ class S3Service {
 
       upload.on('httpUploadProgress', (progress) => {
         const percentComplete = Math.round((progress.loaded / progress.total) * 100);
-        console.log(`[S3 Upload Progress] ${originalFilename}: ${percentComplete}% (${progress.loaded}/${progress.total} bytes)`);
       });
 
       const result = await upload.done();
-
-      console.log(`[S3 Upload] Successfully uploaded ${originalFilename} to ${s3Key}`);
 
       return {
         success: true,
@@ -115,8 +110,6 @@ class S3Service {
         expiresIn: expiresInSeconds
       });
 
-      console.log(`[S3 Presigned URL] Generated URL for ${s3Key} (expires in ${expiresInSeconds}s)`);
-
       return {
         url: presignedUrl,
         expiresIn: expiresInSeconds,
@@ -138,7 +131,6 @@ class S3Service {
       });
 
       await this.s3Client.send(command);
-      console.log(`[S3 Delete] Successfully deleted ${s3Key}`);
 
       return { success: true, key: s3Key };
     } catch (error) {

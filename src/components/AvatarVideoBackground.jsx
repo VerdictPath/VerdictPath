@@ -153,7 +153,6 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         resizeMode={ResizeMode.COVER}
         style={[styles.video, getVideoStyle()]}
         onLoad={() => {
-          console.log('[AvatarVideoBackground] Video loaded');
           setIsReady(true);
         }}
         onError={(error) => {

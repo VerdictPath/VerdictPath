@@ -34,7 +34,6 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
 
     const setupFirebaseListener = async () => {
       try {
-        console.log('💬 Setting up Firebase listener for conversation:', conversationId);
         unsubscribe = await subscribeToChatMessages(
           conversationId,
           handleFirebaseMessages,
@@ -56,7 +55,6 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
 
     return () => {
       if (unsubscribe) {
-        console.log('🔕 Cleaning up Firebase listener for conversation:', conversationId);
         unsubscribe();
       }
     };
@@ -83,11 +81,9 @@ const ChatConversationScreen = ({ conversationId, onBack, user }) => {
 
   const handleFirebaseMessages = async (firebaseMessages) => {
     try {
-      console.log('💬 Firebase real-time update detected:', firebaseMessages.length, 'messages');
       
       // Firebase contains encrypted messages only
       // Fetch decrypted messages from API
-      console.log('🔄 Fetching decrypted messages from API...');
       const response = await apiRequest(`${API_BASE_URL}/api/chat/conversations/${conversationId}/messages`, {
         method: 'GET',
       });

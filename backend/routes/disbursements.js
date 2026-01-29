@@ -366,17 +366,6 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
             : retrievedIntent.latest_charge?.id;
         }
 
-        console.log(`═══════════════════════════════════════════════════════════════`);
-        console.log(`💳 PAYMENT INTENT CREATED & CONFIRMED`);
-        console.log(`═══════════════════════════════════════════════════════════════`);
-        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
-        console.log(`🆔 PaymentIntent ID: ${paymentIntentId}`);
-        console.log(`🔗 Charge ID: ${chargeId}`);
-        console.log(`💵 Amount: $${totalAmount}`);
-        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
-        console.log(`📝 Settlement: ${settlement.case_name || settlementId}`);
-        console.log(`═══════════════════════════════════════════════════════════════`);
-
       } catch (stripeError) {
         console.error('PaymentIntent creation failed:', stripeError);
         await client.query('ROLLBACK');
@@ -478,16 +467,6 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
 
       // Log platform fee collection
       if (platformFee > 0) {
-        console.log(`═══════════════════════════════════════════════════════════════`);
-        console.log(`💰 PLATFORM FEE COLLECTED`);
-        console.log(`═══════════════════════════════════════════════════════════════`);
-        console.log(`📅 Timestamp: ${new Date().toISOString()}`);
-        console.log(`💵 Amount: $${platformFee}`);
-        console.log(`🏢 Law Firm: ${lawFirmName} (ID: ${lawFirmId})`);
-        console.log(`👤 Client: ${settlement.client_first_name} ${settlement.client_last_name}`);
-        console.log(`📝 Settlement ID: ${settlementId}`);
-        console.log(`🆔 PaymentIntent: ${paymentIntentId}`);
-        console.log(`═══════════════════════════════════════════════════════════════`);
       }
     }
 
