@@ -217,6 +217,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API 404 handler - must be after all /api routes but before SPA catch-all
+const { notFoundHandler } = require('./middleware/errorHandler');
+app.use('/api/*', notFoundHandler);
+
 // Serve mobile app at root
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'public/app/index.html');
