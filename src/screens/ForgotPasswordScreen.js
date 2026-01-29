@@ -41,6 +41,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
     if (!player || !enableVideo) return;
     player.loop = true;
     player.muted = true;
+    player.volume = 0;
     player.playbackRate = 0.95;
 
     const timer = setTimeout(async () => {
