@@ -137,9 +137,8 @@ exports.getDashboard = async (req, res) => {
       );
       const hasRecentUpload = parseInt(recentUploadResult.rows[0].count) > 0;
       
-      // For now, mark all patients with records as potentially needing review
-      // TODO: Add review_status column to medical_records table for proper tracking
-      const hasRecordsNeedingReview = recordCount > 0;
+      // Patients with records are flagged for review if they have recent uploads (within 7 days)
+      const hasRecordsNeedingReview = hasRecentUpload;
       
       return {
         id: patient.id,
