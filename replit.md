@@ -83,3 +83,27 @@ Key technical features include:
 - **twilio**: For SMS services.
 - **Firebase**: Real-time database for notification sync layer.
 - **firebase-admin**: Server-side Firebase SDK for custom token authentication.
+
+## Recent Changes (January 2026)
+
+### Console.log Cleanup
+- Reduced console.log statements from ~2,700 to ~1,175 (57% reduction)
+- Created automated cleanup scripts in `/scripts/`
+- Preserved critical error logging and status messages with emojis
+- Fixed broken syntax in uploadController.js and negotiations.js
+
+### Environment Validation
+- Added `backend/services/envValidation.js` for startup environment checks
+- Server now validates required variables (DATABASE_URL, JWT_SECRET, ENCRYPTION_KEY) and exits if missing
+- Reports which optional features are disabled (S3 storage, SMS, Email) based on configuration
+
+### Navigation Hook
+- Created `src/hooks/useAppNavigation.js` for future App.js refactoring
+- Provides navigation state management, history, and back functionality
+
+### AWS S3 Requirements
+- Medical Hub document upload requires AWS S3 credentials:
+  - AWS_ACCESS_KEY_ID
+  - AWS_SECRET_ACCESS_KEY
+  - AWS_S3_BUCKET_NAME
+  - AWS_REGION
