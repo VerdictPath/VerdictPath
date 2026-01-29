@@ -1,6 +1,10 @@
 // Load environment variables from .env file
 require('dotenv').config();
 
+// Validate environment variables on startup
+const { validateEnvironment } = require('./services/envValidation');
+validateEnvironment();
+
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
