@@ -5,11 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
 import { firebaseConfig } from '../config/firebase';
 
-  hasApiKey: !!firebaseConfig.apiKey,
-  hasDatabaseURL: !!firebaseConfig.databaseURL,
-  projectId: firebaseConfig.projectId
-});
-
 let app = null;
 let database = null;
 let auth = null;
@@ -20,11 +15,6 @@ let activeListeners = new Map();
 export const initializeFirebase = () => {
   try {
     if (!isInitialized) {
-        apiKey: firebaseConfig.apiKey ? '✓ Set' : '✗ Missing',
-        authDomain: firebaseConfig.authDomain ? '✓ Set' : '✗ Missing',
-        databaseURL: firebaseConfig.databaseURL ? '✓ Set' : '✗ Missing',
-        projectId: firebaseConfig.projectId ? '✓ Set' : '✗ Missing',
-      });
       app = initializeApp(firebaseConfig);
       database = getDatabase(app);
       auth = getAuth(app);
@@ -391,7 +381,6 @@ export const subscribeToChatMessages = async (conversationId, onMessagesUpdate, 
     (snapshot) => {
       try {
         const data = snapshot.val();
-          data ? Object.keys(data).length : 0, 'messages');
         
         if (data) {
           const messages = Object.entries(data).map(([id, msg]) => ({
@@ -486,7 +475,6 @@ export const subscribeToChatConversations = async (userType, userId, onConversat
     (snapshot) => {
       try {
         const data = snapshot.val();
-          data ? Object.keys(data).length : 0, 'conversations');
         
         if (data) {
           const conversations = Object.entries(data).map(([id, conv]) => ({
@@ -564,7 +552,6 @@ export const subscribeToNegotiations = async (userType, userId, onNegotiationsUp
     (snapshot) => {
       try {
         const data = snapshot.val();
-          data ? Object.keys(data).length : 0, 'negotiations');
         
         if (data) {
           const negotiations = Object.entries(data).map(([id, neg]) => ({

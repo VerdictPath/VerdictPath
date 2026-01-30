@@ -101,11 +101,6 @@ const RegisterScreen = ({
             await new Promise(resolve => setTimeout(resolve, 200));
           }
           
-            playing: player.playing,
-            currentTime: player.currentTime,
-            duration: player.duration,
-          });
-          
           // If still not playing after retry, try once more with a delay
           if (!player.playing && Platform.OS !== 'web') {
             setTimeout(async () => {

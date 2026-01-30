@@ -95,9 +95,6 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
       };
 
       const handleUnreadCountUpdate = (count) => {
-          newCount: count,
-          oldCount: unreadCount 
-        });
         setUnreadCount(count);
         NotificationService.setBadgeCount(count);
       };
@@ -283,26 +280,9 @@ export const NotificationProvider = ({ children, onNavigate = null, user = null 
     // Use user.token directly to avoid timing issues with authToken state
     const token = user?.token || authToken;
     
-      userId: user?.id,
-      userType: user?.userType,
-      hasUserToken: !!user?.token,
-      hasAuthToken: !!authToken,
-      hasToken: !!token,
-      timestamp: new Date().toISOString()
-    });
-    
     if (!user?.id || !token) {
-        hasUserId: !!user?.id,
-        hasUserToken: !!user?.token,
-        hasAuthToken: !!authToken
-      });
       return;
     }
-
-      userType: user.userType,
-      userId: user.id,
-      hasToken: !!token
-    });
     
     // Call initialization async
     const init = async () => {

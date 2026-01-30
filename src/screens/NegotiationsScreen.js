@@ -128,12 +128,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     }
     
     try {
-        userId: user.id,
-        userType: user.type || user.userType,
-        isLawFirm,
-        isMedicalProvider
-      });
-      
       // Initialize Firebase
       initializeFirebase();
       
@@ -210,11 +204,6 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
           if (currentSelectedNegotiation) {
             const updatedSelected = updatedNegotiations.find(n => n.id === currentSelectedNegotiation.id);
             if (updatedSelected) {
-                id: updatedSelected.id,
-                status: updatedSelected.status,
-                lastRespondedBy: updatedSelected.last_responded_by || updatedSelected.lastRespondedBy,
-                currentOffer: updatedSelected.current_offer || updatedSelected.currentOffer
-              });
               setSelectedNegotiation(prev => {
                 if (!prev) return prev;
                 return {
