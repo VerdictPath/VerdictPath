@@ -32,6 +32,18 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ]
+    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
@@ -59,6 +71,9 @@
     },
     "experiments": {
       "baseUrl": "/"
-    }
+    },
+    "plugins": [
+      "expo-build-properties"
+    ]
   }
 }
