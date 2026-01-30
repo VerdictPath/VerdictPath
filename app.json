@@ -6,7 +6,11 @@
     "owner": "verdictpath",
     "scheme": "verdictpath",
     "icon": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
-    "extra": {},
+    "extra": {
+      "eas": {
+        "projectId": "4dccfd60-99f8-4c20-ad4d-3675503fbdb5"
+      }
+    },
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
@@ -20,7 +24,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.verdictpath.app",
-      "associatedDomains": ["applinks:verdictpath.com"]
+      "associatedDomains": [
+        "applinks:verdictpath.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -37,7 +43,10 @@
               "scheme": "verdictpath"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
