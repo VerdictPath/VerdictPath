@@ -2,7 +2,7 @@
   "expo": {
     "name": "Verdict Path",
     "slug": "verdict-path",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "owner": "verdictpath",
     "scheme": "verdictpath",
     "icon": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
@@ -25,25 +25,12 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.verdictpath.app",
       "associatedDomains": [
-        "applinks:verdictpath.com",
         "applinks:verdictpath.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0"
-          }
-        }
-      ]
-    ],
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
@@ -73,7 +60,16 @@
       "baseUrl": "/"
     },
     "plugins": [
-      "expo-build-properties"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ]
     ]
   }
 }
