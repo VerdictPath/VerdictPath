@@ -556,7 +556,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {renderTabButton('settings', 'Settings', '⚙️')}
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
         {activeTab === 'clients' && renderClientsTab()}
         {activeTab === 'analytics' && renderAnalyticsTab()}
         {activeTab === 'notifications' && renderNotificationsTab()}
@@ -761,8 +766,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: 100,
     backgroundColor: theme.lawFirm.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 150,
   },
   tabContent: {
     padding: 16,
