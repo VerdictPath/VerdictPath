@@ -6,11 +6,7 @@
     "owner": "verdictpath",
     "scheme": "verdictpath",
     "icon": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
-    "extra": {
-      "eas": {
-        "projectId": "71e06a4e-c10f-4b46-92d3-4f091343570c"
-      }
-    },
+    "extra": {},
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
