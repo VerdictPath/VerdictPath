@@ -228,6 +228,14 @@ const LawFirmRegistrationScreen = ({
             Are you creating a new firm or joining an existing one?
           </Text>
 
+          <View style={styles.freeTrialBanner}>
+            <Text style={styles.freeTrialBannerIcon}>🎉</Text>
+            <View style={styles.freeTrialBannerContent}>
+              <Text style={styles.freeTrialBannerTitle}>FREE TIER AVAILABLE!</Text>
+              <Text style={styles.freeTrialBannerText}>Start with up to 3 clients at no cost - no credit card required</Text>
+            </View>
+          </View>
+
           {renderPricingCard()}
 
           <TouchableOpacity 
@@ -238,7 +246,7 @@ const LawFirmRegistrationScreen = ({
             <Text style={styles.optionDescription}>
               Start your own firm and become the administrator
             </Text>
-            <Text style={styles.optionPrice}>Launch Special: Only $40/month!</Text>
+            <Text style={styles.optionPriceFree}>Start FREE with up to 3 clients!</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -719,6 +727,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#28A745',
+  },
+  optionPriceFree: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  freeTrialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#2E7D32',
+  },
+  freeTrialBannerIcon: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  freeTrialBannerContent: {
+    flex: 1,
+  },
+  freeTrialBannerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  freeTrialBannerText: {
+    fontSize: 14,
+    color: '#E8F5E9',
   },
   
   form: {
