@@ -297,6 +297,10 @@ const LawFirmRegistrationScreen = ({
             You'll become the first administrator
           </Text>
 
+          <View style={styles.freeTrialBannerCompact}>
+            <Text style={styles.freeTrialBannerCompactText}>🎉 FREE TIER: Start with up to 3 clients at no cost!</Text>
+          </View>
+
           <View style={styles.form}>
             <Text style={styles.label}>Law Firm Name</Text>
             <TextInput
@@ -765,6 +769,20 @@ const styles = StyleSheet.create({
   freeTrialBannerText: {
     fontSize: 14,
     color: '#E8F5E9',
+  },
+  freeTrialBannerCompact: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  freeTrialBannerCompactText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
   },
   
   form: {
