@@ -7,6 +7,27 @@ import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 const LAW_FIRM_PRICING = {
   tiers: [
     { 
+      name: 'Free Trial',
+      min: 1,
+      max: 3,
+      isFree: true,
+      standard: {
+        monthly: 0,
+        annual: 0,
+        features: [
+          'Up to 3 clients',
+          '📍 Interactive Roadmap',
+          '🔔 Push Notifications to Clients',
+          '📊 Basic Analytics Dashboard',
+          '🔒 Evidence Locker Access',
+          '👥 Unlimited team members',
+          '📋 Activity logging & reporting'
+        ]
+      },
+      premium: null,
+      description: 'Try all features with up to 3 clients'
+    },
+    { 
       name: 'Solo/Shingle',
       min: 1,
       max: 24,
@@ -444,8 +465,10 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
     try {
       setUpdating(true);
       
-      // During launch promo, force premium
-      const effectivePlanType = IS_LAUNCH_PROMO ? 'premium' : planType;
+      // Handle free tier specially
+      const isFree = selectedTier.isFree === true;
+      const effectivePlanType = isFree ? 'free' : (IS_LAUNCH_PROMO ? 'premium' : planType);
+      const tierName = isFree ? 'free' : selectedTier.name.toLowerCase().replace(/[^a-z]/g, '');
       
       const response = await apiRequest(API_ENDPOINTS.AUTH.REGISTER_LAWFIRM, {
         method: 'POST',
@@ -455,9 +478,9 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           password: registrationData.password,
           firstName: registrationData.firstName,
           lastName: registrationData.lastName,
-          subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+          subscriptionTier: tierName,
           planType: effectivePlanType,
-          firmSize: {
+          firmSize: isFree ? null : {
             clientCount: clientCount ? parseInt(clientCount) : null,
             tierName: selectedTier.name,
             billingPeriod: billingPeriod,
@@ -474,7 +497,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         firmName: response.lawFirm.firmName,
         firmCode: response.lawFirm.firmCode,
         token: response.token,
-        subscription: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
+        subscription: tierName,
         planType: effectivePlanType,
         coins: 0,
         streak: 0
@@ -722,19 +745,25 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
               <Text style={styles.tierDescription}>{currentTier.description}</Text>
 
               <View style={styles.priceDisplay}>
-                {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
-                  <Text style={styles.originalPriceDisplay}>
-                    ${getOriginalPrice(currentTier)}/mo
-                  </Text>
+                {currentTier.isFree ? (
+                  <Text style={[styles.priceAmount, { color: '#2E7D32' }]}>FREE</Text>
+                ) : (
+                  <>
+                    {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+                      <Text style={styles.originalPriceDisplay}>
+                        ${getOriginalPrice(currentTier)}/mo
+                      </Text>
+                    )}
+                    <Text style={styles.priceAmount}>
+                      ${getPrice(currentTier)}
+                    </Text>
+                    <Text style={styles.pricePeriod}>
+                      /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                    </Text>
+                  </>
                 )}
-                <Text style={styles.priceAmount}>
-                  ${getPrice(currentTier)}
-                </Text>
-                <Text style={styles.pricePeriod}>
-                  /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
-                </Text>
               </View>
-              {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+              {!currentTier.isFree && IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
                 <View style={styles.promoSavingsBox}>
                   <Text style={styles.promoSavingsText}>
                     SAVE ${getOriginalPrice(currentTier) - LAUNCH_PROMO_PRICE}/MONTH!
@@ -743,22 +772,30 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                 </View>
               )}
 
-              <View style={styles.priceDetails}>
-                <Text style={styles.perClientText}>
-                  Just ${getPerClientCost(currentTier, clientCount)} per client
-                </Text>
-                {billingPeriod === 'annual' && (
-                  <Text style={styles.savingsHighlight}>
-                    💰 Save ${getAnnualSavings(currentTier)}/year
+              {currentTier.isFree ? (
+                <View style={styles.priceDetails}>
+                  <Text style={[styles.perClientText, { color: '#2E7D32' }]}>
+                    Try all features FREE with up to {currentTier.max} clients!
                   </Text>
-                )}
-              </View>
+                </View>
+              ) : (
+                <View style={styles.priceDetails}>
+                  <Text style={styles.perClientText}>
+                    Just ${getPerClientCost(currentTier, clientCount)} per client
+                  </Text>
+                  {billingPeriod === 'annual' && (
+                    <Text style={styles.savingsHighlight}>
+                      💰 Save ${getAnnualSavings(currentTier)}/year
+                    </Text>
+                  )}
+                </View>
+              )}
 
               <View style={styles.featuresContainer}>
                 <Text style={styles.featuresTitle}>
-                  {planType === 'premium' ? '⭐ Premium Features:' : '📦 Standard Features:'}
+                  {currentTier.isFree ? '🆓 Free Trial Features:' : (planType === 'premium' ? '⭐ Premium Features:' : '📦 Standard Features:')}
                 </Text>
-                {currentTier[planType].features.map((feature, index) => (
+                {(currentTier.isFree ? currentTier.standard : currentTier[planType])?.features?.map((feature, index) => (
                   <View key={index} style={styles.featureRow}>
                     <Text style={styles.featureCheck}>✓</Text>
                     <Text style={styles.featureText}>{feature}</Text>
@@ -769,7 +806,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
               <TouchableOpacity
                 style={[
                   styles.selectButton,
-                  planType === 'premium' && styles.selectButtonPremium,
+                  currentTier.isFree ? styles.selectButtonFree : (planType === 'premium' && styles.selectButtonPremium),
                   updating && styles.selectButtonDisabled
                 ]}
                 onPress={() => handleSelectTier(currentTier)}
@@ -779,12 +816,15 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={styles.selectButtonText}>
-                    {isNewRegistration ? 'Select' : 'Update to'} {currentTier.name} {planType === 'premium' ? 'Premium' : 'Standard'}
+                    {currentTier.isFree 
+                      ? 'Start Free Trial' 
+                      : `${isNewRegistration ? 'Select' : 'Update to'} ${currentTier.name} ${planType === 'premium' ? 'Premium' : 'Standard'}`
+                    }
                   </Text>
                 )}
               </TouchableOpacity>
 
-              {planType === 'standard' && (
+              {!currentTier.isFree && planType === 'standard' && (
                 <TouchableOpacity
                   style={styles.upgradeHint}
                   onPress={() => setPlanType('premium')}
@@ -809,40 +849,47 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.pricingTable}>
                 {LAW_FIRM_PRICING.tiers.map((tier, index) => {
-                  const pricing = tier.premium; // Always show premium pricing during promo
+                  const isFree = tier.isFree === true;
+                  const pricing = isFree ? tier.standard : tier.premium;
                   const originalPrice = billingPeriod === 'monthly' ? pricing.monthly : pricing.annual;
-                  const promoPrice = IS_LAUNCH_PROMO && billingPeriod === 'monthly' ? LAUNCH_PROMO_PRICE : originalPrice;
+                  const promoPrice = isFree ? 0 : (IS_LAUNCH_PROMO && billingPeriod === 'monthly' ? LAUNCH_PROMO_PRICE : originalPrice);
                   
                   return (
                     <TouchableOpacity
                       key={index}
                       style={[
                         styles.pricingTableColumn,
-                        currentTier?.name === tier.name && styles.pricingTableColumnActive
+                        currentTier?.name === tier.name && styles.pricingTableColumnActive,
+                        isFree && styles.pricingTableColumnFree
                       ]}
                       onPress={() => {
                         setClientCount(String(tier.min));
-                        // Tier selection for firm size - registration/update happens via main button
                       }}
                       disabled={updating}
                     >
-                      <Text style={styles.tableColumnName}>{tier.name}</Text>
+                      <Text style={[styles.tableColumnName, isFree && styles.tableColumnNameFree]}>{tier.name}</Text>
                       <Text style={styles.tableColumnRange}>
-                        {tier.min}-{tier.max === Infinity ? '999+' : tier.max}
+                        {isFree ? `Up to ${tier.max}` : `${tier.min}-${tier.max === Infinity ? '999+' : tier.max}`}
                       </Text>
-                      {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
-                        <Text style={styles.tableColumnOriginalPrice}>
-                          ${originalPrice}
-                        </Text>
+                      {isFree ? (
+                        <Text style={styles.tableColumnFreePrice}>FREE</Text>
+                      ) : (
+                        <>
+                          {IS_LAUNCH_PROMO && billingPeriod === 'monthly' && (
+                            <Text style={styles.tableColumnOriginalPrice}>
+                              ${originalPrice}
+                            </Text>
+                          )}
+                          <Text style={[styles.tableColumnPrice, IS_LAUNCH_PROMO && styles.tableColumnPromoPrice]}>
+                            ${promoPrice}
+                          </Text>
+                          <Text style={styles.tableColumnPeriod}>
+                            /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                          </Text>
+                        </>
                       )}
-                      <Text style={[styles.tableColumnPrice, IS_LAUNCH_PROMO && styles.tableColumnPromoPrice]}>
-                        ${promoPrice}
-                      </Text>
-                      <Text style={styles.tableColumnPeriod}>
-                        /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
-                      </Text>
                       {currentTier?.name === tier.name && (
-                        <View style={styles.selectedBadge}>
+                        <View style={[styles.selectedBadge, isFree && styles.selectedBadgeFree]}>
                           <Text style={styles.selectedBadgeText}>SELECTED</Text>
                         </View>
                       )}
@@ -1235,6 +1282,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#000'
   },
+  selectButtonFree: {
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: '#2E7D32'
+  },
   selectButtonDisabled: {
     opacity: 0.6
   },
@@ -1304,6 +1356,23 @@ const styles = StyleSheet.create({
   pricingTableColumnActive: {
     borderColor: theme.colors.primary,
     backgroundColor: '#e8f4ff'
+  },
+  pricingTableColumnFree: {
+    borderColor: '#4CAF50',
+    backgroundColor: '#E8F5E9'
+  },
+  tableColumnNameFree: {
+    color: '#2E7D32',
+    fontWeight: 'bold'
+  },
+  tableColumnFreePrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginVertical: 4
+  },
+  selectedBadgeFree: {
+    backgroundColor: '#4CAF50'
   },
   tableColumnName: {
     fontSize: 12,

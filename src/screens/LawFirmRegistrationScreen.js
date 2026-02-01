@@ -99,12 +99,21 @@ const LawFirmRegistrationScreen = ({
   const renderPricingCard = () => (
     <View style={styles.pricingSection}>
       <View style={styles.pricingHeader}>
-        <Text style={styles.pricingBadge}>LIMITED TIME OFFER</Text>
+        <Text style={styles.pricingBadge}>START FREE TODAY</Text>
       </View>
       
       <Text style={styles.pricingTitle}>Law Firm Portal Pricing</Text>
       
       <View style={styles.tierContainer}>
+        <View style={[styles.tierCard, styles.tierCardFree]}>
+          <Text style={styles.tierNameFree}>Free Trial</Text>
+          <Text style={styles.tierRange}>Up to 3 Clients</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.freePrice}>FREE</Text>
+          </View>
+          <Text style={styles.freeDescription}>Full functionality included!</Text>
+        </View>
+
         <View style={styles.tierCard}>
           <Text style={styles.tierName}>Solo/Shingle</Text>
           <Text style={styles.tierRange}>1-24 Clients</Text>
@@ -600,6 +609,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF9E6',
     borderWidth: 2,
     borderColor: theme.colors.gold,
+  },
+  tierCardFree: {
+    backgroundColor: '#E8F5E9',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  tierNameFree: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    flex: 1,
+  },
+  freePrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+  },
+  freeDescription: {
+    fontSize: 11,
+    color: '#388E3C',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   tierName: {
     fontSize: 14,
