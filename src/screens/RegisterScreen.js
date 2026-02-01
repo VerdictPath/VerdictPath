@@ -206,9 +206,6 @@ const RegisterScreen = ({
             <Text style={[styles.toggleText, userType === USER_TYPES.LAW_FIRM && styles.toggleTextActive]}>
               Law Firm
             </Text>
-            <View style={styles.freeTierBadge}>
-              <Text style={styles.freeTierBadgeText}>FREE TIER</Text>
-            </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
