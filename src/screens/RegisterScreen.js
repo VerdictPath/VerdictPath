@@ -206,6 +206,9 @@ const RegisterScreen = ({
             <Text style={[styles.toggleText, userType === USER_TYPES.LAW_FIRM && styles.toggleTextActive]}>
               Law Firm
             </Text>
+            <View style={styles.freeTierBadge}>
+              <Text style={styles.freeTierBadgeText}>FREE TIER</Text>
+            </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -464,6 +467,18 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: '#FFFFFF',
+  },
+  freeTierBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  freeTierBadgeText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   disclaimer: {
     fontSize: 12,
