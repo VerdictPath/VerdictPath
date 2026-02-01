@@ -232,7 +232,7 @@ const LawFirmRegistrationScreen = ({
             <Text style={styles.freeTrialBannerIcon}>🎉</Text>
             <View style={styles.freeTrialBannerContent}>
               <Text style={styles.freeTrialBannerTitle}>FREE TIER AVAILABLE!</Text>
-              <Text style={styles.freeTrialBannerText}>Start with up to 3 clients at no cost - no credit card required</Text>
+              <Text style={styles.freeTrialBannerText}>Start with up to 3 clients at no cost</Text>
             </View>
           </View>
 
