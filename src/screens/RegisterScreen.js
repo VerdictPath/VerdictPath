@@ -353,7 +353,7 @@ const RegisterScreen = ({
           style={commonStyles.primaryButton} 
           onPress={onRegister}
         >
-          <Text style={commonStyles.buttonText}>Create Account</Text>
+          <Text style={commonStyles.buttonText}>Create Free Account</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => onNavigate('login')}>
