@@ -248,7 +248,7 @@ const CalendarScreen = ({ user, onBack }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Icon name="sail-boat" size={28} color="#FFD700" />
+          <Icon name="home" size={28} color="#FFD700" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>📅 Calendar</Text>
         <View style={styles.headerRight}>
@@ -259,7 +259,7 @@ const CalendarScreen = ({ user, onBack }) => {
             <Text style={styles.addButtonText}>+ Add</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-            <Icon name="minus" size={24} color="#FFD700" />
+            <Icon name="arrow-left" size={24} color="#FFD700" />
           </TouchableOpacity>
         </View>
       </View>
