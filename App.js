@@ -165,7 +165,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
 
-  // Handle reset-password URL on page load
+  // Handle reset-password and invite URL on page load
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -173,9 +173,21 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       const type = urlParams.get('type');
       const path = window.location.pathname;
       
+      // Handle reset password link
       if (path === '/reset-password' && token) {
         setResetToken(token);
         setCurrentScreen('resetPassword');
+      }
+      
+      // Handle invite code from URL (e.g., ?invite=WJMQAZ6A)
+      const inviteParam = urlParams.get('invite');
+      if (inviteParam) {
+        console.log('[App] Invite code detected from URL:', inviteParam);
+        setInviteCode(inviteParam);
+        // Navigate to registration screen with the invite code pre-filled
+        if (!isLoggedIn) {
+          setCurrentScreen('register');
+        }
       }
     }
   }, []);
