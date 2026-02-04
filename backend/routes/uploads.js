@@ -121,6 +121,48 @@ router.get('/my-evidence', async (req, res) => {
   }
 });
 
+router.get('/my-medical-bills', async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const userId = req.user.id;
+    
+    const result = await db.query(
+      `SELECT id, bill_type, provider_name, facility_name, bill_date, amount, description, 
+              file_name, file_size, mime_type, created_at 
+       FROM medical_billing 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    res.json({ bills: result.rows });
+  } catch (error) {
+    console.error('Error fetching user medical bills:', error);
+    res.status(500).json({ error: 'Failed to fetch medical bills' });
+  }
+});
+
+router.get('/my-medical-records', async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const userId = req.user.id;
+    
+    const result = await db.query(
+      `SELECT id, record_type, facility_name, provider_name, date_of_service, description, 
+              file_name, file_size, mime_type, created_at 
+       FROM medical_records 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    res.json({ records: result.rows });
+  } catch (error) {
+    console.error('Error fetching user medical records:', error);
+    res.status(500).json({ error: 'Failed to fetch medical records' });
+  }
+});
+
 router.get('/download/:type/:fileId', 
   burstProtectionLimiter,
   downloadRateLimiter,
