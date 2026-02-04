@@ -301,7 +301,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         <Text style={styles.headerTitle}>Notification Settings</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {/* Global Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔔 Global Settings</Text>
@@ -718,6 +718,9 @@ const createStyles = (colors) => StyleSheet.create({
   },
   content: {
     flex: 1
+  },
+  contentContainer: {
+    paddingBottom: 180
   },
   section: {
     backgroundColor: colors.surface,
