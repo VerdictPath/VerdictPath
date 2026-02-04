@@ -762,8 +762,24 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       console.error('Error logging out:', error);
     }
     
+    // Clear all user state
     setIsLoggedIn(false);
     setUser(null);
+    
+    // Clear login form fields
+    setEmail('');
+    setPassword('');
+    
+    // Reset user type to default
+    setUserType(USER_TYPES.INDIVIDUAL);
+    
+    // Clear any stored user data
+    try {
+      await AsyncStorage.removeItem('user');
+    } catch (e) {
+      console.error('Error clearing stored user data:', e);
+    }
+    
     setCurrentScreen('landing');
   };
 
