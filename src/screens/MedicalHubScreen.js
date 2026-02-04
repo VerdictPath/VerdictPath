@@ -21,6 +21,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const [medicalBills, setMedicalBills] = useState([]);
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [fetchingDocuments, setFetchingDocuments] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [uploadingBill, setUploadingBill] = useState(false);
   const [uploadingRecord, setUploadingRecord] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -34,6 +35,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const fetchDocuments = async () => {
     try {
       setFetchingDocuments(true);
+      setFetchError(null);
       const [billsRes, recordsRes] = await Promise.all([
         fetch(`${API_URL}/api/uploads/my-medical-bills`, {
           headers: {
@@ -52,14 +54,19 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       if (billsRes.ok) {
         const billsData = await billsRes.json();
         setMedicalBills(billsData.bills || billsData || []);
+      } else {
+        console.error('Error fetching medical bills:', billsRes.status);
       }
       
       if (recordsRes.ok) {
         const recordsData = await recordsRes.json();
         setMedicalRecords(recordsData.records || recordsData || []);
+      } else {
+        console.error('Error fetching medical records:', recordsRes.status);
       }
     } catch (error) {
       console.error('Error fetching documents:', error);
+      setFetchError('Unable to load documents. Please try again.');
     } finally {
       setFetchingDocuments(false);
     }
@@ -337,6 +344,15 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                 styles.medicalContainer,
                 { padding: isDesktop ? 30 : 20 }
               ]}>
+                {fetchError && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{fetchError}</Text>
+                    <TouchableOpacity onPress={fetchDocuments} style={styles.retryButton}>
+                      <Text style={styles.retryButtonText}>Retry</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 {/* Medical Bills Section */}
                 <View style={[
                   styles.documentSection,
@@ -990,6 +1006,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
     textAlign: 'center',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(180, 60, 60, 0.3)',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 100, 100, 0.5)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FF9999',
+    flex: 1,
+    fontSize: 14,
+  },
+  retryButton: {
+    backgroundColor: 'rgba(100, 80, 60, 0.9)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+  retryButtonText: {
+    color: '#FFD700',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 

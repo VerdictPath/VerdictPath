@@ -127,11 +127,11 @@ router.get('/my-medical-bills', async (req, res) => {
     const userId = req.user.id;
     
     const result = await db.query(
-      `SELECT id, bill_type, provider_name, facility_name, bill_date, amount, description, 
-              file_name, file_size, mime_type, created_at 
+      `SELECT id, billing_type, facility_name, bill_number, bill_date, total_amount, description, 
+              file_name, file_size, mime_type, uploaded_at as created_at 
        FROM medical_billing 
        WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+       ORDER BY uploaded_at DESC`,
       [userId]
     );
     
@@ -149,10 +149,10 @@ router.get('/my-medical-records', async (req, res) => {
     
     const result = await db.query(
       `SELECT id, record_type, facility_name, provider_name, date_of_service, description, 
-              file_name, file_size, mime_type, created_at 
+              file_name, file_size, mime_type, uploaded_at as created_at 
        FROM medical_records 
        WHERE user_id = $1 
-       ORDER BY created_at DESC`,
+       ORDER BY uploaded_at DESC`,
       [userId]
     );
     
