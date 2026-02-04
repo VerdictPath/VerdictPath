@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import alert from '../utils/alert';
 import { API_URL } from '../config/api';
-import { pickDocument, pickImage, pickImageFromLibrary, createFormDataFromFile } from '../utils/fileUpload';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
   const { width, height } = useWindowDimensions();
@@ -17,60 +16,10 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const [isLoading, setIsLoading] = useState(false);
   const [connectedProviders, setConnectedProviders] = useState([]);
   const [fetchingProviders, setFetchingProviders] = useState(true);
-  
-  const [medicalBills, setMedicalBills] = useState([]);
-  const [medicalRecords, setMedicalRecords] = useState([]);
-  const [fetchingDocuments, setFetchingDocuments] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
-  const [uploadingBill, setUploadingBill] = useState(false);
-  const [uploadingRecord, setUploadingRecord] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadType, setUploadType] = useState(null);
 
   useEffect(() => {
     fetchConnectedProviders();
-    fetchDocuments();
   }, []);
-
-  const fetchDocuments = async () => {
-    try {
-      setFetchingDocuments(true);
-      setFetchError(null);
-      const [billsRes, recordsRes] = await Promise.all([
-        fetch(`${API_URL}/api/uploads/my-medical-bills`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`${API_URL}/api/uploads/my-medical-records`, {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      ]);
-      
-      if (billsRes.ok) {
-        const billsData = await billsRes.json();
-        setMedicalBills(billsData.bills || billsData || []);
-      } else {
-        console.error('Error fetching medical bills:', billsRes.status);
-      }
-      
-      if (recordsRes.ok) {
-        const recordsData = await recordsRes.json();
-        setMedicalRecords(recordsData.records || recordsData || []);
-      } else {
-        console.error('Error fetching medical records:', recordsRes.status);
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      setFetchError('Unable to load documents. Please try again.');
-    } finally {
-      setFetchingDocuments(false);
-    }
-  };
 
   const fetchConnectedProviders = async () => {
     try {
@@ -91,92 +40,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     } finally {
       setFetchingProviders(false);
     }
-  };
-
-  const handleUpload = (type) => {
-    setUploadType(type);
-    setShowUploadModal(true);
-  };
-
-  const handleSelectUploadMethod = async (method) => {
-    setShowUploadModal(false);
-    
-    const isUploadingBill = uploadType === 'bill';
-    if (isUploadingBill) {
-      setUploadingBill(true);
-    } else {
-      setUploadingRecord(true);
-    }
-
-    try {
-      let result;
-      if (method === 'camera') {
-        result = await pickImage();
-      } else if (method === 'library') {
-        result = await pickImageFromLibrary();
-      } else {
-        result = await pickDocument();
-      }
-
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-
-      const fileAsset = result.assets[0];
-      const formData = createFormDataFromFile(fileAsset, 'file');
-      
-      const endpoint = isUploadingBill 
-        ? `${API_URL}/api/uploads/medical-bill`
-        : `${API_URL}/api/uploads/medical-record`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        await fetchDocuments();
-        alert(
-          '🏴‍☠️ Treasure Secured!',
-          `Yer ${isUploadingBill ? 'medical bill' : 'medical record'} has been safely stored in the vault! ⚓`
-        );
-      } else {
-        const errorData = await response.json();
-        alert(
-          '🏴‍☠️ Upload Failed',
-          errorData.error || `Failed to upload ${isUploadingBill ? 'bill' : 'record'}. Please try again.`
-        );
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert(
-        '🏴‍☠️ Stormy Seas!',
-        'The upload was lost in a storm! Please check yer connection and try again.'
-      );
-    } finally {
-      if (isUploadingBill) {
-        setUploadingBill(false);
-      } else {
-        setUploadingRecord(false);
-      }
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown date';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   const handleAddProvider = () => {
@@ -271,28 +134,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     return width;
   };
 
-  const renderDocumentItem = (doc, type) => {
-    const fileName = doc.file_name || doc.fileName || 'Document';
-    const fileSize = doc.file_size || doc.fileSize;
-    const uploadDate = doc.created_at || doc.createdAt || doc.uploaded_at;
-    
-    return (
-      <View key={doc.id} style={styles.documentItem}>
-        <View style={styles.documentIcon}>
-          <Text style={{ fontSize: 24 }}>
-            {doc.mime_type?.includes('pdf') ? '📄' : '🖼️'}
-          </Text>
-        </View>
-        <View style={styles.documentDetails}>
-          <Text style={styles.documentName} numberOfLines={1}>{fileName}</Text>
-          <Text style={styles.documentMeta}>
-            {formatDate(uploadDate)} {fileSize ? `• ${formatFileSize(fileSize)}` : ''}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -344,16 +185,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                 styles.medicalContainer,
                 { padding: isDesktop ? 30 : 20 }
               ]}>
-                {fetchError && (
-                  <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{fetchError}</Text>
-                    <TouchableOpacity onPress={fetchDocuments} style={styles.retryButton}>
-                      <Text style={styles.retryButtonText}>Retry</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* Medical Bills Section */}
                 <View style={[
                   styles.documentSection,
                   { padding: isDesktop ? 25 : 20 }
@@ -364,50 +195,20 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                       { fontSize: isDesktop ? 24 : 20 }
                     ]}>💵 Medical Bills</Text>
                     <Text style={[
-                      styles.documentCount,
+                      styles.comingSoonBadge,
                       { fontSize: isDesktop ? 13 : 11 }
-                    ]}>{medicalBills.length} uploaded</Text>
+                    ]}>🏴‍☠️ Coming Soon</Text>
                   </View>
-                  <Text style={[
-                    styles.sectionDescription,
-                    { fontSize: isDesktop ? 16 : 14 }
-                  ]}>
-                    Upload your medical bills securely for case documentation
-                  </Text>
-                  
-                  {fetchingDocuments ? (
-                    <ActivityIndicator size="small" color="#FFD700" style={{ marginVertical: 10 }} />
-                  ) : medicalBills.length > 0 && (
-                    <View style={styles.documentList}>
-                      {medicalBills.slice(0, 3).map(bill => renderDocumentItem(bill, 'bill'))}
-                      {medicalBills.length > 3 && (
-                        <Text style={styles.moreDocuments}>
-                          + {medicalBills.length - 3} more documents
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                  
-                  <TouchableOpacity 
-                    style={[
-                      styles.uploadButton,
-                      { paddingVertical: isDesktop ? 18 : 15 }
-                    ]}
-                    onPress={() => handleUpload('bill')}
-                    disabled={uploadingBill}
-                  >
-                    {uploadingBill ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <Text style={[
-                        styles.buttonText,
-                        { fontSize: isDesktop ? 18 : 16 }
-                      ]}>📤 Upload Medical Bill</Text>
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.comingSoonMessage}>
+                    <Text style={[
+                      styles.comingSoonText,
+                      { fontSize: isDesktop ? 16 : 14 }
+                    ]}>
+                      Blimey! This treasure chest be still under construction. Medical Bills upload will be ready soon! ⚓
+                    </Text>
+                  </View>
                 </View>
 
-                {/* Medical Records Section */}
                 <View style={[
                   styles.documentSection,
                   { padding: isDesktop ? 25 : 20 }
@@ -418,47 +219,18 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                       { fontSize: isDesktop ? 24 : 20 }
                     ]}>📋 Medical Records</Text>
                     <Text style={[
-                      styles.documentCount,
+                      styles.comingSoonBadge,
                       { fontSize: isDesktop ? 13 : 11 }
-                    ]}>{medicalRecords.length} uploaded</Text>
+                    ]}>🏴‍☠️ Coming Soon</Text>
                   </View>
-                  <Text style={[
-                    styles.sectionDescription,
-                    { fontSize: isDesktop ? 16 : 14 }
-                  ]}>
-                    Store medical records, doctor notes, and treatment documentation
-                  </Text>
-                  
-                  {fetchingDocuments ? (
-                    <ActivityIndicator size="small" color="#FFD700" style={{ marginVertical: 10 }} />
-                  ) : medicalRecords.length > 0 && (
-                    <View style={styles.documentList}>
-                      {medicalRecords.slice(0, 3).map(record => renderDocumentItem(record, 'record'))}
-                      {medicalRecords.length > 3 && (
-                        <Text style={styles.moreDocuments}>
-                          + {medicalRecords.length - 3} more documents
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                  
-                  <TouchableOpacity 
-                    style={[
-                      styles.uploadButton,
-                      { paddingVertical: isDesktop ? 18 : 15 }
-                    ]}
-                    onPress={() => handleUpload('record')}
-                    disabled={uploadingRecord}
-                  >
-                    {uploadingRecord ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
-                      <Text style={[
-                        styles.buttonText,
-                        { fontSize: isDesktop ? 18 : 16 }
-                      ]}>📤 Upload Medical Record</Text>
-                    )}
-                  </TouchableOpacity>
+                  <View style={styles.comingSoonMessage}>
+                    <Text style={[
+                      styles.comingSoonText,
+                      { fontSize: isDesktop ? 16 : 14 }
+                    ]}>
+                      Arrr! The Medical Records vault be locked tighter than Davy Jones' locker! Upload feature coming soon, savvy? ⚓
+                    </Text>
+                  </View>
                 </View>
 
                 <TouchableOpacity 
@@ -555,7 +327,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         </View>
       </ImageBackground>
 
-      {/* Provider Modal */}
       <Modal
         visible={showProviderModal}
         transparent={true}
@@ -603,59 +374,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                 )}
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Upload Method Selection Modal */}
-      <Modal
-        visible={showUploadModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowUploadModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[
-            styles.modalContent,
-            { width: isDesktop ? 450 : isTablet ? 400 : width * 0.9 }
-          ]}>
-            <Text style={styles.modalTitle}>
-              📤 Upload {uploadType === 'bill' ? 'Medical Bill' : 'Medical Record'}
-            </Text>
-            <Text style={styles.modalDescription}>
-              Choose how ye want to upload yer document, captain!
-            </Text>
-            
-            <TouchableOpacity
-              style={[styles.uploadMethodButton]}
-              onPress={() => handleSelectUploadMethod('camera')}
-            >
-              <Text style={styles.uploadMethodIcon}>📷</Text>
-              <Text style={styles.uploadMethodText}>Take Photo</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.uploadMethodButton]}
-              onPress={() => handleSelectUploadMethod('library')}
-            >
-              <Text style={styles.uploadMethodIcon}>🖼️</Text>
-              <Text style={styles.uploadMethodText}>Choose from Library</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.uploadMethodButton]}
-              onPress={() => handleSelectUploadMethod('document')}
-            >
-              <Text style={styles.uploadMethodIcon}>📄</Text>
-              <Text style={styles.uploadMethodText}>Browse Files (PDF, DOC)</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.uploadMethodButton, styles.cancelMethodButton]}
-              onPress={() => setShowUploadModal(false)}
-            >
-              <Text style={styles.cancelMethodText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -745,7 +463,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
   },
   sectionTitle: {
     fontWeight: 'bold',
@@ -754,69 +472,34 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  documentCount: {
-    backgroundColor: 'rgba(40, 120, 80, 0.9)',
+  comingSoonBadge: {
+    backgroundColor: 'rgba(180, 120, 40, 0.9)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     fontWeight: '700',
-    color: '#90EE90',
+    color: '#FFD700',
     borderWidth: 1,
-    borderColor: 'rgba(80, 200, 120, 0.5)',
+    borderColor: 'rgba(255, 215, 0, 0.5)',
     overflow: 'hidden',
+  },
+  comingSoonMessage: {
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  comingSoonText: {
+    color: '#E8D5B0',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
   },
   sectionDescription: {
     color: '#B8A080',
     marginBottom: 15,
     lineHeight: 22,
-  },
-  documentList: {
-    marginBottom: 15,
-  },
-  documentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 50, 30, 0.85)',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-  },
-  documentIcon: {
-    marginRight: 12,
-  },
-  documentDetails: {
-    flex: 1,
-  },
-  documentName: {
-    color: '#FFD700',
-    fontWeight: '600',
-    fontSize: 14,
-    marginBottom: 2,
-  },
-  documentMeta: {
-    color: '#8B7355',
-    fontSize: 12,
-  },
-  moreDocuments: {
-    color: '#B8A080',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 5,
-    fontSize: 13,
-  },
-  uploadButton: {
-    backgroundColor: 'rgba(40, 120, 80, 0.9)',
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(80, 200, 120, 0.4)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
   },
   addProviderButton: {
     backgroundColor: 'rgba(80, 70, 60, 0.9)',
@@ -976,64 +659,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '700',
     fontSize: 16,
-  },
-  uploadMethodButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 50, 30, 0.85)',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-  },
-  uploadMethodIcon: {
-    fontSize: 24,
-    marginRight: 15,
-  },
-  uploadMethodText: {
-    color: '#FFD700',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  cancelMethodButton: {
-    backgroundColor: 'rgba(80, 70, 60, 0.9)',
-    justifyContent: 'center',
-    marginTop: 5,
-  },
-  cancelMethodText: {
-    color: '#B8A080',
-    fontWeight: '600',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorContainer: {
-    backgroundColor: 'rgba(180, 60, 60, 0.3)',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 100, 100, 0.5)',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#FF9999',
-    flex: 1,
-    fontSize: 14,
-  },
-  retryButton: {
-    backgroundColor: 'rgba(100, 80, 60, 0.9)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  retryButtonText: {
-    color: '#FFD700',
-    fontWeight: '600',
-    fontSize: 14,
   },
 });
 
