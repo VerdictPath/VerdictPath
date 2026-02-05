@@ -11,7 +11,6 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import CalendarService from '../services/CalendarService';
 
@@ -248,7 +247,7 @@ const CalendarScreen = ({ user, onBack }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Icon name="home" size={28} color="#FFD700" />
+          <Text style={styles.navIcon}>🏠</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>📅 Calendar</Text>
         <View style={styles.headerRight}>
@@ -259,7 +258,7 @@ const CalendarScreen = ({ user, onBack }) => {
             <Text style={styles.addButtonText}>+ Add</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-            <Icon name="arrow-left" size={24} color="#FFD700" />
+            <Text style={styles.navIcon}>◀️</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -433,6 +432,9 @@ const styles = StyleSheet.create({
   },
   minimizeButton: {
     padding: 8,
+  },
+  navIcon: {
+    fontSize: 24,
   },
   headerTitle: {
     fontSize: 20,
