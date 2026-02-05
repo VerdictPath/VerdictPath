@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import Icon from '../components/CrossPlatformIcon';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
 
