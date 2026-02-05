@@ -14,6 +14,7 @@ if (Platform.OS !== 'web') {
 import { LITIGATION_STAGES, USER_TYPES } from './src/constants/mockData';
 import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } from './src/utils/gamification';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from './src/config/api';
+import { applyWebFixes, isWeb } from './src/utils/webUtils';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import NotificationService from './src/services/NotificationService';
 import ActionVideoModal from './src/components/ActionVideoModal';
@@ -164,6 +165,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
+
+  // Apply web-specific fixes on mount
+  useEffect(() => {
+    applyWebFixes();
+  }, []);
 
   // Handle reset-password and invite URL on page load
   useEffect(() => {

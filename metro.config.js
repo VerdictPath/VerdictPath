@@ -4,6 +4,19 @@ const config = getDefaultConfig(__dirname);
 
 config.resolver.sourceExts.push('cjs');
 
+config.transformer = {
+  ...config.transformer,
+  minifierPath: 'metro-minify-terser',
+  minifierConfig: {
+    compress: {
+      drop_console: false,
+      dead_code: true,
+      unused: true,
+    },
+    mangle: true,
+  },
+};
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === 'web') {
     if (moduleName === 'react-native') {
