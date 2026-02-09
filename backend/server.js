@@ -55,6 +55,9 @@ app.set('trust proxy', true);
 
 // Get the base URL for the server (for self-referencing API calls)
 const getBaseUrl = () => {
+  if (process.env.APP_URL) {
+    return process.env.APP_URL;
+  }
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
   }
@@ -77,6 +80,8 @@ const corsOptions = {
       'http://localhost:5000',
       'http://localhost:19006', // Expo web dev
       'http://localhost:3000',  // Backend dev
+      'https://www.verdictpath.io',
+      'https://verdictpath.io',
       /\.railway\.app$/,
       /\.replit\.dev$/,
       /\.repl\.co$/

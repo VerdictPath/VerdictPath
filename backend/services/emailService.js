@@ -14,6 +14,9 @@ const transporter = nodemailer.createTransport({
 });
 
 const getBaseUrl = () => {
+  if (process.env.APP_URL) {
+    return process.env.APP_URL;
+  }
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
