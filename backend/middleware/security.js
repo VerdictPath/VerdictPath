@@ -59,33 +59,53 @@ const checkAccountLockout = async (req, res, next) => {
 const handleFailedLogin = async (userId, userType) => {
   try {
     const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
-    const lockoutMinutes = parseInt(process.env.LOCKOUT_DURATION_MINUTES) || 30;
-    
-    // Use upsert to handle both insert and update atomically
-    // First, try to get current record
+
     const current = await db.query(
-      'SELECT login_attempts FROM account_security WHERE user_id = $1',
+      'SELECT login_attempts, lockout_count FROM account_security WHERE user_id = $1',
       [userId]
     );
-    
+
     const currentAttempts = current.rows.length > 0 ? current.rows[0].login_attempts : 0;
+    const currentLockoutCount = current.rows.length > 0 ? (current.rows[0].lockout_count || 0) : 0;
     const newAttempts = currentAttempts + 1;
-    
-    // Determine if we need to lock the account
+
     const shouldLock = newAttempts >= maxAttempts;
-    const lockUntil = shouldLock ? new Date(Date.now() + lockoutMinutes * 60 * 1000) : null;
-    
-    // Upsert the security record
-    await db.query(
-      `INSERT INTO account_security (user_id, user_type, login_attempts, lock_until) 
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id) 
-       DO UPDATE SET 
-         login_attempts = $3,
-         lock_until = COALESCE($4, account_security.lock_until),
-         user_type = $2`,
-      [userId, userType, newAttempts, lockUntil]
-    );
+    let lockUntil = null;
+
+    if (shouldLock) {
+      const newLockoutCount = currentLockoutCount + 1;
+      let lockoutMinutes;
+      if (newLockoutCount === 1) {
+        lockoutMinutes = 1;
+      } else if (newLockoutCount === 2) {
+        lockoutMinutes = 5;
+      } else {
+        lockoutMinutes = 15;
+      }
+      lockUntil = new Date(Date.now() + lockoutMinutes * 60 * 1000);
+
+      await db.query(
+        `INSERT INTO account_security (user_id, user_type, login_attempts, lock_until, lockout_count) 
+         VALUES ($1, $2, 0, $3, $4)
+         ON CONFLICT (user_id) 
+         DO UPDATE SET 
+           login_attempts = 0,
+           lock_until = $3,
+           lockout_count = $4,
+           user_type = $2`,
+        [userId, userType, lockUntil, newLockoutCount]
+      );
+    } else {
+      await db.query(
+        `INSERT INTO account_security (user_id, user_type, login_attempts, lockout_count) 
+         VALUES ($1, $2, $3, 0)
+         ON CONFLICT (user_id) 
+         DO UPDATE SET 
+           login_attempts = $3,
+           user_type = $2`,
+        [userId, userType, newAttempts]
+      );
+    }
   } catch (error) {
     console.error('Failed to handle login attempt:', error);
   }
@@ -97,13 +117,13 @@ const handleFailedLogin = async (userId, userType) => {
  */
 const handleSuccessfulLogin = async (userId, userType, ipAddress) => {
   try {
-    // Update or create security record
     const query = `
-      INSERT INTO account_security (user_id, user_type, login_attempts, last_login, last_login_ip, last_activity)
-      VALUES ($1, $2, 0, NOW(), $3, NOW())
+      INSERT INTO account_security (user_id, user_type, login_attempts, lockout_count, last_login, last_login_ip, last_activity)
+      VALUES ($1, $2, 0, 0, NOW(), $3, NOW())
       ON CONFLICT (user_id) 
       DO UPDATE SET 
         login_attempts = 0,
+        lockout_count = 0,
         lock_until = NULL,
         last_login = NOW(),
         last_login_ip = $3,

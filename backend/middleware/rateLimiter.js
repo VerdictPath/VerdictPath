@@ -19,22 +19,22 @@ const getClientIdentifier = (req) => {
          'unknown';
 };
 
-// Strict rate limit for authentication endpoints
+// Rate limit for authentication endpoints (IP-based, account lockout handles per-user escalation)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 10, // 10 attempts per minute per IP
   message: {
-    message: 'Too many authentication attempts. Please try again in 15 minutes.',
-    retryAfter: '15 minutes'
+    message: 'Too many login attempts from this device. Please wait a moment and try again.',
+    retryAfter: '1 minute'
   },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   keyGenerator: getClientIdentifier,
   handler: (req, res) => {
     console.warn(`⚠️  Rate limit exceeded for ${getClientIdentifier(req)} on ${req.path}`);
     res.status(429).json({
-      message: 'Too many authentication attempts. Please try again in 15 minutes.',
-      retryAfter: '15 minutes'
+      message: 'Too many login attempts from this device. Please wait a moment and try again.',
+      retryAfter: '1 minute'
     });
   }
 });
