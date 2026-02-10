@@ -33,30 +33,7 @@
       You need to enable JavaScript to run this app.
     </noscript>
     <!-- The root element for your Expo app. -->
-    
-    <video id="bg-video" autoplay loop muted playsinline
-      style="position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;z-index:-1;display:none;">
-      <source src="/videos/ship.mp4" type="video/mp4">
-    </video>
-    <script>
-      (function(){
-        var vid = document.getElementById('bg-video');
-        window.__setVideoBg = function(src) {
-          if (vid) {
-            vid.querySelector('source').src = src;
-            vid.load();
-            vid.play().catch(function(){});
-          }
-        };
-        window.__showVideoBg = function(show) {
-          if (vid) {
-            vid.style.display = show ? 'block' : 'none';
-            if (show) vid.play().catch(function(){});
-          }
-        };
-      })();
-    </script>
     <div id="root"></div>
-  <script src="/_expo/static/js/web/AppEntry-c5c2b8abd6f87a1186c4919b12e00378.js" defer></script>
+  <script src="/_expo/static/js/web/AppEntry-ff126c5f09d37291d9a0215ec8ee7fec.js" defer></script>
 </body>
 </html>
