@@ -50,7 +50,7 @@
         height: 100%;
         object-fit: cover;
         opacity: 0;
-        transition: opacity 1.2s ease-in-out;
+        transition: opacity 0.6s ease-in-out;
       }
       #web-video-bg video.vid-ready {
         opacity: 1;
@@ -62,7 +62,7 @@
 
   <body>
     <div id="web-video-bg">
-      <video loop muted playsinline preload="auto"></video>
+      <video src="/videos/ship.mp4" loop muted playsinline preload="auto"></video>
     </div>
     <noscript>
       You need to enable JavaScript to run this app.
@@ -75,26 +75,35 @@
       var v = bg ? bg.querySelector('video') : null;
       if (!v) return;
 
+      var _revealTimer = null;
+
       function revealVideo() {
-        if (v.currentTime > 0.05 && !v.classList.contains('vid-ready')) {
-          requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-              v.classList.add('vid-ready');
-            });
-          });
+        if (_revealTimer) { clearTimeout(_revealTimer); _revealTimer = null; }
+        if (!v.classList.contains('vid-ready')) {
+          v.classList.add('vid-ready');
         }
       }
 
-      v.addEventListener('playing', function() {
-        setTimeout(revealVideo, 50);
-      });
+      function waitAndReveal() {
+        if (_revealTimer) clearTimeout(_revealTimer);
+        _revealTimer = setTimeout(function check() {
+          if (v.currentTime > 0.03) {
+            revealVideo();
+          } else {
+            _revealTimer = setTimeout(check, 30);
+          }
+        }, 30);
+      }
 
-      v.addEventListener('timeupdate', function onTime() {
-        if (v.currentTime > 0.1) {
-          v.removeEventListener('timeupdate', onTime);
+      v.addEventListener('playing', waitAndReveal);
+      v.addEventListener('canplay', function() {
+        if (!v.paused && v.currentTime > 0) {
           revealVideo();
         }
       });
+
+      v.muted = true;
+      v.play().catch(function(){});
 
       window.__setVideoBg = function(src) {
         if (!v || !bg) return;
@@ -104,12 +113,13 @@
             v.muted = true;
             v.play().catch(function(){});
           }
-          if (!v.classList.contains('vid-ready') && v.currentTime > 0.05) {
-            revealVideo();
+          if (!v.classList.contains('vid-ready')) {
+            waitAndReveal();
           }
           return;
         }
         v.classList.remove('vid-ready');
+        if (_revealTimer) { clearTimeout(_revealTimer); _revealTimer = null; }
         v.src = src;
         v.load();
         v.muted = true;
@@ -126,7 +136,6 @@
           }
         } else {
           bg.classList.remove('active');
-          v.classList.remove('vid-ready');
         }
       };
 
