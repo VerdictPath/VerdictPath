@@ -49,6 +49,7 @@ import MedicalProviderNotificationsScreen from './src/screens/MedicalProviderNot
 import IndividualSendNotificationScreen from './src/screens/IndividualSendNotificationScreen';
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
+import UnifiedCalendarScreen from './src/screens/UnifiedCalendarScreen';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
@@ -1580,8 +1581,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'calendar' && (
-        <CalendarScreen 
+        <UnifiedCalendarScreen 
           user={user}
+          onNavigate={handleNavigateInternal}
           onBack={() => setCurrentScreen('dashboard')}
         />
       )}
@@ -1602,8 +1604,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'event-requests' && (
-        <ClientEventRequestsScreen 
+        <UnifiedCalendarScreen 
           user={user}
+          onNavigate={handleNavigateInternal}
           onBack={() => setCurrentScreen('dashboard')}
         />
       )}
@@ -2005,7 +2008,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'appointments' && (
-        <PatientAppointmentBookingScreen
+        <UnifiedCalendarScreen
           user={user}
           onNavigate={handleNavigateInternal}
           onBack={() => setCurrentScreen('dashboard')}
@@ -2146,7 +2149,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {/* Bottom Navigation - only show for individual user screens */}
-        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
+        {['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments', 'calendar', 'event-requests'].includes(currentScreen) && (
           <BottomNavigation 
             currentScreen={currentScreen}
             onNavigate={handleNavigateInternal}
