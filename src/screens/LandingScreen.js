@@ -128,6 +128,85 @@ const LandingScreen = ({ onNavigate }) => {
           />
         </View>
 
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[commonStyles.primaryButton, !allChecked && styles.buttonDisabled]}
+            onPress={() => allChecked && onNavigate("register")}
+            disabled={!allChecked}
+          >
+            <Text style={commonStyles.buttonText}>
+              {allChecked ? 'Get Started' : 'Please Agree to All Terms'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={commonStyles.secondaryButton}
+            onPress={() => onNavigate("login")}
+          >
+            <Text style={commonStyles.secondaryButtonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.featuresContainer}>
+          <Text style={styles.featureTitle}>What You'll Get:</Text>
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureRow}>
+              <View style={styles.iconBadge}>
+                <Image
+                  source={require("../../attached_assets/MAP_1763356928680.png")}
+                  style={styles.iconThumbnail}
+                  resizeMode="cover"
+                />
+              </View>
+              <Text style={styles.featureItem}>Case roadmap</Text>
+            </View>
+            <View style={styles.featureRow}>
+              <View style={styles.iconBadge}>
+                <Image
+                  source={require("../../attached_assets/_a_pirates_treasure_chest_of_gold_1763356815342.png")}
+                  style={styles.iconThumbnail}
+                  resizeMode="cover"
+                />
+              </View>
+              <Text style={styles.featureItem}>Earn treasure</Text>
+            </View>
+          </View>
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureRow}>
+              <View style={styles.iconBadge}>
+                <Image
+                  source={require("../../attached_assets/Old Camera Closeup_1764040319335.png")}
+                  style={styles.iconThumbnail}
+                  resizeMode="cover"
+                />
+              </View>
+              <Text style={styles.featureItem}>Video tutorials</Text>
+            </View>
+            <View style={styles.featureRow}>
+              <View style={styles.iconBadge}>
+                <Image
+                  source={require("../../attached_assets/Medical Symbol Pirate_1764039521695.png")}
+                  style={styles.iconThumbnail}
+                  resizeMode="cover"
+                />
+              </View>
+              <Text style={styles.featureItem}>Medical Hub</Text>
+            </View>
+          </View>
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureRow}>
+              <View style={styles.iconBadge}>
+                <Image
+                  source={require("../../attached_assets/Evidence Vault_1764037430801.png")}
+                  style={styles.iconThumbnail}
+                  resizeMode="cover"
+                />
+              </View>
+              <Text style={styles.featureItem}>Evidence Vault</Text>
+            </View>
+          </View>
+        </View>
+
         <View style={styles.agreementsContainer}>
           <Text style={styles.agreementsTitle}>Please review and agree:</Text>
 
@@ -206,85 +285,6 @@ const LandingScreen = ({ onNavigate }) => {
               </Text>
             </Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[commonStyles.primaryButton, !allChecked && styles.buttonDisabled]}
-            onPress={() => allChecked && onNavigate("register")}
-            disabled={!allChecked}
-          >
-            <Text style={commonStyles.buttonText}>
-              {allChecked ? 'Get Started' : 'Please Agree to All Terms'}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={commonStyles.secondaryButton}
-            onPress={() => onNavigate("login")}
-          >
-            <Text style={commonStyles.secondaryButtonText}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.featuresContainer}>
-          <Text style={styles.featureTitle}>What You'll Get:</Text>
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureRow}>
-              <View style={styles.iconBadge}>
-                <Image
-                  source={require("../../attached_assets/MAP_1763356928680.png")}
-                  style={styles.iconThumbnail}
-                  resizeMode="cover"
-                />
-              </View>
-              <Text style={styles.featureItem}>Case roadmap</Text>
-            </View>
-            <View style={styles.featureRow}>
-              <View style={styles.iconBadge}>
-                <Image
-                  source={require("../../attached_assets/_a_pirates_treasure_chest_of_gold_1763356815342.png")}
-                  style={styles.iconThumbnail}
-                  resizeMode="cover"
-                />
-              </View>
-              <Text style={styles.featureItem}>Earn treasure</Text>
-            </View>
-          </View>
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureRow}>
-              <View style={styles.iconBadge}>
-                <Image
-                  source={require("../../attached_assets/Old Camera Closeup_1764040319335.png")}
-                  style={styles.iconThumbnail}
-                  resizeMode="cover"
-                />
-              </View>
-              <Text style={styles.featureItem}>Video tutorials</Text>
-            </View>
-            <View style={styles.featureRow}>
-              <View style={styles.iconBadge}>
-                <Image
-                  source={require("../../attached_assets/Medical Symbol Pirate_1764039521695.png")}
-                  style={styles.iconThumbnail}
-                  resizeMode="cover"
-                />
-              </View>
-              <Text style={styles.featureItem}>Medical Hub</Text>
-            </View>
-          </View>
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureRow}>
-              <View style={styles.iconBadge}>
-                <Image
-                  source={require("../../attached_assets/Evidence Vault_1764037430801.png")}
-                  style={styles.iconThumbnail}
-                  resizeMode="cover"
-                />
-              </View>
-              <Text style={styles.featureItem}>Evidence Vault</Text>
-            </View>
-          </View>
         </View>
       </ScrollView>
     </View>
