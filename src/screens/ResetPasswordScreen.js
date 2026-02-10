@@ -250,7 +250,7 @@ const ResetPasswordScreen = ({ onNavigate, resetToken }) => {
           <VideoView
             player={player}
             style={styles.video}
-            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
+            contentFit="contain"
             nativeControls={false}
           />
         </View>

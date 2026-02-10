@@ -159,7 +159,7 @@ const RegisterScreen = ({
               styles.backgroundVideo,
               Platform.OS !== 'web' && styles.backgroundVideoMobile
             ]}
-            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
+            contentFit="contain"
             nativeControls={false}
             allowsFullscreen={false}
             allowsPictureInPicture={false}

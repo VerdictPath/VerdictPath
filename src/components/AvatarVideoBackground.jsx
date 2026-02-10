@@ -45,27 +45,13 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
   };
 
   const getVideoStyle = () => {
-    const baseStyle = {
+    return {
       position: 'absolute',
       top: 0,
       left: 0,
       width: width,
       height: height,
     };
-
-    if (isDesktop || isLargeDesktop || isTablet) {
-      return baseStyle;
-    }
-
-    if (isTallDevice) {
-      return {
-        ...baseStyle,
-        width: width * 1.1,
-        left: -width * 0.05,
-      };
-    }
-
-    return baseStyle;
   };
 
   const getGradientOpacity = () => {
@@ -109,7 +95,7 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         isMuted={true}
         isLooping={true}
         shouldPlay={true}
-        resizeMode={isDesktop || isLargeDesktop || isTablet ? ResizeMode.CONTAIN : ResizeMode.COVER}
+        resizeMode={ResizeMode.CONTAIN}
         style={[styles.video, getVideoStyle()]}
         onLoad={() => {
           setIsReady(true);
