@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     right: 0,
     width: '100%',
     height: '100%',
-    zIndex: Platform.OS === 'web' ? -1 : 0,
+    zIndex: 0,
     backgroundColor: '#000',
     overflow: 'hidden',
   },

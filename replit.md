@@ -62,6 +62,19 @@ Key technical features include:
 - Video functionality works correctly across all screens
 - Full migration deferred to post-launch due to complexity
 
+### Web Video Background System (February 2026 - Permanent Fix)
+- **Component**: `src/components/WebVideoBackground.js` handles ALL video background logic for web
+- **How it works**: Uses React Native Web `ref` to get the DOM node, creates a native `<video>` element via `document.createElement`, appends it as a child. No HTML injection needed.
+- **Poster fallback**: Each video has a matching poster image (e.g., `/videos/ship_poster.jpg`) that shows immediately while video loads, and as fallback if video can't play
+- **CSS background fallback**: The poster image is also set as a CSS `background-image` on the video element for triple redundancy
+- **Video files**: Stored in `backend/public/videos/` (ship.mp4, breathing.mp4, cat_mobile.mp4, cat_tab.mp4, cat_desktop.mp4)
+- **CRITICAL RULES** (violating these breaks videos):
+  1. NEVER set `zIndex: -1` on videoContainer/videoWrapper styles - this hides the video behind the page
+  2. The video container z-index should always be `0`, content overlay should be `1` or higher
+  3. `fix-web-build.js` must NOT inject any video HTML - all video logic lives in the React component
+  4. The build process (`npx expo export` + `node fix-web-build.js`) only handles cache busting, NOT video injection
+- **Screens using video**: LandingScreen (ship), LoginScreen (cat_*), RegisterScreen (breathing), ForgotPasswordScreen (cat_*), ResetPasswordScreen (cat_*), ChangePasswordScreen (breathing), SubscriptionSelectionScreen (breathing), LawFirmRegistrationScreen (breathing), MedicalProviderRegistrationScreen (breathing)
+
 ### AWS S3 Requirements
 - Medical Hub document upload requires AWS S3 credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION)
 

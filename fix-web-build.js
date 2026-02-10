@@ -24,6 +24,7 @@ if (fs.existsSync(oldJsPath)) {
 if (fs.existsSync(indexPath)) {
   let html = fs.readFileSync(indexPath, 'utf8');
   const cacheBuster = Date.now();
+
   html = html.replace(
     /src="\/home\/runner\/workspace\/node_modules\/expo\/AppEntry\.js"/,
     `src="/bundle.js?v=${cacheBuster}"`
@@ -34,14 +35,12 @@ if (fs.existsSync(indexPath)) {
   );
 
   if (html.includes('id="bg-video"')) {
-    html = html.replace(/<style>[\s\S]*?<\/style>\s*<video[\s\S]*?<\/video>\s*<script>[\s\S]*?<\/script>\s*/m, '');
-    console.log('✓ Removed old video background injection (now handled by React component)');
-  } else {
-    console.log('✓ No old video injection to remove');
+    html = html.replace(/<style>[^]*?<\/style>\s*<video[^]*?<\/video>\s*<script>[^]*?<\/script>\s*/m, '');
+    console.log('✓ Removed legacy video injection from index.html');
   }
 
   fs.writeFileSync(indexPath, html);
-  console.log(`✓ Updated index.html script reference with cache buster v=${cacheBuster}`);
+  console.log(`✓ Updated index.html with cache buster v=${cacheBuster}`);
 } else {
   console.log('⚠ Could not find index.html');
 }
