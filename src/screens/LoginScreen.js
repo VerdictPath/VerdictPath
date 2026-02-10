@@ -144,10 +144,11 @@ const LoginScreen = ({
   }, [player, videoSource, enableVideo]);
 
   return (
-    <View style={commonStyles.container}>
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
       <View 
         style={[
           styles.videoContainer,
+          Platform.OS === 'web' && { backgroundColor: 'transparent' },
           Platform.OS !== 'web' && { width, height }
         ]} 
         pointerEvents="none"

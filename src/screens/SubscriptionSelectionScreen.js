@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Video, ResizeMode } from "../utils/safeAVImport";
+import WebVideoBackground from "../components/WebVideoBackground";
 import { theme } from "../styles/theme";
 import FeatureComparisonMatrix from "../components/FeatureComparisonMatrix";
 
@@ -1305,9 +1306,11 @@ const SubscriptionSelectionScreen = ({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.videoContainer} pointerEvents="none">
-        {Platform.OS !== 'web' && Video && (
+    <View style={[styles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+      <View style={[styles.videoContainer, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri="/videos/breathing.mp4" />
+        ) : Video ? (
           <Video
             ref={videoRef}
             source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
@@ -1317,7 +1320,7 @@ const SubscriptionSelectionScreen = ({
             isMuted
             shouldPlay
           />
-        )}
+        ) : null}
         <View style={styles.videoOverlay} />
       </View>
 

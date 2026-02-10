@@ -4,6 +4,7 @@ import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
+import WebVideoBackground from '../components/WebVideoBackground';
 
 const MedicalProviderRegistrationScreen = ({ 
   email,
@@ -276,9 +277,11 @@ const MedicalProviderRegistrationScreen = ({
 
   if (!mode) {
     return (
-      <View style={commonStyles.container}>
-        <View style={styles.videoWrapper} pointerEvents="none">
-          {Platform.OS !== 'web' && Video && (
+      <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+        <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+          {Platform.OS === 'web' ? (
+            <WebVideoBackground uri="/videos/breathing.mp4" />
+          ) : Video ? (
             <Video
               ref={videoRef}
               source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -288,7 +291,7 @@ const MedicalProviderRegistrationScreen = ({
               isMuted
               shouldPlay
             />
-          )}
+          ) : null}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -332,9 +335,11 @@ const MedicalProviderRegistrationScreen = ({
 
   if (mode === 'create') {
     return (
-      <View style={commonStyles.container}>
-        <View style={styles.videoWrapper} pointerEvents="none">
-          {Platform.OS !== 'web' && Video && (
+      <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+        <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+          {Platform.OS === 'web' ? (
+            <WebVideoBackground uri="/videos/breathing.mp4" />
+          ) : Video ? (
             <Video
               ref={videoRef}
               source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -344,7 +349,7 @@ const MedicalProviderRegistrationScreen = ({
               isMuted
               shouldPlay
             />
-          )}
+          ) : null}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -469,9 +474,11 @@ const MedicalProviderRegistrationScreen = ({
   }
 
   return (
-    <View style={commonStyles.container}>
-      <View style={styles.videoWrapper} pointerEvents="none">
-        {Platform.OS !== 'web' && Video && (
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+      <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri="/videos/breathing.mp4" />
+        ) : Video ? (
           <Video
             ref={videoRef}
             source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -481,7 +488,7 @@ const MedicalProviderRegistrationScreen = ({
             isMuted
             shouldPlay
           />
-        )}
+        ) : null}
         <View style={styles.videoOverlay} />
       </View>
 

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Activi
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import { theme } from '../styles/theme';
+import WebVideoBackground from '../components/WebVideoBackground';
 
 const LawFirmRegistrationScreen = ({ 
   email,
@@ -208,9 +209,11 @@ const LawFirmRegistrationScreen = ({
 
   if (!mode) {
     return (
-      <View style={commonStyles.container}>
-        <View style={styles.videoWrapper} pointerEvents="none">
-          {Platform.OS !== 'web' && Video && (
+      <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+        <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+          {Platform.OS === 'web' ? (
+            <WebVideoBackground uri="/videos/breathing.mp4" />
+          ) : Video ? (
             <Video
               ref={videoRef}
               source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -220,7 +223,7 @@ const LawFirmRegistrationScreen = ({
               isMuted
               shouldPlay
             />
-          )}
+          ) : null}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -272,9 +275,11 @@ const LawFirmRegistrationScreen = ({
 
   if (mode === 'create') {
     return (
-      <View style={commonStyles.container}>
-        <View style={styles.videoWrapper} pointerEvents="none">
-          {Platform.OS !== 'web' && Video && (
+      <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+        <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+          {Platform.OS === 'web' ? (
+            <WebVideoBackground uri="/videos/breathing.mp4" />
+          ) : Video ? (
             <Video
               ref={videoRef}
               source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -284,7 +289,7 @@ const LawFirmRegistrationScreen = ({
               isMuted
               shouldPlay
             />
-          )}
+          ) : null}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -386,9 +391,11 @@ const LawFirmRegistrationScreen = ({
   }
 
   return (
-    <View style={commonStyles.container}>
-      <View style={styles.videoWrapper} pointerEvents="none">
-        {Platform.OS !== 'web' && Video && (
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+      <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri="/videos/breathing.mp4" />
+        ) : Video ? (
           <Video
             ref={videoRef}
             source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
@@ -398,7 +405,7 @@ const LawFirmRegistrationScreen = ({
             isMuted
             shouldPlay
           />
-        )}
+        ) : null}
         <View style={styles.videoOverlay} />
       </View>
 

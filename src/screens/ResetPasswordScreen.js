@@ -245,9 +245,9 @@ const ResetPasswordScreen = ({ onNavigate, resetToken }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
       {Platform.OS === 'web' ? (
-        <View style={styles.videoContainer}>
+        <View style={[styles.videoContainer, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
           <WebVideoBackground uri={width < 600 ? "/videos/cat_mobile.mp4" : width < 1024 ? "/videos/cat_tab.mp4" : "/videos/cat_desktop.mp4"} />
         </View>
       ) : enableVideo && player && VideoView ? (

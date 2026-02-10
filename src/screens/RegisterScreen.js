@@ -145,10 +145,11 @@ const RegisterScreen = ({
 
   
   return (
-    <View style={commonStyles.container}>
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
       <View 
         style={[
           styles.videoWrapper,
+          Platform.OS === 'web' && { backgroundColor: 'transparent' },
           Platform.OS !== 'web' && { width, height }
         ]} 
         pointerEvents="none"

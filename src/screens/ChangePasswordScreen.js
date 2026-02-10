@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animat
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import WebVideoBackground from '../components/WebVideoBackground';
 
 const Toast = ({ visible, message, type, onHide }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -225,15 +226,17 @@ const ChangePasswordScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={commonStyles.container}>
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
       <Toast
         visible={toast.visible}
         message={toast.message}
         type={toast.type}
         onHide={hideToast}
       />
-      <View style={styles.videoWrapper} pointerEvents="none">
-        {Platform.OS !== 'web' && Video && (
+      <View style={[styles.videoWrapper, Platform.OS === 'web' && { backgroundColor: 'transparent' }]} pointerEvents="none">
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri="/videos/breathing.mp4" />
+        ) : Video ? (
           <Video
             ref={videoRef}
             source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
@@ -243,7 +246,7 @@ const ChangePasswordScreen = ({ route, navigation }) => {
             isMuted
             shouldPlay
           />
-        )}
+        ) : null}
         <View style={styles.videoOverlay} />
       </View>
       
