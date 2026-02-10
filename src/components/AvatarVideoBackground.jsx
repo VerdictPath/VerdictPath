@@ -47,66 +47,25 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
   const getVideoStyle = () => {
     const baseStyle = {
       position: 'absolute',
+      top: 0,
+      left: 0,
+      width: width,
+      height: height,
     };
 
-    if (isLargeDesktop) {
-      return {
-        ...baseStyle,
-        width: width * 1.1,
-        height: height * 1.1,
-        top: -height * 0.05,
-        left: -width * 0.05,
-      };
-    }
-
-    if (isDesktop) {
-      return {
-        ...baseStyle,
-        width: width,
-        height: height,
-        top: 0,
-        left: 0,
-      };
-    }
-
-    if (isTablet) {
-      const scale = isTallDevice ? 1.15 : 1.05;
-      return {
-        ...baseStyle,
-        width: width * scale,
-        height: height * scale,
-        top: -height * ((scale - 1) / 2),
-        left: -width * ((scale - 1) / 2),
-      };
+    if (isDesktop || isLargeDesktop || isTablet) {
+      return baseStyle;
     }
 
     if (isTallDevice) {
       return {
         ...baseStyle,
-        width: width * 1.3,
-        height: height,
-        top: 0,
-        left: -width * 0.15,
+        width: width * 1.1,
+        left: -width * 0.05,
       };
     }
 
-    if (isShortDevice) {
-      return {
-        ...baseStyle,
-        width: width,
-        height: height * 1.2,
-        top: -height * 0.1,
-        left: 0,
-      };
-    }
-
-    return {
-      ...baseStyle,
-      width: width * 1.1,
-      height: height * 1.1,
-      top: -height * 0.05,
-      left: -width * 0.05,
-    };
+    return baseStyle;
   };
 
   const getGradientOpacity = () => {
@@ -150,7 +109,7 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
         isMuted={true}
         isLooping={true}
         shouldPlay={true}
-        resizeMode={ResizeMode.COVER}
+        resizeMode={isDesktop || isLargeDesktop || isTablet ? ResizeMode.CONTAIN : ResizeMode.COVER}
         style={[styles.video, getVideoStyle()]}
         onLoad={() => {
           setIsReady(true);

@@ -8,6 +8,7 @@ import {
   ScrollView,
   useWindowDimensions,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { commonStyles } from "../styles/commonStyles";
@@ -249,7 +250,7 @@ const ResetPasswordScreen = ({ onNavigate, resetToken }) => {
           <VideoView
             player={player}
             style={styles.video}
-            contentFit="cover"
+            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
             nativeControls={false}
           />
         </View>

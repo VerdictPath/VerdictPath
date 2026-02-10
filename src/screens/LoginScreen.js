@@ -158,15 +158,13 @@ const LoginScreen = ({
               styles.backgroundVideo,
               Platform.OS !== 'web' && styles.backgroundVideoMobile
             ]}
-            contentFit="cover"
+            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
             nativeControls={false}
             allowsFullscreen={false}
             allowsPictureInPicture={false}
             requiresLinearPlayback={false}
             pointerEvents="none"
-            // Performance optimizations
             allowsExternalPlayback={false}
-            // Ensure video fills on mobile
             {...(Platform.OS !== 'web' && { 
               entersFullscreenWhenPlayerEntersFullscreen: false,
             })}

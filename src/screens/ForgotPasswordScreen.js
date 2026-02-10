@@ -109,7 +109,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
             <VideoView
               player={player}
               style={styles.video}
-              contentFit="cover"
+              contentFit={Platform.OS === 'web' ? "contain" : "cover"}
               nativeControls={false}
             />
           </View>
@@ -150,7 +150,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
           <VideoView
             player={player}
             style={styles.video}
-            contentFit="cover"
+            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
             nativeControls={false}
           />
         </View>

@@ -131,7 +131,7 @@ const LandingScreen = ({ onNavigate }) => {
               styles.backgroundVideo,
               Platform.OS !== 'web' && styles.backgroundVideoMobile
             ]}
-            contentFit="cover"
+            contentFit={Platform.OS === 'web' ? "contain" : "cover"}
             nativeControls={false}
             allowsFullscreen={false}
             allowsPictureInPicture={false}
