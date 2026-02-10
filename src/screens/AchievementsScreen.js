@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  ImageBackground,
-  useWindowDimensions
+ View,
+ Text,
+ ScrollView,
+ TouchableOpacity,
+ StyleSheet,
+ ActivityIndicator,
+ ImageBackground,
+ useWindowDimensions
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_BASE_URL } from '../config/api';
 
@@ -53,7 +53,7 @@ const AchievementsScreen = ({ user, onBack, onViewBadges }) => {
       }
     } catch (error) {
       console.error('Error loading achievements:', error);
-      Alert.alert('Error', 'Failed to load achievements');
+      alert('Error', 'Failed to load achievements');
     } finally {
       setLoading(false);
     }

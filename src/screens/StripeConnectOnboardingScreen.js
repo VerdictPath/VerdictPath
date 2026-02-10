@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Linking,
-  ScrollView
+ View,
+ Text,
+ StyleSheet,
+ TouchableOpacity,
+ ActivityIndicator,
+ Platform,
+ Linking,
+ ScrollView
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -39,7 +39,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       setAccountStatus(response);
     } catch (error) {
       console.error('Error checking account status:', error);
-      Alert.alert('Error', 'Failed to check payment account status');
+      alert('Error', 'Failed to check payment account status');
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       if (response.url) {
         if (Platform.OS === 'web') {
           window.open(response.url, '_blank');
-          Alert.alert(
+          alert(
             'Payment Setup',
             'A new window has opened for you to add your payment method. Complete the setup and return here.',
             [
@@ -84,7 +84,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           );
         } else {
           await Linking.openURL(response.url);
-          Alert.alert(
+          alert(
             'Payment Setup',
             'Please add your payment method in the browser and return to the app.',
             [
@@ -98,7 +98,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error setting up payment:', error);
-      Alert.alert('Error', error.message || 'Failed to set up payment method');
+      alert('Error', error.message || 'Failed to set up payment method');
     } finally {
       setSettingUpAccount(false);
     }
@@ -121,7 +121,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       if (response.onboardingUrl) {
         if (Platform.OS === 'web') {
           window.open(response.onboardingUrl, '_blank');
-          Alert.alert(
+          alert(
             'Account Setup',
             'A new window has opened with your Stripe onboarding. Complete the setup and return here to continue.',
             [
@@ -137,7 +137,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           );
         } else {
           await Linking.openURL(response.onboardingUrl);
-          Alert.alert(
+          alert(
             'Account Setup',
             'Please complete the Stripe setup in your browser and return to the app.',
             [
@@ -151,7 +151,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error setting up account:', error);
-      Alert.alert('Error', error.message || 'Failed to set up payment account');
+      alert('Error', error.message || 'Failed to set up payment account');
     } finally {
       setSettingUpAccount(false);
     }
@@ -171,7 +171,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       if (response.onboardingUrl) {
         if (Platform.OS === 'web') {
           window.open(response.onboardingUrl, '_blank');
-          Alert.alert(
+          alert(
             'Complete Setup',
             'Please finish your account setup in the new window.',
             [
@@ -183,7 +183,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           );
         } else {
           await Linking.openURL(response.onboardingUrl);
-          Alert.alert(
+          alert(
             'Complete Setup',
             'Please finish your account setup and return to the app.',
             [
@@ -197,7 +197,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error resuming onboarding:', error);
-      Alert.alert('Error', error.message || 'Failed to resume setup');
+      alert('Error', error.message || 'Failed to resume setup');
     } finally {
       setSettingUpAccount(false);
     }
@@ -238,7 +238,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error accessing dashboard:', error);
-      Alert.alert('Error', 'Failed to access payment dashboard');
+      alert('Error', 'Failed to access payment dashboard');
     }
   };
 

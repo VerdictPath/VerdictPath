@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { Alert, Platform, AppState } from 'react-native';
+import { Platform, AppState } from 'react-native';
+import alert from '../utils/alert';
 
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 const WARNING_BEFORE_TIMEOUT = 2 * 60 * 1000; // Show warning 2 min before timeout
@@ -39,7 +40,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
         onLogout();
       }
     } else {
-      Alert.alert(
+      alert(
         'Session Expired',
         'You have been logged out due to inactivity for security purposes.',
         [{ text: 'OK', onPress: onLogout }]

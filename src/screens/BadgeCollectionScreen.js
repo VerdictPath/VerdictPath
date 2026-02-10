@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert
-} from 'react-native';
+ View,
+ Text,
+ ScrollView,
+ TouchableOpacity,
+ StyleSheet,
+ ActivityIndicator } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 
@@ -35,7 +34,7 @@ const BadgeCollectionScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error loading badges:', error);
-      Alert.alert('Error', 'Failed to load badges');
+      alert('Error', 'Failed to load badges');
     } finally {
       setLoading(false);
     }

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  Platform
+ View,
+ Text,
+ StyleSheet,
+ TouchableOpacity,
+ ScrollView,
+ ActivityIndicator,
+ Modal,
+ Platform
 } from 'react-native';
+import alert from '../utils/alert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { API_BASE_URL } from '../config/api';
@@ -48,7 +48,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       setEventRequests(data.eventRequests || []);
     } catch (error) {
       console.error('Error fetching event requests:', error);
-      Alert.alert('Error', 'Failed to load event requests');
+      alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       }
     } catch (error) {
       console.error('Error fetching request details:', error);
-      Alert.alert('Error', 'Failed to load request details');
+      alert('Error', 'Failed to load request details');
     }
   };
 
@@ -126,14 +126,14 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
     const allDatesValid = proposedDates.every(d => d.startTime && d.endTime);
     
     if (!allDatesValid) {
-      Alert.alert('Error', 'Please select start and end times for all 3 dates');
+      alert('Error', 'Please select start and end times for all 3 dates');
       return;
     }
 
     // Validate end time is after start time for each date
     for (let i = 0; i < proposedDates.length; i++) {
       if (proposedDates[i].endTime <= proposedDates[i].startTime) {
-        Alert.alert('Error', `Date ${i + 1}: End time must be after start time`);
+        alert('Error', `Date ${i + 1}: End time must be after start time`);
         return;
       }
     }
@@ -159,16 +159,16 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       );
 
       if (response.ok) {
-        Alert.alert('Success', 'Your available dates have been sent to your law firm');
+        alert('Success', 'Your available dates have been sent to your law firm');
         setShowDetailModal(false);
         fetchEventRequests();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to submit dates');
+        alert('Error', error.error || 'Failed to submit dates');
       }
     } catch (error) {
       console.error('Error submitting dates:', error);
-      Alert.alert('Error', 'Failed to submit dates');
+      alert('Error', 'Failed to submit dates');
     }
   };
 
@@ -189,16 +189,16 @@ export default function ClientEventRequestsScreen({ user, onBack }) {
       );
 
       if (response.ok) {
-        Alert.alert('Success', 'Date selected! The event has been added to your calendar.');
+        alert('Success', 'Date selected! The event has been added to your calendar.');
         setShowDetailModal(false);
         fetchEventRequests();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to select date');
+        alert('Error', error.error || 'Failed to select date');
       }
     } catch (error) {
       console.error('Error selecting date:', error);
-      Alert.alert('Error', 'Failed to select date');
+      alert('Error', 'Failed to select date');
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, ImageBackground, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground, Platform } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { useNotifications } from '../contexts/NotificationContext';
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from '../config/api';
@@ -73,14 +74,14 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
       }
     } catch (error) {
       console.error('Error loading notification detail:', error);
-      Alert.alert('Error', 'Failed to load notification details');
+      alert('Error', 'Failed to load notification details');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleArchive = async () => {
-    Alert.alert(
+    alert(
       'Archive Notification',
       'Are you sure you want to archive this notification?',
       [
@@ -103,13 +104,13 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
               
               if (response.ok) {
                 await refreshNotifications();
-                Alert.alert('Archived', 'Notification has been archived', [
+                alert('Archived', 'Notification has been archived', [
                   { text: 'OK', onPress: () => onBack() }
                 ]);
               }
             } catch (error) {
               console.error('Error archiving notification:', error);
-              Alert.alert('Error', 'Failed to archive notification');
+              alert('Error', 'Failed to archive notification');
             } finally {
               setIsArchiving(false);
             }
@@ -120,7 +121,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
   };
 
   const handleDelete = async () => {
-    Alert.alert(
+    alert(
       'Delete Notification',
       'Are you sure you want to delete this notification? This action cannot be undone.',
       [
@@ -144,13 +145,13 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
               
               if (response.ok) {
                 await refreshNotifications();
-                Alert.alert('Deleted', 'Notification has been deleted', [
+                alert('Deleted', 'Notification has been deleted', [
                   { text: 'OK', onPress: () => onBack() }
                 ]);
               }
             } catch (error) {
               console.error('Error deleting notification:', error);
-              Alert.alert('Error', 'Failed to delete notification');
+              alert('Error', 'Failed to delete notification');
             } finally {
               setIsArchiving(false);
             }

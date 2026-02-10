@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Platform,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  TextInput
+ View,
+ Text,
+ StyleSheet,
+ ScrollView,
+ TouchableOpacity,
+ Switch,
+ Platform,
+ ActivityIndicator,
+ Modal,
+ TextInput
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
@@ -131,11 +131,11 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
       if (response.ok) {
         setEmailCCPrefs(prev => ({ ...prev, ...updates }));
       } else {
-        Alert.alert('Error', 'Failed to update email CC settings');
+        alert('Error', 'Failed to update email CC settings');
       }
     } catch (error) {
       console.error('Error updating email CC preferences:', error);
-      Alert.alert('Error', 'Failed to save email CC settings');
+      alert('Error', 'Failed to save email CC settings');
     } finally {
       setSaving(false);
     }
@@ -150,7 +150,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   const saveCCEmailAddress = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (ccEmailInput && !emailRegex.test(ccEmailInput)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
     updateEmailCCPreferences({ ccEmailAddress: ccEmailInput });
@@ -185,11 +185,11 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           marketingNotifications: data.marketing_notifications ?? false
         });
       } else {
-        Alert.alert('Error', data.error || 'Failed to load notification preferences');
+        alert('Error', data.error || 'Failed to load notification preferences');
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
-      Alert.alert('Error', 'Failed to load notification preferences');
+      alert('Error', 'Failed to load notification preferences');
     } finally {
       setLoading(false);
     }
@@ -234,13 +234,13 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             marketingNotifications: data.preferences.marketing_notifications ?? preferences.marketingNotifications
           });
         }
-        Alert.alert('Success', 'Notification preferences updated');
+        alert('Success', 'Notification preferences updated');
       } else {
-        Alert.alert('Error', data.error || 'Failed to update preferences');
+        alert('Error', data.error || 'Failed to update preferences');
       }
     } catch (error) {
       console.error('Error updating preferences:', error);
-      Alert.alert('Error', 'Failed to update preferences');
+      alert('Error', 'Failed to update preferences');
     } finally {
       setSaving(false);
     }
@@ -267,7 +267,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
       setShowTimePicker(null);
       setTimeInput('');
     } else {
-      Alert.alert('Invalid Format', 'Please use HH:MM format (e.g., 22:00)');
+      alert('Invalid Format', 'Please use HH:MM format (e.g., 22:00)');
     }
   };
 

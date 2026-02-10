@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  Modal,
-  Alert,
-  Platform,
-  ActivityIndicator
+ View,
+ Text,
+ ScrollView,
+ TouchableOpacity,
+ StyleSheet,
+ TextInput,
+ Modal,
+ Platform,
+ ActivityIndicator
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import CalendarService from '../services/CalendarService';
 
@@ -48,7 +48,7 @@ const CalendarScreen = ({ user, onBack }) => {
       setEvents(fetchedEvents);
     } catch (error) {
       console.error('Error loading events:', error);
-      Alert.alert('Error', 'Failed to load calendar events');
+      alert('Error', 'Failed to load calendar events');
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ const CalendarScreen = ({ user, onBack }) => {
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.startTime) {
-      Alert.alert('Validation Error', 'Please provide a title and start time');
+      alert('Validation Error', 'Please provide a title and start time');
       return;
     }
 
@@ -73,10 +73,10 @@ const CalendarScreen = ({ user, onBack }) => {
       setShowAddModal(false);
       resetNewEvent();
       
-      Alert.alert('Success', 'Event created successfully!');
+      alert('Success', 'Event created successfully!');
     } catch (error) {
       console.error('Error creating event:', error);
-      Alert.alert('Error', 'Failed to create event');
+      alert('Error', 'Failed to create event');
     }
   };
 
@@ -84,7 +84,7 @@ const CalendarScreen = ({ user, onBack }) => {
     try {
       const hasPermission = await CalendarService.requestPermissions();
       if (!hasPermission) {
-        Alert.alert(
+        alert(
           'Permission Required',
           'Calendar permission is required to sync events to your device calendar'
         );
@@ -101,11 +101,11 @@ const CalendarScreen = ({ user, onBack }) => {
         )
       );
       
-      Alert.alert('Success', 'Event synced to your device calendar!');
+      alert('Success', 'Event synced to your device calendar!');
       loadEvents();
     } catch (error) {
       console.error('Error syncing event:', error);
-      Alert.alert('Error', 'Failed to sync event to device calendar');
+      alert('Error', 'Failed to sync event to device calendar');
     }
   };
 
@@ -121,16 +121,16 @@ const CalendarScreen = ({ user, onBack }) => {
         )
       );
       
-      Alert.alert('Success', 'Event removed from device calendar');
+      alert('Success', 'Event removed from device calendar');
       loadEvents();
     } catch (error) {
       console.error('Error unsyncing event:', error);
-      Alert.alert('Error', 'Failed to remove event from device calendar');
+      alert('Error', 'Failed to remove event from device calendar');
     }
   };
 
   const handleDeleteEvent = async (event) => {
-    Alert.alert(
+    alert(
       'Delete Event',
       'Are you sure you want to delete this event?',
       [
@@ -146,10 +146,10 @@ const CalendarScreen = ({ user, onBack }) => {
               
               await CalendarService.deleteEventFromBackend(event.id, user.token);
               setEvents(prev => prev.filter(e => e.id !== event.id));
-              Alert.alert('Success', 'Event deleted');
+              alert('Success', 'Event deleted');
             } catch (error) {
               console.error('Error deleting event:', error);
-              Alert.alert('Error', 'Failed to delete event');
+              alert('Error', 'Failed to delete event');
             }
           }
         }

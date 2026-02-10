@@ -1,6 +1,7 @@
 import * as Calendar from 'expo-calendar';
-import { Platform, Alert } from 'react-native';
+import { Platform } from 'react-native';
 import { API_BASE_URL } from '../config/api';
+import alert from '../utils/alert';
 
 class CalendarService {
   constructor() {
@@ -20,7 +21,7 @@ class CalendarService {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
+        alert(
           'Calendar Permission Required',
           'Please enable calendar access in your device settings to sync events.'
         );

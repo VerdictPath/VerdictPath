@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-  Image,
-  Alert,
-  Platform,
-  SafeAreaView,
-} from 'react-native';
+ View,
+ Text,
+ ScrollView,
+ TouchableOpacity,
+ StyleSheet,
+ useWindowDimensions,
+ Image,
+ Platform,
+ SafeAreaView } from 'react-native';
+import alert from '../utils/alert';
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { AVATARS } from '../constants/avatars';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
@@ -57,7 +56,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
           onAvatarSelected(avatarId);
         }
 
-        Alert.alert(
+        alert(
           'Avatar Changed! ⚓',
           `You are now "${AVATARS[avatarId.toUpperCase()].name}"`,
           [{ text: 'Awesome!', onPress: onBack }]
@@ -65,7 +64,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
       }
     } catch (error) {
       console.error('[AvatarSelection] Save error:', error);
-      Alert.alert('Error', 'Failed to save avatar. Please try again.');
+      alert('Error', 'Failed to save avatar. Please try again.');
     } finally {
       setIsSaving(false);
     }

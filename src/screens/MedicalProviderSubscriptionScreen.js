@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Platform, TextInput } from 'react-native';
+import alert from '../utils/alert';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
@@ -146,7 +147,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       if (Platform.OS === 'web') {
         alert('Failed to load subscription details');
       } else {
-        Alert.alert('Error', 'Failed to load subscription details');
+        alert('Error', 'Failed to load subscription details');
       }
     } finally {
       setLoading(false);
@@ -205,7 +206,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       if (Platform.OS === 'web') {
         alert('Subscription updated successfully!');
       } else {
-        Alert.alert('Success', 'Subscription updated successfully!');
+        alert('Success', 'Subscription updated successfully!');
       }
       
       // Try to refresh subscription details, but don't show error if it fails
@@ -218,7 +219,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       if (Platform.OS === 'web') {
         alert(error.message || 'Failed to update subscription');
       } else {
-        Alert.alert('Error', error.message || 'Failed to update subscription');
+        alert('Error', error.message || 'Failed to update subscription');
       }
     } finally {
       setUpdating(false);
@@ -276,7 +277,7 @@ const MedicalProviderSubscriptionScreen = ({ token, onBack, isNewRegistration, r
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);
       } else {
-        Alert.alert('Registration Error', errorMsg);
+        alert('Registration Error', errorMsg);
       }
     } finally {
       setUpdating(false);

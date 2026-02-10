@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import alert from '../utils/alert';
-import { API_URL } from '../config/api';
+import { API_BASE_URL } from '../config/api';
 
 const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploads, authToken }) => {
   const { width, height } = useWindowDimensions();
@@ -24,7 +24,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const fetchConnectedProviders = async () => {
     try {
       setFetchingProviders(true);
-      const response = await fetch(`${API_URL}/api/connections/my-connections`, {
+      const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
@@ -55,7 +55,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/connections/add-medical-provider`, {
+      const response = await fetch(`${API_BASE_URL}/api/connections/add-medical-provider`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -102,7 +102,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`${API_URL}/api/connections/remove-medical-provider`, {
+              const response = await fetch(`${API_BASE_URL}/api/connections/remove-medical-provider`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${authToken}`,

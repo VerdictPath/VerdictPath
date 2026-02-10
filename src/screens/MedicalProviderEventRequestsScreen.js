@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Modal
+ View,
+ Text,
+ StyleSheet,
+ TouchableOpacity,
+ ScrollView,
+ TextInput,
+ ActivityIndicator,
+ Modal
 } from 'react-native';
+import alert from '../utils/alert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
 
@@ -55,7 +55,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
       setPatients(patientsData.patients || []);
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Failed to load event requests');
+      alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
 
   const handleCreateRequest = async () => {
     if (!selectedPatient || !title) {
-      Alert.alert('Error', 'Please select a patient and enter a title');
+      alert('Error', 'Please select a patient and enter a title');
       return;
     }
 
@@ -88,17 +88,17 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Event request sent to patient');
+        alert('Success', 'Event request sent to patient');
         setShowCreateModal(false);
         resetForm();
         fetchData();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to create event request');
+        alert('Error', error.error || 'Failed to create event request');
       }
     } catch (error) {
       console.error('Error creating event request:', error);
-      Alert.alert('Error', 'Failed to create event request');
+      alert('Error', 'Failed to create event request');
     }
   };
 
@@ -117,7 +117,7 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
       }
     } catch (error) {
       console.error('Error fetching request details:', error);
-      Alert.alert('Error', 'Failed to load request details');
+      alert('Error', 'Failed to load request details');
     }
   };
 
@@ -138,16 +138,16 @@ export default function MedicalProviderEventRequestsScreen({ user, onBack }) {
       );
 
       if (response.ok) {
-        Alert.alert('Success', 'Event confirmed and added to calendar');
+        alert('Success', 'Event confirmed and added to calendar');
         setShowDetailModal(false);
         fetchData();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to confirm event');
+        alert('Error', error.error || 'Failed to confirm event');
       }
     } catch (error) {
       console.error('Error confirming date:', error);
-      Alert.alert('Error', 'Failed to confirm event');
+      alert('Error', 'Failed to confirm event');
     }
   };
 

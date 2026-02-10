@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  Platform
+ View,
+ Text,
+ StyleSheet,
+ TouchableOpacity,
+ ScrollView,
+ TextInput,
+ ActivityIndicator,
+ Modal,
+ Platform
 } from 'react-native';
+import alert from '../utils/alert';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { API_BASE_URL } from '../config/api';
@@ -91,7 +91,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       setClients(clientsData.clients || []);
     } catch (error) {
       console.error('Error fetching data:', error);
-      Alert.alert('Error', 'Failed to load event requests');
+      alert('Error', 'Failed to load event requests');
     } finally {
       setLoading(false);
     }
@@ -99,14 +99,14 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
 
   const handleCreateRequest = async () => {
     if (!selectedClient || !title) {
-      Alert.alert('Error', 'Please select a client and enter a title');
+      alert('Error', 'Please select a client and enter a title');
       return;
     }
 
     // Validate all 4 date/time options are set
     const validOptions = dateTimeOptions.filter(opt => opt.date && opt.startTime);
     if (validOptions.length !== 4) {
-      Alert.alert('Error', 'Please provide all 4 date/time options for the client to choose from');
+      alert('Error', 'Please provide all 4 date/time options for the client to choose from');
       return;
     }
 
@@ -147,17 +147,17 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Event request sent to client with 4 date options');
+        alert('Success', 'Event request sent to client with 4 date options');
         setShowCreateModal(false);
         resetForm();
         fetchData();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to create event request');
+        alert('Error', error.error || 'Failed to create event request');
       }
     } catch (error) {
       console.error('Error creating event request:', error);
-      Alert.alert('Error', 'Failed to create event request');
+      alert('Error', 'Failed to create event request');
     }
   };
   
@@ -210,7 +210,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       }
     } catch (error) {
       console.error('Error fetching request details:', error);
-      Alert.alert('Error', 'Failed to load request details');
+      alert('Error', 'Failed to load request details');
     }
   };
 
@@ -231,16 +231,16 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       );
 
       if (response.ok) {
-        Alert.alert('Success', 'Event confirmed and added to calendar');
+        alert('Success', 'Event confirmed and added to calendar');
         setShowDetailModal(false);
         fetchData();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.error || 'Failed to confirm event');
+        alert('Error', error.error || 'Failed to confirm event');
       }
     } catch (error) {
       console.error('Error confirming date:', error);
-      Alert.alert('Error', 'Failed to confirm event');
+      alert('Error', 'Failed to confirm event');
     }
   };
 

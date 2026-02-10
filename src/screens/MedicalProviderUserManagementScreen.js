@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Modal,
-  ImageBackground,
-  Platform,
-} from 'react-native';
+ View,
+ Text,
+ ScrollView,
+ StyleSheet,
+ TouchableOpacity,
+ TextInput,
+ Modal,
+ ImageBackground,
+ Platform } from 'react-native';
+import alert from '../utils/alert';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import MedicalGlassCard from '../components/MedicalGlassCard';
@@ -30,7 +29,7 @@ const showAlert = (title, message) => {
       window.alert(`${title}\n${message}`);
     }
   } else {
-    Alert.alert(title, message);
+    alert(title, message);
   }
 };
 
@@ -76,7 +75,7 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
         deactivateUser(userId);
       }
     } else {
-      Alert.alert(
+      alert(
         'Deactivate User',
         `Are you sure you want to deactivate ${userName}? They will immediately lose access to the portal.`,
         [

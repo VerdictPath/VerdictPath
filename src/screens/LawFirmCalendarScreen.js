@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-  TextInput, Alert, Modal, Platform, FlatList
+ View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
+ TextInput, Modal, Platform, FlatList
 } from 'react-native';
+import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import { theme } from '../styles/theme';
@@ -359,7 +360,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       const daysToAdd = bulkMode ? selectedDays : [newAvailability.dayOfWeek];
       
       if (daysToAdd.length === 0) {
-        Alert.alert('Error', 'Please select at least one day');
+        alert('Error', 'Please select at least one day');
         return;
       }
       
@@ -393,7 +394,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       }
       
       if (successCount > 0) {
-        Alert.alert('Success', `Availability set for ${successCount} day(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+        alert('Success', `Availability set for ${successCount} day(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
         setShowAvailabilityModal(false);
         fetchAvailability();
         setNewAvailability({
@@ -405,15 +406,15 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           meetingType: 'consultation'
         });
       } else {
-        Alert.alert('Error', 'Failed to add availability for any days');
+        alert('Error', 'Failed to add availability for any days');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to add availability');
+      alert('Error', 'Failed to add availability');
     }
   };
 
   const handleDeleteAvailability = async (availabilityId) => {
-    Alert.alert(
+    alert(
       'Delete Availability',
       'Are you sure you want to remove this availability slot?',
       [
@@ -434,7 +435,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                 fetchAvailability();
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete availability');
+              alert('Error', 'Failed to delete availability');
             }
           }
         }
@@ -444,7 +445,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const handleBlockTime = async () => {
     if (!newBlockedTime.startDate || !newBlockedTime.endDate) {
-      Alert.alert('Error', 'Please select start and end dates');
+      alert('Error', 'Please select start and end dates');
       return;
     }
     
@@ -470,7 +471,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Time blocked successfully!');
+        alert('Success', 'Time blocked successfully!');
         setShowBlockTimeModal(false);
         fetchBlockedTimes();
         setNewBlockedTime({
@@ -482,10 +483,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         });
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to block time');
+        alert('Error', data.error || 'Failed to block time');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to block time');
+      alert('Error', 'Failed to block time');
     }
   };
 
@@ -502,13 +503,13 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchBlockedTimes();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to remove blocked time');
+      alert('Error', 'Failed to remove blocked time');
     }
   };
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.eventDate || !newEvent.startTime) {
-      Alert.alert('Error', 'Please enter a title, date, and start time');
+      alert('Error', 'Please enter a title, date, and start time');
       return;
     }
 
@@ -516,7 +517,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     const startDateTime = `${isoDate}T${newEvent.startTime}`;
     const parsedStartTime = new Date(startDateTime);
     if (isNaN(parsedStartTime.getTime())) {
-      Alert.alert('Error', 'Invalid date or start time format. Use MM/DD/YYYY');
+      alert('Error', 'Invalid date or start time format. Use MM/DD/YYYY');
       return;
     }
 
@@ -525,7 +526,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       const endDateTime = `${isoDate}T${newEvent.endTime}`;
       parsedEndTime = new Date(endDateTime);
       if (isNaN(parsedEndTime.getTime())) {
-        Alert.alert('Error', 'Invalid end time format');
+        alert('Error', 'Invalid end time format');
         return;
       }
     } else {
@@ -557,7 +558,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         const successMessage = newEvent.selectedClientId 
           ? 'Event created and notification sent to client!' 
           : 'Event created successfully!';
-        Alert.alert('Success', successMessage);
+        alert('Success', successMessage);
         setShowAddEventModal(false);
         setNewEvent({
           title: '',
@@ -573,17 +574,17 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchAppointments();
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to create event');
+        alert('Error', data.error || 'Failed to create event');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      Alert.alert('Error', 'Failed to create event');
+      alert('Error', 'Failed to create event');
     }
   };
 
   const handleCreateAppointment = async () => {
     if (!newAppointment.clientId) {
-      Alert.alert('Error', 'Please select a client');
+      alert('Error', 'Please select a client');
       return;
     }
     
@@ -605,7 +606,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment created successfully!');
+        alert('Success', 'Appointment created successfully!');
         setShowCreateAppointmentModal(false);
         fetchAppointments();
         setNewAppointment({
@@ -621,10 +622,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         });
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to create appointment');
+        alert('Error', data.error || 'Failed to create appointment');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to create appointment');
+      alert('Error', 'Failed to create appointment');
     }
   };
 
@@ -645,7 +646,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     if (Platform.OS === 'web') {
       window.alert(`${title}: ${message}`);
     } else {
-      Alert.alert(title, message);
+      alert(title, message);
     }
   };
 
@@ -763,13 +764,13 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
       if (response.ok) {
         const data = await response.json();
         setSettings(data.settings);
-        Alert.alert('Success', 'Settings updated successfully!');
+        alert('Success', 'Settings updated successfully!');
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to update settings');
+        alert('Error', data.error || 'Failed to update settings');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update settings');
+      alert('Error', 'Failed to update settings');
     }
   };
 
@@ -783,12 +784,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment confirmed!');
+        alert('Success', 'Appointment confirmed!');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to confirm appointment');
+      alert('Error', 'Failed to confirm appointment');
     }
   };
 
@@ -806,12 +807,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment cancelled');
+        alert('Success', 'Appointment cancelled');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to cancel appointment');
+      alert('Error', 'Failed to cancel appointment');
     }
   };
 
@@ -829,12 +830,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment marked as completed!');
+        alert('Success', 'Appointment marked as completed!');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to complete appointment');
+      alert('Error', 'Failed to complete appointment');
     }
   };
 
@@ -1182,7 +1183,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleClearAllAvailability = async () => {
-    Alert.alert(
+    alert(
       'Clear All Hours',
       'Are you sure you want to remove all availability? This will stop the recurring schedule.',
       [
@@ -1201,10 +1202,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
                   }
                 );
               }
-              Alert.alert('Success', 'All availability cleared');
+              alert('Success', 'All availability cleared');
               fetchAvailability();
             } catch (error) {
-              Alert.alert('Error', 'Failed to clear availability');
+              alert('Error', 'Failed to clear availability');
             }
           }
         }

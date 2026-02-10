@@ -210,18 +210,6 @@ app.use('/portal/admin', adminPortalRoutes);
 // SMS Test routes (for testing all SMS services)
 app.use('/api/sms-test', smsTestRoutes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not configured',
-    database: process.env.DATABASE_URL ? 'configured' : 'not configured',
-    twilio: process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN ? 'configured' : 'not configured'
-  });
-});
-
 // API 404 handler - must be after all /api routes but before SPA catch-all
 const { notFoundHandler } = require('./middleware/errorHandler');
 app.use('/api/*', notFoundHandler);

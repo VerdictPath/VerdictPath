@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  Linking,
-  Platform
+ View,
+ Text,
+ StyleSheet,
+ ScrollView,
+ TouchableOpacity,
+ TextInput,
+ ActivityIndicator,
+ Modal,
+ Linking,
+ Platform
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
@@ -66,7 +66,7 @@ const showAlert = (title, message, buttons = [{ text: 'OK' }]) => {
       }
     }
   } else {
-    Alert.alert(title, message, buttons);
+    alert(title, message, buttons);
   }
 };
 

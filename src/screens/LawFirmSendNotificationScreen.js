@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -115,7 +116,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
-      Alert.alert('Error', 'Failed to load clients');
+      alert('Error', 'Failed to load clients');
     } finally {
       setIsLoading(false);
     }
@@ -155,12 +156,12 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
 
   const handleSendNotification = async () => {
     if (selectedClients.length === 0) {
-      Alert.alert('Error', 'Please select at least one client');
+      alert('Error', 'Please select at least one client');
       return;
     }
 
     if (!notificationTitle.trim() || !notificationBody.trim()) {
-      Alert.alert('Error', 'Please enter notification title and message');
+      alert('Error', 'Please enter notification title and message');
       return;
     }
 
@@ -213,7 +214,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
       }
 
       if (response.success) {
-        Alert.alert(
+        alert(
           'Success',
           `Notification ${createTask ? 'and task ' : ''}sent to ${response.results?.successful || selectedClients.length} client(s)`,
           [
@@ -237,11 +238,11 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
           ]
         );
       } else {
-        Alert.alert('Error', response.error || 'Failed to send notification');
+        alert('Error', response.error || 'Failed to send notification');
       }
     } catch (error) {
       console.error('Error sending notification:', error);
-      Alert.alert('Error', 'Failed to send notification. Please try again.');
+      alert('Error', 'Failed to send notification. Please try again.');
     } finally {
       setIsSending(false);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert, Platform, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Platform, TextInput } from 'react-native';
+import alert from '../utils/alert';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
 import { theme } from '../styles/theme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
@@ -300,7 +301,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
       if (Platform.OS === 'web') {
         alert('Failed to load subscription details');
       } else {
-        Alert.alert('Error', 'Failed to load subscription details');
+        alert('Error', 'Failed to load subscription details');
       }
     } finally {
       setLoading(false);
@@ -372,7 +373,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         onConfirm();
       }
     } else {
-      Alert.alert(
+      alert(
         '⚠️ Downgrade Warning',
         'You are about to downgrade from Premium to Standard.\n\n' +
         '⛔ You will LOSE access to:\n' +
@@ -438,14 +439,14 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
         if (Platform.OS === 'web') {
           alert('Subscription updated successfully!');
         } else {
-          Alert.alert('Success', 'Subscription updated successfully!');
+          alert('Success', 'Subscription updated successfully!');
         }
       } catch (error) {
         console.error('Error updating subscription:', error);
         if (Platform.OS === 'web') {
           alert(error.message || 'Failed to update subscription');
         } else {
-          Alert.alert('Error', error.message || 'Failed to update subscription');
+          alert('Error', error.message || 'Failed to update subscription');
         }
       } finally {
         setUpdating(false);
@@ -512,7 +513,7 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);
       } else {
-        Alert.alert('Registration Error', errorMsg);
+        alert('Registration Error', errorMsg);
       }
     } finally {
       setUpdating(false);

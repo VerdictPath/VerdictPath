@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-  TextInput, Alert, Modal, Platform
+ View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
+ TextInput, Modal, Platform
 } from 'react-native';
+import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import Icon from '../components/CrossPlatformIcon';
@@ -268,13 +269,13 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       if (response.ok) {
         const data = await response.json();
         setSettings(data.settings);
-        Alert.alert('Success', 'Settings updated successfully!');
+        alert('Success', 'Settings updated successfully!');
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to update settings');
+        alert('Error', data.error || 'Failed to update settings');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update settings');
+      alert('Error', 'Failed to update settings');
     }
   };
 
@@ -313,7 +314,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       const daysToAdd = bulkMode ? selectedDays : [newAvailability.dayOfWeek];
       
       if (daysToAdd.length === 0) {
-        Alert.alert('Error', 'Please select at least one day');
+        alert('Error', 'Please select at least one day');
         return;
       }
       
@@ -347,7 +348,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       }
       
       if (successCount > 0) {
-        Alert.alert('Success', `Availability set for ${successCount} day(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+        alert('Success', `Availability set for ${successCount} day(s)${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
         setShowAvailabilityModal(false);
         fetchAvailability();
         setNewAvailability({
@@ -358,15 +359,15 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           bufferMinutes: 15
         });
       } else {
-        Alert.alert('Error', 'Failed to add availability for any days');
+        alert('Error', 'Failed to add availability for any days');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to add availability');
+      alert('Error', 'Failed to add availability');
     }
   };
 
   const handleDeleteAvailability = async (availabilityId) => {
-    Alert.alert(
+    alert(
       'Delete Availability',
       'Are you sure you want to remove this availability slot?',
       [
@@ -387,7 +388,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                 fetchAvailability();
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete availability');
+              alert('Error', 'Failed to delete availability');
             }
           }
         }
@@ -397,7 +398,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const handleBlockTime = async () => {
     if (!newBlockedTime.startDate || !newBlockedTime.endDate) {
-      Alert.alert('Error', 'Please select start and end dates');
+      alert('Error', 'Please select start and end dates');
       return;
     }
     
@@ -406,7 +407,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     const parsedEndDate = moment(newBlockedTime.endDate, 'MM/DD/YYYY');
     
     if (!parsedStartDate.isValid() || !parsedEndDate.isValid()) {
-      Alert.alert('Error', 'Invalid date format. Use MM/DD/YYYY');
+      alert('Error', 'Invalid date format. Use MM/DD/YYYY');
       return;
     }
     
@@ -429,7 +430,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Time blocked successfully!');
+        alert('Success', 'Time blocked successfully!');
         setShowBlockTimeModal(false);
         fetchBlockedTimes();
         setNewBlockedTime({
@@ -441,10 +442,10 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         });
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to block time');
+        alert('Error', data.error || 'Failed to block time');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to block time');
+      alert('Error', 'Failed to block time');
     }
   };
 
@@ -461,20 +462,20 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchBlockedTimes();
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to remove blocked time');
+      alert('Error', 'Failed to remove blocked time');
     }
   };
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.startDate || !newEvent.startTimeValue) {
-      Alert.alert('Error', 'Please enter a title, date, and time');
+      alert('Error', 'Please enter a title, date, and time');
       return;
     }
 
     // Parse MM/DD/YYYY date and HH:mm time separately
     const parsedStartMoment = moment(`${newEvent.startDate} ${newEvent.startTimeValue}`, 'MM/DD/YYYY HH:mm');
     if (!parsedStartMoment.isValid()) {
-      Alert.alert('Error', 'Invalid date or time format');
+      alert('Error', 'Invalid date or time format');
       return;
     }
     const parsedStartTime = parsedStartMoment.toDate();
@@ -503,7 +504,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Event created successfully!');
+        alert('Success', 'Event created successfully!');
         setShowAddEventModal(false);
         setNewEvent({
           title: '',
@@ -519,11 +520,11 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchAppointments();
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to create event');
+        alert('Error', data.error || 'Failed to create event');
       }
     } catch (error) {
       console.error('Error creating event:', error);
-      Alert.alert('Error', 'Failed to create event');
+      alert('Error', 'Failed to create event');
     }
   };
 
@@ -537,12 +538,12 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment confirmed!');
+        alert('Success', 'Appointment confirmed!');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to confirm appointment');
+      alert('Error', 'Failed to confirm appointment');
     }
   };
 
@@ -560,12 +561,12 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment cancelled');
+        alert('Success', 'Appointment cancelled');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to cancel appointment');
+      alert('Error', 'Failed to cancel appointment');
     }
   };
 
@@ -583,12 +584,12 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
         }
       );
       if (response.ok) {
-        Alert.alert('Success', 'Appointment marked as completed!');
+        alert('Success', 'Appointment marked as completed!');
         fetchAppointments();
         setShowAppointmentModal(false);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to complete appointment');
+      alert('Error', 'Failed to complete appointment');
     }
   };
 
@@ -919,7 +920,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleClearAllAvailability = async () => {
-    Alert.alert(
+    alert(
       'Clear All Hours',
       'Are you sure you want to remove all availability? This will stop the recurring schedule.',
       [
@@ -938,10 +939,10 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
                   }
                 );
               }
-              Alert.alert('Success', 'All availability cleared');
+              alert('Success', 'All availability cleared');
               fetchAvailability();
             } catch (error) {
-              Alert.alert('Error', 'Failed to clear availability');
+              alert('Error', 'Failed to clear availability');
             }
           }
         }
@@ -1191,7 +1192,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             <TouchableOpacity
               style={styles.saveButton}
               onPress={() => {
-                Alert.alert('Coming Soon', 'Calendar import feature will be available in a future update.');
+                alert('Coming Soon', 'Calendar import feature will be available in a future update.');
                 setShowImportModal(false);
               }}
             >

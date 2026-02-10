@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-  TextInput,
-  Modal
+ View,
+ Text,
+ StyleSheet,
+ FlatList,
+ TouchableOpacity,
+ ScrollView,
+ TextInput,
+ Modal
 } from 'react-native';
+import alert from '../utils/alert';
 import { API_BASE_URL } from '../config/api';
 
 export default function HIPAAFormsScreen({ onNavigate, user }) {
@@ -26,7 +26,7 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
   const loadForms = async () => {
     try {
       if (!user?.token) {
-        Alert.alert('Error', 'Please log in to continue');
+        alert('Error', 'Please log in to continue');
         return;
       }
 
@@ -41,11 +41,11 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
         const data = await response.json();
         setForms(data.forms);
       } else {
-        Alert.alert('Error', 'Failed to load forms');
+        alert('Error', 'Failed to load forms');
       }
     } catch (error) {
       console.error('Error loading forms:', error);
-      Alert.alert('Error', 'Failed to load forms');
+      alert('Error', 'Failed to load forms');
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
   const viewForm = async (formId) => {
     try {
       if (!user?.token) {
-        Alert.alert('Error', 'Please log in to continue');
+        alert('Error', 'Please log in to continue');
         return;
       }
 
@@ -70,22 +70,22 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
         setSelectedForm(data.submission);
         setShowSignModal(true);
       } else {
-        Alert.alert('Error', 'Failed to load form details');
+        alert('Error', 'Failed to load form details');
       }
     } catch (error) {
       console.error('Error loading form:', error);
-      Alert.alert('Error', 'Failed to load form details');
+      alert('Error', 'Failed to load form details');
     }
   };
 
   const signForm = async () => {
     if (!signatureText.trim()) {
-      Alert.alert('Error', 'Please type your full name to sign');
+      alert('Error', 'Please type your full name to sign');
       return;
     }
 
     if (!user?.token) {
-      Alert.alert('Error', 'Please log in to continue');
+      alert('Error', 'Please log in to continue');
       return;
     }
 
@@ -102,18 +102,18 @@ export default function HIPAAFormsScreen({ onNavigate, user }) {
       });
 
       if (response.ok) {
-        Alert.alert('Success', 'Form signed successfully');
+        alert('Success', 'Form signed successfully');
         setShowSignModal(false);
         setSelectedForm(null);
         setSignatureText('');
         loadForms();
       } else {
         const error = await response.json();
-        Alert.alert('Error', error.message || 'Failed to sign form');
+        alert('Error', error.message || 'Failed to sign form');
       }
     } catch (error) {
       console.error('Error signing form:', error);
-      Alert.alert('Error', 'Failed to sign form');
+      alert('Error', 'Failed to sign form');
     }
   };
 

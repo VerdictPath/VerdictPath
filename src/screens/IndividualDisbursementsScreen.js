@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  TextInput,
-  Modal,
-  Alert
-} from 'react-native';
+ View,
+ Text,
+ StyleSheet,
+ ScrollView,
+ TouchableOpacity,
+ ActivityIndicator,
+ RefreshControl,
+ TextInput,
+ Modal } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -78,17 +77,17 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
 
   const handleSaveBankInfo = async () => {
     if (!bankForm.bankName || !bankForm.accountHolder || !bankForm.routingNumber || !bankForm.accountNumber) {
-      Alert.alert('Missing Information', 'Please fill in all bank information fields.');
+      alert('Missing Information', 'Please fill in all bank information fields.');
       return;
     }
 
     if (!/^\d{9}$/.test(bankForm.routingNumber)) {
-      Alert.alert('Invalid Routing Number', 'Routing number must be exactly 9 digits.');
+      alert('Invalid Routing Number', 'Routing number must be exactly 9 digits.');
       return;
     }
 
     if (!/^\d{4,17}$/.test(bankForm.accountNumber)) {
-      Alert.alert('Invalid Account Number', 'Account number must be between 4 and 17 digits.');
+      alert('Invalid Account Number', 'Account number must be between 4 and 17 digits.');
       return;
     }
 
@@ -105,10 +104,10 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
       setBankInfo(response.bankInfo);
       setShowBankModal(false);
       setBankForm({ bankName: '', accountHolder: '', routingNumber: '', accountNumber: '', accountType: 'checking' });
-      Alert.alert('Success', 'Bank information saved securely.');
+      alert('Success', 'Bank information saved securely.');
     } catch (error) {
       console.error('Error saving bank info:', error);
-      Alert.alert('Error', 'Failed to save bank information. Please try again.');
+      alert('Error', 'Failed to save bank information. Please try again.');
     } finally {
       setSavingBank(false);
     }

@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Modal,
-  Switch,
-  Platform,
-} from 'react-native';
+ View,
+ Text,
+ ScrollView,
+ StyleSheet,
+ TouchableOpacity,
+ TextInput,
+ Modal,
+ Switch,
+ Platform } from 'react-native';
+import alert from '../utils/alert';
 import { LinearGradient } from 'expo-linear-gradient';
 import { lawFirmTheme } from '../styles/lawFirmTheme';
 import { theme } from '../styles/theme';
@@ -29,7 +28,7 @@ const showAlert = (title, message) => {
       window.alert(`${title}\n${message}`);
     }
   } else {
-    Alert.alert(title, message);
+    alert(title, message);
   }
 };
 
@@ -69,7 +68,7 @@ const LawFirmUserManagementScreen = ({ user, onBack }) => {
         deactivateUser(userId);
       }
     } else {
-      Alert.alert(
+      alert(
         'Deactivate User',
         `Are you sure you want to deactivate ${userName}? They will immediately lose access to the portal.`,
         [

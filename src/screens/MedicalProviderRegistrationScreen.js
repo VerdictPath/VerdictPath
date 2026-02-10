@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform } from 'react-native';
+import alert from '../utils/alert';
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
@@ -104,7 +105,7 @@ const MedicalProviderRegistrationScreen = ({
       if (Platform.OS === 'web') {
         alert('Registration Error: ' + errorMsg);
       } else {
-        Alert.alert('Registration Error', errorMsg);
+        alert('Registration Error', errorMsg);
       }
     } finally {
       setLoading(false);
@@ -175,7 +176,7 @@ const MedicalProviderRegistrationScreen = ({
       if (Platform.OS === 'web') {
         alert('Join Error: ' + errorMsg);
       } else {
-        Alert.alert('Join Error', errorMsg);
+        alert('Join Error', errorMsg);
       }
     } finally {
       setLoading(false);

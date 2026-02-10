@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
@@ -83,7 +84,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     const expired = isEvidenceExpired(doc.uploaded_at);
     
     if (expired) {
-      Alert.alert(
+      alert(
         '⚠️ Evidence Expired',
         'This evidence is 30+ days old and has expired. Expired evidence cannot be viewed.',
         [
@@ -208,7 +209,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     const expired = isEvidenceExpired(doc.uploaded_at);
     
     if (expired) {
-      Alert.alert(
+      alert(
         '⚠️ Evidence Expired',
         'This evidence is 30+ days old and has expired. Expired evidence cannot be downloaded.',
         [
@@ -246,11 +247,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       } else {
         const errorData = await response.json();
         console.error('Error fetching document URL:', errorData);
-        Alert.alert('Error', 'Failed to download document. Please try again.');
+        alert('Error', 'Failed to download document. Please try again.');
       }
     } catch (error) {
       console.error('Error downloading document:', error);
-      Alert.alert('Error', 'Failed to download document. Please try again.');
+      alert('Error', 'Failed to download document. Please try again.');
     } finally {
       setDocumentLoading(false);
     }

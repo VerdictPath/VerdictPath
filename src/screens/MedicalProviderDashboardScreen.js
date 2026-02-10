@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput, Alert
-} from 'react-native';
+ View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
+import alert from '../utils/alert';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS, apiRequest } from '../config/api';
 import { CASE_PHASES } from '../constants/mockData';
@@ -119,7 +119,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
 
   const handleAddLawFirm = async () => {
     if (!firmCode.trim()) {
-      Alert.alert('Missing Information', 'Please enter a law firm code');
+      alert('Missing Information', 'Please enter a law firm code');
       return;
     }
 
@@ -135,20 +135,20 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
       });
 
       if (response.success) {
-        Alert.alert('Success', response.message || 'Law firm connection added successfully!');
+        alert('Success', response.message || 'Law firm connection added successfully!');
         setFirmCode('');
         fetchLawFirms();
       }
     } catch (error) {
       console.error('Error adding law firm:', error);
-      Alert.alert('Error', error.response?.error || 'Failed to add law firm connection');
+      alert('Error', error.response?.error || 'Failed to add law firm connection');
     } finally {
       setAddingFirm(false);
     }
   };
 
   const handleRemoveLawFirm = async (lawFirmId, firmName) => {
-    Alert.alert(
+    alert(
       'Remove Connection',
       `Are you sure you want to disconnect from ${firmName}?`,
       [
@@ -171,12 +171,12 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
               });
 
               if (response.success) {
-                Alert.alert('Success', response.message || 'Law firm connection removed successfully');
+                alert('Success', response.message || 'Law firm connection removed successfully');
                 fetchLawFirms();
               }
             } catch (error) {
               console.error('Error removing law firm:', error);
-              Alert.alert('Error', error.response?.error || 'Failed to remove law firm connection');
+              alert('Error', error.response?.error || 'Failed to remove law firm connection');
             }
           }
         }

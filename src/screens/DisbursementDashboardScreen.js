@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  TextInput,
-  Modal
+ View,
+ Text,
+ StyleSheet,
+ ScrollView,
+ TouchableOpacity,
+ ActivityIndicator,
+ TextInput,
+ Modal
 } from 'react-native';
+import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -96,7 +96,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       setClients(eligibleClients);
     } catch (error) {
       console.error('Error loading clients:', error);
-      Alert.alert('Error', 'Failed to load clients');
+      alert('Error', 'Failed to load clients');
     } finally {
       setLoading(false);
     }
@@ -229,7 +229,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     const clientAmount = parseCurrency(disbursementAmount);
     
     if (!clientAmount || clientAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid client disbursement amount');
+      alert('Error', 'Please enter a valid client disbursement amount');
       return false;
     }
 
@@ -238,7 +238,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       if (payment.amount && payment.amount.trim() !== '') {
         const amt = parseCurrency(payment.amount);
         if (amt <= 0) {
-          Alert.alert('Error', `Invalid amount for ${payment.providerName}`);
+          alert('Error', `Invalid amount for ${payment.providerName}`);
           return false;
         }
       }
@@ -255,7 +255,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     const clientAmount = parseCurrency(disbursementAmount);
     const totalAmount = calculateTotalDisbursement();
 
-    Alert.alert(
+    alert(
       'Confirm Disbursement',
       `Client Payment: $${clientAmount.toFixed(2)}\n` +
       `Medical Providers: $${totalMedicalPayments.toFixed(2)}\n` +
@@ -300,7 +300,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       });
 
       if (response.success) {
-        Alert.alert(
+        alert(
           '✅ Disbursement Successful',
           `Settlement proceeds have been disbursed!\n\n` +
           `Client: $${response.clientAmount.toFixed(2)}\n` +
@@ -321,7 +321,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       }
     } catch (error) {
       console.error('Disbursement error:', error);
-      Alert.alert(
+      alert(
         'Payment Failed',
         error.message || 'Failed to process disbursement. Please try again.'
       );

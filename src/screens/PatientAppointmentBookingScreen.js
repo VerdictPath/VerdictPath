@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, TextInput, Alert, ActivityIndicator, Platform
+ View, Text, StyleSheet, ScrollView, TouchableOpacity,
+ Modal, TextInput, ActivityIndicator, Platform
 } from 'react-native';
+import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import Icon from '../components/CrossPlatformIcon';
@@ -286,7 +287,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       }
     } catch (error) {
       console.error('Error loading slots:', error);
-      Alert.alert('Error', 'Failed to load available slots');
+      alert('Error', 'Failed to load available slots');
     } finally {
       setLoadingSlots(false);
     }
@@ -342,7 +343,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       }
     } catch (error) {
       console.error('Error loading law firm slots:', error);
-      Alert.alert('Error', 'Failed to load available slots');
+      alert('Error', 'Failed to load available slots');
     } finally {
       setLoadingLawFirmSlots(false);
     }
@@ -355,7 +356,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
   const handleBookLawFirmAppointment = async () => {
     if (!lawFirmAppointmentType) {
-      Alert.alert('Required', 'Please select an appointment type');
+      alert('Required', 'Please select an appointment type');
       return;
     }
 
@@ -381,7 +382,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       );
 
       if (response.ok) {
-        Alert.alert(
+        alert(
           'Success!',
           'Your appointment has been requested. You\'ll receive a confirmation once the law firm confirms.',
           [
@@ -400,18 +401,18 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         );
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to book appointment');
+        alert('Error', data.error || 'Failed to book appointment');
       }
     } catch (error) {
       console.error('Error booking law firm appointment:', error);
-      Alert.alert('Error', 'Failed to book appointment');
+      alert('Error', 'Failed to book appointment');
     } finally {
       setBookingLawFirm(false);
     }
   };
 
   const handleCancelLawFirmAppointment = (appointmentId) => {
-    Alert.alert(
+    alert(
       'Cancel Appointment',
       'Are you sure you want to cancel this appointment?',
       [
@@ -433,11 +434,11 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
                 }
               );
               if (response.ok) {
-                Alert.alert('Success', 'Appointment cancelled');
+                alert('Success', 'Appointment cancelled');
                 loadLawFirmAppointments();
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to cancel appointment');
+              alert('Error', 'Failed to cancel appointment');
             }
           }
         }
@@ -447,7 +448,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
   const handleBookAppointment = async () => {
     if (!appointmentType.trim()) {
-      Alert.alert('Required', 'Please select an appointment type');
+      alert('Required', 'Please select an appointment type');
       return;
     }
 
@@ -473,7 +474,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       );
 
       if (response.ok) {
-        Alert.alert(
+        alert(
           'Success!',
           'Your appointment has been requested. You\'ll receive a confirmation once the provider confirms.',
           [
@@ -492,18 +493,18 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         );
       } else {
         const data = await response.json();
-        Alert.alert('Error', data.error || 'Failed to book appointment');
+        alert('Error', data.error || 'Failed to book appointment');
       }
     } catch (error) {
       console.error('Error booking appointment:', error);
-      Alert.alert('Error', 'Failed to book appointment');
+      alert('Error', 'Failed to book appointment');
     } finally {
       setBooking(false);
     }
   };
 
   const handleCancelAppointment = (appointmentId) => {
-    Alert.alert(
+    alert(
       'Cancel Appointment',
       'Are you sure you want to cancel this appointment?',
       [
@@ -525,11 +526,11 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
                 }
               );
               if (response.ok) {
-                Alert.alert('Success', 'Appointment cancelled');
+                alert('Success', 'Appointment cancelled');
                 loadMyAppointments();
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to cancel appointment');
+              alert('Error', 'Failed to cancel appointment');
             }
           }
         }
@@ -548,19 +549,19 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
 
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.startTime) {
-      Alert.alert('Required', 'Please provide a title and start date/time');
+      alert('Required', 'Please provide a title and start date/time');
       return;
     }
 
     const parsedStartTime = parseDateTime(newEvent.startTime);
     if (!parsedStartTime) {
-      Alert.alert('Invalid Date', 'Please enter a valid date in format YYYY-MM-DD HH:MM (e.g., 2025-12-15 14:00)');
+      alert('Invalid Date', 'Please enter a valid date in format YYYY-MM-DD HH:MM (e.g., 2025-12-15 14:00)');
       return;
     }
 
     const parsedEndTime = newEvent.endTime ? parseDateTime(newEvent.endTime) : null;
     if (newEvent.endTime && !parsedEndTime) {
-      Alert.alert('Invalid End Date', 'Please enter a valid end date in format YYYY-MM-DD HH:MM');
+      alert('Invalid End Date', 'Please enter a valid end date in format YYYY-MM-DD HH:MM');
       return;
     }
 
@@ -583,16 +584,16 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
       resetNewEvent();
       loadPersonalEvents();
       
-      Alert.alert('Success', 'Event created successfully!');
+      alert('Success', 'Event created successfully!');
     } catch (error) {
       console.error('Error creating event:', error);
-      Alert.alert('Error', error.message || 'Failed to create event. Please try again.');
+      alert('Error', error.message || 'Failed to create event. Please try again.');
     }
   };
 
   const handleSyncToDevice = async (event) => {
     if (Platform.OS === 'web') {
-      Alert.alert(
+      alert(
         'Mobile Feature',
         'Syncing to device calendar is only available on the mobile app. Please use the Verdict Path mobile app to sync events to your device calendar.'
       );
@@ -602,7 +603,7 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
     try {
       const hasPermission = await CalendarService.requestPermissions();
       if (!hasPermission) {
-        Alert.alert(
+        alert(
           'Permission Required',
           'Calendar permission is required to sync events to your device calendar'
         );
@@ -619,11 +620,11 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         )
       );
       
-      Alert.alert('Success', 'Event synced to your device calendar!');
+      alert('Success', 'Event synced to your device calendar!');
       loadPersonalEvents();
     } catch (error) {
       console.error('Error syncing event:', error);
-      Alert.alert('Error', 'Failed to sync event to device calendar');
+      alert('Error', 'Failed to sync event to device calendar');
     }
   };
 
@@ -639,16 +640,16 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
         )
       );
       
-      Alert.alert('Success', 'Event removed from device calendar');
+      alert('Success', 'Event removed from device calendar');
       loadPersonalEvents();
     } catch (error) {
       console.error('Error unsyncing event:', error);
-      Alert.alert('Error', 'Failed to remove event from device calendar');
+      alert('Error', 'Failed to remove event from device calendar');
     }
   };
 
   const handleDeleteEvent = (event) => {
-    Alert.alert(
+    alert(
       'Delete Event',
       'Are you sure you want to delete this event?',
       [
@@ -664,10 +665,10 @@ const PatientAppointmentBookingScreen = ({ user, onNavigate, onBack }) => {
               
               await CalendarService.deleteEventFromBackend(event.id, user.token);
               setPersonalEvents(prev => prev.filter(e => e.id !== event.id));
-              Alert.alert('Success', 'Event deleted');
+              alert('Success', 'Event deleted');
             } catch (error) {
               console.error('Error deleting event:', error);
-              Alert.alert('Error', 'Failed to delete event');
+              alert('Error', 'Failed to delete event');
             }
           }
         }

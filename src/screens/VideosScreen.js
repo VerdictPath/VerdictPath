@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
+import alert from '../utils/alert';
 import { commonStyles } from '../styles/commonStyles';
 import { VIDEOS } from '../constants/mockData';
 
 const VideosScreen = ({ onNavigate }) => {
   const handleWatchVideo = () => {
-    Alert.alert('Coming Soon', 'Video player integration in progress');
+    alert('Coming Soon', 'Video player integration in progress');
   };
 
   return (

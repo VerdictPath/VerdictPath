@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
+import alert from '../utils/alert';
 
 const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userType = 'individual' }) => {
   const [loading, setLoading] = useState(false);
@@ -59,7 +60,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
 
   const handleUpdateLawFirm = async () => {
     if (!lawFirmCode.trim()) {
-      Alert.alert('Error', 'Please enter a law firm code');
+      alert('Error', 'Please enter a law firm code');
       return;
     }
 
@@ -77,15 +78,15 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', data.message || 'Law firm connection updated successfully');
+        alert('Success', data.message || 'Law firm connection updated successfully');
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
-        Alert.alert('Error', data.error || 'Failed to update law firm connection');
+        alert('Error', data.error || 'Failed to update law firm connection');
       }
     } catch (error) {
       console.error('Error updating law firm:', error);
-      Alert.alert('Error', 'Failed to update law firm connection');
+      alert('Error', 'Failed to update law firm connection');
     } finally {
       setSaving(false);
     }
@@ -93,7 +94,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
 
   const handleAddMedicalProvider = async () => {
     if (!medicalProviderCode.trim()) {
-      Alert.alert('Error', 'Please enter a medical provider code');
+      alert('Error', 'Please enter a medical provider code');
       return;
     }
 
@@ -117,16 +118,16 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', data.message || 'Medical provider added successfully');
+        alert('Success', data.message || 'Medical provider added successfully');
         setMedicalProviderCode('');
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
-        Alert.alert('Error', data.error || 'Failed to add medical provider');
+        alert('Error', data.error || 'Failed to add medical provider');
       }
     } catch (error) {
       console.error('Error adding medical provider:', error);
-      Alert.alert('Error', 'Failed to add medical provider');
+      alert('Error', 'Failed to add medical provider');
     } finally {
       setSaving(false);
     }
@@ -153,15 +154,15 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', data.message || 'Medical provider removed successfully');
+        alert('Success', data.message || 'Medical provider removed successfully');
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
-        Alert.alert('Error', data.error || 'Failed to remove medical provider');
+        alert('Error', data.error || 'Failed to remove medical provider');
       }
     } catch (error) {
       console.error('Error removing medical provider:', error);
-      Alert.alert('Error', 'Failed to remove medical provider');
+      alert('Error', 'Failed to remove medical provider');
     } finally {
       setSaving(false);
     }

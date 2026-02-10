@@ -1,15 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Platform,
-  useWindowDimensions,
-} from "react-native";
+ View,
+ Text,
+ StyleSheet,
+ ScrollView,
+ TouchableOpacity,
+ TextInput,
+ Platform,
+ useWindowDimensions } from "react-native";
+import alert from '../utils/alert';
 import { Video, ResizeMode } from "../utils/safeAVImport";
 import WebVideoBackground from "../components/WebVideoBackground";
 import { theme } from "../styles/theme";
@@ -462,7 +461,7 @@ const SubscriptionSelectionScreen = ({
           onSelectSubscription();
         }
       } else {
-        Alert.alert(
+        alert(
           "Ready to Get Started?",
           "Create an account to select this plan.",
           [
@@ -487,7 +486,7 @@ const SubscriptionSelectionScreen = ({
         if (Platform.OS === "web") {
           alert(alertMessage);
         } else {
-          Alert.alert("Selection Required", alertMessage);
+          alert("Selection Required", alertMessage);
         }
         return;
       }
@@ -541,7 +540,7 @@ const SubscriptionSelectionScreen = ({
                 buttons[1].onPress();
               }
             }
-          : Alert.alert;
+          : alert;
 
       alertFunc("Confirm Selection", confirmMessage, [
         { text: "Cancel", style: "cancel" },
@@ -575,7 +574,7 @@ const SubscriptionSelectionScreen = ({
                   buttons[1].onPress();
                 }
               }
-            : Alert.alert;
+            : alert;
 
         alertFunc(
           "Confirm Selection",
