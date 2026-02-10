@@ -2,8 +2,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { LinearGradient } from 'expo-linear-gradient';
+import WebVideoBackground from './WebVideoBackground';
 
-const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
+const AvatarVideoBackground = ({ videoSource, webVideoUri, opacity = 0.6 }) => {
   const { width, height } = useWindowDimensions();
   const videoRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
@@ -11,14 +12,9 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
   const isSmallPhone = width < 375;
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
-  const isDesktop = width >= 1024;
-  const isLargeDesktop = width >= 1440;
-  
-  const aspectRatio = height / width;
-  const isTallDevice = aspectRatio > 1.8;
-  const isShortDevice = aspectRatio < 1.5;
 
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     loadVideo();
     return () => {
       if (videoRef.current) {
@@ -87,7 +83,9 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
 
   return (
     <View style={styles.container}>
-      {Platform.OS !== 'web' && Video ? (
+      {Platform.OS === 'web' ? (
+        webVideoUri ? <WebVideoBackground uri={webVideoUri} /> : null
+      ) : Video ? (
         <Video
           ref={videoRef}
           source={videoSource}

@@ -138,7 +138,18 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
         activeOpacity={0.85}
       >
         <View style={[styles.videoPreview, { height: getVideoHeight() }]}>
-          {isPreviewing && avatar.calmVideo && Platform.OS !== 'web' && Video ? (
+          {isPreviewing && Platform.OS === 'web' && avatar.calmVideoWeb ? (
+            <View style={styles.previewVideo}>
+              <video
+                src={avatar.calmVideoWeb}
+                autoPlay
+                loop
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </View>
+          ) : isPreviewing && avatar.calmVideo && Platform.OS !== 'web' && Video ? (
             <Video
               source={avatar.calmVideo}
               rate={1.0}

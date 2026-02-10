@@ -92,6 +92,7 @@ const DashboardScreen = ({
       
       <AvatarVideoBackground 
         videoSource={selectedAvatar.calmVideo}
+        webVideoUri={selectedAvatar.calmVideoWeb}
         opacity={0.7}
       />
 
