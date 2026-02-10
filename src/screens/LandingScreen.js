@@ -14,108 +14,65 @@ import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
 const LandingScreen = ({ onNavigate }) => {
-  // Video source - memoized to prevent recreation
+  const isWeb = Platform.OS === 'web';
+
   const videoSource = useMemo(() => 
-    require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4"),
+    isWeb ? null : require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4"),
     []
   );
 
-  // Enable video with performance optimizations
-  const [enableVideo, setEnableVideo] = useState(true);
+  const [enableVideo, setEnableVideo] = useState(!isWeb);
 
-  // Create video player only if video is enabled
   const player = useVideoPlayer(enableVideo ? videoSource : null);
 
-  // Configure player once on mount with aggressive performance optimizations
   useEffect(() => {
-    if (!player || !enableVideo) return;
+    if (isWeb || !player || !enableVideo) return;
 
-    // Set all player properties for maximum performance
     player.loop = true;
     player.muted = true;
     player.volume = 0;
-    // Slightly reduce playback rate to reduce lag (0.95 = 95% speed)
     player.playbackRate = 0.95;
-    
-    // Longer delay to let UI fully render and settle before starting video
-    // Mobile may need more time
-    const delay = Platform.OS === 'web' ? 800 : 1000;
-    
-    const waitForVideoLoad = () => {
-      // Check if video is loaded (duration > 0 means video metadata is loaded)
-      if (player && player.duration > 0) {
-        return true;
-      }
-      return false;
-    };
 
     const startPlayback = async () => {
       try {
-        // Wait for video to load on mobile - check multiple times
         let attempts = 0;
-        const maxAttempts = Platform.OS === 'web' ? 5 : 20; // More attempts on mobile
-        const checkInterval = 100; // Check every 100ms
-
-        while (attempts < maxAttempts && !waitForVideoLoad()) {
-          await new Promise(resolve => setTimeout(resolve, checkInterval));
+        const maxAttempts = 20;
+        while (attempts < maxAttempts && !(player && player.duration > 0)) {
+          await new Promise(resolve => setTimeout(resolve, 100));
           attempts++;
         }
 
-        if (!waitForVideoLoad()) {
-        }
-
         if (player && !player.playing) {
-          // Start playback with reduced rate for smoother playback
           player.playbackRate = 0.95;
-          
-          // Try to play
           await player.play();
-          
-          // On Android, play() may resolve but not actually start playing
-          // Wait a moment and check if it's actually playing
           await new Promise(resolve => setTimeout(resolve, 200));
           
-          // If still not playing, try again (Android sometimes needs this)
-          if (!player.playing && Platform.OS !== 'web') {
+          if (!player.playing) {
             await player.play();
             await new Promise(resolve => setTimeout(resolve, 200));
           }
           
-          // If still not playing after retry, try once more with a delay
-          if (!player.playing && Platform.OS !== 'web') {
+          if (!player.playing) {
             setTimeout(async () => {
-              try {
-                await player.play();
-              } catch (e) {
-                console.error('[LandingScreen] Final retry error:', e);
-              }
+              try { await player.play(); } catch (e) {}
             }, 500);
           }
         }
       } catch (error) {
-        console.error('[LandingScreen] Play error:', error);
-        // Retry once on mobile if it fails
-        if (Platform.OS !== 'web') {
-          setTimeout(async () => {
-            try {
-              // Wait a bit more for video to load
-              await new Promise(resolve => setTimeout(resolve, 500));
-              if (player && !player.playing && waitForVideoLoad()) {
-                await player.play();
-              } else {
-              }
-            } catch (retryError) {
-              console.error('[LandingScreen] Retry failed:', retryError);
-              setEnableVideo(false);
+        setTimeout(async () => {
+          try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (player && !player.playing && player.duration > 0) {
+              await player.play();
             }
-          }, 1000);
-        } else {
-          setEnableVideo(false);
-        }
+          } catch (retryError) {
+            setEnableVideo(false);
+          }
+        }, 1000);
       }
     };
     
-    const startTimer = setTimeout(startPlayback, delay);
+    const startTimer = setTimeout(startPlayback, 1000);
     
     return () => {
       clearTimeout(startTimer);

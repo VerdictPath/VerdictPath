@@ -12,7 +12,7 @@
       }
       body {
         overflow: hidden;
-        background: #000;
+        background: #0d1b2a;
       }
       #root {
         display: flex;
@@ -36,6 +36,7 @@
         z-index: 0;
         overflow: hidden;
         pointer-events: none;
+        display: none;
         background-color: #0d1b2a;
         background-size: cover;
         background-position: center;
@@ -49,9 +50,11 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-      }
-      #web-video-bg video:not([data-playing]) {
         opacity: 0;
+        transition: opacity 0.8s ease-in;
+      }
+      #web-video-bg video[data-playing] {
+        opacity: 1;
       }
     </style>
   <meta name="theme-color" content="#2C5F7C">
@@ -60,13 +63,13 @@
 
   <body>
     <div id="web-video-bg">
-      <video src="/videos/ship.mp4" autoplay loop muted playsinline preload="auto" poster="/videos/ship_poster.jpg"></video>
+      <video src="/videos/ship.mp4" loop muted playsinline preload="auto" poster="/videos/ship_poster.jpg"></video>
     </div>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
     <div id="root"></div>
-  <script src="/_expo/static/js/web/AppEntry-ebdd8eb0ddb6feff05227e50f74ae81a.js" defer></script>
+  <script src="/_expo/static/js/web/AppEntry-561b845c799aeb47f6d2b5d7e3eff587.js" defer></script>
   <script>
     window.__VIDEO_BG = document.getElementById('web-video-bg');
     window.__setVideoBg = function(src) {
@@ -83,33 +86,41 @@
         v.load();
         v.muted = true;
         v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
+      } else if (v.paused) {
+        v.muted = true;
+        v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
       }
     };
     window.__showVideoBg = function(show) {
       var el = document.getElementById('web-video-bg');
-      if (el) el.style.display = show ? 'block' : 'none';
+      if (!el) return;
+      if (show) {
+        el.style.display = 'block';
+        var v = el.querySelector('video');
+        if (v && v.paused) {
+          v.muted = true;
+          v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
+        }
+      } else {
+        el.style.display = 'none';
+      }
     };
-    (function retryAutoplay() {
+    (function setupVideoListeners() {
       var v = document.querySelector('#web-video-bg video');
       if (!v) return;
-      function tryPlay() {
+      v.addEventListener('playing', function() { v.setAttribute('data-playing',''); });
+      document.addEventListener('click', function once() {
         if (v.paused) {
           v.muted = true;
           v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
         }
-      }
-      v.addEventListener('playing', function() { v.setAttribute('data-playing',''); });
-      v.addEventListener('canplay', tryPlay);
-      v.addEventListener('loadeddata', tryPlay);
-      setTimeout(tryPlay, 500);
-      setTimeout(tryPlay, 1500);
-      setTimeout(tryPlay, 3000);
-      document.addEventListener('click', function once() {
-        tryPlay();
         document.removeEventListener('click', once);
       });
       document.addEventListener('touchstart', function once() {
-        tryPlay();
+        if (v.paused) {
+          v.muted = true;
+          v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
+        }
         document.removeEventListener('touchstart', once);
       });
     })();
