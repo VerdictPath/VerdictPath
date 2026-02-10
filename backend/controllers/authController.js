@@ -815,8 +815,7 @@ exports.login = async (req, res) => {
     const isValidPassword = await bcrypt.compare(password, account.password);
     
     if (!isValidPassword) {
-      // HIPAA: Log failed login and increment attempts
-      await handleFailedLogin(account.id, userType || account.user_type);
+      const lockoutInfo = await handleFailedLogin(account.id, userType || account.user_type);
       await auditLogger.logAuth({
         userId: account.id,
         email: email,
@@ -826,7 +825,27 @@ exports.login = async (req, res) => {
         success: false,
         failureReason: 'Invalid password'
       });
-      return res.status(401).json({ message: 'Invalid credentials' });
+
+      if (lockoutInfo && lockoutInfo.locked) {
+        return res.status(423).json({
+          message: `Account locked for ${lockoutInfo.lockoutMinutes} minute${lockoutInfo.lockoutMinutes > 1 ? 's' : ''} due to too many failed attempts. Use "Forgot Password" if you need to reset your password.`,
+          locked: true,
+          lockoutMinutes: lockoutInfo.lockoutMinutes,
+          showForgotPassword: true
+        });
+      }
+
+      const remaining = lockoutInfo ? lockoutInfo.remaining : null;
+      let warningMessage = 'Invalid credentials.';
+      if (remaining !== null && remaining <= 3) {
+        warningMessage += ` ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before your account is locked.`;
+      }
+
+      return res.status(401).json({
+        message: warningMessage,
+        remainingAttempts: remaining,
+        showForgotPassword: remaining !== null && remaining <= 2
+      });
     }
 
     // Check for temporary password expiry

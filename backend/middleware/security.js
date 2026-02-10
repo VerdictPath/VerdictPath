@@ -71,10 +71,10 @@ const handleFailedLogin = async (userId, userType) => {
 
     const shouldLock = newAttempts >= maxAttempts;
     let lockUntil = null;
+    let lockoutMinutes = 0;
 
     if (shouldLock) {
       const newLockoutCount = currentLockoutCount + 1;
-      let lockoutMinutes;
       if (newLockoutCount === 1) {
         lockoutMinutes = 1;
       } else if (newLockoutCount === 2) {
@@ -95,6 +95,8 @@ const handleFailedLogin = async (userId, userType) => {
            user_type = $2`,
         [userId, userType, lockUntil, newLockoutCount]
       );
+
+      return { locked: true, lockoutMinutes, attemptsUsed: newAttempts, maxAttempts };
     } else {
       await db.query(
         `INSERT INTO account_security (user_id, user_type, login_attempts, lockout_count) 
@@ -105,9 +107,12 @@ const handleFailedLogin = async (userId, userType) => {
            user_type = $2`,
         [userId, userType, newAttempts]
       );
+
+      return { locked: false, attemptsUsed: newAttempts, maxAttempts, remaining: maxAttempts - newAttempts };
     }
   } catch (error) {
     console.error('Failed to handle login attempt:', error);
+    return null;
   }
 };
 

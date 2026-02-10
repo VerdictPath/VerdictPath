@@ -751,7 +751,30 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setCurrentScreen(targetScreen);
     } catch (error) {
       console.error('[Login] Login error:', error);
-      alert('Error', error.message || 'Login failed. Please check your credentials.');
+      const responseData = error.response || {};
+      const errorMessage = error.message || 'Login failed. Please check your credentials.';
+
+      if (responseData.locked || error.status === 423) {
+        alert(
+          'Account Locked',
+          errorMessage,
+          [
+            { text: 'Forgot Password', onPress: () => setCurrentScreen('forgotPassword') },
+            { text: 'OK' }
+          ]
+        );
+      } else if (responseData.showForgotPassword) {
+        alert(
+          'Login Failed',
+          errorMessage,
+          [
+            { text: 'Forgot Password', onPress: () => setCurrentScreen('forgotPassword') },
+            { text: 'Try Again' }
+          ]
+        );
+      } else {
+        alert('Login Failed', errorMessage);
+      }
     }
   };
 
