@@ -4,7 +4,6 @@ export const AVATARS = {
     name: 'The Advocate',
     description: 'Passionate and determined - fights for your justice',
     calmVideo: require('../../assets/avatars/captain/captain-calm.mp4'),
-    actionVideo: require('../../assets/avatars/captain/captain-action.mp4'),
     thumbnail: require('../../assets/avatars/captain/captain-thumbnail.png'),
     primaryColor: '#1E40AF',
     accentColor: '#60A5FA',
@@ -14,7 +13,6 @@ export const AVATARS = {
     name: 'Lady Justice',
     description: 'Fair and balanced - upholds truth and righteousness',
     calmVideo: require('../../assets/avatars/navigator/navigator-calm.mp4'),
-    actionVideo: require('../../assets/avatars/navigator/navigator-action.mp4'),
     thumbnail: require('../../assets/avatars/navigator/navigator-thumbnail.png'),
     primaryColor: '#0F766E',
     accentColor: '#5EEAD4',
@@ -24,7 +22,6 @@ export const AVATARS = {
     name: 'The Paralegal',
     description: 'Organized and thorough - manages every detail expertly',
     calmVideo: require('../../assets/avatars/strategist/strategist-calm.mp4'),
-    actionVideo: require('../../assets/avatars/strategist/strategist-action.mp4'),
     thumbnail: require('../../assets/avatars/strategist/strategist-thumbnail.png'),
     primaryColor: '#7C3AED',
     accentColor: '#C4B5FD',
@@ -34,7 +31,6 @@ export const AVATARS = {
     name: 'The Judge',
     description: 'Wise and authoritative - guides you with experience',
     calmVideo: require('../../assets/avatars/advocate/advocate-calm.mp4'),
-    actionVideo: require('../../assets/avatars/advocate/advocate-action.mp4'),
     thumbnail: require('../../assets/avatars/advocate/advocate-thumbnail.png'),
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
@@ -44,7 +40,6 @@ export const AVATARS = {
     name: 'Polly the Parrot',
     description: 'The Eternal Optimist. Always on your side',
     calmVideo: require('../../assets/avatars/polly/polly-calm.mp4'),
-    actionVideo: require('../../assets/avatars/polly/polly-action.mp4'),
     thumbnail: require('../../assets/avatars/polly/polly-thumbnail.png'),
     primaryColor: '#22C55E',
     accentColor: '#86EFAC',
@@ -58,17 +53,3 @@ export const ACTION_TRIGGERS = {
   ACHIEVEMENT: 'achievement',
   MILESTONE: 'milestone',
 };
-
-// NOTE: To enable video playback, add these video files:
-// assets/avatars/captain/captain-calm.mp4 (The Advocate)
-// assets/avatars/captain/captain-action.mp4
-// assets/avatars/captain/captain-thumbnail.png
-// assets/avatars/navigator/navigator-calm.mp4 (Lady Justice)
-// assets/avatars/navigator/navigator-action.mp4
-// assets/avatars/navigator/navigator-thumbnail.png
-// assets/avatars/strategist/strategist-calm.mp4 (The Paralegal)
-// assets/avatars/strategist/strategist-action.mp4
-// assets/avatars/strategist/strategist-thumbnail.png
-// assets/avatars/advocate/advocate-calm.mp4 (The Judge)
-// assets/avatars/advocate/advocate-action.mp4
-// assets/avatars/advocate/advocate-thumbnail.png

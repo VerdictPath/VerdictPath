@@ -17,7 +17,6 @@ import { apiRequest, API_ENDPOINTS, API_BASE_URL } from './src/config/api';
 import { applyWebFixes, isWeb } from './src/utils/webUtils';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
 import NotificationService from './src/services/NotificationService';
-import ActionVideoModal from './src/components/ActionVideoModal';
 import { AVATARS } from './src/constants/avatars';
 import useSessionTimeout from './src/hooks/useSessionTimeout';
 
@@ -144,11 +143,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const prevScreenRef = useRef(currentScreen);
   const [treasureChestRefreshKey, setTreasureChestRefreshKey] = useState(0);
 
-  const [showActionVideo, setShowActionVideo] = useState(false);
-  const [actionVideoData, setActionVideoData] = useState({
-    message: '',
-    coinsEarned: 0,
-  });
 
   const handleSessionLogout = async () => {
     try {
@@ -820,11 +814,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     }
   };
 
-  const triggerActionVideo = (message, coinsEarned = 0) => {
-    setActionVideoData({ message, coinsEarned });
-    setShowActionVideo(true);
-  };
-
   const handleClaimDailyBonus = async () => {
     if (!user || !user.token) {
       Alert.alert('Error', 'You must be logged in to claim daily rewards');
@@ -844,7 +833,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setCoins(response.totalCoins);
         setLoginStreak(response.newStreak);
         
-        triggerActionVideo(`Daily Bonus Claimed! 🎉\nDay ${response.newStreak} Streak`, bonusAmount);
+        Alert.alert('Daily Bonus Claimed! 🎉', `Day ${response.newStreak} Streak\n+${bonusAmount} coins!`);
       } else {
         Alert.alert('Error', response.message || 'Failed to claim daily reward');
       }
@@ -929,7 +918,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       // Trigger treasure chest refresh to show updated coin balance
       setTreasureChestRefreshKey(prev => prev + 1);
       
-      triggerActionVideo('Stage Complete! 🏆', stageCoins);
+      Alert.alert('🏆 Stage Complete!', `+${stageCoins} coins earned!`);
       return;
     }
 
@@ -967,7 +956,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       });
       
       if (actualCoinsEarned > 0) {
-        triggerActionVideo('Stage Complete! 🏆', actualCoinsEarned);
+        Alert.alert('🏆 Stage Complete!', `+${actualCoinsEarned} coins earned!`);
       } else {
         Alert.alert('🎉 Stage Completed!', `Stage marked complete! (Coins were already earned previously)`);
       }
@@ -1070,9 +1059,8 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
                 return prev + 1;
               });
               
-              // Trigger action video for substage completion
               if (subStageCoins > 0) {
-                triggerActionVideo('Substage Complete! 🎯', subStageCoins);
+                Alert.alert('🎯 Substage Complete!', `+${subStageCoins} coins earned!`);
               }
               
               return { ...subStage, completed: true };
@@ -2240,16 +2228,6 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         </View>
       )}
 
-      {/* Global Action Video Modal - Individual Users Only */}
-      {user && user.userType === 'individual' && user.avatarType && (
-        <ActionVideoModal
-          visible={showActionVideo}
-          onClose={() => setShowActionVideo(false)}
-          avatarType={user.avatarType}
-          message={actionVideoData.message}
-          coinsEarned={actionVideoData.coinsEarned}
-        />
-      )}
     </SafeAreaView>
   );
 };

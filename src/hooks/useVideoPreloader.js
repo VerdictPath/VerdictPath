@@ -5,7 +5,6 @@ import { AVATARS } from '../constants/avatars';
 export const useVideoPreloader = (avatarType = 'captain') => {
   const [videosLoaded, setVideosLoaded] = useState(false);
   const [calmVideoRef, setCalmVideoRef] = useState(null);
-  const [actionVideoRef, setActionVideoRef] = useState(null);
 
   useEffect(() => {
     preloadVideos();
@@ -16,7 +15,6 @@ export const useVideoPreloader = (avatarType = 'captain') => {
     if (!avatar) return;
 
     try {
-
       const { sound: calmVideo } = await Video.createAsync(
         avatar.calmVideo,
         { shouldPlay: false },
@@ -25,14 +23,6 @@ export const useVideoPreloader = (avatarType = 'captain') => {
       );
       setCalmVideoRef(calmVideo);
 
-      const { sound: actionVideo } = await Video.createAsync(
-        avatar.actionVideo,
-        { shouldPlay: false },
-        null,
-        false
-      );
-      setActionVideoRef(actionVideo);
-
       setVideosLoaded(true);
     } catch (error) {
       console.error('[VideoPreloader] Error preloading videos:', error);
@@ -40,5 +30,5 @@ export const useVideoPreloader = (avatarType = 'captain') => {
     }
   };
 
-  return { videosLoaded, calmVideoRef, actionVideoRef };
+  return { videosLoaded, calmVideoRef };
 };

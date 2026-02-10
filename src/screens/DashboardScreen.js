@@ -10,7 +10,6 @@ import {
   Image,
 } from 'react-native';
 import AvatarVideoBackground from '../components/AvatarVideoBackground';
-import ActionVideoModal from '../components/ActionVideoModal';
 import InviteModal from '../components/InviteModal';
 import ConnectionsModal from '../components/ConnectionsModal';
 import { AVATARS } from '../constants/avatars';
@@ -28,10 +27,6 @@ const DashboardScreen = ({
   onNavigate,
   onLogout,
 }) => {
-  const [showActionVideo, setShowActionVideo] = useState(false);
-  const [actionMessage, setActionMessage] = useState('');
-  const [actionCoins, setActionCoins] = useState(0);
-  const [useCelebrationVideo, setUseCelebrationVideo] = useState(false);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [connectionsModalVisible, setConnectionsModalVisible] = useState(false);
   const [connections, setConnections] = useState({
@@ -86,18 +81,9 @@ const DashboardScreen = ({
   const handleClaimBonus = async () => {
     try {
       await onClaimBonus();
-      
-      triggerActionVideo('Daily Bonus Claimed! 🎉', 50, true);
     } catch (error) {
       console.error('[Dashboard] Claim bonus error:', error);
     }
-  };
-
-  const triggerActionVideo = (message, coinsEarned = 0, celebrationMode = false) => {
-    setActionMessage(message);
-    setActionCoins(coinsEarned);
-    setUseCelebrationVideo(celebrationMode);
-    setShowActionVideo(true);
   };
 
   return (
@@ -248,15 +234,6 @@ const DashboardScreen = ({
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <ActionVideoModal
-        visible={showActionVideo}
-        onClose={() => setShowActionVideo(false)}
-        avatarType={avatarType}
-        message={actionMessage}
-        coinsEarned={actionCoins}
-        useCelebrationVideo={useCelebrationVideo}
-      />
 
       <InviteModal
         visible={inviteModalVisible}

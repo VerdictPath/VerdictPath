@@ -1,11 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, Animated, StyleSheet, Dimensions } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
 
 const { width, height } = Dimensions.get('window');
 
 const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 100 }) => {
-  const videoRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -20,10 +18,6 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
 
   useEffect(() => {
     if (visible) {
-      // Play video
-      playVideo();
-      
-      // Reset animations
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.3);
       bounceAnim.setValue(0);
@@ -34,7 +28,6 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
         anim.rotation.setValue(0);
       });
 
-      // Explosive entrance with bounce
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -67,7 +60,6 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
         }),
       ]).start();
 
-      // Faster confetti explosion
       const confettiAnimations = confettiAnims.map((anim) =>
         Animated.parallel([
           Animated.timing(anim.y, {
@@ -85,7 +77,6 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
 
       Animated.parallel(confettiAnimations).start();
 
-      // Auto-dismiss after video completes (extended duration)
       setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
@@ -96,30 +87,11 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
     }
   }, [visible]);
 
-  const playVideo = async () => {
-    if (videoRef.current) {
-      try {
-        await videoRef.current.unloadAsync();
-        await videoRef.current.loadAsync(
-          require('../../attached_assets/raining_small_gold_coins_from_the_sky_1764036908152.mp4'),
-          {
-            shouldPlay: true,
-            isLooping: false,
-            volume: 0.8,
-          }
-        );
-      } catch (error) {
-        console.error('[CelebrationAnimation] Video error:', error);
-      }
-    }
-  };
-
   if (!visible) return null;
 
   return (
     <Modal transparent visible={visible} animationType="none">
       <View style={styles.overlay}>
-        {/* Confetti */}
         {confettiAnims.map((anim, index) => (
           <Animated.View
             key={index}
@@ -142,7 +114,6 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
           />
         ))}
 
-        {/* Video celebration card */}
         <Animated.View
           style={[
             styles.celebrationCard,
@@ -160,21 +131,8 @@ const CelebrationAnimation = ({ visible, onComplete, milestone, coinsEarned = 10
             },
           ]}
         >
-          <View style={styles.videoContainer}>
-            <Video
-              ref={videoRef}
-              rate={1.0}
-              volume={0.8}
-              isMuted={false}
-              isLooping={false}
-              shouldPlay={visible}
-              resizeMode={ResizeMode.CONTAIN}
-              style={styles.video}
-            />
-          </View>
-          
           <View style={styles.messageContainer}>
-            <Text style={styles.congratsText}>💰 COINS RAINING DOWN! 💰</Text>
+            <Text style={styles.congratsText}>💰 COINS EARNED! 💰</Text>
             <View style={styles.coinsContainer}>
               <Text style={styles.coinsBig}>🪙</Text>
               <Text style={styles.coinsEarnedText}>+{coinsEarned}</Text>
@@ -203,7 +161,7 @@ const styles = StyleSheet.create({
   celebrationCard: {
     backgroundColor: '#1a1a1a',
     borderRadius: 20,
-    padding: 15,
+    padding: 30,
     alignItems: 'center',
     borderWidth: 4,
     borderColor: '#FFD700',
@@ -214,18 +172,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 15,
     elevation: 15,
-  },
-  videoContainer: {
-    width: '100%',
-    height: 250,
-    borderRadius: 15,
-    overflow: 'hidden',
-    marginBottom: 15,
-    backgroundColor: '#000',
-  },
-  video: {
-    width: '100%',
-    height: '100%',
   },
   messageContainer: {
     alignItems: 'center',
