@@ -62,6 +62,7 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState(moment().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('calendar');
 
   const [medicalAppointments, setMedicalAppointments] = useState([]);
   const [lawFirmAppointments, setLawFirmAppointments] = useState([]);
@@ -313,6 +314,19 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
   const itemsForSelectedDate = useMemo(() => {
     return filteredItems.filter(item => item.date === selectedDate);
   }, [filteredItems, selectedDate]);
+
+  const agendaGrouped = useMemo(() => {
+    const today = moment().format('YYYY-MM-DD');
+    const upcoming = filteredItems
+      .filter(i => i.date >= today && i.status !== 'cancelled')
+      .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+    const groups = {};
+    upcoming.forEach(item => {
+      if (!groups[item.date]) groups[item.date] = [];
+      groups[item.date].push(item);
+    });
+    return Object.entries(groups).map(([date, items]) => ({ date, items }));
+  }, [filteredItems]);
 
   const markedDates = useMemo(() => {
     const marked = {};
@@ -1150,9 +1164,21 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
           <Icon name="calendar-month" size={28} color="#FFD700" />
           <Text style={styles.headerTitle}>Calendar</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => setShowQuickActions(!showQuickActions)}>
-          <Icon name={showQuickActions ? 'close' : 'plus'} size={24} color="#FFD700" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === 'calendar' && styles.viewToggleBtnActive]}
+            onPress={() => setViewMode('calendar')}>
+            <Icon name="calendar-month" size={18} color={viewMode === 'calendar' ? '#0d2f54' : '#FFD700'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === 'agenda' && styles.viewToggleBtnActive]}
+            onPress={() => setViewMode('agenda')}>
+            <Icon name="view-list" size={18} color={viewMode === 'agenda' ? '#0d2f54' : '#FFD700'} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowQuickActions(!showQuickActions)}>
+            <Icon name={showQuickActions ? 'close' : 'plus'} size={24} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showQuickActions && renderQuickActions()}
@@ -1174,55 +1200,93 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.calendarSection}>
-          <Calendar
-            current={selectedDate}
-            onDayPress={(day) => setSelectedDate(day.dateString)}
-            markingType="multi-dot"
-            markedDates={markedDates}
-            theme={calendarTheme}
-          />
-        </View>
-
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#10b981' }]} /><Text style={styles.legendText}>Medical</Text></View>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} /><Text style={styles.legendText}>Law Firm</Text></View>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} /><Text style={styles.legendText}>Tasks</Text></View>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#8b5cf6' }]} /><Text style={styles.legendText}>Requests</Text></View>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} /><Text style={styles.legendText}>Personal</Text></View>
-        </View>
-
-        <View style={styles.daySection}>
-          <View style={styles.daySectionHeader}>
-            <Text style={styles.daySectionTitle}>
-              {moment(selectedDate).format('dddd, MMMM D')}
-            </Text>
-            <Text style={styles.daySectionCount}>
-              {itemsForSelectedDate.length} {itemsForSelectedDate.length === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
-
-          {itemsForSelectedDate.length === 0 ? (
-            <View style={styles.emptyDay}>
-              <Icon name="calendar-blank" size={48} color="#4a5568" />
-              <Text style={styles.emptyDayText}>Nothing scheduled</Text>
-              <Text style={styles.emptyDaySubtext}>Tap + to add an event</Text>
+        {viewMode === 'calendar' ? (
+          <>
+            <View style={styles.calendarSection}>
+              <Calendar
+                current={selectedDate}
+                onDayPress={(day) => setSelectedDate(day.dateString)}
+                markingType="multi-dot"
+                markedDates={markedDates}
+                theme={calendarTheme}
+              />
             </View>
-          ) : (
-            itemsForSelectedDate.map(item => renderItemCard(item))
-          )}
-        </View>
 
-        {activeFilter === 'all' && (
-          <View style={styles.upcomingSection}>
-            <Text style={styles.upcomingSectionTitle}>
-              Upcoming ({upcomingCount})
-            </Text>
-            {allItems
-              .filter(i => i.date >= moment().format('YYYY-MM-DD') && i.status !== 'cancelled' && i.status !== 'completed')
-              .sort((a, b) => a.date.localeCompare(b.date))
-              .slice(0, 10)
-              .map(item => renderItemCard(item))}
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#10b981' }]} /><Text style={styles.legendText}>Medical</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} /><Text style={styles.legendText}>Law Firm</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} /><Text style={styles.legendText}>Tasks</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#8b5cf6' }]} /><Text style={styles.legendText}>Requests</Text></View>
+              <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#e74c3c' }]} /><Text style={styles.legendText}>Personal</Text></View>
+            </View>
+
+            <View style={styles.daySection}>
+              <View style={styles.daySectionHeader}>
+                <Text style={styles.daySectionTitle}>
+                  {moment(selectedDate).format('dddd, MMMM D')}
+                </Text>
+                <Text style={styles.daySectionCount}>
+                  {itemsForSelectedDate.length} {itemsForSelectedDate.length === 1 ? 'item' : 'items'}
+                </Text>
+              </View>
+
+              {itemsForSelectedDate.length === 0 ? (
+                <View style={styles.emptyDay}>
+                  <Icon name="calendar-blank" size={48} color="#4a5568" />
+                  <Text style={styles.emptyDayText}>Nothing scheduled</Text>
+                  <Text style={styles.emptyDaySubtext}>Tap + to add an event</Text>
+                </View>
+              ) : (
+                itemsForSelectedDate.map(item => renderItemCard(item))
+              )}
+            </View>
+          </>
+        ) : (
+          <View style={styles.agendaContainer}>
+            <View style={styles.agendaHeader}>
+              <Icon name="view-list" size={22} color="#FFD700" />
+              <Text style={styles.agendaHeaderTitle}>All Upcoming Events</Text>
+              <View style={styles.agendaCountBadge}>
+                <Text style={styles.agendaCountText}>
+                  {agendaGrouped.reduce((sum, g) => sum + g.items.length, 0)}
+                </Text>
+              </View>
+            </View>
+
+            {agendaGrouped.length === 0 ? (
+              <View style={styles.emptyDay}>
+                <Icon name="calendar-blank" size={48} color="#4a5568" />
+                <Text style={styles.emptyDayText}>No upcoming events</Text>
+                <Text style={styles.emptyDaySubtext}>Tap + to add an event</Text>
+              </View>
+            ) : (
+              agendaGrouped.map(group => {
+                const isToday = group.date === moment().format('YYYY-MM-DD');
+                const isTomorrow = group.date === moment().add(1, 'day').format('YYYY-MM-DD');
+                const dateLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : moment(group.date).format('ddd, MMM D');
+                return (
+                  <View key={group.date} style={styles.agendaDateGroup}>
+                    <View style={styles.agendaDateRow}>
+                      <View style={[styles.agendaDateBubble, isToday && styles.agendaDateBubbleToday]}>
+                        <Text style={[styles.agendaDateDay, isToday && styles.agendaDateDayToday]}>
+                          {moment(group.date).format('D')}
+                        </Text>
+                        <Text style={[styles.agendaDateMonth, isToday && styles.agendaDateMonthToday]}>
+                          {moment(group.date).format('MMM')}
+                        </Text>
+                      </View>
+                      <View style={styles.agendaDateInfo}>
+                        <Text style={[styles.agendaDateLabel, isToday && { color: '#FFD700' }]}>{dateLabel}</Text>
+                        <Text style={styles.agendaDateSublabel}>
+                          {group.items.length} {group.items.length === 1 ? 'event' : 'events'}
+                        </Text>
+                      </View>
+                    </View>
+                    {group.items.map(item => renderItemCard(item))}
+                  </View>
+                );
+              })
+            )}
           </View>
         )}
 
@@ -1358,6 +1422,36 @@ const styles = StyleSheet.create({
   dateProposalInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 12, color: '#fff', fontSize: 13, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 6 },
   offeredDateCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 12, backgroundColor: 'rgba(255,215,0,0.1)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)', marginBottom: 8 },
   offeredDateText: { color: '#fff', fontSize: 14 },
+  viewToggleBtn: {
+    width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)'
+  },
+  viewToggleBtnActive: { backgroundColor: '#FFD700', borderColor: '#FFD700' },
+  agendaContainer: { marginHorizontal: 16, marginTop: 12 },
+  agendaHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16,
+    paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,215,0,0.2)'
+  },
+  agendaHeaderTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFD700', flex: 1 },
+  agendaCountBadge: {
+    backgroundColor: '#1a5490', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+    minWidth: 28, alignItems: 'center'
+  },
+  agendaCountText: { color: '#FFD700', fontSize: 13, fontWeight: 'bold' },
+  agendaDateGroup: { marginBottom: 20 },
+  agendaDateRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  agendaDateBubble: {
+    width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.2)'
+  },
+  agendaDateBubbleToday: { backgroundColor: 'rgba(255,215,0,0.15)', borderColor: '#FFD700' },
+  agendaDateDay: { color: '#fff', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
+  agendaDateDayToday: { color: '#FFD700' },
+  agendaDateMonth: { color: '#a0aec0', fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  agendaDateMonthToday: { color: '#FFD700' },
+  agendaDateInfo: { flex: 1 },
+  agendaDateLabel: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  agendaDateSublabel: { color: '#a0aec0', fontSize: 12, marginTop: 2 },
 });
 
 export default UnifiedCalendarScreen;
