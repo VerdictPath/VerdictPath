@@ -1255,7 +1255,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={[commonStyles.safeArea, Platform.OS === 'web' && ['landing', 'login', 'register', 'forgot-password', 'reset-password'].includes(currentScreen) && { backgroundColor: 'transparent' }]}>
         <StatusBar 
           barStyle="dark-content" 
           backgroundColor={theme.colors.background}

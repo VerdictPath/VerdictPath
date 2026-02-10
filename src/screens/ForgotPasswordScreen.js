@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
+import WebVideoBackground from "../components/WebVideoBackground";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 import { API_BASE_URL } from "../config/api";
@@ -104,7 +105,11 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
   if (submitted) {
     return (
       <View style={styles.container}>
-        {enableVideo && player && VideoView && (
+        {Platform.OS === 'web' ? (
+          <View style={styles.videoContainer}>
+            <WebVideoBackground uri={width < 600 ? "/videos/cat_mobile.mp4" : width < 1024 ? "/videos/cat_tab.mp4" : "/videos/cat_desktop.mp4"} />
+          </View>
+        ) : enableVideo && player && VideoView ? (
           <View style={styles.videoContainer}>
             <VideoView
               player={player}
@@ -113,7 +118,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
               nativeControls={false}
             />
           </View>
-        )}
+        ) : null}
         <View style={styles.overlay} />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -145,7 +150,11 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      {enableVideo && player && VideoView && (
+      {Platform.OS === 'web' ? (
+        <View style={styles.videoContainer}>
+          <WebVideoBackground uri={width < 600 ? "/videos/cat_mobile.mp4" : width < 1024 ? "/videos/cat_tab.mp4" : "/videos/cat_desktop.mp4"} />
+        </View>
+      ) : enableVideo && player && VideoView ? (
         <View style={styles.videoContainer}>
           <VideoView
             player={player}
@@ -154,7 +163,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
             nativeControls={false}
           />
         </View>
-      )}
+      ) : null}
       <View style={styles.overlay} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}

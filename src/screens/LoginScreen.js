@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
+import WebVideoBackground from "../components/WebVideoBackground";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 
@@ -151,12 +152,14 @@ const LoginScreen = ({
         ]} 
         pointerEvents="none"
       >
-        {enableVideo && player && VideoView ? (
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri={width < 600 ? "/videos/cat_mobile.mp4" : width < 1024 ? "/videos/cat_tab.mp4" : "/videos/cat_desktop.mp4"} />
+        ) : enableVideo && player && VideoView ? (
           <VideoView
             player={player}
             style={[
               styles.backgroundVideo,
-              Platform.OS !== 'web' && styles.backgroundVideoMobile
+              styles.backgroundVideoMobile
             ]}
             contentFit="contain"
             nativeControls={false}
@@ -165,9 +168,7 @@ const LoginScreen = ({
             requiresLinearPlayback={false}
             pointerEvents="none"
             allowsExternalPlayback={false}
-            {...(Platform.OS !== 'web' && { 
-              entersFullscreenWhenPlayerEntersFullscreen: false,
-            })}
+            entersFullscreenWhenPlayerEntersFullscreen={false}
           />
         ) : (
           <View style={[styles.backgroundVideo, styles.staticBackground]} />

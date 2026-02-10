@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
+import WebVideoBackground from "../components/WebVideoBackground";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
@@ -122,14 +123,16 @@ const LandingScreen = ({ onNavigate }) => {
   }, [player, enableVideo]);
 
   return (
-    <View style={commonStyles.container}>
-      <View style={styles.videoContainer}>
-        {enableVideo && player && VideoView ? (
+    <View style={[commonStyles.container, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+      <View style={[styles.videoContainer, Platform.OS === 'web' && { backgroundColor: 'transparent' }]}>
+        {Platform.OS === 'web' ? (
+          <WebVideoBackground uri="/videos/ship.mp4" />
+        ) : enableVideo && player && VideoView ? (
           <VideoView
             player={player}
             style={[
               styles.backgroundVideo,
-              Platform.OS !== 'web' && styles.backgroundVideoMobile
+              styles.backgroundVideoMobile
             ]}
             contentFit="contain"
             nativeControls={false}
@@ -137,12 +140,8 @@ const LandingScreen = ({ onNavigate }) => {
             allowsPictureInPicture={false}
             requiresLinearPlayback={false}
             pointerEvents="none"
-            // Performance optimizations
             allowsExternalPlayback={false}
-            // Ensure video fills on mobile
-            {...(Platform.OS !== 'web' && { 
-              entersFullscreenWhenPlayerEntersFullscreen: false,
-            })}
+            entersFullscreenWhenPlayerEntersFullscreen={false}
           />
         ) : (
           <View style={[styles.backgroundVideo, styles.staticBackground]} />
