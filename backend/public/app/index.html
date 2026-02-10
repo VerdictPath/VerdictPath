@@ -20,7 +20,10 @@
         flex: 1;
         position: relative;
         z-index: 1;
-        background: transparent;
+        background: transparent !important;
+      }
+      #root > div {
+        background: transparent !important;
       }
     </style>
     <style id="video-bg-style">
@@ -33,7 +36,11 @@
         z-index: 0;
         overflow: hidden;
         pointer-events: none;
-        background: linear-gradient(135deg, #1a0e05 0%, #2c1810 30%, #1a2a3a 60%, #0d1b2a 100%);
+        background-color: #0d1b2a;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-image: url('/videos/ship_poster.jpg');
       }
       #web-video-bg video {
         position: absolute;
@@ -43,6 +50,9 @@
         height: 100%;
         object-fit: cover;
       }
+      #web-video-bg video:not([data-playing]) {
+        opacity: 0;
+      }
     </style>
   <meta name="theme-color" content="#2C5F7C">
 <meta name="description" content="Legal case management and education platform for civil litigation">
@@ -50,23 +60,29 @@
 
   <body>
     <div id="web-video-bg">
-      <video src="/videos/ship.mp4" autoplay loop muted playsinline preload="auto"></video>
+      <video src="/videos/ship.mp4" autoplay loop muted playsinline preload="auto" poster="/videos/ship_poster.jpg"></video>
     </div>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
     <div id="root"></div>
-  <script src="/_expo/static/js/web/AppEntry-1e11891a018b755685e8f1b64efdf3f8.js" defer></script>
+  <script src="/_expo/static/js/web/AppEntry-b8aeabbafc937a9396cc7de26eb843d0.js" defer></script>
   <script>
     window.__VIDEO_BG = document.getElementById('web-video-bg');
     window.__setVideoBg = function(src) {
       var v = document.querySelector('#web-video-bg video');
+      var bg = document.getElementById('web-video-bg');
       if (!v) return;
       var currentSrc = v.getAttribute('src') || '';
       if (currentSrc !== src) {
+        var posterSrc = src.replace('.mp4', '_poster.jpg');
+        v.poster = posterSrc;
+        v.removeAttribute('data-playing');
+        if (bg) bg.style.backgroundImage = "url('" + posterSrc + "')";
         v.src = src;
         v.load();
-        v.play().catch(function(){});
+        v.muted = true;
+        v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
       }
     };
     window.__showVideoBg = function(show) {
@@ -79,9 +95,10 @@
       function tryPlay() {
         if (v.paused) {
           v.muted = true;
-          v.play().catch(function(){});
+          v.play().then(function(){ v.setAttribute('data-playing',''); }).catch(function(){});
         }
       }
+      v.addEventListener('playing', function() { v.setAttribute('data-playing',''); });
       v.addEventListener('canplay', tryPlay);
       v.addEventListener('loadeddata', tryPlay);
       setTimeout(tryPlay, 500);
@@ -90,6 +107,10 @@
       document.addEventListener('click', function once() {
         tryPlay();
         document.removeEventListener('click', once);
+      });
+      document.addEventListener('touchstart', function once() {
+        tryPlay();
+        document.removeEventListener('touchstart', once);
       });
     })();
   </script>

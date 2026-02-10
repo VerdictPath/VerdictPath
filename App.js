@@ -1255,7 +1255,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   return (
-    <SafeAreaView style={[commonStyles.safeArea, Platform.OS === 'web' && ['landing', 'login', 'register', 'forgot-password', 'reset-password'].includes(currentScreen) && { backgroundColor: 'transparent' }]}>
+    <SafeAreaView style={[commonStyles.safeArea, Platform.OS === 'web' && ['landing', 'login', 'register', 'forgotPassword', 'resetPassword', 'view-pricing', 'change-password', 'lawfirm-registration', 'medicalprovider-registration', 'subscription', 'lawfirm-subscription-selection', 'medicalprovider-subscription-selection'].includes(currentScreen) && { backgroundColor: 'transparent' }]}>
         <StatusBar 
           barStyle="dark-content" 
           backgroundColor={theme.colors.background}
