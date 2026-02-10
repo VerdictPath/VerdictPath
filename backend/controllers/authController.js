@@ -761,7 +761,7 @@ exports.login = async (req, res) => {
       }
     } else {
       result = await db.query(
-        'SELECT id, first_name, last_name, email, password, user_type FROM users WHERE email = $1',
+        'SELECT id, first_name, last_name, email, password, user_type, total_coins, coins_spent, purchased_coins, purchased_coins_spent, login_streak, avatar_type FROM users WHERE email = $1',
         [email.toLowerCase()]
       );
     }
@@ -1065,12 +1065,17 @@ exports.login = async (req, res) => {
         };
       }
     } else {
+      const totalCoins = (parseInt(account.total_coins) || 0) - (parseInt(account.coins_spent) || 0);
+      const purchasedCoins = (parseInt(account.purchased_coins) || 0) - (parseInt(account.purchased_coins_spent) || 0);
       responseData = {
         id: account.id,
         firstName: account.first_name,
         lastName: account.last_name,
         email: account.email,
-        userType: account.user_type
+        userType: account.user_type,
+        coins: totalCoins + purchasedCoins,
+        loginStreak: parseInt(account.login_streak) || 0,
+        avatarType: account.avatar_type || 'captain'
       };
     }
     

@@ -735,8 +735,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           lastName: response.user.lastName,
           token: response.token,
           subscription: subscriptionTier,
-          coins: 0,
-          streak: 0
+          coins: response.user.coins || 0,
+          streak: response.user.loginStreak || 0,
+          avatarType: response.user.avatarType || 'captain'
         };
       }
       
