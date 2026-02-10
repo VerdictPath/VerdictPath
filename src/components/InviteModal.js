@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Share, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, Share, Platform, ScrollView } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { theme } from '../styles/theme';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
@@ -211,15 +211,14 @@ const InviteModal = ({ visible, onClose, user }) => {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
+      <Pressable 
         style={styles.overlay} 
-        activeOpacity={1} 
         onPress={onClose}
       >
-        <TouchableOpacity 
+        <View 
           style={styles.modalContainer} 
-          activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={(e) => e.stopPropagation()}
         >
           <View style={styles.header}>
             <Text style={styles.headerTitle}>🎁 Invite Friends</Text>
@@ -389,8 +388,8 @@ const InviteModal = ({ visible, onClose, user }) => {
               </TouchableOpacity>
             </ScrollView>
           ) : null}
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </Pressable>
     </Modal>
   );
 };

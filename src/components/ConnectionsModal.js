@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 
@@ -174,15 +174,14 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableOpacity 
+      <Pressable 
         style={styles.overlay} 
-        activeOpacity={1} 
         onPress={onClose}
       >
-        <TouchableOpacity 
+        <View 
           style={styles.modalContainer} 
-          activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={(e) => e.stopPropagation()}
         >
           <View style={styles.header}>
             <Text style={styles.title}>My Connections</Text>
@@ -307,8 +306,8 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
               </View>
             </ScrollView>
           )}
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </Pressable>
     </Modal>
   );
 };
