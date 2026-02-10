@@ -33,6 +33,7 @@
         z-index: 0;
         overflow: hidden;
         pointer-events: none;
+        background: linear-gradient(135deg, #1a0e05 0%, #2c1810 30%, #1a2a3a 60%, #0d1b2a 100%);
       }
       #web-video-bg video {
         position: absolute;
@@ -49,21 +50,22 @@
 
   <body>
     <div id="web-video-bg">
-      <video autoplay loop muted playsinline>
-        <source src="/videos/ship.mp4" type="video/mp4">
-      </video>
+      <video src="/videos/ship.mp4" autoplay loop muted playsinline preload="auto"></video>
     </div>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
     <div id="root"></div>
-  <script src="/_expo/static/js/web/AppEntry-62d5038de636bb74afef39c354916163.js" defer></script>
+  <script src="/_expo/static/js/web/AppEntry-1e11891a018b755685e8f1b64efdf3f8.js" defer></script>
   <script>
     window.__VIDEO_BG = document.getElementById('web-video-bg');
     window.__setVideoBg = function(src) {
       var v = document.querySelector('#web-video-bg video');
-      if (v && v.getAttribute('src') !== src) {
+      if (!v) return;
+      var currentSrc = v.getAttribute('src') || '';
+      if (currentSrc !== src) {
         v.src = src;
+        v.load();
         v.play().catch(function(){});
       }
     };
@@ -71,6 +73,25 @@
       var el = document.getElementById('web-video-bg');
       if (el) el.style.display = show ? 'block' : 'none';
     };
+    (function retryAutoplay() {
+      var v = document.querySelector('#web-video-bg video');
+      if (!v) return;
+      function tryPlay() {
+        if (v.paused) {
+          v.muted = true;
+          v.play().catch(function(){});
+        }
+      }
+      v.addEventListener('canplay', tryPlay);
+      v.addEventListener('loadeddata', tryPlay);
+      setTimeout(tryPlay, 500);
+      setTimeout(tryPlay, 1500);
+      setTimeout(tryPlay, 3000);
+      document.addEventListener('click', function once() {
+        tryPlay();
+        document.removeEventListener('click', once);
+      });
+    })();
   </script>
 </body>
 </html>
