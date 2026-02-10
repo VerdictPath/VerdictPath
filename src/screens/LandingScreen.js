@@ -8,7 +8,7 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
-import { VideoView, useVideoPlayer } from "expo-video";
+import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
 import { commonStyles } from "../styles/commonStyles";
 import { theme } from "../styles/theme";
 
@@ -124,7 +124,7 @@ const LandingScreen = ({ onNavigate }) => {
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoContainer}>
-        {enableVideo && player ? (
+        {enableVideo && player && VideoView ? (
           <VideoView
             player={player}
             style={[

@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
   Platform,
 } from "react-native";
-import { VideoView, useVideoPlayer } from "expo-video";
+import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 
@@ -151,7 +151,7 @@ const LoginScreen = ({
         ]} 
         pointerEvents="none"
       >
-        {enableVideo && player ? (
+        {enableVideo && player && VideoView ? (
           <VideoView
             player={player}
             style={[

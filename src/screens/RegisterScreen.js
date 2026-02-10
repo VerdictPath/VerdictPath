@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Platform, useWindowDimensions } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { VideoView, useVideoPlayer } from '../utils/safeVideoImport';
 import { commonStyles } from '../styles/commonStyles';
 import { USER_TYPES } from '../constants/mockData';
 
@@ -152,7 +152,7 @@ const RegisterScreen = ({
         ]} 
         pointerEvents="none"
       >
-        {enableVideo && player ? (
+        {enableVideo && player && VideoView ? (
           <VideoView
             player={player}
             style={[

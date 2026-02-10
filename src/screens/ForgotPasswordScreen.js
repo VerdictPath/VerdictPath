@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { VideoView, useVideoPlayer } from "expo-video";
+import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
 import { commonStyles } from "../styles/commonStyles";
 import { USER_TYPES } from "../constants/mockData";
 import { API_BASE_URL } from "../config/api";
@@ -104,7 +104,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
   if (submitted) {
     return (
       <View style={styles.container}>
-        {enableVideo && (
+        {enableVideo && player && VideoView && (
           <View style={styles.videoContainer}>
             <VideoView
               player={player}
@@ -145,7 +145,7 @@ const ForgotPasswordScreen = ({ onNavigate }) => {
 
   return (
     <View style={styles.container}>
-      {enableVideo && (
+      {enableVideo && player && VideoView && (
         <View style={styles.videoContainer}>
           <VideoView
             player={player}

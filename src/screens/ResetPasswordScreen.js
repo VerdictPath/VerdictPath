@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { VideoView, useVideoPlayer } from "expo-video";
+import { VideoView, useVideoPlayer } from "../utils/safeVideoImport";
 import { commonStyles } from "../styles/commonStyles";
 import { API_BASE_URL } from "../config/api";
 
@@ -245,7 +245,7 @@ const ResetPasswordScreen = ({ onNavigate, resetToken }) => {
 
   return (
     <View style={styles.container}>
-      {enableVideo && (
+      {enableVideo && player && VideoView && (
         <View style={styles.videoContainer}>
           <VideoView
             player={player}
