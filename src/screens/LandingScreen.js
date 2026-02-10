@@ -159,7 +159,7 @@ const LandingScreen = ({ onNavigate }) => {
         {/* Verdict Path Logo */}
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png")}
+            source={require("../../attached_assets/verdict_path_logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -289,8 +289,9 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 220,
+    height: 130,
+    borderRadius: 12,
   },
   buttonContainer: {
     paddingHorizontal: 20,

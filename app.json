@@ -5,7 +5,7 @@
     "version": "1.0.4",
     "owner": "verdictpath",
     "scheme": "verdictpath",
-    "icon": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
+    "icon": "./attached_assets/verdict_path_logo.png",
     "extra": {
       "eas": {
         "projectId": "4dccfd60-99f8-4c20-ad4d-3675503fbdb5"
@@ -14,7 +14,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
+      "image": "./attached_assets/verdict_path_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#2C5F7C"
     },
@@ -33,7 +33,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
+        "foregroundImage": "./attached_assets/verdict_path_logo.png",
         "backgroundColor": "#2C5F7C"
       },
       "package": "com.verdictpath.app",
@@ -56,7 +56,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./attached_assets/Nautical_Pirate_Logo_with_Foggy_Sea_Background_1762830868803.png",
+      "favicon": "./attached_assets/verdict_path_logo.png",
       "name": "Verdict Path",
       "shortName": "VerdictPath",
       "description": "Legal case management and education platform for civil litigation",
