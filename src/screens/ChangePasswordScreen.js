@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
+import { API_BASE_URL } from '../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WebVideoBackground from '../components/WebVideoBackground';
 
@@ -189,7 +190,7 @@ const ChangePasswordScreen = ({ route, navigation }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/change-password/first-login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password/first-login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

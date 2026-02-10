@@ -1,6 +1,7 @@
 // APP VERSION 1.0.5 - Privacy Acceptance Screen Added - Build: 20251031212500
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, Alert, Platform, View, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView, StatusBar, Platform, View, Text, TouchableOpacity } from 'react-native';
+import alert from './src/utils/alert';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from './src/styles/commonStyles';
@@ -637,7 +638,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setIsLoggedIn(true);
         setPrivacyAccepted(false);
         
-        Alert.alert(
+        alert(
           '🎉 Welcome to Verdict Path!',
           `Your ${tier} account has been created! In a production app, payment processing would occur here. You're now on a free trial.`,
           [{ text: 'Get Started!', onPress: () => {} }]
@@ -645,14 +646,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       } catch (error) {
         console.error('Paid Registration Error:', error);
         const errorMessage = error.response?.message || error.message || 'Failed to create account. Please try again.';
-        Alert.alert('Registration Error', errorMessage);
+        alert('Registration Error', errorMessage);
       }
     }
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      alert('Error', 'Please enter email and password');
       return;
     }
     
@@ -749,7 +750,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setCurrentScreen(targetScreen);
     } catch (error) {
       console.error('[Login] Login error:', error);
-      Alert.alert('Error', error.message || 'Login failed. Please check your credentials.');
+      alert('Error', error.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -817,7 +818,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
 
   const handleClaimDailyBonus = async () => {
     if (!user || !user.token) {
-      Alert.alert('Error', 'You must be logged in to claim daily rewards');
+      alert('Error', 'You must be logged in to claim daily rewards');
       return;
     }
 
@@ -834,16 +835,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         setCoins(response.totalCoins);
         setLoginStreak(response.newStreak);
         
-        Alert.alert('Daily Bonus Claimed! 🎉', `Day ${response.newStreak} Streak\n+${bonusAmount} coins!`);
+        alert('Daily Bonus Claimed! 🎉', `Day ${response.newStreak} Streak\n+${bonusAmount} coins!`);
       } else {
-        Alert.alert('Error', response.message || 'Failed to claim daily reward');
+        alert('Error', response.message || 'Failed to claim daily reward');
       }
     } catch (error) {
       if (error.message && error.message.includes('already claimed')) {
-        Alert.alert('Already Claimed', 'You have already claimed your daily reward today. Come back tomorrow!');
+        alert('Already Claimed', 'You have already claimed your daily reward today. Come back tomorrow!');
       } else {
         console.error('Error claiming daily bonus:', error);
-        Alert.alert('Error', error.message || 'Failed to claim daily reward');
+        alert('Error', error.message || 'Failed to claim daily reward');
       }
     }
   };
@@ -853,11 +854,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     const coinsNeeded = calculateCoinsNeeded(actualCredits);
     
     if (actualCredits === 0) {
-      Alert.alert('Not Enough Coins', 'You need at least 5,000 coins to convert to credits.\n\n(5,000 coins = $1)');
+      alert('Not Enough Coins', 'You need at least 5,000 coins to convert to credits.\n\n(5,000 coins = $1)');
       return;
     }
     
-    Alert.alert(
+    alert(
       'Convert Coins to Credits',
       `Convert ${coinsNeeded} coins to $${actualCredits}?\n\n⚠️ Lifetime cap: $5 per account`,
       [
@@ -881,7 +882,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
                 ? `\n\nRemaining lifetime conversions: $${response.remainingLifetimeCredits.toFixed(2)}` 
                 : '\n\n🎯 You\'ve reached your $5 lifetime cap!';
               
-              Alert.alert(
+              alert(
                 '✅ Success!', 
                 `$${response.creditAmount} added to your account!\n\nCoins converted: ${response.coinsConverted}${remainingMsg}`
               );
@@ -890,16 +891,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               
               // Check if it's a lifetime cap error
               if (error.message && error.message.includes('lifetime cap')) {
-                Alert.alert('💰 Lifetime Cap Reached', error.message);
+                alert('💰 Lifetime Cap Reached', error.message);
               } else if (error.message && error.message.includes('exceed your lifetime cap')) {
-                Alert.alert('⚠️ Conversion Limit', error.message);
+                alert('⚠️ Conversion Limit', error.message);
               } else {
-                Alert.alert('Error', error.message || 'Failed to convert coins. Please try again.');
+                alert('Error', error.message || 'Failed to convert coins. Please try again.');
               }
             }
           } else {
             setCoins(coins - coinsNeeded);
-            Alert.alert('Success!', `$${actualCredits} added to your account credits!`);
+            alert('Success!', `$${actualCredits} added to your account credits!`);
           }
         }}
       ]
@@ -919,7 +920,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       // Trigger treasure chest refresh to show updated coin balance
       setTreasureChestRefreshKey(prev => prev + 1);
       
-      Alert.alert('🏆 Stage Complete!', `+${stageCoins} coins earned!`);
+      alert('🏆 Stage Complete!', `+${stageCoins} coins earned!`);
       return;
     }
 
@@ -957,13 +958,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       });
       
       if (actualCoinsEarned > 0) {
-        Alert.alert('🏆 Stage Complete!', `+${actualCoinsEarned} coins earned!`);
+        alert('🏆 Stage Complete!', `+${actualCoinsEarned} coins earned!`);
       } else {
-        Alert.alert('🎉 Stage Completed!', `Stage marked complete! (Coins were already earned previously)`);
+        alert('🎉 Stage Completed!', `Stage marked complete! (Coins were already earned previously)`);
       }
     } catch (error) {
       console.error('Failed to complete stage:', error);
-      Alert.alert('Error', error.message || 'Failed to complete stage. Please try again.');
+      alert('Error', error.message || 'Failed to complete stage. Please try again.');
     }
   };
 
@@ -1005,14 +1006,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           );
         }
         
-        Alert.alert(
+        alert(
           'Stage Reverted',
           'This stage is now marked as incomplete.\n\n💰 Note: Previously earned coins are preserved and cannot be earned again when you re-complete this stage.'
         );
         
       } catch (error) {
         console.error('Failed to revert stage:', error);
-        Alert.alert('Error', error.message || 'Failed to revert stage. Please try again.');
+        alert('Error', error.message || 'Failed to revert stage. Please try again.');
       }
     } else {
       // Offline mode - just update local state
@@ -1029,7 +1030,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         })
       );
       
-      Alert.alert(
+      alert(
         'Stage Reverted',
         'This stage is now marked as incomplete (offline mode).'
       );
@@ -1061,7 +1062,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
               });
               
               if (subStageCoins > 0) {
-                Alert.alert('🎯 Substage Complete!', `+${subStageCoins} coins earned!`);
+                alert('🎯 Substage Complete!', `+${subStageCoins} coins earned!`);
               }
               
               return { ...subStage, completed: true };
@@ -1086,14 +1087,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const handlePurchaseVideo = (video) => {
-    Alert.alert(
+    alert(
       `${video.title}`,
       `Duration: ${video.duration}\nPrice: $${video.price}\n\nPurchase this tutorial video?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Purchase', 
-          onPress: () => Alert.alert('Success!', 'Video added to your library! You can watch it anytime in the Videos section.')
+          onPress: () => alert('Success!', 'Video added to your library! You can watch it anytime in the Videos section.')
         }
       ]
     );
