@@ -272,7 +272,7 @@ const LoginScreen = ({
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => onNavigate("register")}>
+          <TouchableOpacity onPress={() => onNavigate("landing")}>
             <Text style={commonStyles.linkText}>
               Don't have an account? Sign Up
             </Text>
