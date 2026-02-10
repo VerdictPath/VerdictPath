@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Animated, Platform } from 'react-native';
+import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -233,15 +233,17 @@ const ChangePasswordScreen = ({ route, navigation }) => {
         onHide={hideToast}
       />
       <View style={styles.videoWrapper} pointerEvents="none">
-        <Video
-          ref={videoRef}
-          source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.CONTAIN}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+        {Platform.OS !== 'web' && Video && (
+          <Video
+            ref={videoRef}
+            source={require('../../attached_assets/Cat looking around 10sec_1763360910310.mp4')}
+            style={styles.backgroundVideo}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        )}
         <View style={styles.videoOverlay} />
       </View>
       

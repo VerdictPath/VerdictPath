@@ -11,7 +11,7 @@ import {
   Platform,
   SafeAreaView,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode } from '../utils/safeAVImport';
 import { AVATARS } from '../constants/avatars';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
@@ -138,7 +138,7 @@ const AvatarSelectionScreen = ({ user, onBack, onAvatarSelected }) => {
         activeOpacity={0.85}
       >
         <View style={[styles.videoPreview, { height: getVideoHeight() }]}>
-          {isPreviewing && avatar.calmVideo ? (
+          {isPreviewing && avatar.calmVideo && Platform.OS !== 'web' && Video ? (
             <Video
               source={avatar.calmVideo}
               rate={1.0}

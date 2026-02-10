@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode } from '../utils/safeAVImport';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
@@ -87,25 +87,27 @@ const AvatarVideoBackground = ({ videoSource, opacity = 0.6 }) => {
 
   return (
     <View style={styles.container}>
-      <Video
-        ref={videoRef}
-        source={videoSource}
-        rate={1.0}
-        volume={0}
-        isMuted={true}
-        isLooping={true}
-        shouldPlay={true}
-        resizeMode={ResizeMode.CONTAIN}
-        style={[styles.video, getVideoStyle()]}
-        onLoad={() => {
-          setIsReady(true);
-        }}
-        onError={(error) => {
-          console.error('[AvatarVideoBackground] Error:', error);
-        }}
-        posterStyle={styles.poster}
-        usePoster={!isReady}
-      />
+      {Platform.OS !== 'web' && Video ? (
+        <Video
+          ref={videoRef}
+          source={videoSource}
+          rate={1.0}
+          volume={0}
+          isMuted={true}
+          isLooping={true}
+          shouldPlay={true}
+          resizeMode={ResizeMode.CONTAIN}
+          style={[styles.video, getVideoStyle()]}
+          onLoad={() => {
+            setIsReady(true);
+          }}
+          onError={(error) => {
+            console.error('[AvatarVideoBackground] Error:', error);
+          }}
+          posterStyle={styles.poster}
+          usePoster={!isReady}
+        />
+      ) : null}
       
       <LinearGradient
         colors={[

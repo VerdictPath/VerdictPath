@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Alert } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_ENDPOINTS, apiRequest } from '../config/api';
@@ -278,15 +278,17 @@ const MedicalProviderRegistrationScreen = ({
     return (
       <View style={commonStyles.container}>
         <View style={styles.videoWrapper} pointerEvents="none">
-          <Video
-            ref={videoRef}
-            source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
-            style={styles.backgroundVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted
-            shouldPlay
-          />
+          {Platform.OS !== 'web' && Video && (
+            <Video
+              ref={videoRef}
+              source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
+              style={styles.backgroundVideo}
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping
+              isMuted
+              shouldPlay
+            />
+          )}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -332,15 +334,17 @@ const MedicalProviderRegistrationScreen = ({
     return (
       <View style={commonStyles.container}>
         <View style={styles.videoWrapper} pointerEvents="none">
-          <Video
-            ref={videoRef}
-            source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
-            style={styles.backgroundVideo}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            isMuted
-            shouldPlay
-          />
+          {Platform.OS !== 'web' && Video && (
+            <Video
+              ref={videoRef}
+              source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
+              style={styles.backgroundVideo}
+              resizeMode={ResizeMode.CONTAIN}
+              isLooping
+              isMuted
+              shouldPlay
+            />
+          )}
           <View style={styles.videoOverlay} />
         </View>
 
@@ -467,15 +471,17 @@ const MedicalProviderRegistrationScreen = ({
   return (
     <View style={commonStyles.container}>
       <View style={styles.videoWrapper} pointerEvents="none">
-        <Video
-          ref={videoRef}
-          source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.CONTAIN}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+        {Platform.OS !== 'web' && Video && (
+          <Video
+            ref={videoRef}
+            source={require('../../attached_assets/Stationary Breathing 10sec_1763360411263.mp4')}
+            style={styles.backgroundVideo}
+            resizeMode={ResizeMode.CONTAIN}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        )}
         <View style={styles.videoOverlay} />
       </View>
 

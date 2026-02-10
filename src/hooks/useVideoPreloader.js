@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Video } from 'expo-av';
+import { Platform } from 'react-native';
+import { Video } from '../utils/safeAVImport';
 import { AVATARS } from '../constants/avatars';
 
 export const useVideoPreloader = (avatarType = 'captain') => {
@@ -7,6 +8,10 @@ export const useVideoPreloader = (avatarType = 'captain') => {
   const [calmVideoRef, setCalmVideoRef] = useState(null);
 
   useEffect(() => {
+    if (Platform.OS === 'web' || !Video) {
+      setVideosLoaded(true);
+      return;
+    }
     preloadVideos();
   }, [avatarType]);
 

@@ -10,7 +10,7 @@ import {
   Platform,
   useWindowDimensions,
 } from "react-native";
-import { Video, ResizeMode } from "expo-av";
+import { Video, ResizeMode } from "../utils/safeAVImport";
 import { theme } from "../styles/theme";
 import FeatureComparisonMatrix from "../components/FeatureComparisonMatrix";
 
@@ -1307,15 +1307,17 @@ const SubscriptionSelectionScreen = ({
   return (
     <View style={styles.container}>
       <View style={styles.videoContainer} pointerEvents="none">
-        <Video
-          ref={videoRef}
-          source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
-          style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
-          resizeMode={resizeMode}
-          isLooping
-          isMuted
-          shouldPlay
-        />
+        {Platform.OS !== 'web' && Video && (
+          <Video
+            ref={videoRef}
+            source={require("../../attached_assets/Femal Pirate on Cliff Brathing 10sec_1763360451626.mp4")}
+            style={[styles.backgroundVideo, { width: videoWidth, height: videoHeight }]}
+            resizeMode={resizeMode}
+            isLooping
+            isMuted
+            shouldPlay
+          />
+        )}
         <View style={styles.videoOverlay} />
       </View>
 
