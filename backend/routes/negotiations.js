@@ -229,14 +229,15 @@ router.post('/initiate', authenticateToken, async (req, res) => {
     console.error('Error initiating negotiation:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to initiate negotiation',
-      error: error.message
+      message: 'Failed to initiate negotiation'
     });
   }
 });
 
 // POST /api/negotiations/counter-offer - Send a counter offer
 router.post('/counter-offer', authenticateToken, async (req, res) => {
+  const client = await db.pool.connect();
+  let txnStarted = false;
   try {
     const userType = getUserType(req.user);
     
@@ -256,13 +257,17 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get negotiation details
-    const negotiationQuery = await db.query(
-      'SELECT * FROM negotiations WHERE id = $1',
+    await client.query('BEGIN');
+    txnStarted = true;
+
+    // Lock the negotiation row to prevent concurrent modifications
+    const negotiationQuery = await client.query(
+      'SELECT * FROM negotiations WHERE id = $1 FOR UPDATE',
       [negotiationId]
     );
 
     if (negotiationQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ 
         success: false, 
         message: 'Negotiation not found' 
@@ -278,14 +283,25 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
     );
 
     if (!isAuthorized) {
+      await client.query('ROLLBACK');
       return res.status(403).json({ 
         success: false, 
         message: 'Not authorized for this negotiation' 
       });
     }
 
+    // Cannot counter-offer on accepted, declined, or cancelled negotiations
+    if (['accepted', 'declined', 'cancelled'].includes(negotiation.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false, 
+        message: `Cannot send counter offer - negotiation is ${negotiation.status}` 
+      });
+    }
+
     // Validate counter offer
     if (parseFloat(counterOffer) > parseFloat(negotiation.bill_amount) || parseFloat(counterOffer) < 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ 
         success: false, 
         message: 'Invalid counter offer amount' 
@@ -293,22 +309,26 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
     }
 
     // Update negotiation
-    await db.query(
+    await client.query(
       `UPDATE negotiations 
        SET current_offer = $1, 
            status = 'counter_offered',
-           last_responded_by = $2
+           last_responded_by = $2,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $3`,
       [counterOffer, userType, negotiationId]
     );
 
     // Add to history
-    await db.query(
+    await client.query(
       `INSERT INTO negotiation_history (
         negotiation_id, action_type, action_by, amount, notes
       ) VALUES ($1, $2, $3, $4, $5)`,
       [negotiationId, 'counter_offer', userType, counterOffer, notes || null]
     );
+
+    await client.query('COMMIT');
+    txnStarted = false;
 
     // Sync update to Firebase for real-time updates
     const updatedNegotiationQuery = await db.query(
@@ -334,16 +354,21 @@ router.post('/counter-offer', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
+    if (txnStarted) { try { await client.query('ROLLBACK'); } catch (e) {} }
     console.error('Error sending counter offer:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to send counter offer' 
     });
+  } finally {
+    client.release();
   }
 });
 
 // POST /api/negotiations/accept - Accept the current offer
 router.post('/accept', authenticateToken, async (req, res) => {
+  const client = await db.pool.connect();
+  let txnStarted = false;
   try {
     const userType = getUserType(req.user);
     
@@ -363,13 +388,18 @@ router.post('/accept', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get negotiation details
-    const negotiationQuery = await db.query(
-      'SELECT * FROM negotiations_with_details WHERE id = $1',
+    await client.query('BEGIN');
+    txnStarted = true;
+
+    // Lock the negotiation row to prevent concurrent modifications
+    const negotiationQuery = await client.query(
+      'SELECT * FROM negotiations WHERE id = $1 FOR UPDATE',
       [negotiationId]
     );
 
     if (negotiationQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
       return res.status(404).json({ 
         success: false, 
         message: 'Negotiation not found' 
@@ -385,25 +415,30 @@ router.post('/accept', authenticateToken, async (req, res) => {
     );
 
     if (!isAuthorized) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
       return res.status(403).json({ 
         success: false, 
         message: 'Not authorized for this negotiation' 
       });
     }
 
-    // Check if negotiation is already accepted
-    if (negotiation.status === 'accepted') {
+    // Check if negotiation is already in a terminal state
+    if (['accepted', 'declined', 'cancelled'].includes(negotiation.status)) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
       return res.status(400).json({ 
         success: false, 
-        message: 'This negotiation has already been accepted' 
+        message: `This negotiation is already ${negotiation.status}` 
       });
     }
 
     // Verify user can accept - you can only accept offers made by the OTHER party
-    // If you made the last offer (last_responded_by = your type), you cannot accept your own offer
     const lastRespondedBy = negotiation.last_responded_by;
     
     if (lastRespondedBy === userType) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
       return res.status(400).json({ 
         success: false, 
         message: 'You cannot accept your own offer. Wait for the other party to respond.' 
@@ -411,23 +446,27 @@ router.post('/accept', authenticateToken, async (req, res) => {
     }
 
     // Update negotiation to accepted
-    await db.query(
+    await client.query(
       `UPDATE negotiations 
        SET status = 'accepted',
-           accepted_at = CURRENT_TIMESTAMP
+           accepted_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $1`,
       [negotiationId]
     );
 
     // Add to history
-    await db.query(
+    await client.query(
       `INSERT INTO negotiation_history (
         negotiation_id, action_type, action_by, amount
       ) VALUES ($1, $2, $3, $4)`,
       [negotiationId, 'accepted', userType, negotiation.current_offer]
     );
 
-    // Sync update to Firebase for real-time updates
+    await client.query('COMMIT');
+    txnStarted = false;
+
+    // Sync update to Firebase for real-time updates (outside transaction)
     const acceptedNegotiationQuery = await db.query(
       'SELECT * FROM negotiations_with_details WHERE id = $1',
       [negotiationId]
@@ -439,23 +478,131 @@ router.post('/accept', authenticateToken, async (req, res) => {
       });
     }
 
-    // Send push notification to the other party (notifications disabled for now)
-    // const otherPartyId = userType === 'law_firm' 
-    //   ? negotiation.medical_provider_id 
-    //   : negotiation.law_firm_id;
-    // const otherPartyType = userType === 'law_firm' ? 'medical_provider' : 'lawfirm';
-
     res.json({
       success: true,
       message: 'Offer accepted successfully'
     });
 
   } catch (error) {
+    if (txnStarted) { try { await client.query('ROLLBACK'); } catch (e) {} }
     console.error('Error accepting offer:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to accept offer' 
     });
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/negotiations/decline - Decline a negotiation
+router.post('/decline', authenticateToken, async (req, res) => {
+  const client = await db.pool.connect();
+  let txnStarted = false;
+  try {
+    const userType = getUserType(req.user);
+    
+    if (!userType) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Unauthorized' 
+      });
+    }
+
+    const { negotiationId, reason } = req.body;
+
+    if (!negotiationId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing negotiation ID' 
+      });
+    }
+
+    await client.query('BEGIN');
+    txnStarted = true;
+
+    const negotiationQuery = await client.query(
+      'SELECT * FROM negotiations WHERE id = $1 FOR UPDATE',
+      [negotiationId]
+    );
+
+    if (negotiationQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Negotiation not found' 
+      });
+    }
+
+    const negotiation = negotiationQuery.rows[0];
+
+    const isAuthorized = (
+      (userType === 'law_firm' && negotiation.law_firm_id === req.user.id) ||
+      (userType === 'medical_provider' && negotiation.medical_provider_id === req.user.id)
+    );
+
+    if (!isAuthorized) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized for this negotiation' 
+      });
+    }
+
+    if (['accepted', 'declined', 'cancelled'].includes(negotiation.status)) {
+      await client.query('ROLLBACK');
+      txnStarted = false;
+      return res.status(400).json({ 
+        success: false, 
+        message: `This negotiation is already ${negotiation.status}` 
+      });
+    }
+
+    await client.query(
+      `UPDATE negotiations 
+       SET status = 'declined',
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [negotiationId]
+    );
+
+    await client.query(
+      `INSERT INTO negotiation_history (
+        negotiation_id, action_type, action_by, notes
+      ) VALUES ($1, $2, $3, $4)`,
+      [negotiationId, 'declined', userType, reason || null]
+    );
+
+    await client.query('COMMIT');
+    txnStarted = false;
+
+    const declinedNegotiationQuery = await db.query(
+      'SELECT * FROM negotiations_with_details WHERE id = $1',
+      [negotiationId]
+    );
+    
+    if (declinedNegotiationQuery.rows.length > 0) {
+      syncNegotiationToFirebase(declinedNegotiationQuery.rows[0]).catch(err => {
+        console.error('Firebase sync failed for declined negotiation:', err);
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Negotiation declined'
+    });
+
+  } catch (error) {
+    if (txnStarted) { try { await client.query('ROLLBACK'); } catch (e) {} }
+    console.error('Error declining negotiation:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to decline negotiation' 
+    });
+  } finally {
+    client.release();
   }
 });
 

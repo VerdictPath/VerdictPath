@@ -555,6 +555,48 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     );
   };
 
+  const handleDeclineNegotiation = async (negotiationId) => {
+    showAlert(
+      'Decline Negotiation',
+      'Are you sure you want to decline this negotiation? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Decline', 
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await apiRequest(API_ENDPOINTS.NEGOTIATIONS.DECLINE, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                  negotiationId,
+                  reason: 'Declined by user'
+                })
+              });
+
+              showAlert(
+                'Declined',
+                'The negotiation has been declined.',
+                [{ text: 'OK', onPress: () => {
+                  loadNegotiations();
+                  setSelectedNegotiation(null);
+                }}]
+              );
+            } catch (error) {
+              console.error('Error declining negotiation:', error);
+              showAlert('Error', 'Failed to decline negotiation. Please try again.');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleRequestCall = async () => {
     
     if (!phoneNumber) {
@@ -637,6 +679,8 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       case 'pending': return '#FFA500';
       case 'counter_offered': return '#1E90FF';
       case 'accepted': return '#28a745';
+      case 'declined': return '#DC2626';
+      case 'cancelled': return '#6c757d';
       case 'stalled': return '#dc3545';
       default: return '#6c757d';
     }
@@ -647,6 +691,8 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       case 'pending': return 'Pending Response';
       case 'counter_offered': return 'Counter Offer Made';
       case 'accepted': return 'Accepted';
+      case 'declined': return 'Declined';
+      case 'cancelled': return 'Cancelled';
       case 'stalled': return 'Stalled - Call Requested';
       default: return status;
     }
@@ -724,11 +770,11 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
     }
 
     // You can only accept when it's your turn (meaning the OTHER party made the last offer)
-    // You cannot accept your own offer
+    const isTerminal = ['accepted', 'declined', 'cancelled'].includes(selectedNegotiation.status);
     const canAccept = isMyTurn && 
                       (selectedNegotiation.status === 'counter_offered' || selectedNegotiation.status === 'pending') &&
-                      selectedNegotiation.status !== 'accepted';
-    const canCounterOffer = isMyTurn && selectedNegotiation.status !== 'accepted';
+                      !isTerminal;
+    const canCounterOffer = isMyTurn && !isTerminal;
     
     // Determine who requested the call (for stalled status)
     const myUserType = isLawFirm ? 'law_firm' : 'medical_provider';
@@ -879,8 +925,8 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
               </View>
             )}
 
-            {/* Show normal action buttons when not stalled and it's my turn */}
-            {selectedNegotiation.status !== 'accepted' && selectedNegotiation.status !== 'stalled' && isMyTurn && (
+            {/* Show normal action buttons when not in terminal/stalled state and it's my turn */}
+            {!isTerminal && selectedNegotiation.status !== 'stalled' && isMyTurn && (
               <View style={styles.actionSection}>
                 {canAccept && (
                   <TouchableOpacity
@@ -908,13 +954,26 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
                 >
                   <Text style={styles.callButtonText}>📞 Request Call</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.declineButton}
+                  onPress={() => handleDeclineNegotiation(selectedNegotiation.id)}
+                >
+                  <Text style={styles.declineButtonText}>✕ Decline Negotiation</Text>
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* Show waiting message when it's not your turn (not stalled) */}
-            {selectedNegotiation.status !== 'accepted' && selectedNegotiation.status !== 'stalled' && !isMyTurn && (
+            {/* Show waiting message when it's not your turn (not stalled/terminal) */}
+            {!isTerminal && selectedNegotiation.status !== 'stalled' && !isMyTurn && (
               <View style={styles.waitingSection}>
                 <Text style={styles.waitingText}>⏳ Waiting for the other party to respond...</Text>
+                <TouchableOpacity
+                  style={[styles.declineButton, { marginTop: 12 }]}
+                  onPress={() => handleDeclineNegotiation(selectedNegotiation.id)}
+                >
+                  <Text style={styles.declineButtonText}>✕ Decline Negotiation</Text>
+                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
@@ -1566,6 +1625,20 @@ const createStyles = (themeColors) => StyleSheet.create({
   },
   callButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  declineButton: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  declineButtonText: {
+    color: '#DC2626',
     fontSize: 16,
     fontWeight: '600',
   },

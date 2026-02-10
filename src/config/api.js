@@ -143,6 +143,7 @@ export const API_ENDPOINTS = {
     INITIATE: `${API_BASE_URL}/api/negotiations/initiate`,
     COUNTER_OFFER: `${API_BASE_URL}/api/negotiations/counter-offer`,
     ACCEPT: `${API_BASE_URL}/api/negotiations/accept`,
+    DECLINE: `${API_BASE_URL}/api/negotiations/decline`,
     REQUEST_CALL: `${API_BASE_URL}/api/negotiations/request-call`,
     LOG: (negotiationId) => `${API_BASE_URL}/api/negotiations/${negotiationId}/log`,
   },

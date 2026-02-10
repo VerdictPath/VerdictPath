@@ -55,7 +55,7 @@ router.post('/create-payment-intent', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to create payment. Please try again.' });
   }
 });
 
@@ -124,7 +124,7 @@ router.post('/create-subscription', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating subscription:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to create subscription. Please try again.' });
   }
 });
 
@@ -166,7 +166,7 @@ router.post('/cancel-subscription', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error cancelling subscription:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to cancel subscription. Please try again.' });
   }
 });
 
@@ -209,7 +209,7 @@ router.get('/subscription-status', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching subscription status:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch subscription status' });
   }
 });
 
@@ -227,7 +227,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send('Webhook signature verification failed');
   }
 
   try {
@@ -282,7 +282,7 @@ router.get('/prices', async (req, res) => {
     res.json({ prices: prices.data });
   } catch (error) {
     console.error('Error fetching prices:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to fetch pricing information' });
   }
 });
 

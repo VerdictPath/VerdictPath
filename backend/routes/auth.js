@@ -120,7 +120,8 @@ router.get('/debug/create-test-accounts', async (req, res) => {
       results
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Debug setup error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -174,7 +175,8 @@ router.get('/debug/reset-passwords', async (req, res) => {
       results
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Password reset error:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
@@ -222,9 +224,10 @@ router.get('/debug/accounts-check', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Accounts check error:', error);
     res.status(500).json({
       status: 'error',
-      message: error.message,
+      message: 'Internal server error',
       database_connected: false
     });
   }

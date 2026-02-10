@@ -4,12 +4,21 @@ const crypto = require('crypto');
 const db = require('../config/db');
 const { authenticateToken } = require('../middleware/auth');
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+if (!process.env.ENCRYPTION_KEY) {
+  console.error('CRITICAL: ENCRYPTION_KEY environment variable is not set. Bank info encryption will not work.');
+  process.exit(1);
+}
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
 const IV_LENGTH = 16;
+
+function deriveKey() {
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest();
+}
 
 function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
-  const key = Buffer.from(ENCRYPTION_KEY.slice(0, 32).padEnd(32, '0'));
+  const key = deriveKey();
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -19,15 +28,16 @@ function encrypt(text) {
 function decrypt(text) {
   try {
     const parts = text.split(':');
+    if (parts.length < 2) return null;
     const iv = Buffer.from(parts[0], 'hex');
-    const key = Buffer.from(ENCRYPTION_KEY.slice(0, 32).padEnd(32, '0'));
+    const key = deriveKey();
     const encryptedText = parts[1];
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    console.error('Decryption error - data may have been encrypted with a different key');
     return null;
   }
 }

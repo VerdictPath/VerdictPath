@@ -9,7 +9,8 @@ router.get('/templates', authenticateToken, async (req, res) => {
     const templates = await formsService.getFormTemplates({ template_type: type });
     res.json({ templates });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching form templates', error: error.message });
+    console.error('Error fetching form templates:', error);
+    res.status(500).json({ message: 'Error fetching form templates' });
   }
 });
 
@@ -21,7 +22,8 @@ router.get('/templates/:id', authenticateToken, async (req, res) => {
     }
     res.json({ template });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching form template', error: error.message });
+    console.error('Error fetching form template:', error);
+    res.status(500).json({ message: 'Error fetching form template' });
   }
 });
 
@@ -48,10 +50,11 @@ router.post('/submissions', authenticateToken, async (req, res) => {
     
     res.status(201).json({ message: 'Form created successfully', submission });
   } catch (error) {
-    if (error.message.includes('Access denied')) {
-      return res.status(403).json({ message: error.message });
+    if (error.message && error.message.includes('Access denied')) {
+      return res.status(403).json({ message: 'Access denied' });
     }
-    res.status(500).json({ message: 'Error creating form submission', error: error.message });
+    console.error('Error creating form submission:', error);
+    res.status(500).json({ message: 'Error creating form submission' });
   }
 });
 
@@ -80,9 +83,10 @@ router.put('/submissions/:id', authenticateToken, async (req, res) => {
     res.json({ message: 'Form updated successfully', submission });
   } catch (error) {
     if (error.message === 'Access denied to update this form' || error.message === 'Cannot update a signed form') {
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: 'Access denied or form is locked' });
     }
-    res.status(500).json({ message: 'Error updating form submission', error: error.message });
+    console.error('Error updating form submission:', error);
+    res.status(500).json({ message: 'Error updating form submission' });
   }
 });
 
@@ -104,7 +108,8 @@ router.post('/submissions/:id/sign', authenticateToken, async (req, res) => {
     
     res.json({ message: 'Form signed successfully', signature });
   } catch (error) {
-    res.status(403).json({ message: error.message });
+    console.error('Error signing form:', error);
+    res.status(403).json({ message: 'Unable to sign this form' });
   }
 });
 
@@ -126,9 +131,10 @@ router.get('/submissions/:id', authenticateToken, async (req, res) => {
     res.json({ submission });
   } catch (error) {
     if (error.message === 'Access denied to this form') {
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: 'Access denied' });
     }
-    res.status(500).json({ message: 'Error fetching form submission', error: error.message });
+    console.error('Error fetching form submission:', error);
+    res.status(500).json({ message: 'Error fetching form submission' });
   }
 });
 
@@ -137,7 +143,8 @@ router.get('/my-forms', authenticateToken, async (req, res) => {
     const forms = await formsService.getPatientForms(req.user.id);
     res.json({ forms });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching forms', error: error.message });
+    console.error('Error fetching forms:', error);
+    res.status(500).json({ message: 'Error fetching forms' });
   }
 });
 
@@ -154,7 +161,8 @@ router.delete('/submissions/:id', authenticateToken, async (req, res) => {
     
     res.json({ message: 'Form deleted successfully' });
   } catch (error) {
-    res.status(403).json({ message: error.message });
+    console.error('Error deleting form submission:', error);
+    res.status(403).json({ message: 'Unable to delete this form' });
   }
 });
 
