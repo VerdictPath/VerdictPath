@@ -2,12 +2,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { Video, ResizeMode } from '../utils/safeAVImport';
 import { LinearGradient } from 'expo-linear-gradient';
-import WebVideoBackground from './WebVideoBackground';
 
 const AvatarVideoBackground = ({ videoSource, webVideoUri, opacity = 0.6 }) => {
   const { width, height } = useWindowDimensions();
   const videoRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
+  const webVideoRef = useRef(null);
 
   const isSmallPhone = width < 375;
   const isPhone = width < 768;
@@ -22,6 +22,54 @@ const AvatarVideoBackground = ({ videoSource, webVideoUri, opacity = 0.6 }) => {
       }
     };
   }, [videoSource]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !webVideoUri) return;
+
+    const container = webVideoRef.current;
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const vid = document.createElement('video');
+    vid.src = webVideoUri;
+    vid.loop = true;
+    vid.muted = true;
+    vid.playsInline = true;
+    vid.autoplay = true;
+    vid.setAttribute('playsinline', '');
+    vid.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.2s ease-in-out;';
+
+    const reveal = () => {
+      if (vid.currentTime > 0.05) {
+        requestAnimationFrame(() => {
+          vid.style.opacity = '1';
+        });
+      }
+    };
+
+    vid.addEventListener('playing', () => {
+      setTimeout(reveal, 50);
+    });
+
+    vid.addEventListener('timeupdate', function onTime() {
+      if (vid.currentTime > 0.1) {
+        vid.removeEventListener('timeupdate', onTime);
+        requestAnimationFrame(() => {
+          vid.style.opacity = '1';
+        });
+      }
+    });
+
+    container.appendChild(vid);
+    vid.play().catch(() => {});
+
+    return () => {
+      vid.pause();
+      vid.src = '';
+      container.innerHTML = '';
+    };
+  }, [webVideoUri]);
 
   const loadVideo = async () => {
     if (videoRef.current) {
@@ -84,7 +132,20 @@ const AvatarVideoBackground = ({ videoSource, webVideoUri, opacity = 0.6 }) => {
   return (
     <View style={styles.container}>
       {Platform.OS === 'web' ? (
-        webVideoUri ? <WebVideoBackground uri={webVideoUri} /> : null
+        webVideoUri ? (
+          <div
+            ref={webVideoRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              overflow: 'hidden',
+              backgroundColor: '#0A1128',
+            }}
+          />
+        ) : null
       ) : Video ? (
         <Video
           ref={videoRef}
