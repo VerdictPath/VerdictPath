@@ -50,9 +50,9 @@
         height: 100%;
         object-fit: cover;
         opacity: 0;
-        transition: opacity 0.6s ease-in-out;
+        transition: opacity 0.35s ease;
       }
-      #web-video-bg video.vid-ready {
+      #web-video-bg video.vid-active {
         opacity: 1;
       }
     </style>
@@ -61,9 +61,7 @@
 <link rel="shortcut icon" href="/favicon.ico" /></head>
 
   <body>
-    <div id="web-video-bg">
-      <video src="/videos/ship.mp4" loop muted playsinline preload="auto"></video>
-    </div>
+    <div id="web-video-bg"></div>
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
@@ -72,87 +70,113 @@
   <script>
     (function() {
       var bg = document.getElementById('web-video-bg');
-      var v = bg ? bg.querySelector('video') : null;
-      if (!v) return;
+      if (!bg) return;
 
-      var _revealTimer = null;
+      var pool = {};
+      var activeSrc = null;
+      var timers = {};
 
-      function revealVideo() {
-        if (_revealTimer) { clearTimeout(_revealTimer); _revealTimer = null; }
-        if (!v.classList.contains('vid-ready')) {
-          v.classList.add('vid-ready');
-        }
+      var w = window.innerWidth;
+      var catVid = w < 600 ? '/videos/cat_mobile.mp4' : w < 1024 ? '/videos/cat_tab.mp4' : '/videos/cat_desktop.mp4';
+      var preloadList = ['/videos/ship.mp4', catVid, '/videos/breathing.mp4'];
+
+      function makeVid(src) {
+        var vid = document.createElement('video');
+        vid.loop = true;
+        vid.muted = true;
+        vid.playsInline = true;
+        vid.setAttribute('playsinline', '');
+        vid.setAttribute('webkit-playsinline', '');
+        vid.preload = 'auto';
+        vid.src = src;
+        bg.appendChild(vid);
+        pool[src] = vid;
+
+        vid.addEventListener('playing', function() {
+          pollReveal(src);
+        });
+
+        vid.load();
+        vid.play().catch(function(){});
+        return vid;
       }
 
-      function waitAndReveal() {
-        if (_revealTimer) clearTimeout(_revealTimer);
-        _revealTimer = setTimeout(function check() {
-          if (v.currentTime > 0.03) {
-            revealVideo();
+      function pollReveal(src) {
+        var vid = pool[src];
+        if (!vid) return;
+        if (timers[src]) { clearTimeout(timers[src]); timers[src] = null; }
+        timers[src] = setTimeout(function check() {
+          if (vid.currentTime > 0.03) {
+            if (src === activeSrc) {
+              vid.classList.add('vid-active');
+            }
+            timers[src] = null;
           } else {
-            _revealTimer = setTimeout(check, 30);
+            timers[src] = setTimeout(check, 20);
           }
-        }, 30);
+        }, 20);
       }
 
-      v.addEventListener('playing', waitAndReveal);
-      v.addEventListener('canplay', function() {
-        if (!v.paused && v.currentTime > 0) {
-          revealVideo();
+      preloadList.forEach(function(src, i) {
+        if (i === 0) {
+          makeVid(src);
+        } else {
+          setTimeout(function() { makeVid(src); }, 500 + i * 300);
         }
       });
 
-      v.muted = true;
-      v.play().catch(function(){});
-
       window.__setVideoBg = function(src) {
-        if (!v || !bg) return;
-        var fullSrc = v.src || '';
-        if (fullSrc.indexOf(src) !== -1 && fullSrc.length > 0) {
-          if (v.paused) {
-            v.muted = true;
-            v.play().catch(function(){});
-          }
-          if (!v.classList.contains('vid-ready')) {
-            waitAndReveal();
+        if (!bg) return;
+        if (src === activeSrc) {
+          var cur = pool[src];
+          if (cur && cur.paused) { cur.muted = true; cur.play().catch(function(){}); }
+          if (cur && !cur.classList.contains('vid-active') && cur.currentTime > 0.03) {
+            cur.classList.add('vid-active');
           }
           return;
         }
-        v.classList.remove('vid-ready');
-        if (_revealTimer) { clearTimeout(_revealTimer); _revealTimer = null; }
-        v.src = src;
-        v.load();
-        v.muted = true;
-        v.play().catch(function(){});
+
+        if (activeSrc && pool[activeSrc]) {
+          pool[activeSrc].classList.remove('vid-active');
+        }
+
+        activeSrc = src;
+
+        var vid = pool[src];
+        if (!vid) {
+          vid = makeVid(src);
+        }
+
+        if (vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
+
+        if (vid.readyState >= 3 && vid.currentTime > 0.03) {
+          vid.classList.add('vid-active');
+        } else {
+          pollReveal(src);
+        }
       };
 
       window.__showVideoBg = function(show) {
         if (!bg) return;
         if (show) {
           bg.classList.add('active');
-          if (v && v.paused && v.src) {
-            v.muted = true;
-            v.play().catch(function(){});
+          if (activeSrc && pool[activeSrc]) {
+            var vid = pool[activeSrc];
+            if (vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
           }
         } else {
           bg.classList.remove('active');
         }
       };
 
-      document.addEventListener('click', function once() {
-        if (v && v.paused && v.src) {
-          v.muted = true;
-          v.play().catch(function(){});
-        }
-        document.removeEventListener('click', once);
-      });
-      document.addEventListener('touchstart', function once() {
-        if (v && v.paused && v.src) {
-          v.muted = true;
-          v.play().catch(function(){});
-        }
-        document.removeEventListener('touchstart', once);
-      });
+      function resumeAll() {
+        Object.keys(pool).forEach(function(src) {
+          var vid = pool[src];
+          if (vid && vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
+        });
+      }
+      document.addEventListener('click', resumeAll, { once: true });
+      document.addEventListener('touchstart', resumeAll, { once: true });
     })();
   </script>
   </body>
