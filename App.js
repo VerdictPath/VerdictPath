@@ -69,6 +69,7 @@ import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import TermsOfServiceScreen from './src/screens/TermsOfServiceScreen';
 import EULAScreen from './src/screens/EULAScreen';
+import LegalDisclaimerScreen from './src/screens/LegalDisclaimerScreen';
 import IndividualSubscriptionScreen from './src/screens/IndividualSubscriptionScreen';
 import LawFirmSubscriptionScreen from './src/screens/LawFirmSubscriptionScreen';
 import MedicalProviderSubscriptionScreen from './src/screens/MedicalProviderSubscriptionScreen';
@@ -112,6 +113,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const [firmCode, setFirmCode] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [previousScreen, setPreviousScreen] = useState('landing');
 
   const [subscriptionTier, setSubscriptionTier] = useState('free');
   const [firmSize, setFirmSize] = useState('small');
@@ -1249,6 +1251,10 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setSelectedClientId(data.clientId);
       setClientRoadmapData(data.clientData);
     }
+    const docScreens = ['privacy-policy', 'terms-of-service', 'eula', 'legal-disclaimer'];
+    if (docScreens.includes(screen)) {
+      setPreviousScreen(currentScreen);
+    }
     setCurrentScreen(screen);
   };
 
@@ -1454,21 +1460,28 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       
       {currentScreen === 'privacy-policy' && (
         <PrivacyPolicyScreen
-          onBack={() => setCurrentScreen('privacy-acceptance')}
+          onBack={() => setCurrentScreen(previousScreen || 'landing')}
           onNavigate={handleNavigateInternal}
         />
       )}
       
       {currentScreen === 'terms-of-service' && (
         <TermsOfServiceScreen
-          onBack={() => setCurrentScreen('privacy-acceptance')}
+          onBack={() => setCurrentScreen(previousScreen || 'landing')}
           onNavigate={handleNavigateInternal}
         />
       )}
       
       {currentScreen === 'eula' && (
         <EULAScreen
-          onBack={() => setCurrentScreen('privacy-acceptance')}
+          onBack={() => setCurrentScreen(previousScreen || 'landing')}
+          onNavigate={handleNavigateInternal}
+        />
+      )}
+
+      {currentScreen === 'legal-disclaimer' && (
+        <LegalDisclaimerScreen
+          onBack={() => setCurrentScreen(previousScreen || 'landing')}
           onNavigate={handleNavigateInternal}
         />
       )}

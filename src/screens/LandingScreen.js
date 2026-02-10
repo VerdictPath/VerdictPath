@@ -16,6 +16,13 @@ import { theme } from "../styles/theme";
 const LandingScreen = ({ onNavigate }) => {
   const isWeb = Platform.OS === 'web';
 
+  const [privacyChecked, setPrivacyChecked] = useState(false);
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [userAgreementChecked, setUserAgreementChecked] = useState(false);
+  const [eulaChecked, setEulaChecked] = useState(false);
+
+  const allChecked = privacyChecked && disclaimerChecked && userAgreementChecked && eulaChecked;
+
   const videoSource = useMemo(() => 
     isWeb ? null : require("../../attached_assets/Ship in Medium Weather 10sec_1763359328620.mp4"),
     []
@@ -121,12 +128,95 @@ const LandingScreen = ({ onNavigate }) => {
           />
         </View>
 
+        <View style={styles.agreementsContainer}>
+          <Text style={styles.agreementsTitle}>Please review and agree:</Text>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => setPrivacyChecked(!privacyChecked)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.agreementCheckbox, privacyChecked && styles.agreementCheckboxChecked]}>
+              {privacyChecked && <Text style={styles.agreementCheckmark}>✓</Text>}
+            </View>
+            <Text style={styles.agreementLabel}>
+              I agree to the{' '}
+              <Text
+                style={styles.agreementLink}
+                onPress={(e) => { e.stopPropagation && e.stopPropagation(); onNavigate('privacy-policy'); }}
+              >
+                Privacy Policy
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => setDisclaimerChecked(!disclaimerChecked)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.agreementCheckbox, disclaimerChecked && styles.agreementCheckboxChecked]}>
+              {disclaimerChecked && <Text style={styles.agreementCheckmark}>✓</Text>}
+            </View>
+            <Text style={styles.agreementLabel}>
+              I agree to the{' '}
+              <Text
+                style={styles.agreementLink}
+                onPress={(e) => { e.stopPropagation && e.stopPropagation(); onNavigate('legal-disclaimer'); }}
+              >
+                Legal Disclaimer
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => setUserAgreementChecked(!userAgreementChecked)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.agreementCheckbox, userAgreementChecked && styles.agreementCheckboxChecked]}>
+              {userAgreementChecked && <Text style={styles.agreementCheckmark}>✓</Text>}
+            </View>
+            <Text style={styles.agreementLabel}>
+              I agree to the{' '}
+              <Text
+                style={styles.agreementLink}
+                onPress={(e) => { e.stopPropagation && e.stopPropagation(); onNavigate('terms-of-service'); }}
+              >
+                User Agreement
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.agreementRow}
+            onPress={() => setEulaChecked(!eulaChecked)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.agreementCheckbox, eulaChecked && styles.agreementCheckboxChecked]}>
+              {eulaChecked && <Text style={styles.agreementCheckmark}>✓</Text>}
+            </View>
+            <Text style={styles.agreementLabel}>
+              I agree to the{' '}
+              <Text
+                style={styles.agreementLink}
+                onPress={(e) => { e.stopPropagation && e.stopPropagation(); onNavigate('eula'); }}
+              >
+                EULA
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={commonStyles.primaryButton}
-            onPress={() => onNavigate("register")}
+            style={[commonStyles.primaryButton, !allChecked && styles.buttonDisabled]}
+            onPress={() => allChecked && onNavigate("register")}
+            disabled={!allChecked}
           >
-            <Text style={commonStyles.buttonText}>Get Started</Text>
+            <Text style={commonStyles.buttonText}>
+              {allChecked ? 'Get Started' : 'Please Agree to All Terms'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -248,6 +338,66 @@ const styles = StyleSheet.create({
     width: 220,
     height: 130,
     borderRadius: 12,
+  },
+  agreementsContainer: {
+    paddingHorizontal: 20,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  agreementsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  agreementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 8,
+  },
+  agreementCheckbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: '#f5deb3',
+    borderRadius: 4,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  agreementCheckboxChecked: {
+    backgroundColor: '#27ae60',
+    borderColor: '#27ae60',
+  },
+  agreementCheckmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  agreementLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: '#FFFFFF',
+    lineHeight: 18,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  agreementLink: {
+    color: '#5dade2',
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   buttonContainer: {
     paddingHorizontal: 20,
