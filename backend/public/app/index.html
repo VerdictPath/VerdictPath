@@ -5,55 +5,22 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Verdict Path</title>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
+      /* These styles make the body full-height */
       html,
       body {
         height: 100%;
       }
+      /* These styles disable body scrolling if you are using <ScrollView> */
       body {
         overflow: hidden;
-        background: #0d1b2a;
       }
+      /* These styles make the root element full-height */
       #root {
         display: flex;
         height: 100%;
         flex: 1;
-        position: relative;
-        z-index: 1;
-        background: transparent !important;
-      }
-      #root > div {
-        background: transparent !important;
-      }
-    </style>
-    <style id="video-bg-style">
-      #web-video-bg {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: 0;
-        overflow: hidden;
-        pointer-events: none;
-        visibility: hidden;
-        background-color: #0d1b2a;
-      }
-      #web-video-bg.active {
-        visibility: visible;
-      }
-      #web-video-bg video {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0;
-        transition: opacity 0.35s ease;
-      }
-      #web-video-bg video.vid-active {
-        opacity: 1;
       }
     </style>
   <meta name="theme-color" content="#2C5F7C">
@@ -61,123 +28,12 @@
 <link rel="shortcut icon" href="/favicon.ico" /></head>
 
   <body>
-    <div id="web-video-bg"></div>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
+    <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/_expo/static/js/web/AppEntry-887720496d86b5675eafd8966bb0d718.js" defer></script>
-  <script>
-    (function() {
-      var bg = document.getElementById('web-video-bg');
-      if (!bg) return;
-
-      var pool = {};
-      var activeSrc = null;
-      var timers = {};
-
-      var w = window.innerWidth;
-      var catVid = w < 600 ? '/videos/cat_mobile.mp4' : w < 1024 ? '/videos/cat_tab.mp4' : '/videos/cat_desktop.mp4';
-      var preloadList = ['/videos/ship.mp4', catVid, '/videos/breathing.mp4'];
-
-      function makeVid(src) {
-        var vid = document.createElement('video');
-        vid.loop = true;
-        vid.muted = true;
-        vid.playsInline = true;
-        vid.setAttribute('playsinline', '');
-        vid.setAttribute('webkit-playsinline', '');
-        vid.preload = 'auto';
-        vid.src = src;
-        bg.appendChild(vid);
-        pool[src] = vid;
-
-        vid.addEventListener('playing', function() {
-          pollReveal(src);
-        });
-
-        vid.load();
-        vid.play().catch(function(){});
-        return vid;
-      }
-
-      function pollReveal(src) {
-        var vid = pool[src];
-        if (!vid) return;
-        if (timers[src]) { clearTimeout(timers[src]); timers[src] = null; }
-        timers[src] = setTimeout(function check() {
-          if (vid.currentTime > 0.03) {
-            if (src === activeSrc) {
-              vid.classList.add('vid-active');
-            }
-            timers[src] = null;
-          } else {
-            timers[src] = setTimeout(check, 20);
-          }
-        }, 20);
-      }
-
-      preloadList.forEach(function(src, i) {
-        if (i === 0) {
-          makeVid(src);
-        } else {
-          setTimeout(function() { makeVid(src); }, 500 + i * 300);
-        }
-      });
-
-      window.__setVideoBg = function(src) {
-        if (!bg) return;
-        if (src === activeSrc) {
-          var cur = pool[src];
-          if (cur && cur.paused) { cur.muted = true; cur.play().catch(function(){}); }
-          if (cur && !cur.classList.contains('vid-active') && cur.currentTime > 0.03) {
-            cur.classList.add('vid-active');
-          }
-          return;
-        }
-
-        if (activeSrc && pool[activeSrc]) {
-          pool[activeSrc].classList.remove('vid-active');
-        }
-
-        activeSrc = src;
-
-        var vid = pool[src];
-        if (!vid) {
-          vid = makeVid(src);
-        }
-
-        if (vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
-
-        if (vid.readyState >= 3 && vid.currentTime > 0.03) {
-          vid.classList.add('vid-active');
-        } else {
-          pollReveal(src);
-        }
-      };
-
-      window.__showVideoBg = function(show) {
-        if (!bg) return;
-        if (show) {
-          bg.classList.add('active');
-          if (activeSrc && pool[activeSrc]) {
-            var vid = pool[activeSrc];
-            if (vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
-          }
-        } else {
-          bg.classList.remove('active');
-        }
-      };
-
-      function resumeAll() {
-        Object.keys(pool).forEach(function(src) {
-          var vid = pool[src];
-          if (vid && vid.paused) { vid.muted = true; vid.play().catch(function(){}); }
-        });
-      }
-      document.addEventListener('click', resumeAll, { once: true });
-      document.addEventListener('touchstart', resumeAll, { once: true });
-    })();
-  </script>
-  </body>
+  <script src="/_expo/static/js/web/AppEntry-565f188fc43dfa9a0dfba9795d00f7ad.js" defer></script>
+</body>
 </html>
