@@ -76,9 +76,7 @@ const WebVideoBackground = ({ uri }) => {
       'transition:opacity 0.4s ease-in',
     ].join(';');
 
-    if (poster) {
-      container.style.background = 'url(' + poster + ') center/cover no-repeat';
-    }
+    container.style.backgroundColor = '#000';
 
     var revealVideo = function() {
       if (mountedRef.current && videoElRef.current === video) {
