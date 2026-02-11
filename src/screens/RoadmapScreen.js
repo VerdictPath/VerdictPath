@@ -738,6 +738,10 @@ const RoadmapScreen = ({
 
   const renderTreasure = (stage, index) => {
     const isCurrent = currentStageIndex === index && !stage.completed;
+    const completedSubs = stage.subStages?.filter(s => s.completed).length || 0;
+    const totalSubs = stage.subStages?.length || 1;
+    const stageProgress = stage.completed ? 100 : Math.round((completedSubs / totalSubs) * 100);
+
     return (
       <View
         key={stage.id}
@@ -754,6 +758,11 @@ const RoadmapScreen = ({
           onPress={() => openStageModal(stage)}
           activeOpacity={0.7}
         >
+          {stageProgress > 0 && (
+            <View style={styles.progressFillContainer}>
+              <View style={[styles.progressFill, { height: `${stageProgress}%` }]} />
+            </View>
+          )}
           {isCurrent && selectedAvatar && !stage.completed && !readOnly ? (
             <Text style={styles.avatarIcon}>{selectedAvatar.emoji}</Text>
           ) : stage.completed ? (
@@ -1368,13 +1377,35 @@ const styles = StyleSheet.create({
   },
   treasureIcon: {
     fontSize: 35,
+    zIndex: 2,
   },
   xMarksSpotImage: {
     width: 40,
     height: 40,
+    zIndex: 2,
+  },
+  progressFillContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 0,
+    borderRadius: 27,
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  progressFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(34, 139, 34, 0.45)',
+    borderBottomLeftRadius: 27,
+    borderBottomRightRadius: 27,
   },
   avatarIcon: {
     fontSize: 32,
+    zIndex: 2,
   },
   completeBadge: {
     position: 'absolute',
