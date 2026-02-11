@@ -75,6 +75,15 @@ Key technical features include:
   4. The build process (`npx expo export` + `node fix-web-build.js`) only handles cache busting, NOT video injection
 - **Screens using video**: LandingScreen (ship), LoginScreen (cat_*), RegisterScreen (breathing), ForgotPasswordScreen (cat_*), ResetPasswordScreen (cat_*), ChangePasswordScreen (breathing), SubscriptionSelectionScreen (breathing), LawFirmRegistrationScreen (breathing), MedicalProviderRegistrationScreen (breathing)
 
+### Security Hardening (February 2026)
+- **Debug endpoints removed** - All unauthenticated debug/seed routes (/debug/create-test-accounts, /debug/reset-passwords, /debug/accounts-check) removed. Admin-temp seed route also removed from server routing.
+- **JWT secret unified** - All token verification uses centralized JWT_SECRET from middleware/auth.js. No more fallback mismatches.
+- **Token expiry reduced** - JWT tokens now expire in 7 days (was 30 days). Cookie maxAge matches. Automatic token refresh added via POST /api/auth/refresh-token endpoint. Frontend apiRequest auto-retries on TOKEN_EXPIRED (401) with one-retry guard.
+- **Helmet middleware** - Added helmet for additional security headers (HSTS, X-Download-Options, X-DNS-Prefetch-Control, etc). CSP still handled by custom securityHeaders.js.
+- **CORS tightened** - Localhost origins only allowed in non-production mode. Production restricted to verdictpath.io and deployment platforms.
+- **Legacy unsigned cookie removed** - authenticateToken no longer falls back to unsigned cookies. Only signed httpOnly cookies and Bearer tokens accepted.
+- **Admin portal unaffected** - Uses separate `adminToken` signed cookie with its own auth middleware.
+
 ### AWS S3 Requirements
 - Medical Hub document upload requires AWS S3 credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION)
 
