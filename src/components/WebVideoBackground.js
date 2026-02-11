@@ -59,7 +59,7 @@ const WebVideoBackground = ({ uri }) => {
     video.setAttribute('disablepictureinpicture', '');
     video.setAttribute('disableremoteplayback', '');
 
-    var cssRules = [
+    video.style.cssText = [
       'position:absolute',
       'top:0',
       'left:0',
@@ -72,14 +72,24 @@ const WebVideoBackground = ({ uri }) => {
       '-webkit-backface-visibility:hidden',
       'transform:translateZ(0)',
       '-webkit-transform:translateZ(0)',
-    ];
+      'opacity:0',
+      'transition:opacity 0.4s ease-in',
+    ].join(';');
 
     if (poster) {
-      video.poster = poster;
-      cssRules.push('background:url(' + poster + ') center/cover no-repeat');
+      container.style.background = 'url(' + poster + ') center/cover no-repeat';
     }
 
-    video.style.cssText = cssRules.join(';');
+    var revealVideo = function() {
+      if (mountedRef.current && videoElRef.current === video) {
+        video.style.opacity = '1';
+      }
+    };
+
+    video.addEventListener('playing', function onPlaying() {
+      video.removeEventListener('playing', onPlaying);
+      revealVideo();
+    });
 
     video.addEventListener('ended', function() {
       if (mountedRef.current && videoElRef.current === video) {
@@ -98,7 +108,9 @@ const WebVideoBackground = ({ uri }) => {
     var maxAttempts = 8;
     var tryPlay = function() {
       if (!mountedRef.current || videoElRef.current !== video) return;
-      video.play().then(function() {}).catch(function() {
+      video.play().then(function() {
+        revealVideo();
+      }).catch(function() {
         playAttempts++;
         if (playAttempts < maxAttempts && mountedRef.current) {
           retryTimerRef.current = setTimeout(tryPlay, 300 * playAttempts);
@@ -106,14 +118,14 @@ const WebVideoBackground = ({ uri }) => {
       });
     };
 
-    if (video.readyState >= 2) {
+    if (video.readyState >= 3) {
       tryPlay();
     } else {
-      video.addEventListener('canplay', function onCanPlay() {
-        video.removeEventListener('canplay', onCanPlay);
+      video.addEventListener('canplaythrough', function onReady() {
+        video.removeEventListener('canplaythrough', onReady);
         tryPlay();
       });
-      retryTimerRef.current = setTimeout(tryPlay, 500);
+      retryTimerRef.current = setTimeout(tryPlay, 800);
     }
   }, [cleanupVideo]);
 
