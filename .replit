@@ -11,7 +11,7 @@ language = "nodejs"
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
+build = ["bash", "-c", "cd backend && npm install"]
 publicDir = "dist"
 run = ["node", "backend/server.js"]
 
