@@ -15,13 +15,16 @@ const crypto = require('crypto');
 const { sendErrorResponse, sendSuccessResponse, handleDatabaseError, errorCodes } = require('../utils/errorResponse');
 
 // Helper function to set httpOnly authentication cookie
+const TOKEN_EXPIRY = '7d';
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
 const setAuthCookie = (res, token) => {
   res.cookie('authToken', token, {
-    httpOnly: true,           // Prevents JavaScript access (XSS protection)
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    sameSite: 'lax',          // CSRF protection
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
-    signed: true              // Cryptographically signed cookie
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: COOKIE_MAX_AGE,
+    signed: true
   });
 };
 
@@ -143,15 +146,14 @@ exports.registerClient = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, userType: user.user_type },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
     
-    // Set httpOnly cookie for secure authentication
     setAuthCookie(res, token);
     
     res.status(201).json({
       message: 'User registered successfully',
-      token,  // TEMPORARY: Keep for backward compatibility during migration
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -304,7 +306,7 @@ exports.registerLawFirm = async (req, res) => {
         isLawFirmUser: true
       },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
     
     // Set httpOnly cookie for secure authentication
@@ -472,7 +474,7 @@ exports.registerMedicalProvider = async (req, res) => {
         isMedicalProviderUser: true
       },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
 
     // Set httpOnly cookie for secure authentication
@@ -657,7 +659,7 @@ exports.joinMedicalProvider = async (req, res) => {
         isMedicalProviderUser: true
       },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
 
     setAuthCookie(res, token);
@@ -1192,7 +1194,7 @@ exports.loginLawFirmUser = async (req, res) => {
         isLawFirmUser: true
       },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
 
     await auditLogger.logAuth({
@@ -1333,7 +1335,7 @@ exports.loginMedicalProviderUser = async (req, res) => {
         isMedicalProviderUser: true
       },
       JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: TOKEN_EXPIRY }
     );
 
     await auditLogger.logAuth({
@@ -1574,5 +1576,53 @@ exports.verifyResetToken = async (req, res) => {
     return sendErrorResponse(res, 500, 'Error verifying token', {
       code: errorCodes.INTERNAL_ERROR
     });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const user = req.user;
+    
+    let tokenPayload;
+    if (user.userType === 'lawfirm' && user.isLawFirmUser) {
+      tokenPayload = {
+        id: user.id,
+        lawFirmUserId: user.lawFirmUserId,
+        email: user.email,
+        userType: user.userType,
+        firmCode: user.firmCode,
+        lawFirmUserRole: user.lawFirmUserRole,
+        isLawFirmUser: true,
+        permissions: user.permissions
+      };
+    } else if (user.userType === 'medical_provider' && user.isMedicalProviderUser) {
+      tokenPayload = {
+        id: user.id,
+        medicalProviderUserId: user.medicalProviderUserId,
+        email: user.email,
+        userType: user.userType,
+        providerCode: user.providerCode,
+        medicalProviderUserRole: user.medicalProviderUserRole,
+        isMedicalProviderUser: true,
+        permissions: user.permissions
+      };
+    } else {
+      tokenPayload = {
+        id: user.id,
+        email: user.email,
+        userType: user.userType
+      };
+    }
+
+    const newToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+    setAuthCookie(res, newToken);
+
+    res.json({
+      message: 'Token refreshed successfully',
+      token: newToken
+    });
+  } catch (error) {
+    console.error('[Refresh Token] Error:', error.message);
+    res.status(500).json({ message: 'Failed to refresh token' });
   }
 };

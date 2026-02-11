@@ -7,6 +7,7 @@ validateEnvironment();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const securityHeaders = require('./middleware/securityHeaders');
@@ -33,7 +34,6 @@ const paymentRoutes = require('./routes/payment');
 const disbursementsRoutes = require('./routes/disbursements');
 const settlementsRoutes = require('./routes/settlements');
 const stripeConnectRoutes = require('./routes/stripe-connect');
-const adminTempRoutes = require('./routes/admin-temp');
 const negotiationsRoutes = require('./routes/negotiations');
 const clientRelationshipsRoutes = require('./routes/client-relationships');
 const avatarRoutes = require('./routes/avatarRoutes');
@@ -71,21 +71,25 @@ const BASE_URL = getBaseUrl();
 
 // CORS configuration - allow Railway domains and Replit
 // SECURITY FIX: Reject unauthorized origins
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+const allowedOrigins = [
+  'https://www.verdictpath.io',
+  'https://verdictpath.io',
+  /\.railway\.app$/,
+  /\.replit\.dev$/,
+  /\.repl\.co$/
+];
+
+if (!IS_PRODUCTION) {
+  allowedOrigins.push('http://localhost:5000', 'http://localhost:19006', 'http://localhost:3000');
+}
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, Postman, curl)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:5000',
-      'http://localhost:19006', // Expo web dev
-      'http://localhost:3000',  // Backend dev
-      'https://www.verdictpath.io',
-      'https://verdictpath.io',
-      /\.railway\.app$/,
-      /\.replit\.dev$/,
-      /\.repl\.co$/
-    ];
+    if (!origin) {
+      return callback(null, true);
+    }
     
     const isAllowed = allowedOrigins.some(pattern => {
       if (pattern instanceof RegExp) {
@@ -97,7 +101,6 @@ const corsOptions = {
     if (isAllowed) {
       callback(null, true);
     } else {
-      // SECURITY: Reject unauthorized origins
       console.warn(`⚠️  CORS blocked request from unauthorized origin: ${origin}`);
       callback(new Error('Not allowed by CORS'), false);
     }
@@ -120,6 +123,11 @@ const corsMiddleware = (req, res, next) => {
 };
 
 app.use(corsMiddleware);
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(securityHeaders);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -199,7 +207,6 @@ app.use('/api/event-requests', require('./routes/eventRequests'));
 app.use('/api/negotiations', negotiationsRoutes);
 app.use('/api/client-relationships', clientRelationshipsRoutes);
 app.use('/api/avatar', avatarRoutes);
-app.use('/api/admin', adminTempRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/medical-calendar', require('./routes/medicalCalendar'));
 app.use('/api/law-firm-calendar', require('./routes/lawFirmCalendar'));

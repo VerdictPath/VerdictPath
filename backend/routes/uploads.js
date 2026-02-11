@@ -24,7 +24,7 @@ router.get('/stream/*', async (req, res) => {
     if (token) {
       try {
         const jwt = require('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+        const { JWT_SECRET } = require('../middleware/auth');
         jwt.verify(token, JWT_SECRET);
         // Token is valid, proceed
       } catch (tokenError) {

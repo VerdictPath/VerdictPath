@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
     LOGIN_LAWFIRM_USER: `${API_BASE_URL}/api/auth/login/lawfirm-user`,
     LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,
     LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+    REFRESH_TOKEN: `${API_BASE_URL}/api/auth/refresh-token`,
   },
 
   // Coins & Gamification
@@ -249,8 +250,40 @@ export const API_ENDPOINTS = {
 // IMPROVED API REQUEST FUNCTION WITH BETTER ERROR HANDLING
 // ============================================================================
 
-export async function apiRequest(url, options = {}) {
-  // Merge headers separately to ensure Content-Type is preserved
+let isRefreshing = false;
+let refreshPromise = null;
+
+async function attemptTokenRefresh(originalHeaders) {
+  if (isRefreshing) {
+    return refreshPromise;
+  }
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const refreshResponse = await fetch(API_ENDPOINTS.AUTH.REFRESH_TOKEN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...originalHeaders,
+        },
+        credentials: 'include',
+      });
+      if (!refreshResponse.ok) {
+        return null;
+      }
+      const refreshData = await refreshResponse.json();
+      return refreshData.token || true;
+    } catch {
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
+export async function apiRequest(url, options = {}, _isRetry = false) {
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -259,39 +292,42 @@ export async function apiRequest(url, options = {}) {
   const config = {
     ...options,
     headers,
-    credentials: 'include',  // Always send httpOnly cookies with requests
+    credentials: 'include',
   };
 
   try {
     
     const response = await fetch(url, config);
-    
-    // Log response status
 
-    // Handle non-JSON responses (like for file downloads)
     const contentType = response.headers.get('content-type');
     
     let data;
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
-      // For non-JSON responses (files, etc.)
       data = await response.text();
     }
 
-    // Handle errors
     if (!response.ok) {
-      // Extract error message from response
+      if (response.status === 401 && data?.code === 'TOKEN_EXPIRED' && !_isRetry) {
+        const refreshResult = await attemptTokenRefresh(options.headers || {});
+        if (refreshResult) {
+          const retryHeaders = { ...options.headers };
+          if (typeof refreshResult === 'string' && retryHeaders.Authorization) {
+            retryHeaders.Authorization = `Bearer ${refreshResult}`;
+          }
+          return apiRequest(url, { ...options, headers: retryHeaders }, true);
+        }
+      }
+
       const errorMessage = data?.message || data?.error || response.statusText || 'Request failed';
       
-      // Log for debugging
       console.error('[API] Error:', {
         status: response.status,
         message: errorMessage,
         url: url
       });
 
-      // Throw with detailed error
       const error = new Error(errorMessage);
       error.status = response.status;
       error.response = data;
@@ -301,19 +337,16 @@ export async function apiRequest(url, options = {}) {
     return data;
 
   } catch (error) {
-    // Network errors or other fetch errors
     if (error.message === 'Network request failed' || error.message === 'Failed to fetch') {
       console.error('[API] Network Error - Check your internet connection');
       throw new Error('Network error. Please check your internet connection.');
     }
 
-    // Timeout errors
     if (error.name === 'AbortError') {
       console.error('[API] Request Timeout');
       throw new Error('Request timeout. Please try again.');
     }
 
-    // Re-throw the error with context
     console.error('[API] Request failed:', error);
     throw error;
   }
@@ -435,6 +468,10 @@ export function isAuthError(error) {
   return error?.status === 401 || error?.status === 403;
 }
 
+export function isTokenExpiredError(error) {
+  return error?.status === 401 && error?.response?.code === 'TOKEN_EXPIRED';
+}
+
 /**
  * Check if error is network error
  */
@@ -537,5 +574,6 @@ export default {
   uploadFileWithProgress,
   getErrorMessage,
   isAuthError,
+  isTokenExpiredError,
   isNetworkError,
 };

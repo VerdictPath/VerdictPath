@@ -10,18 +10,11 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-secret-key-change-in-production';
 
 exports.authenticateToken = (req, res, next) => {
-  // Priority: Signed httpOnly cookie > Bearer token header > Legacy unsigned cookie
-  // This ensures httpOnly cookie authentication is preferred (XSS protection)
-  // while maintaining backward compatibility with Bearer tokens during migration
-  let token = req.signedCookies?.authToken;  // New httpOnly cookie (signed)
+  let token = req.signedCookies?.authToken;
   
   if (!token) {
     const authHeader = req.header('Authorization');
-    token = authHeader?.replace('Bearer ', '');  // Fallback to Bearer token
-  }
-  
-  if (!token) {
-    token = req.cookies?.token;  // Legacy portal cookie (unsigned)
+    token = authHeader?.replace('Bearer ', '');
   }
   
   if (!token) {
@@ -33,6 +26,9 @@ exports.authenticateToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired.', code: 'TOKEN_EXPIRED' });
+    }
     res.status(403).json({ message: 'Invalid token.' });
   }
 };
