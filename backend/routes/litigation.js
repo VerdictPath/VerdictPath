@@ -4,7 +4,6 @@ const litigationController = require('../controllers/litigationController');
 const { authenticateToken } = require('../middleware/auth');
 const { rewardLimiter } = require('../middleware/rateLimiter');
 
-// All litigation routes require authentication
 router.use(authenticateToken);
 
 // Individual user routes
@@ -17,7 +16,14 @@ router.post('/stage/complete', rewardLimiter, litigationController.completeStage
 router.post('/stage/revert', litigationController.revertStage);
 router.post('/video/progress', litigationController.updateVideoProgress);
 
-// Law firm routes - get client's litigation progress
+// Law firm routes - get/update client's litigation progress
 router.get('/client/:clientId/progress', litigationController.getClientProgress);
+router.post('/client/:clientId/substage/complete', litigationController.completeSubstageForClient);
+router.post('/client/:clientId/substage/revert', litigationController.revertSubstageForClient);
+
+// Medical provider routes - get/update patient's litigation progress
+router.get('/patient/:patientId/progress', litigationController.getPatientProgress);
+router.post('/patient/:patientId/substage/complete', litigationController.completeSubstageForClient);
+router.post('/patient/:patientId/substage/revert', litigationController.revertSubstageForClient);
 
 module.exports = router;

@@ -103,7 +103,7 @@ const completeSubstage = async (req, res) => {
     const userType = req.user.userType;
     
     // Roadmap features are only for individual users
-    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+    if (userType === 'lawfirm' || userType === 'medicalprovider' || userType === 'medical_provider') {
       return res.status(403).json({ 
         error: 'Roadmap features are only available for individual users. Law firms and medical providers manage their clients/patients who complete the litigation journey.',
         userType: userType
@@ -258,7 +258,7 @@ const completeStage = async (req, res) => {
     const userType = req.user.userType;
     
     // Roadmap features are only for individual users
-    if (userType === 'lawfirm' || userType === 'medicalprovider') {
+    if (userType === 'lawfirm' || userType === 'medicalprovider' || userType === 'medical_provider') {
       return res.status(403).json({ 
         error: 'Roadmap features are only available for individual users.',
         userType: userType
@@ -440,23 +440,66 @@ const updateVideoProgress = async (req, res) => {
   }
 };
 
+const STAGE_DEFINITIONS = [
+  { id: 1, name: 'Pre-Litigation', substageCount: 11 },
+  { id: 2, name: 'Complaint Filed', substageCount: 4 },
+  { id: 3, name: 'Discovery Begins', substageCount: 5 },
+  { id: 4, name: 'Depositions', substageCount: 4 },
+  { id: 5, name: 'Mediation', substageCount: 3 },
+  { id: 6, name: 'Trial Prep', substageCount: 5 },
+  { id: 7, name: 'Trial', substageCount: 16 },
+  { id: 8, name: 'Settlement', substageCount: 10 },
+  { id: 9, name: 'Case Resolved', substageCount: 2 },
+];
+
+const buildStructuredStages = (completedSubstages, completedStages, progress) => {
+  return STAGE_DEFINITIONS.map(def => {
+    const activeSubstages = completedSubstages.filter(
+      s => s.stage_id === def.id && !s.is_reverted
+    );
+    const stageCompletion = completedStages.find(
+      s => s.stage_id === def.id && !s.is_reverted
+    );
+    return {
+      stage_id: def.id,
+      stage_name: def.name,
+      total_substages: def.substageCount,
+      substages_completed: activeSubstages.length,
+      completed_at: stageCompletion?.completed_at || null,
+      is_current: progress?.current_stage_id === def.id,
+    };
+  });
+};
+
+const verifyClientAccess = async (userId, clientId, userType) => {
+  if (userType === 'lawfirm') {
+    const result = await db.query(
+      'SELECT id FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [userId, clientId]
+    );
+    return result.rows.length > 0;
+  }
+  if (userType === 'medicalprovider' || userType === 'medical_provider') {
+    const result = await db.query(
+      'SELECT id FROM medical_provider_patients WHERE provider_id = $1 AND patient_id = $2',
+      [userId, clientId]
+    );
+    return result.rows.length > 0;
+  }
+  return false;
+};
+
 // Get litigation progress for law firm's client
 const getClientProgress = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
     const { clientId } = req.params;
 
-    // Verify law firm has access to this client
-    const accessCheck = await db.query(
-      'SELECT id FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
-      [lawFirmId, clientId]
-    );
-
-    if (accessCheck.rows.length === 0) {
+    const hasAccess = await verifyClientAccess(lawFirmId, clientId, 'lawfirm');
+    if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied to this client' });
     }
 
-    // Get client's progress
     const progressResult = await db.query(
       'SELECT * FROM user_litigation_progress WHERE user_id = $1',
       [clientId]
@@ -472,14 +515,177 @@ const getClientProgress = async (req, res) => {
       [clientId]
     );
 
+    const progress = progressResult.rows[0] || null;
+    const stages = buildStructuredStages(substagesResult.rows, stagesResult.rows, progress);
+
     res.json({
-      progress: progressResult.rows[0] || null,
+      progress,
       completedSubstages: substagesResult.rows,
-      completedStages: stagesResult.rows
+      completedStages: stagesResult.rows,
+      stages
     });
   } catch (error) {
     console.error('Error getting client progress:', error);
     res.status(500).json({ error: 'Failed to get client progress' });
+  }
+};
+
+// Get litigation progress for medical provider's patient
+const getPatientProgress = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const { patientId } = req.params;
+
+    const hasAccess = await verifyClientAccess(providerId, patientId, 'medicalprovider');
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied to this patient' });
+    }
+
+    const progressResult = await db.query(
+      'SELECT * FROM user_litigation_progress WHERE user_id = $1',
+      [patientId]
+    );
+
+    const substagesResult = await db.query(
+      'SELECT * FROM litigation_substage_completions WHERE user_id = $1 ORDER BY completed_at DESC',
+      [patientId]
+    );
+
+    const stagesResult = await db.query(
+      'SELECT * FROM litigation_stage_completions WHERE user_id = $1 ORDER BY stage_id',
+      [patientId]
+    );
+
+    const progress = progressResult.rows[0] || null;
+    const stages = buildStructuredStages(substagesResult.rows, stagesResult.rows, progress);
+
+    res.json({
+      progress,
+      completedSubstages: substagesResult.rows,
+      completedStages: stagesResult.rows,
+      stages
+    });
+  } catch (error) {
+    console.error('Error getting patient progress:', error);
+    res.status(500).json({ error: 'Failed to get patient progress' });
+  }
+};
+
+// Complete a substage on behalf of a client (law firm or medical provider)
+const completeSubstageForClient = async (req, res) => {
+  try {
+    const actorId = req.user.id;
+    const userType = req.user.userType;
+    const targetId = req.params.clientId || req.params.patientId;
+    const { stageId, stageName, substageId, substageName, substageType } = req.body;
+
+    if (!targetId || !stageId || !substageId || !substageName) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const hasAccess = await verifyClientAccess(actorId, targetId, userType);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied to this client/patient' });
+    }
+
+    await ensureProgressRecord(targetId);
+
+    const existing = await db.query(
+      'SELECT id, is_reverted FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3',
+      [targetId, stageId, substageId]
+    );
+
+    if (existing.rows.length > 0 && !existing.rows[0].is_reverted) {
+      return res.status(400).json({ error: 'Substage already completed' });
+    }
+
+    let result;
+    if (existing.rows.length > 0 && existing.rows[0].is_reverted) {
+      result = await db.query(
+        `UPDATE litigation_substage_completions 
+         SET is_reverted = FALSE, reverted_at = NULL, completed_at = CURRENT_TIMESTAMP,
+             coins_earned = 0, completed_by = $1, completed_by_type = $2
+         WHERE id = $3 RETURNING *`,
+        [actorId, userType, existing.rows[0].id]
+      );
+    } else {
+      result = await db.query(
+        `INSERT INTO litigation_substage_completions 
+         (user_id, stage_id, stage_name, substage_id, substage_name, substage_type, coins_earned, is_reverted, completed_by, completed_by_type)
+         VALUES ($1, $2, $3, $4, $5, $6, 0, FALSE, $7, $8)
+         RETURNING *`,
+        [targetId, stageId, stageName, substageId, substageName, substageType || 'upload', actorId, userType]
+      );
+    }
+
+    await db.query(
+      `UPDATE user_litigation_progress 
+       SET total_substages_completed = total_substages_completed + 1,
+           last_activity_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1`,
+      [targetId]
+    );
+
+    res.json({
+      message: 'Substage completed on behalf of client',
+      completion: result.rows[0],
+      completedBy: userType
+    });
+  } catch (error) {
+    console.error('Error completing substage for client:', error);
+    res.status(500).json({ error: 'Failed to complete substage for client' });
+  }
+};
+
+// Revert a substage on behalf of a client (law firm or medical provider)
+const revertSubstageForClient = async (req, res) => {
+  try {
+    const actorId = req.user.id;
+    const userType = req.user.userType;
+    const targetId = req.params.clientId || req.params.patientId;
+    const { stageId, substageId } = req.body;
+
+    if (!targetId || !stageId || !substageId) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const hasAccess = await verifyClientAccess(actorId, targetId, userType);
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Access denied to this client/patient' });
+    }
+
+    const existing = await db.query(
+      'SELECT * FROM litigation_substage_completions WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3 AND is_reverted = FALSE',
+      [targetId, stageId, substageId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Substage completion not found or already reverted' });
+    }
+
+    await db.query(
+      `UPDATE litigation_substage_completions 
+       SET is_reverted = TRUE, reverted_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1 AND stage_id = $2 AND substage_id = $3 AND is_reverted = FALSE`,
+      [targetId, stageId, substageId]
+    );
+
+    await db.query(
+      `UPDATE user_litigation_progress 
+       SET total_substages_completed = GREATEST(0, total_substages_completed - 1),
+           last_activity_at = CURRENT_TIMESTAMP
+       WHERE user_id = $1`,
+      [targetId]
+    );
+
+    res.json({
+      message: 'Substage reverted on behalf of client',
+      substageId,
+      revertedBy: userType
+    });
+  } catch (error) {
+    console.error('Error reverting substage for client:', error);
+    res.status(500).json({ error: 'Failed to revert substage for client' });
   }
 };
 
@@ -626,6 +832,9 @@ module.exports = {
   completeStage,
   updateVideoProgress,
   getClientProgress,
+  getPatientProgress,
+  completeSubstageForClient,
+  revertSubstageForClient,
   revertSubstage,
   revertStage
 };
