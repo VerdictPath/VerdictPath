@@ -359,8 +359,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingVertical: 4,
     paddingHorizontal: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    borderRadius: 8,
   },
   agreementCheckbox: {
     width: 22,
