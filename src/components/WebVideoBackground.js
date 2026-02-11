@@ -73,7 +73,7 @@ const WebVideoBackground = ({ uri }) => {
       'transform:translateZ(0)',
       '-webkit-transform:translateZ(0)',
       'opacity:0',
-      'transition:opacity 0.4s ease-in',
+      'transition:opacity 0.15s ease-in',
     ].join(';');
 
     container.style.backgroundColor = '#000';
