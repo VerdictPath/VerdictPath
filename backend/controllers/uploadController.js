@@ -1087,6 +1087,51 @@ const viewMedicalDocument = async (req, res) => {
   }
 };
 
+const viewEvidenceDocument = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT id, file_name, mime_type, s3_key, storage_type, document_url FROM evidence WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = result.rows[0];
+
+    await auditLogger.log({
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
+      action: 'VIEW_EVIDENCE_DOCUMENT',
+      entityType: 'evidence',
+      entityId: id,
+      metadata: { fileName: doc.file_name },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    if (doc.storage_type === 's3' && doc.s3_key) {
+      const s3Service = require('../services/s3Service');
+      const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
+      return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+    } else if (doc.storage_type === 'local' && doc.s3_key) {
+      const streamUrl = `/api/uploads/stream/${doc.s3_key}`;
+      return res.json({ success: true, url: streamUrl, fileName: doc.file_name, mimeType: doc.mime_type });
+    } else if (doc.document_url) {
+      return res.json({ success: true, url: doc.document_url, fileName: doc.file_name, mimeType: doc.mime_type });
+    }
+
+    return res.status(404).json({ error: 'Document file not available' });
+  } catch (error) {
+    console.error('Error viewing evidence document:', error);
+    res.status(500).json({ error: 'Failed to retrieve document' });
+  }
+};
+
 module.exports = {
   uploadMedicalRecord,
   uploadMedicalBill,
@@ -1095,5 +1140,6 @@ module.exports = {
   getMyMedicalRecords,
   getMyMedicalBills,
   deleteMedicalDocument,
-  viewMedicalDocument
+  viewMedicalDocument,
+  viewEvidenceDocument
 };

@@ -140,6 +140,7 @@ router.post('/evidence',
 router.get('/my-medical-records', uploadController.getMyMedicalRecords);
 router.get('/my-medical-bills', uploadController.getMyMedicalBills);
 router.get('/medical/:type/:id/view', uploadController.viewMedicalDocument);
+router.get('/evidence/:id/view', uploadController.viewEvidenceDocument);
 router.delete('/medical/:type/:id', uploadController.deleteMedicalDocument);
 
 router.get('/my-evidence', async (req, res) => {

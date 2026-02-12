@@ -374,6 +374,40 @@ const RoadmapScreen = ({
     }
   };
 
+  const [viewingEvidenceId, setViewingEvidenceId] = useState(null);
+
+  const handleViewEvidence = async (evidenceId, fileName) => {
+    setViewingEvidenceId(evidenceId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${evidenceId}/view`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to retrieve document');
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        if (Platform.OS === 'web') {
+          window.open(data.url, '_blank');
+        } else {
+          const { Linking } = require('react-native');
+          await Linking.openURL(data.url);
+        }
+      } else {
+        alert('Error', 'Document URL not available.');
+      }
+    } catch (error) {
+      console.error('Error viewing evidence:', error);
+      alert('View Error', error.message || 'Failed to open document.');
+    } finally {
+      setViewingEvidenceId(null);
+    }
+  };
+
   const viewUploadedFiles = (subStage) => {
     if (!subStage.uploaded || !subStage.uploadedFiles || subStage.uploadedFiles.length === 0) {
       alert('No Files', 'No files have been uploaded yet.');
@@ -916,7 +950,22 @@ const RoadmapScreen = ({
                                 <View style={styles.uploadedFilesList}>
                                   <Text style={styles.uploadedFilesLabel}>✅ Uploaded Files:</Text>
                                   {uploadedFiles[subStage.id].map((file, index) => (
-                                    <Text key={index} style={styles.uploadedFileName}>• {file.fileName}</Text>
+                                    <TouchableOpacity
+                                      key={index}
+                                      style={styles.uploadedFileRow}
+                                      onPress={() => handleViewEvidence(file.id, file.fileName)}
+                                      disabled={viewingEvidenceId === file.id}
+                                    >
+                                      {viewingEvidenceId === file.id ? (
+                                        <ActivityIndicator size="small" color="#8B4513" style={{ marginRight: 6 }} />
+                                      ) : (
+                                        <Text style={styles.uploadedFileIcon}>📄</Text>
+                                      )}
+                                      <View style={styles.uploadedFileInfo}>
+                                        <Text style={styles.uploadedFileName} numberOfLines={1}>{file.fileName}</Text>
+                                        <Text style={styles.uploadedFileTap}>Tap to view</Text>
+                                      </View>
+                                    </TouchableOpacity>
                                   ))}
                                 </View>
                               )}
@@ -1680,10 +1729,33 @@ const styles = StyleSheet.create({
     color: '#2e7d32',
     marginBottom: 5,
   },
+  uploadedFileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#c8e6c9',
+  },
+  uploadedFileIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  uploadedFileInfo: {
+    flex: 1,
+  },
   uploadedFileName: {
     fontSize: 12,
     color: '#333',
-    marginLeft: 5,
+    fontWeight: '500',
+  },
+  uploadedFileTap: {
+    fontSize: 10,
+    color: '#1976d2',
+    fontStyle: 'italic',
+    marginTop: 1,
   },
   readOnlyUploadBanner: {
     backgroundColor: '#f5f5f5',
