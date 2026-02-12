@@ -17,7 +17,7 @@ class BackgroundMusicService {
     this.webAudio = null;
     this.currentSource = null;
     this.isPlaying = false;
-    this.volume = 0.3;
+    this.volume = 0.7;
     this.preference = MUSIC_PREFERENCES.OFF;
     this.avatarType = 'captain';
     this.isLoading = false;

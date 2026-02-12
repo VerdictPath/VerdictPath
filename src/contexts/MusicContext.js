@@ -12,7 +12,7 @@ const MUSIC_VOLUME_STORAGE_KEY = '@verdict_path_music_volume';
 
 export const MusicProvider = ({ children, user }) => {
   const [musicPreference, setMusicPreference] = useState(MUSIC_PREFERENCES.OFF);
-  const [volume, setVolume] = useState(0.3);
+  const [volume, setVolume] = useState(0.7);
   const [isPlaying, setIsPlaying] = useState(false);
   const [nowPlaying, setNowPlaying] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +68,7 @@ export const MusicProvider = ({ children, user }) => {
       ]);
 
       const pref = user?.musicPreference || storedPref || MUSIC_PREFERENCES.OFF;
-      const vol = storedVolume ? parseFloat(storedVolume) : 0.3;
+      const vol = storedVolume ? parseFloat(storedVolume) : 0.7;
 
       setMusicPreference(pref);
       setVolume(vol);
@@ -174,7 +174,7 @@ export const useMusic = () => {
   if (!context) {
     return {
       musicPreference: MUSIC_PREFERENCES.OFF,
-      volume: 0.3,
+      volume: 0.7,
       isPlaying: false,
       nowPlaying: null,
       isLoading: false,
