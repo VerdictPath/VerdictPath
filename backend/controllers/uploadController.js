@@ -971,7 +971,7 @@ const getMyMedicalRecords = async (req, res) => {
                 WHEN mr.uploaded_by_type = 'lawfirm' OR mr.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 WHEN mr.uploaded_by_type = 'medical_provider' THEN 
-                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_records mr
@@ -998,7 +998,7 @@ const getMyMedicalBills = async (req, res) => {
                 WHEN mb.uploaded_by_type = 'lawfirm' OR mb.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 WHEN mb.uploaded_by_type = 'medical_provider' THEN 
-                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_billing mb
@@ -1520,7 +1520,7 @@ const getClientMedicalRecords = async (req, res) => {
               mr.uploaded_by, mr.uploaded_by_type,
               CASE 
                 WHEN mr.uploaded_by_type = 'medical_provider' THEN 
-                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 WHEN mr.uploaded_by_type = 'lawfirm' OR mr.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 ELSE NULL
@@ -1602,7 +1602,7 @@ const getClientMedicalBills = async (req, res) => {
               mb.uploaded_by, mb.uploaded_by_type,
               CASE 
                 WHEN mb.uploaded_by_type = 'medical_provider' THEN 
-                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 WHEN mb.uploaded_by_type = 'lawfirm' OR mb.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 ELSE NULL
