@@ -262,17 +262,20 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
 
     personalEvents.forEach(e => {
       const eventDate = moment(e.start_time).format('YYYY-MM-DD');
+      const sourceLabel = e.event_source === 'law_firm' ? `From: ${e.shared_by_name || 'Law Firm'}` :
+                          e.event_source === 'medical_provider' ? `From: ${e.shared_by_name || 'Provider'}` : null;
       items.push({
         id: `evt-${e.id}`, type: 'personal', category: 'personal',
         title: e.title,
-        subtitle: (e.event_type || '').replace('_', ' ').toUpperCase(),
+        subtitle: sourceLabel || (e.event_type || '').replace('_', ' ').toUpperCase(),
         date: eventDate,
         time: moment(e.start_time).format('h:mm A'),
         status: null,
-        color: CATEGORY_COLORS[e.event_type] || '#FFD700',
+        color: e.is_shared ? '#8b5cf6' : (CATEGORY_COLORS[e.event_type] || '#FFD700'),
         icon: getEventTypeIcon(e.event_type),
         raw: e, syncable: true, synced: e.synced_to_device,
-        location: e.location, description: e.description
+        location: e.location, description: e.description,
+        eventSource: e.event_source, sharedByName: e.shared_by_name, isShared: e.is_shared
       });
     });
 
@@ -717,6 +720,13 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
               <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
                 {item.status}
+              </Text>
+            </View>
+          )}
+          {item.isShared && (
+            <View style={styles.sharedSourceBadge}>
+              <Text style={styles.sharedSourceText}>
+                {item.eventSource === 'law_firm' ? 'Law Firm' : item.eventSource === 'medical_provider' ? 'Provider' : ''}
               </Text>
             </View>
           )}
@@ -1409,6 +1419,8 @@ const styles = StyleSheet.create({
   itemSubtitle: { color: '#a0aec0', fontSize: 12, marginTop: 1 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  sharedSourceBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.3)' },
+  sharedSourceText: { fontSize: 10, fontWeight: '600', color: '#c4b5fd' },
   syncedBadge: { backgroundColor: '#10b981', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   itemDetails: { marginTop: 8, gap: 4 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

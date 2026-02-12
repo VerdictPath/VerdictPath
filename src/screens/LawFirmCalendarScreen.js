@@ -54,6 +54,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [calendarEvents, setCalendarEvents] = useState([]);
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -231,7 +232,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchBlockedTimes(),
         fetchAppointments(),
         fetchSettings(),
-        fetchClients()
+        fetchClients(),
+        fetchCalendarEvents()
       ]);
     } catch (error) {
       console.error('Error fetching calendar data:', error);
@@ -317,6 +319,21 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const fetchCalendarEvents = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/calendar/events`,
+        { headers: { 'Authorization': `Bearer ${user.token}` } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCalendarEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+    }
+  };
+
   const updateMarkedDates = (appts, blocked) => {
     const marked = {};
     
@@ -342,6 +359,15 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         marked[date].dots.push({ key: `block-${block.id}-${date}`, color: '#ef4444' });
         current.add(1, 'day');
       }
+    });
+
+    calendarEvents.forEach(evt => {
+      const date = moment(evt.start_time).format('YYYY-MM-DD');
+      if (!marked[date]) {
+        marked[date] = { dots: [] };
+      }
+      const color = evt.is_shared ? '#8b5cf6' : (EVENT_TYPE_COLORS[evt.event_type] || '#3498db');
+      marked[date].dots.push({ key: `evt-${evt.id}`, color });
     });
 
     setMarkedDates(marked);
@@ -552,6 +578,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           : 'Event created successfully!';
         alert('Success', successMessage);
         setShowAddEventModal(false);
+        fetchCalendarEvents();
         setNewEvent({
           title: '',
           description: '',
@@ -1048,6 +1075,44 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             ))}
           </View>
         )}
+
+        {(() => {
+          const dayEvents = calendarEvents.filter(evt => 
+            moment(evt.start_time).format('YYYY-MM-DD') === selectedDate
+          );
+          if (dayEvents.length === 0) return null;
+          return (
+            <View style={styles.dayEventsContainer}>
+              <Text style={styles.dayEventsTitle}>Calendar Events</Text>
+              {dayEvents.map(evt => (
+                <View key={`evt-${evt.id}`} style={[styles.dayEventCard, evt.is_shared && styles.dayEventCardShared]}>
+                  <View style={styles.dayEventHeader}>
+                    <Text style={styles.dayEventEmoji}>
+                      {EVENT_TYPES.find(t => t.value === evt.event_type)?.emoji || '📅'}
+                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.dayEventTitle}>{evt.title}</Text>
+                      <Text style={styles.dayEventTime}>
+                        {moment(evt.start_time).format('h:mm A')} - {moment(evt.end_time).format('h:mm A')}
+                      </Text>
+                    </View>
+                    {evt.is_shared && (
+                      <View style={styles.eventSourceBadge}>
+                        <Text style={styles.eventSourceText}>
+                          {evt.event_source === 'client' ? 'Client' : evt.event_source === 'medical_provider' ? 'Provider' : evt.event_source}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  {evt.shared_by_name && (
+                    <Text style={styles.dayEventSource}>From: {evt.shared_by_name}</Text>
+                  )}
+                  {evt.description ? <Text style={styles.dayEventDesc}>{evt.description}</Text> : null}
+                </View>
+              ))}
+            </View>
+          );
+        })()}
       </View>
     );
   };
@@ -2302,6 +2367,72 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 12,
     fontSize: 16
+  },
+  dayEventsContainer: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(26, 84, 144, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.2)',
+  },
+  dayEventsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#C0C0C0',
+    marginBottom: 10,
+  },
+  dayEventCard: {
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(52, 152, 219, 0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#3498db',
+    marginBottom: 8,
+  },
+  dayEventCardShared: {
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderLeftColor: '#8b5cf6',
+  },
+  dayEventHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dayEventEmoji: {
+    fontSize: 18,
+  },
+  dayEventTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  dayEventTime: {
+    fontSize: 12,
+    color: '#C0C0C0',
+    marginTop: 2,
+  },
+  dayEventSource: {
+    fontSize: 11,
+    color: '#8b5cf6',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  dayEventDesc: {
+    fontSize: 12,
+    color: '#aaa',
+    marginTop: 4,
+  },
+  eventSourceBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  eventSourceText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#c4b5fd',
   },
   dayViewContainer: {
     padding: 16

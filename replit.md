@@ -99,6 +99,18 @@ Key technical features include:
 - **Web autoplay handling**: Falls back to user interaction listener if browser blocks autoplay
 - **IMPORTANT**: Replace placeholder MP3 files with real music files before release. Placeholders are silent.
 
+### Cross-Account Calendar Event Visibility (February 2026)
+- **Backend**: `calendarController.getEvents` uses UNION ALL with DISTINCT ON (id) to surface events from connected accounts
+- **Individual users** see: own events + events from connected law firms + events from connected medical providers
+- **Law firms** see: own events + events from connected clients (individuals) + medical provider events shared with their clients
+- **Medical providers** see: own events + events from connected patients (individuals) + law firm events shared with their patients
+- **De-duplication**: DISTINCT ON (id) with is_shared ASC preference ensures each event appears once, favoring "self" ownership
+- **Security scoping**: Cross-provider/firm visibility requires events to be explicitly shared with a mutual client/patient (via shared_calendar_events table JOIN), preventing data leakage
+- **Frontend display**: All three calendar screens (UnifiedCalendar, LawFirmCalendar, MedicalProviderCalendar) show source badges (Client/Patient/Law Firm/Provider) for cross-account events
+- **event_source field**: Backend returns 'self', 'client', 'patient', 'law_firm', or 'medical_provider' to indicate event origin
+- **Calendar dots**: Cross-account events appear as purple dots on the calendar month view
+- **Date/Time pickers**: DatePickerInput and TimePickerInput custom components with popup calendar and scrollable time selection (MM/DD/YYYY display format)
+
 ### AWS S3 Requirements
 - Medical Hub document upload requires AWS S3 credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION)
 

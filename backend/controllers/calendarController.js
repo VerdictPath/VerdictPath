@@ -20,40 +20,137 @@ const calendarController = {
       const params = [];
       
       if (userType === 'individual') {
-        // For individuals, get their own events PLUS shared events from law firms/providers
         query = `
-          SELECT ce.*, 
-            NULL as shared_by_type, 
-            NULL as shared_by_id,
-            NULL as shared_by_name,
-            false as is_shared
-          FROM calendar_events ce
-          WHERE ce.user_id = $1
-          
-          UNION ALL
-          
-          SELECT ce.*, 
-            sce.shared_by_type,
-            sce.shared_by_id,
-            CASE 
-              WHEN sce.shared_by_type = 'law_firm' THEN (SELECT firm_name FROM law_firms WHERE id = sce.shared_by_id)
-              WHEN sce.shared_by_type = 'medical_provider' THEN (SELECT provider_name FROM medical_providers WHERE id = sce.shared_by_id)
-              ELSE NULL
-            END as shared_by_name,
-            true as is_shared
-          FROM calendar_events ce
-          JOIN shared_calendar_events sce ON ce.id = sce.event_id
-          WHERE sce.shared_with_user_id = $1
+          SELECT DISTINCT ON (id) * FROM (
+            SELECT ce.*, 
+              NULL as shared_by_type, 
+              NULL::integer as shared_by_id,
+              NULL::text as shared_by_name,
+              false as is_shared,
+              'self' as event_source
+            FROM calendar_events ce
+            WHERE ce.user_id = $1
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'law_firm' as shared_by_type,
+              ce.law_firm_id as shared_by_id,
+              (SELECT firm_name FROM law_firms WHERE id = ce.law_firm_id) as shared_by_name,
+              true as is_shared,
+              'law_firm' as event_source
+            FROM calendar_events ce
+            WHERE ce.law_firm_id IN (
+              SELECT law_firm_id FROM law_firm_clients WHERE client_id = $1
+            )
+            AND (ce.user_id IS NULL OR ce.user_id != $1)
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'medical_provider' as shared_by_type,
+              ce.medical_provider_id as shared_by_id,
+              (SELECT provider_name FROM medical_providers WHERE id = ce.medical_provider_id) as shared_by_name,
+              true as is_shared,
+              'medical_provider' as event_source
+            FROM calendar_events ce
+            WHERE ce.medical_provider_id IN (
+              SELECT medical_provider_id FROM medical_provider_patients WHERE patient_id = $1
+            )
+            AND (ce.user_id IS NULL OR ce.user_id != $1)
+          ) AS all_events ORDER BY id, is_shared ASC
         `;
         params.push(userId);
       } else if (userType === 'law_firm' || userType === 'lawfirm') {
-        query = `SELECT *, false as is_shared FROM calendar_events WHERE law_firm_id = $1`;
+        query = `
+          SELECT DISTINCT ON (id) * FROM (
+            SELECT ce.*, 
+              NULL as shared_by_type, 
+              NULL::integer as shared_by_id,
+              NULL::text as shared_by_name,
+              false as is_shared,
+              'self' as event_source
+            FROM calendar_events ce
+            WHERE ce.law_firm_id = $1
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'individual' as shared_by_type,
+              ce.user_id as shared_by_id,
+              (SELECT CONCAT(first_name, ' ', last_name) FROM users WHERE id = ce.user_id) as shared_by_name,
+              true as is_shared,
+              'client' as event_source
+            FROM calendar_events ce
+            WHERE ce.user_id IN (
+              SELECT client_id FROM law_firm_clients WHERE law_firm_id = $1
+            )
+            AND (ce.law_firm_id IS NULL OR ce.law_firm_id != $1)
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'medical_provider' as shared_by_type,
+              ce.medical_provider_id as shared_by_id,
+              (SELECT provider_name FROM medical_providers WHERE id = ce.medical_provider_id) as shared_by_name,
+              true as is_shared,
+              'medical_provider' as event_source
+            FROM calendar_events ce
+            JOIN shared_calendar_events sce ON sce.event_id = ce.id
+            WHERE ce.medical_provider_id IS NOT NULL
+            AND (ce.law_firm_id IS NULL OR ce.law_firm_id != $1)
+            AND sce.shared_with_user_id IN (
+              SELECT client_id FROM law_firm_clients WHERE law_firm_id = $1
+            )
+          ) AS all_events ORDER BY id, is_shared ASC
+        `;
         params.push(userId);
       } else if (userType === 'medical_provider') {
-        query = `SELECT *, false as is_shared FROM calendar_events WHERE medical_provider_id = $1`;
+        query = `
+          SELECT DISTINCT ON (id) * FROM (
+            SELECT ce.*, 
+              NULL as shared_by_type, 
+              NULL::integer as shared_by_id,
+              NULL::text as shared_by_name,
+              false as is_shared,
+              'self' as event_source
+            FROM calendar_events ce
+            WHERE ce.medical_provider_id = $1
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'individual' as shared_by_type,
+              ce.user_id as shared_by_id,
+              (SELECT CONCAT(first_name, ' ', last_name) FROM users WHERE id = ce.user_id) as shared_by_name,
+              true as is_shared,
+              'patient' as event_source
+            FROM calendar_events ce
+            WHERE ce.user_id IN (
+              SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+            )
+            AND (ce.medical_provider_id IS NULL OR ce.medical_provider_id != $1)
+            
+            UNION ALL
+            
+            SELECT ce.*, 
+              'law_firm' as shared_by_type,
+              ce.law_firm_id as shared_by_id,
+              (SELECT firm_name FROM law_firms WHERE id = ce.law_firm_id) as shared_by_name,
+              true as is_shared,
+              'law_firm' as event_source
+            FROM calendar_events ce
+            JOIN shared_calendar_events sce ON sce.event_id = ce.id
+            WHERE ce.law_firm_id IS NOT NULL
+            AND (ce.medical_provider_id IS NULL OR ce.medical_provider_id != $1)
+            AND sce.shared_with_user_id IN (
+              SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+            )
+          ) AS all_events ORDER BY id, is_shared ASC
+        `;
         params.push(userId);
       } else {
-        query = `SELECT *, false as is_shared FROM calendar_events WHERE 1 = 0`;
+        query = `SELECT *, false as is_shared, 'self' as event_source FROM calendar_events WHERE 1 = 0`;
       }
 
       // Wrap query to apply filters
