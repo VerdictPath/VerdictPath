@@ -1495,7 +1495,7 @@ const getClientMedicalRecords = async (req, res) => {
         const consent = await documentAccessService.verifyMedicalProviderConsent(providerId, clientId, 'medical_records');
         if (!consent) return res.status(403).json({ error: 'No active consent for medical records' });
         hasConsent = true;
-        accessibleFilter = `AND (mr.uploaded_by_type IS NULL OR mr.uploaded_by_type NOT IN ('lawfirm', 'law_firm') OR LOWER(mr.record_type) LIKE '%hipaa%release%') AND LOWER(COALESCE(mr.record_type, '')) NOT IN ('police report', 'pictures', 'photos', 'accident photos', 'health insurance', 'health insurance card', 'insurance card', 'body cam footage', 'dash cam footage', 'demand sent', 'demand rejected', 'auto insurance company', 'auto insurance policy number')`;
+        accessibleFilter = `AND (mr.uploaded_by_type IS NULL OR mr.uploaded_by_type NOT IN ('lawfirm', 'law_firm') OR LOWER(mr.record_type) LIKE '%hipaa%release%')`;
         await auditLogger.log({
           actorId: req.user.id,
           actorType: 'medical_provider',

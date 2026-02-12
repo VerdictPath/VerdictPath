@@ -182,13 +182,6 @@ exports.getDashboard = async (req, res) => {
            OR mr.uploaded_by_type NOT IN ('lawfirm', 'law_firm')
            OR LOWER(mr.record_type) LIKE '%hipaa%release%'
          )
-         AND LOWER(COALESCE(mr.record_type, '')) NOT IN (
-           'police report', 'pictures', 'photos', 'accident photos',
-           'health insurance', 'health insurance card', 'insurance card',
-           'body cam footage', 'dash cam footage',
-           'demand sent', 'demand rejected',
-           'auto insurance company', 'auto insurance policy number'
-         )
        ORDER BY mr.uploaded_at DESC
        LIMIT 50`,
       [providerId]
@@ -305,7 +298,7 @@ exports.getPatientDetails = async (req, res) => {
     const firstName = encryption.decrypt(patient.first_name_encrypted);
     const lastName = encryption.decrypt(patient.last_name_encrypted);
     
-    // Get medical records - exclude law firm uploads (except HIPAA Release) and non-medical record types
+    // Get medical records - exclude law firm uploads except HIPAA Release documents
     const medicalRecordsResult = await db.query(
       `SELECT id, file_name, mime_type, file_size, uploaded_at, record_type,
               uploaded_by, uploaded_by_type
@@ -315,13 +308,6 @@ exports.getPatientDetails = async (req, res) => {
            uploaded_by_type IS NULL 
            OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
            OR LOWER(record_type) LIKE '%hipaa%release%'
-         )
-         AND LOWER(COALESCE(record_type, '')) NOT IN (
-           'police report', 'pictures', 'photos', 'accident photos',
-           'health insurance', 'health insurance card', 'insurance card',
-           'body cam footage', 'dash cam footage',
-           'demand sent', 'demand rejected',
-           'auto insurance company', 'auto insurance policy number'
          )
        ORDER BY uploaded_at DESC`,
       [patientId]
