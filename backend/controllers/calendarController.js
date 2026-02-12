@@ -126,9 +126,16 @@ const calendarController = {
               true as is_shared,
               'patient' as event_source
             FROM calendar_events ce
-            WHERE ce.user_id IN (
-              SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+            JOIN shared_calendar_events sce ON sce.event_id = ce.id
+            WHERE (
+              sce.shared_with_medical_provider_id = $1
+              OR (
+                sce.shared_with_user_id IN (
+                  SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+                )
+              )
             )
+            AND ce.user_id IS NOT NULL
             AND (ce.medical_provider_id IS NULL OR ce.medical_provider_id != $1)
             
             UNION ALL
@@ -143,8 +150,16 @@ const calendarController = {
             JOIN shared_calendar_events sce ON sce.event_id = ce.id
             WHERE ce.law_firm_id IS NOT NULL
             AND (ce.medical_provider_id IS NULL OR ce.medical_provider_id != $1)
-            AND sce.shared_with_user_id IN (
-              SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+            AND (
+              sce.shared_with_medical_provider_id = $1
+              OR (
+                sce.shared_with_user_id IN (
+                  SELECT patient_id FROM medical_provider_patients WHERE medical_provider_id = $1
+                )
+                AND sce.shared_with_user_id IN (
+                  SELECT client_id FROM law_firm_clients WHERE law_firm_id = ce.law_firm_id
+                )
+              )
             )
           ) AS all_events ORDER BY id, is_shared ASC
         `;

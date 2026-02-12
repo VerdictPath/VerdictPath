@@ -103,7 +103,8 @@ Key technical features include:
 - **Backend**: `calendarController.getEvents` uses UNION ALL with DISTINCT ON (id) to surface events from connected accounts
 - **Individual users** see: own events + events from connected law firms + events from connected medical providers
 - **Law firms** see: own events + events from connected clients (individuals) + medical provider events shared with their clients
-- **Medical providers** see: own events + events from connected patients (individuals) + law firm events shared with their patients
+- **Medical providers** see: own events + explicitly shared patient events + law firm events shared with mutual patients
+- **Medical provider security (February 2026 hardening)**: Patient events require explicit sharing via shared_calendar_events (shared_with_medical_provider_id or shared_with connected patient). Law firm events require either direct sharing with provider OR sharing with a user who is both a patient of the provider AND a client of the specific law firm (mutual connection triangle). Prevents visibility of unconnected individuals' or law firms' calendars.
 - **De-duplication**: DISTINCT ON (id) with is_shared ASC preference ensures each event appears once, favoring "self" ownership
 - **Security scoping**: Cross-provider/firm visibility requires events to be explicitly shared with a mutual client/patient (via shared_calendar_events table JOIN), preventing data leakage
 - **Frontend display**: All three calendar screens (UnifiedCalendar, LawFirmCalendar, MedicalProviderCalendar) show source badges (Client/Patient/Law Firm/Provider) for cross-account events
