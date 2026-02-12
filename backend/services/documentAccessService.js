@@ -310,12 +310,16 @@ async function authorizeMedicalProviderDocumentAccess(providerId, patientId, doc
   const doc = docResult.rows[0];
 
   // Medical providers cannot view documents uploaded by law firms,
-  // except for HIPAA Release medical records
+  // except for specific allowed record types
   if (doc.uploaded_by_type === 'lawfirm' || doc.uploaded_by_type === 'law_firm') {
-    const isHipaaRelease = documentType === 'medical_records' && 
-      doc.record_type && doc.record_type.toLowerCase().includes('hipaa') && 
-      doc.record_type.toLowerCase().includes('release');
-    if (!isHipaaRelease) {
+    const rt = (doc.record_type || '').toLowerCase();
+    const isAllowedType = documentType === 'medical_records' && (
+      (rt.includes('hipaa') && rt.includes('release')) ||
+      rt.includes('police report') ||
+      rt.includes('picture') || rt.includes('photo') ||
+      rt.includes('health insurance') || rt.includes('insurance card')
+    );
+    if (!isAllowedType) {
       return {
         authorized: false,
         reason: 'Medical providers cannot access documents uploaded by law firms'

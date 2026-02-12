@@ -181,6 +181,11 @@ exports.getDashboard = async (req, res) => {
            mr.uploaded_by_type IS NULL
            OR mr.uploaded_by_type NOT IN ('lawfirm', 'law_firm')
            OR LOWER(mr.record_type) LIKE '%hipaa%release%'
+           OR LOWER(mr.record_type) LIKE '%police report%'
+           OR LOWER(mr.record_type) LIKE '%picture%'
+           OR LOWER(mr.record_type) LIKE '%photo%'
+           OR LOWER(mr.record_type) LIKE '%health insurance%'
+           OR LOWER(mr.record_type) LIKE '%insurance card%'
          )
        ORDER BY mr.uploaded_at DESC
        LIMIT 50`,
@@ -298,7 +303,7 @@ exports.getPatientDetails = async (req, res) => {
     const firstName = encryption.decrypt(patient.first_name_encrypted);
     const lastName = encryption.decrypt(patient.last_name_encrypted);
     
-    // Get medical records - exclude law firm uploads except HIPAA Release documents
+    // Get medical records - exclude law firm uploads except allowed types
     const medicalRecordsResult = await db.query(
       `SELECT id, file_name, mime_type, file_size, uploaded_at, record_type,
               uploaded_by, uploaded_by_type
@@ -308,6 +313,11 @@ exports.getPatientDetails = async (req, res) => {
            uploaded_by_type IS NULL 
            OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
            OR LOWER(record_type) LIKE '%hipaa%release%'
+           OR LOWER(record_type) LIKE '%police report%'
+           OR LOWER(record_type) LIKE '%picture%'
+           OR LOWER(record_type) LIKE '%photo%'
+           OR LOWER(record_type) LIKE '%health insurance%'
+           OR LOWER(record_type) LIKE '%insurance card%'
          )
        ORDER BY uploaded_at DESC`,
       [patientId]

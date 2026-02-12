@@ -25,6 +25,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const RECORD_TYPE_OPTIONS = [
     { label: 'Medical Record', value: 'Medical Record' },
     { label: 'HIPAA Release', value: 'HIPAA Release' },
+    { label: 'Police Report', value: 'Police Report' },
+    { label: 'Pictures / Photos', value: 'Pictures' },
+    { label: 'Health Insurance Card', value: 'Health Insurance Card' },
     { label: 'Imaging / Radiology', value: 'Imaging / Radiology' },
     { label: 'Lab Results', value: 'Lab Results' },
     { label: 'Surgical Report', value: 'Surgical Report' },
