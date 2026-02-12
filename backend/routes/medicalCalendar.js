@@ -187,14 +187,6 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.getDay();
     
-    // Get calendar settings for multi-booking
-    const settingsResult = await db.query(
-      `SELECT allow_multi_booking, max_concurrent_bookings FROM calendar_sync_settings WHERE provider_id = $1`,
-      [providerId]
-    );
-    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
-    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
-    
     // Get recurring availability for this day
     const availabilityResult = await db.query(
       `SELECT * FROM provider_availability 
@@ -243,21 +235,16 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
           return slotDateTime >= blockStart && slotDateTime < blockEnd;
         });
         
-        // Count appointments in this slot for multi-booking support
         const appointmentCount = existingAppointments.filter(appt => {
           return slotStart >= appt.start_time.substring(0, 5) && slotStart < appt.end_time.substring(0, 5);
         }).length;
         
-        const hasCapacity = appointmentCount < maxBookings;
-        
-        if (!isBlocked && hasCapacity) {
+        if (!isBlocked) {
           slots.push({
             startTime: slotStart,
             endTime: slotEnd,
             available: true,
-            currentBookings: appointmentCount,
-            maxBookings: maxBookings,
-            spotsRemaining: maxBookings - appointmentCount
+            currentBookings: appointmentCount
           });
         }
         
@@ -265,7 +252,7 @@ router.get('/providers/:providerId/available-slots', authenticateToken, async (r
       }
     }
     
-    res.json({ success: true, date, slots, multiBookingEnabled: settings.allow_multi_booking });
+    res.json({ success: true, date, slots });
   } catch (error) {
     console.error('Error fetching available slots:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch available slots' });
@@ -280,26 +267,6 @@ router.post('/appointments', authenticateToken, async (req, res) => {
     
     if (req.user.userType !== 'individual') {
       return res.status(403).json({ success: false, error: 'Only patients can book appointments' });
-    }
-    
-    // Get multi-booking settings
-    const settingsResult = await db.query(
-      `SELECT allow_multi_booking, max_concurrent_bookings FROM calendar_sync_settings WHERE provider_id = $1`,
-      [providerId]
-    );
-    const settings = settingsResult.rows[0] || { allow_multi_booking: false, max_concurrent_bookings: 1 };
-    const maxBookings = settings.allow_multi_booking ? (settings.max_concurrent_bookings || 4) : 1;
-    
-    // Count existing appointments in this slot
-    const existingResult = await db.query(
-      `SELECT id FROM medical_appointments 
-       WHERE provider_id = $1 AND appointment_date = $2 
-       AND start_time = $3 AND status NOT IN ('cancelled')`,
-      [providerId, appointmentDate, startTime]
-    );
-    
-    if (existingResult.rows.length >= maxBookings) {
-      return res.status(400).json({ success: false, error: 'This time slot is no longer available' });
     }
     
     // Get patient's law firm if any

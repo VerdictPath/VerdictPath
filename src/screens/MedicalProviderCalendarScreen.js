@@ -82,6 +82,10 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [calendarEvents, setCalendarEvents] = useState([]);
 
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [conflictEvents, setConflictEvents] = useState([]);
+  const [pendingEventAction, setPendingEventAction] = useState(null);
+
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -489,6 +493,44 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
+  const checkForConflicts = async (date, startTime, endTime) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/calendar/events/check-conflicts?date=${date}&startTime=${startTime}&endTime=${endTime || startTime}`,
+        {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+      return { hasConflicts: false, conflicts: [] };
+    } catch (error) {
+      console.error('Error checking conflicts:', error);
+      return { hasConflicts: false, conflicts: [] };
+    }
+  };
+
+  const formatConflictTime = (isoTime) => {
+    if (!isoTime) return '';
+    return moment(isoTime).format('h:mm A');
+  };
+
+  const proceedWithEventCreation = async () => {
+    setShowConflictModal(false);
+    if (pendingEventAction) {
+      await pendingEventAction();
+      setPendingEventAction(null);
+    }
+  };
+
+  const cancelConflictAction = () => {
+    setShowConflictModal(false);
+    setPendingEventAction(null);
+    setConflictEvents([]);
+  };
+
   const handleAddEvent = async () => {
     if (!newEvent.title || !newEvent.eventDate || !newEvent.startTime) {
       alert('Error', 'Please enter a title, date, and time');
@@ -505,6 +547,21 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     const parsedEndMoment = moment(`${newEvent.eventDate} ${newEvent.endTime}`, 'YYYY-MM-DD HH:mm');
     const parsedEndTime = parsedEndMoment.isValid() ? parsedEndMoment.toDate() : new Date(parsedStartTime.getTime() + 60 * 60 * 1000);
 
+    const isoDate = newEvent.eventDate;
+    const conflictData = await checkForConflicts(isoDate, newEvent.startTime, newEvent.endTime);
+    if (conflictData.hasConflicts) {
+      setConflictEvents(conflictData.conflicts);
+      setPendingEventAction(() => async () => {
+        await submitEvent(parsedStartTime, parsedEndTime);
+      });
+      setShowConflictModal(true);
+      return;
+    }
+
+    await submitEvent(parsedStartTime, parsedEndTime);
+  };
+
+  const submitEvent = async (parsedStartTime, parsedEndTime) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/calendar/events`, {
         method: 'POST',
@@ -1360,62 +1417,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Multi-Booking Settings</Text>
-              <Text style={styles.settingsDescription}>
-                Allow multiple patients to book the same time slot. Useful for group therapy or parallel consultations.
-              </Text>
-
-              <View style={styles.toggleRow}>
-                <View style={styles.toggleInfo}>
-                  <Icon name="account-group" size={24} color="#FFD700" />
-                  <Text style={styles.toggleLabel}>Enable Multi-Booking</Text>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.toggleButton,
-                    settings?.allow_multi_booking && styles.toggleButtonActive
-                  ]}
-                  onPress={() => handleUpdateSettings({ 
-                    allowMultiBooking: !settings?.allow_multi_booking 
-                  })}
-                >
-                  <View style={[
-                    styles.toggleCircle,
-                    settings?.allow_multi_booking && styles.toggleCircleActive
-                  ]} />
-                </TouchableOpacity>
-              </View>
-
-              {settings?.allow_multi_booking && (
-                <View style={styles.maxBookingsContainer}>
-                  <Text style={styles.modalLabel}>Max Concurrent Bookings</Text>
-                  <Text style={styles.settingsDescription}>
-                    Maximum number of patients that can book the same time slot
-                  </Text>
-                  <View style={styles.maxBookingsSelector}>
-                    {[2, 3, 4, 5, 6].map((num) => (
-                      <TouchableOpacity
-                        key={num}
-                        style={[
-                          styles.maxBookingsOption,
-                          (settings?.max_concurrent_bookings || 4) === num && styles.maxBookingsOptionActive
-                        ]}
-                        onPress={() => handleUpdateSettings({ maxConcurrentBookings: num })}
-                      >
-                        <Text style={[
-                          styles.maxBookingsOptionText,
-                          (settings?.max_concurrent_bookings || 4) === num && styles.maxBookingsOptionTextActive
-                        ]}>
-                          {num}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Notification Preferences</Text>
 
               <View style={styles.toggleRow}>
@@ -1750,6 +1751,44 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       {renderAppointmentModal()}
       {renderSettingsModal()}
       {renderAddEventModal()}
+
+      <Modal visible={showConflictModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { maxHeight: '70%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Scheduling Conflict</Text>
+              <TouchableOpacity onPress={cancelConflictAction}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalContent}>
+              <Text style={styles.conflictWarningText}>
+                You already have {conflictEvents.length} event{conflictEvents.length !== 1 ? 's' : ''} scheduled at this time:
+              </Text>
+              {conflictEvents.map((conflict, index) => (
+                <View key={index} style={styles.conflictEventCard}>
+                  <Text style={styles.conflictEventTitle}>{conflict.title}</Text>
+                  <Text style={styles.conflictEventTime}>
+                    {formatConflictTime(conflict.startTime)} - {formatConflictTime(conflict.endTime)}
+                  </Text>
+                  <Text style={styles.conflictEventType}>{conflict.eventType}</Text>
+                </View>
+              ))}
+              <Text style={styles.conflictPromptText}>
+                Would you like to continue with the double booking or choose a different time?
+              </Text>
+            </ScrollView>
+            <View style={styles.conflictButtonRow}>
+              <TouchableOpacity style={styles.conflictCancelButton} onPress={cancelConflictAction}>
+                <Text style={styles.conflictCancelButtonText}>Change Time</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.conflictContinueButton} onPress={proceedWithEventCreation}>
+                <Text style={styles.conflictContinueButtonText}>Continue Anyway</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -2683,6 +2722,73 @@ const styles = StyleSheet.create({
   },
   dateTimeHalf: {
     flex: 1
+  },
+  conflictWarningText: {
+    color: '#FFD700',
+    fontSize: 15,
+    marginBottom: 12,
+    lineHeight: 22
+  },
+  conflictEventCard: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#ef4444',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8
+  },
+  conflictEventTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4
+  },
+  conflictEventTime: {
+    color: '#C0C0C0',
+    fontSize: 13,
+    marginBottom: 2
+  },
+  conflictEventType: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textTransform: 'capitalize'
+  },
+  conflictPromptText: {
+    color: '#C0C0C0',
+    fontSize: 14,
+    marginTop: 12,
+    lineHeight: 20
+  },
+  conflictButtonRow: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)'
+  },
+  conflictCancelButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center'
+  },
+  conflictCancelButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600'
+  },
+  conflictContinueButton: {
+    flex: 1,
+    backgroundColor: '#f59e0b',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center'
+  },
+  conflictContinueButtonText: {
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '700'
   }
 });
 

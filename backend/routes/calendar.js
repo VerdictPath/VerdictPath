@@ -5,6 +5,8 @@ const { authenticateToken } = require('../middleware/auth');
 
 router.get('/events', authenticateToken, calendarController.getEvents);
 
+router.get('/events/check-conflicts', authenticateToken, calendarController.checkConflicts);
+
 router.post('/events', authenticateToken, calendarController.createEvent);
 
 router.put('/events/:eventId', authenticateToken, calendarController.updateEvent);

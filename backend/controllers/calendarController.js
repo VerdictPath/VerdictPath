@@ -188,6 +188,96 @@ const calendarController = {
     }
   },
 
+  async checkConflicts(req, res) {
+    try {
+      const userId = req.user.id;
+      const userType = req.user.userType || req.user.type;
+      const { date, startTime, endTime } = req.query;
+
+      if (!date || !startTime) {
+        return res.status(400).json({ error: 'Date and start time are required' });
+      }
+
+      const startDateTime = new Date(`${date}T${startTime}`);
+      const resolvedEndTime = endTime || startTime;
+      const endDateTime = endTime ? new Date(`${date}T${endTime}`) : new Date(startDateTime.getTime() + 60 * 60 * 1000);
+
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        return res.status(400).json({ error: 'Invalid date or time format' });
+      }
+
+      let ownerColumn;
+      if (userType === 'law_firm') {
+        ownerColumn = 'law_firm_id';
+      } else if (userType === 'medical_provider') {
+        ownerColumn = 'medical_provider_id';
+      } else {
+        ownerColumn = 'user_id';
+      }
+
+      const conflictQuery = `
+        SELECT id, title, event_type, start_time, end_time
+        FROM calendar_events
+        WHERE ${ownerColumn} = $1
+        AND start_time::date = $2::date
+        AND start_time < $4::timestamp
+        AND end_time > $3::timestamp
+        ORDER BY start_time ASC
+      `;
+
+      const result = await pool.query(conflictQuery, [
+        userId, date,
+        startDateTime.toISOString(),
+        endDateTime.toISOString()
+      ]);
+
+      let appointmentConflicts = [];
+      if (userType === 'law_firm') {
+        const apptResult = await pool.query(
+          `SELECT id, title, appointment_type as event_type, 
+            (appointment_date + start_time) as start_time,
+            (appointment_date + end_time) as end_time
+           FROM law_firm_appointments
+           WHERE law_firm_id = $1 AND appointment_date = $2::date
+           AND start_time < $4::time AND end_time > $3::time
+           AND status NOT IN ('cancelled')
+           ORDER BY start_time ASC`,
+          [userId, date, startTime, resolvedEndTime]
+        );
+        appointmentConflicts = apptResult.rows;
+      } else if (userType === 'medical_provider') {
+        const apptResult = await pool.query(
+          `SELECT id, appointment_type as event_type,
+            (appointment_date + start_time) as start_time,
+            (appointment_date + end_time) as end_time
+           FROM medical_appointments
+           WHERE provider_id = $1 AND appointment_date = $2::date
+           AND start_time < $4::time AND end_time > $3::time
+           AND status NOT IN ('cancelled')
+           ORDER BY start_time ASC`,
+          [userId, date, startTime, resolvedEndTime]
+        );
+        appointmentConflicts = apptResult.rows;
+      }
+
+      const allConflicts = [...result.rows, ...appointmentConflicts];
+
+      res.json({
+        hasConflicts: allConflicts.length > 0,
+        conflicts: allConflicts.map(c => ({
+          id: c.id,
+          title: c.title || c.event_type,
+          eventType: c.event_type,
+          startTime: c.start_time,
+          endTime: c.end_time
+        }))
+      });
+    } catch (error) {
+      console.error('Error checking calendar conflicts:', error);
+      res.status(500).json({ error: 'Failed to check for conflicts' });
+    }
+  },
+
   async createEvent(req, res) {
     try {
       const userId = req.user.id;
