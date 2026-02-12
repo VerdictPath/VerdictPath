@@ -443,20 +443,33 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     setViewingDocId(docId);
     try {
       const docType = type === 'bills' ? 'bill' : 'record';
+      console.log('[MedicalHub] Requesting view for', docType, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${docType}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
+      console.log('[MedicalHub] Response status:', response.status);
+
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to retrieve document');
+        const errText = await response.text();
+        console.error('[MedicalHub] Error response:', errText);
+        let errMsg = 'Failed to retrieve document';
+        try {
+          const errData = JSON.parse(errText);
+          errMsg = errData.error || errMsg;
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
+      console.log('[MedicalHub] Got URL:', data.url ? 'yes' : 'no');
 
       if (data.url) {
         if (Platform.OS === 'web') {
-          window.open(data.url, '_blank');
+          const newWin = window.open(data.url, '_blank');
+          if (!newWin) {
+            window.location.href = data.url;
+          }
         } else {
           const { Linking } = require('react-native');
           await Linking.openURL(data.url);
@@ -465,7 +478,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
-      console.error('Error viewing document:', error);
+      console.error('Error viewing document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
       setViewingDocId(null);

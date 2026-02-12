@@ -380,20 +380,33 @@ const RoadmapScreen = ({
   const handleViewEvidence = async (evidenceId, fileName) => {
     setViewingEvidenceId(evidenceId);
     try {
+      console.log('[RoadmapView] Requesting evidence view for id:', evidenceId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${evidenceId}/view`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
+      console.log('[RoadmapView] Response status:', response.status);
+
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to retrieve document');
+        const errText = await response.text();
+        console.error('[RoadmapView] Error response:', errText);
+        let errMsg = 'Failed to retrieve document';
+        try {
+          const errData = JSON.parse(errText);
+          errMsg = errData.error || errMsg;
+        } catch (e) {}
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
+      console.log('[RoadmapView] Got URL:', data.url ? 'yes' : 'no');
 
       if (data.url) {
         if (Platform.OS === 'web') {
-          window.open(data.url, '_blank');
+          const newWin = window.open(data.url, '_blank');
+          if (!newWin) {
+            window.location.href = data.url;
+          }
         } else {
           const { Linking } = require('react-native');
           await Linking.openURL(data.url);
@@ -402,7 +415,7 @@ const RoadmapScreen = ({
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
-      console.error('Error viewing evidence:', error);
+      console.error('Error viewing evidence:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
       setViewingEvidenceId(null);

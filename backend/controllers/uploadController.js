@@ -1108,8 +1108,11 @@ const viewMedicalDocument = async (req, res) => {
     }
 
     if (!doc) {
+      console.error('[ViewMedical] Document not found or access denied - type:', type, 'docId:', id, 'userId:', userId, 'userType:', userType);
       return res.status(404).json({ error: 'Document not found or access denied' });
     }
+
+    console.log('[ViewMedical] Found doc:', { id: doc.id, storage_type: doc.storage_type, s3_key: doc.s3_key ? 'present' : 'null', document_url: doc.document_url ? 'present' : 'null' });
 
     await auditLogger.log({
       actorId: userId,
@@ -1123,9 +1126,18 @@ const viewMedicalDocument = async (req, res) => {
     });
 
     if (doc.storage_type === 's3' && doc.s3_key) {
-      const s3Service = require('../services/s3Service');
-      const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
-      return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+      try {
+        const s3Service = require('../services/s3Service');
+        const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
+        return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+      } catch (s3Error) {
+        console.error('[ViewMedical] S3 presigned URL error:', s3Error.message);
+        if (doc.document_url) {
+          console.log('[ViewMedical] Falling back to document_url');
+          return res.json({ success: true, url: doc.document_url, fileName: doc.file_name, mimeType: doc.mime_type });
+        }
+        return res.status(500).json({ error: 'Failed to generate secure document link' });
+      }
     } else if (doc.storage_type === 'local' && doc.s3_key) {
       const streamUrl = `/api/uploads/stream/${doc.s3_key}`;
       return res.json({ success: true, url: streamUrl, fileName: doc.file_name, mimeType: doc.mime_type });
@@ -1135,7 +1147,7 @@ const viewMedicalDocument = async (req, res) => {
 
     return res.status(404).json({ error: 'Document file not available' });
   } catch (error) {
-    console.error('Error viewing medical document:', error);
+    console.error('Error viewing medical document:', error.message, error.stack);
     res.status(500).json({ error: 'Failed to retrieve document' });
   }
 };
@@ -1187,8 +1199,11 @@ const viewEvidenceDocument = async (req, res) => {
     }
 
     if (!doc) {
+      console.error('[ViewEvidence] Document not found or access denied - evidenceId:', id, 'userId:', userId, 'userType:', userType);
       return res.status(404).json({ error: 'Document not found or access denied' });
     }
+
+    console.log('[ViewEvidence] Found doc:', { id: doc.id, storage_type: doc.storage_type, s3_key: doc.s3_key ? 'present' : 'null', document_url: doc.document_url ? 'present' : 'null' });
 
     await auditLogger.log({
       actorId: userId,
@@ -1202,9 +1217,18 @@ const viewEvidenceDocument = async (req, res) => {
     });
 
     if (doc.storage_type === 's3' && doc.s3_key) {
-      const s3Service = require('../services/s3Service');
-      const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
-      return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+      try {
+        const s3Service = require('../services/s3Service');
+        const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
+        return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+      } catch (s3Error) {
+        console.error('[ViewEvidence] S3 presigned URL error:', s3Error.message);
+        if (doc.document_url) {
+          console.log('[ViewEvidence] Falling back to document_url');
+          return res.json({ success: true, url: doc.document_url, fileName: doc.file_name, mimeType: doc.mime_type });
+        }
+        return res.status(500).json({ error: 'Failed to generate secure document link' });
+      }
     } else if (doc.storage_type === 'local' && doc.s3_key) {
       const streamUrl = `/api/uploads/stream/${doc.s3_key}`;
       return res.json({ success: true, url: streamUrl, fileName: doc.file_name, mimeType: doc.mime_type });
@@ -1214,7 +1238,7 @@ const viewEvidenceDocument = async (req, res) => {
 
     return res.status(404).json({ error: 'Document file not available' });
   } catch (error) {
-    console.error('Error viewing evidence document:', error);
+    console.error('Error viewing evidence document:', error.message, error.stack);
     res.status(500).json({ error: 'Failed to retrieve document' });
   }
 };
