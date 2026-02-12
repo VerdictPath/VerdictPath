@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator, Image, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Modal, useWindowDimensions, Animated, TextInput, Platform, ActivityIndicator, Image, ImageBackground, Linking } from 'react-native';
 import { commonStyles } from '../styles/commonStyles';
 import CelebrationAnimation from '../components/CelebrationAnimation';
 import Svg, { Path } from 'react-native-svg';
@@ -421,7 +421,6 @@ const RoadmapScreen = ({
             document.body.removeChild(a);
           }
         } else {
-          const { Linking } = require('react-native');
           await Linking.openURL(docUrl);
         }
       } else {
