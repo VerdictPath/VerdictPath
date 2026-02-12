@@ -350,10 +350,11 @@ const RoadmapScreen = ({
       
       setUploadProgress(prev => ({ ...prev, [subStageId]: 100 }));
 
+      const docId = uploadData.document?.id || uploadData.id;
       setUploadedFiles(prev => ({
         ...prev,
         [subStageId]: [...(prev[subStageId] || []), {
-          id: uploadData.id,
+          id: docId,
           fileName: fileName,
           uploadedAt: new Date().toISOString(),
         }]

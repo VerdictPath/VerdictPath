@@ -947,11 +947,19 @@ const getMyMedicalRecords = async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query(
-      `SELECT id, record_type, facility_name, provider_name, date_of_service, description,
-              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
-       FROM medical_records
-       WHERE user_id = $1
-       ORDER BY uploaded_at DESC`,
+      `SELECT mr.id, mr.record_type, mr.facility_name, mr.provider_name, mr.date_of_service, mr.description,
+              mr.file_name, mr.file_size, mr.mime_type, mr.uploaded_at, mr.storage_type, mr.s3_key,
+              mr.uploaded_by, mr.uploaded_by_type,
+              CASE 
+                WHEN mr.uploaded_by_type = 'lawfirm' OR mr.uploaded_by_type = 'law_firm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                WHEN mr.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM medical_records mr
+       WHERE mr.user_id = $1
+       ORDER BY mr.uploaded_at DESC`,
       [userId]
     );
     res.json({ records: result.rows });
@@ -965,12 +973,20 @@ const getMyMedicalBills = async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query(
-      `SELECT id, billing_type, facility_name, bill_number, date_of_service, bill_date, 
-              due_date, total_amount, amount_paid, amount_due, description,
-              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
-       FROM medical_billing
-       WHERE user_id = $1
-       ORDER BY uploaded_at DESC`,
+      `SELECT mb.id, mb.billing_type, mb.facility_name, mb.bill_number, mb.date_of_service, mb.bill_date, 
+              mb.due_date, mb.total_amount, mb.amount_paid, mb.amount_due, mb.description,
+              mb.file_name, mb.file_size, mb.mime_type, mb.uploaded_at, mb.storage_type, mb.s3_key,
+              mb.uploaded_by, mb.uploaded_by_type,
+              CASE 
+                WHEN mb.uploaded_by_type = 'lawfirm' OR mb.uploaded_by_type = 'law_firm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                WHEN mb.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM medical_billing mb
+       WHERE mb.user_id = $1
+       ORDER BY mb.uploaded_at DESC`,
       [userId]
     );
     res.json({ bills: result.rows });
@@ -1416,7 +1432,7 @@ const getClientMedicalRecords = async (req, res) => {
         const consent = await documentAccessService.verifyLawFirmConsent(lawFirmId, clientId, 'medical_records');
         if (!consent) return res.status(403).json({ error: 'No active consent for medical records' });
         hasConsent = true;
-        accessibleFilter = 'AND accessible_by_law_firm = TRUE';
+        accessibleFilter = 'AND mr.accessible_by_law_firm = TRUE';
         await auditLogger.log({
           actorId: req.user.id,
           actorType: 'lawfirm',
@@ -1457,11 +1473,19 @@ const getClientMedicalRecords = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, record_type, facility_name, provider_name, date_of_service, description,
-              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
-       FROM medical_records
-       WHERE user_id = $1 ${accessibleFilter}
-       ORDER BY uploaded_at DESC`,
+      `SELECT mr.id, mr.record_type, mr.facility_name, mr.provider_name, mr.date_of_service, mr.description,
+              mr.file_name, mr.file_size, mr.mime_type, mr.uploaded_at, mr.storage_type, mr.s3_key,
+              mr.uploaded_by, mr.uploaded_by_type,
+              CASE 
+                WHEN mr.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                WHEN mr.uploaded_by_type = 'lawfirm' OR mr.uploaded_by_type = 'law_firm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM medical_records mr
+       WHERE mr.user_id = $1 ${accessibleFilter}
+       ORDER BY mr.uploaded_at DESC`,
       [clientId]
     );
     res.json({ records: result.rows });
@@ -1488,7 +1512,7 @@ const getClientMedicalBills = async (req, res) => {
         const consent = await documentAccessService.verifyLawFirmConsent(lawFirmId, clientId, 'medical_billing');
         if (!consent) return res.status(403).json({ error: 'No active consent for medical billing' });
         hasConsent = true;
-        accessibleFilter = 'AND accessible_by_law_firm = TRUE';
+        accessibleFilter = 'AND mb.accessible_by_law_firm = TRUE';
         await auditLogger.log({
           actorId: req.user.id,
           actorType: 'lawfirm',
@@ -1529,12 +1553,20 @@ const getClientMedicalBills = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, billing_type, facility_name, bill_number, date_of_service, bill_date, 
-              due_date, total_amount, amount_paid, amount_due, description,
-              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
-       FROM medical_billing
-       WHERE user_id = $1 ${accessibleFilter}
-       ORDER BY uploaded_at DESC`,
+      `SELECT mb.id, mb.billing_type, mb.facility_name, mb.bill_number, mb.date_of_service, mb.bill_date, 
+              mb.due_date, mb.total_amount, mb.amount_paid, mb.amount_due, mb.description,
+              mb.file_name, mb.file_size, mb.mime_type, mb.uploaded_at, mb.storage_type, mb.s3_key,
+              mb.uploaded_by, mb.uploaded_by_type,
+              CASE 
+                WHEN mb.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.practice_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                WHEN mb.uploaded_by_type = 'lawfirm' OR mb.uploaded_by_type = 'law_firm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM medical_billing mb
+       WHERE mb.user_id = $1 ${accessibleFilter}
+       ORDER BY mb.uploaded_at DESC`,
       [clientId]
     );
     res.json({ bills: result.rows });

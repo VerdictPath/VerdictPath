@@ -715,6 +715,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                     <Text style={styles.documentDate}>
                       Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
                     </Text>
+                    {record.uploaded_by_name && (
+                      <Text style={styles.uploaderInfo}>By: {record.uploaded_by_name}</Text>
+                    )}
                     <Text style={styles.tapToViewHint}>Tap to view</Text>
                   </TouchableOpacity>
                 ))
@@ -783,6 +786,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                       <Text style={styles.documentDate}>
                         Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
                       </Text>
+                      {bill.uploaded_by_name && (
+                        <Text style={styles.uploaderInfo}>By: {bill.uploaded_by_name}</Text>
+                      )}
                       <Text style={styles.tapToViewHint}>Tap to view</Text>
                     </TouchableOpacity>
                   ))}
@@ -1331,6 +1337,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     marginTop: 4,
+  },
+  uploaderInfo: {
+    fontSize: 11,
+    color: '#4FC3F7',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   sectionHeaderRow: {
     flexDirection: 'row',

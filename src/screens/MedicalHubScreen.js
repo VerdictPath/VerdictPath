@@ -502,6 +502,11 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
             <Text style={styles.documentMeta}>
               {formatFileSize(doc.file_size)} {doc.uploaded_at ? `• ${formatDate(doc.uploaded_at)}` : ''}
             </Text>
+            {doc.uploaded_by_name && (
+              <Text style={styles.uploaderInfo}>
+                Uploaded by: {doc.uploaded_by_name}
+              </Text>
+            )}
             <Text style={styles.tapToView}>Tap to view</Text>
           </View>
         </TouchableOpacity>
@@ -1030,6 +1035,12 @@ const styles = StyleSheet.create({
     color: '#8B7355',
     fontSize: 11,
     marginTop: 2,
+  },
+  uploaderInfo: {
+    color: '#4FC3F7',
+    fontSize: 10,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   deleteDocButton: {
     width: 28,

@@ -611,6 +611,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                     <Text style={styles.documentDate}>
                       Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US')}
                     </Text>
+                    {record.uploaded_by_name && (
+                      <Text style={styles.uploaderInfo}>By: {record.uploaded_by_name}</Text>
+                    )}
                     <Text style={styles.tapToView}>Tap to view</Text>
                   </TouchableOpacity>
                 ))
@@ -684,6 +687,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                       <Text style={styles.documentDate}>
                         Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US')}
                       </Text>
+                      {bill.uploaded_by_name && (
+                        <Text style={styles.uploaderInfo}>By: {bill.uploaded_by_name}</Text>
+                      )}
                       <Text style={styles.tapToView}>Tap to view</Text>
                     </TouchableOpacity>
                   ))}
@@ -1109,6 +1115,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.warmGray,
     marginTop: 4,
+  },
+  uploaderInfo: {
+    fontSize: 11,
+    color: '#4FC3F7',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   emptyState: {
     padding: 30,
