@@ -95,6 +95,7 @@ import BottomNavigation from './src/components/BottomNavigation';
 import LawFirmBottomNavigation from './src/components/LawFirmBottomNavigation';
 import MedicalProviderBottomNavigation from './src/components/MedicalProviderBottomNavigation';
 import FloatingParrotButton from './src/components/FloatingParrotButton';
+import FloatingMusicControl from './src/components/FloatingMusicControl';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
@@ -2187,6 +2188,12 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {user && (user.type === 'individual' || user.userType === 'individual') && 
         ['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
         <FloatingParrotButton onNavigate={handleNavigateInternal} />
+      )}
+
+      {/* Floating Music Control - Individual Users */}
+      {user && (user.type === 'individual' || user.userType === 'individual') && 
+        ['dashboard', 'roadmap', 'medical', 'hipaaForms', 'notifications', 'chat-list', 'chat-conversation', 'actions', 'task-detail', 'profile', 'appointments'].includes(currentScreen) && (
+        <FloatingMusicControl user={user} />
       )}
 
       {/* Bottom Navigation - only show for individual user screens */}
