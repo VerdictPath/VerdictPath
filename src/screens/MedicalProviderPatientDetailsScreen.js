@@ -483,17 +483,23 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     setViewingDocId(docId);
     try {
       const type = docType === 'bill' ? 'bill' : 'record';
+      console.log('[MedProviderView] Requesting medical doc view:', type, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
+      console.log('[MedProviderView] Response status:', response.status);
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to retrieve document');
+        const errText = await response.text();
+        console.error('[MedProviderView] Error response:', errText);
+        let errMsg = 'Failed to retrieve document';
+        try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
+        throw new Error(errMsg);
       }
       const data = await response.json();
       if (data.url) {
         if (Platform.OS === 'web') {
-          window.open(data.url, '_blank');
+          const newWin = window.open(data.url, '_blank');
+          if (!newWin) window.location.href = data.url;
         } else {
           await Linking.openURL(data.url);
         }
@@ -501,7 +507,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
-      console.error('Error viewing medical document:', error);
+      console.error('Error viewing medical document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
       setViewingDocId(null);
@@ -511,17 +517,23 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const handleViewEvidence = async (docId, fileName) => {
     setViewingDocId(docId);
     try {
+      console.log('[MedProviderView] Requesting evidence view:', docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
+      console.log('[MedProviderView] Evidence response status:', response.status);
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to retrieve document');
+        const errText = await response.text();
+        console.error('[MedProviderView] Evidence error response:', errText);
+        let errMsg = 'Failed to retrieve document';
+        try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
+        throw new Error(errMsg);
       }
       const data = await response.json();
       if (data.url) {
         if (Platform.OS === 'web') {
-          window.open(data.url, '_blank');
+          const newWin = window.open(data.url, '_blank');
+          if (!newWin) window.location.href = data.url;
         } else {
           await Linking.openURL(data.url);
         }
@@ -529,7 +541,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
-      console.error('Error viewing evidence:', error);
+      console.error('Error viewing evidence:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
       setViewingDocId(null);

@@ -253,17 +253,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     setViewingDocId(docId);
     try {
       const type = docType === 'bill' ? 'bill' : 'record';
+      console.log('[LawFirmView] Requesting medical doc view:', type, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
+      console.log('[LawFirmView] Response status:', response.status);
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to retrieve document');
+        const errText = await response.text();
+        console.error('[LawFirmView] Error response:', errText);
+        let errMsg = 'Failed to retrieve document';
+        try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
+        throw new Error(errMsg);
       }
       const data = await response.json();
       if (data.url) {
         if (Platform.OS === 'web') {
-          window.open(data.url, '_blank');
+          const newWin = window.open(data.url, '_blank');
+          if (!newWin) window.location.href = data.url;
         } else {
           await Linking.openURL(data.url);
         }
@@ -271,7 +277,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
-      console.error('Error viewing medical document:', error);
+      console.error('Error viewing medical document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
       setViewingDocId(null);
@@ -305,8 +311,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const proceedWithViewDocument = async (doc) => {
     setDocumentLoading(true);
-    setImageLoading(true); // Reset image loading state when opening new document
+    setImageLoading(true);
     try {
+      console.log('[LawFirmEvidence] Requesting download URL for evidence:', doc.id);
       const response = await fetch(
         `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
         {
@@ -316,28 +323,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
 
+      console.log('[LawFirmEvidence] Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
         
-        // Make sure presignedUrl is absolute
         let imageUrl = data.presignedUrl;
         if (imageUrl && imageUrl.startsWith('/')) {
-          // Relative URL - make it absolute
           imageUrl = `${API_BASE_URL}${imageUrl}`;
         }
         
-        
         if (isImageFile(doc.mime_type)) {
-          // For S3 presigned URLs, use them directly (they're already authenticated)
-          // For local storage URLs, we need to handle authentication
           if (data.storageType === 's3' || imageUrl.includes('amazonaws.com') || imageUrl.includes('s3.')) {
-            // S3 presigned URL - use directly, no token needed
             setViewingDocument({
               ...doc,
               presignedUrl: imageUrl
             });
           } else {
-            // Local storage - need to fetch with auth or add token
             try {
               const imageResponse = await fetch(imageUrl, {
                 headers: {
@@ -346,7 +348,6 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               });
               
               if (imageResponse.ok) {
-                // Convert to blob and create data URI for React Native Image
                 const blob = await imageResponse.blob();
                 const reader = new FileReader();
                 
@@ -354,13 +355,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                   const base64data = reader.result;
                   setViewingDocument({
                     ...doc,
-                    presignedUrl: base64data // Use data URI instead of URL
+                    presignedUrl: base64data
                   });
                 };
                 
                 reader.onerror = (error) => {
                   console.error('[View Document] Error reading blob:', error);
-                  // Fallback to original URL with token in query
                   const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
                   setViewingDocument({
                     ...doc,
@@ -370,7 +370,6 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 
                 reader.readAsDataURL(blob);
               } else {
-                // If fetch fails, try with token in URL
                 const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
                 setViewingDocument({
                   ...doc,
@@ -379,7 +378,6 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               }
             } catch (fetchError) {
               console.error('[View Document] Error fetching image:', fetchError);
-              // Fallback: add token to URL
               const urlWithToken = `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
               setViewingDocument({
                 ...doc,
@@ -389,19 +387,22 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           }
         } else {
           if (Platform.OS === 'web') {
-            window.open(data.presignedUrl, '_blank');
+            const newWin = window.open(data.presignedUrl, '_blank');
+            if (!newWin) window.location.href = data.presignedUrl;
           } else {
             Linking.openURL(data.presignedUrl);
           }
         }
       } else {
-        const errorData = await response.json();
-        console.error('Error fetching document URL:', errorData);
-        alert('Failed to load document. Please try again.');
+        const errText = await response.text();
+        console.error('[LawFirmEvidence] Error response:', errText);
+        let errMsg = 'Failed to load document. Please try again.';
+        try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
+        alert('View Error', errMsg);
       }
     } catch (error) {
-      console.error('Error viewing document:', error);
-      alert('Failed to load document. Please try again.');
+      console.error('Error viewing document:', error.message || error);
+      alert('View Error', 'Failed to load document. Please try again.');
     } finally {
       setDocumentLoading(false);
     }
@@ -431,6 +432,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const proceedWithDownloadDocument = async (doc) => {
     setDocumentLoading(true);
     try {
+      console.log('[LawFirmDownload] Requesting download URL for evidence:', doc.id);
       const response = await fetch(
         `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
         {
@@ -440,21 +442,26 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         }
       );
 
+      console.log('[LawFirmDownload] Response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
         if (Platform.OS === 'web') {
-          window.open(data.presignedUrl, '_blank');
+          const newWin = window.open(data.presignedUrl, '_blank');
+          if (!newWin) window.location.href = data.presignedUrl;
         } else {
           Linking.openURL(data.presignedUrl);
         }
       } else {
-        const errorData = await response.json();
-        console.error('Error fetching document URL:', errorData);
-        alert('Error', 'Failed to download document. Please try again.');
+        const errText = await response.text();
+        console.error('[LawFirmDownload] Error response:', errText);
+        let errMsg = 'Failed to download document. Please try again.';
+        try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
+        alert('Download Error', errMsg);
       }
     } catch (error) {
-      console.error('Error downloading document:', error);
-      alert('Error', 'Failed to download document. Please try again.');
+      console.error('Error downloading document:', error.message || error);
+      alert('Download Error', 'Failed to download document. Please try again.');
     } finally {
       setDocumentLoading(false);
     }

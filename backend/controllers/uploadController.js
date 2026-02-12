@@ -894,12 +894,28 @@ const downloadFile = async (req, res) => {
       });
     }
 
-    const presignedUrlData = await storageService.generateDownloadUrl(
-      document.s3_key,
-      300,
-      document.file_name,
-      document.storage_type || 's3'
-    );
+    let presignedUrlData;
+    try {
+      presignedUrlData = await storageService.generateDownloadUrl(
+        document.s3_key,
+        300,
+        document.file_name,
+        document.storage_type || 's3'
+      );
+    } catch (s3Error) {
+      console.error('[Download] S3 presigned URL generation failed:', s3Error.message);
+      if (document.document_url) {
+        console.log('[Download] Falling back to document_url');
+        presignedUrlData = {
+          url: document.document_url,
+          expiresIn: null,
+          expiresAt: null,
+          storageType: 'fallback'
+        };
+      } else {
+        return res.status(500).json({ error: 'Failed to generate secure document link' });
+      }
+    }
 
     await Promise.all([
       auditLogger.log({
@@ -915,7 +931,7 @@ const downloadFile = async (req, res) => {
           accessedBy: userType,
           s3Key: document.s3_key,
           s3Bucket: document.s3_bucket,
-          storageType: 's3',
+          storageType: presignedUrlData.storageType || 's3',
           presignedUrlExpiry: presignedUrlData.expiresAt
         },
         ipAddress: req.ip,
@@ -935,10 +951,11 @@ const downloadFile = async (req, res) => {
       mimeType: document.mime_type,
       fileSize: document.file_size,
       expiresIn: presignedUrlData.expiresIn,
-      expiresAt: presignedUrlData.expiresAt
+      expiresAt: presignedUrlData.expiresAt,
+      storageType: presignedUrlData.storageType || 's3'
     });
   } catch (error) {
-    console.error('Error downloading file:', error);
+    console.error('Error downloading file:', error.message, error.stack);
     res.status(500).json({ error: 'Failed to download file' });
   }
 };
