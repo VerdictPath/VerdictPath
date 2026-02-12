@@ -15,18 +15,18 @@ const {
 
 // Stream route needs to handle auth via query param (for React Native Image component)
 // So we'll handle auth manually in the route
+const db = require('../config/db');
+
 router.get('/stream/*', async (req, res) => {
   try {
-    // Allow token in query parameter for React Native Image component
-    // which doesn't send Authorization headers
     const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
     
+    let decoded;
     if (token) {
       try {
         const jwt = require('jsonwebtoken');
         const { JWT_SECRET } = require('../middleware/auth');
-        jwt.verify(token, JWT_SECRET);
-        // Token is valid, proceed
+        decoded = jwt.verify(token, JWT_SECRET);
       } catch (tokenError) {
         return res.status(401).json({ error: 'Invalid or expired token' });
       }
@@ -36,16 +36,71 @@ router.get('/stream/*', async (req, res) => {
     
     const localKey = req.params[0];
     
-    if (!localKey || localKey.includes('..')) {
+    if (!localKey || localKey.includes('..') || localKey.startsWith('/') || /[<>|&;$`\\]/.test(localKey)) {
       return res.status(400).json({ error: 'Invalid file path' });
     }
 
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
-    const filePath = path.join(uploadsDir, localKey);
+    const uploadsDir = path.resolve(__dirname, '..', 'uploads');
+    const filePath = path.resolve(uploadsDir, localKey);
+
+    if (!filePath.startsWith(uploadsDir)) {
+      return res.status(400).json({ error: 'Invalid file path' });
+    }
 
     if (!fs.existsSync(filePath)) {
       console.error(`[Stream] File not found: ${filePath}`);
       return res.status(404).json({ error: 'File not found' });
+    }
+
+    const userId = decoded.id || decoded.userId;
+    const userType = decoded.userType;
+    const fileName = path.basename(localKey);
+    const fileOwnerMatch = fileName.match(/^user[_]?(\d+)_/);
+    
+    let fileOwnerId = null;
+    
+    if (fileOwnerMatch) {
+      fileOwnerId = parseInt(fileOwnerMatch[1]);
+    } else {
+      const dbLookup = await db.query(
+        `SELECT user_id FROM (
+          SELECT user_id, file_name FROM medical_records
+          UNION ALL SELECT user_id, file_name FROM medical_billing
+          UNION ALL SELECT user_id, file_name FROM evidence
+        ) AS all_files WHERE file_name = $1 LIMIT 1`,
+        [fileName]
+      );
+      if (dbLookup.rows.length > 0) {
+        fileOwnerId = dbLookup.rows[0].user_id;
+      }
+    }
+    
+    if (fileOwnerId === null) {
+      console.warn(`[Stream] Access denied: cannot determine owner for file ${fileName}`);
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (parseInt(fileOwnerId) !== parseInt(userId)) {
+      let hasAccess = false;
+      
+      if (userType === 'lawfirm') {
+        const clientCheck = await db.query(
+          `SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2 LIMIT 1`,
+          [userId, fileOwnerId]
+        );
+        hasAccess = clientCheck.rows.length > 0;
+      } else if (userType === 'medical_provider') {
+        const patientCheck = await db.query(
+          `SELECT 1 FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2 LIMIT 1`,
+          [userId, fileOwnerId]
+        );
+        hasAccess = patientCheck.rows.length > 0;
+      }
+      
+      if (!hasAccess) {
+        console.warn(`[Stream] Access denied: user ${userId} (${userType}) tried to access file owned by user ${fileOwnerId}`);
+        return res.status(403).json({ error: 'Access denied' });
+      }
     }
 
     const ext = path.extname(filePath).toLowerCase();
@@ -62,10 +117,10 @@ router.get('/stream/*', async (req, res) => {
     };
 
     const mimeType = mimeTypes[ext] || 'application/octet-stream';
-    const fileName = path.basename(filePath);
+    const streamFileName = path.basename(filePath);
 
     res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${streamFileName}"`);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(filePath);
   } catch (error) {
@@ -192,14 +247,66 @@ router.get('/download/*', async (req, res) => {
   try {
     const localKey = req.params[0];
     
-    if (!localKey || localKey.includes('..')) {
+    if (!localKey || localKey.includes('..') || localKey.startsWith('/') || /[<>|&;$`\\]/.test(localKey)) {
       return res.status(400).json({ error: 'Invalid file path' });
     }
 
-    const filePath = storageService.getLocalFilePath(localKey);
+    const uploadsDir = path.resolve(__dirname, '..', 'uploads');
+    const filePath = path.resolve(uploadsDir, localKey);
+
+    if (!filePath.startsWith(uploadsDir)) {
+      return res.status(400).json({ error: 'Invalid file path' });
+    }
 
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'File not found' });
+    }
+
+    const userId = req.user?.id || req.user?.userId;
+    const userType = req.user?.userType;
+    const dlFileName = path.basename(localKey);
+    const dlOwnerMatch = dlFileName.match(/^user[_]?(\d+)_/);
+    
+    let dlFileOwnerId = null;
+    
+    if (dlOwnerMatch) {
+      dlFileOwnerId = parseInt(dlOwnerMatch[1]);
+    } else {
+      const dbLookup = await db.query(
+        `SELECT user_id FROM (
+          SELECT user_id, file_name FROM medical_records
+          UNION ALL SELECT user_id, file_name FROM medical_billing
+          UNION ALL SELECT user_id, file_name FROM evidence
+        ) AS all_files WHERE file_name = $1 LIMIT 1`,
+        [dlFileName]
+      );
+      if (dbLookup.rows.length > 0) {
+        dlFileOwnerId = dbLookup.rows[0].user_id;
+      }
+    }
+    
+    if (dlFileOwnerId === null) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    if (parseInt(dlFileOwnerId) !== parseInt(userId)) {
+      let hasAccess = false;
+      if (userType === 'lawfirm') {
+        const check = await db.query(
+          `SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2 LIMIT 1`,
+          [userId, dlFileOwnerId]
+        );
+        hasAccess = check.rows.length > 0;
+      } else if (userType === 'medical_provider') {
+        const check = await db.query(
+          `SELECT 1 FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2 LIMIT 1`,
+          [userId, dlFileOwnerId]
+        );
+        hasAccess = check.rows.length > 0;
+      }
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
     }
 
     const ext = path.extname(filePath).toLowerCase();

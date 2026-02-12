@@ -31,7 +31,7 @@ exports.getActivityLogs = async (req, res) => {
     res.json({ success: true, logs, total: logs.length });
   } catch (error) {
     console.error('Error fetching activity logs:', error);
-    res.status(500).json({ success: false, message: 'Error fetching activity logs', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching activity logs' });
   }
 };
 
@@ -53,7 +53,7 @@ exports.getActivityStatistics = async (req, res) => {
     res.json({ success: true, statistics });
   } catch (error) {
     console.error('Error fetching activity statistics:', error);
-    res.status(500).json({ success: false, message: 'Error fetching statistics', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching statistics' });
   }
 };
 
@@ -76,7 +76,7 @@ exports.getMostActiveUsers = async (req, res) => {
     res.json({ success: true, users });
   } catch (error) {
     console.error('Error fetching most active users:', error);
-    res.status(500).json({ success: false, message: 'Error fetching user activity', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching user activity' });
   }
 };
 
@@ -97,7 +97,7 @@ exports.getFailedActivities = async (req, res) => {
     res.json({ success: true, activities });
   } catch (error) {
     console.error('Error fetching failed activities:', error);
-    res.status(500).json({ success: false, message: 'Error fetching failed activities', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching failed activities' });
   }
 };
 
@@ -170,7 +170,7 @@ exports.getUserActivityTimeline = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user activity timeline:', error);
-    res.status(500).json({ success: false, message: 'Error fetching timeline', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching timeline' });
   }
 };
 
@@ -232,6 +232,6 @@ exports.getActivitySummary = async (req, res) => {
     res.json({ success: true, summary });
   } catch (error) {
     console.error('Error fetching activity summary:', error);
-    res.status(500).json({ success: false, message: 'Error fetching activity summary', error: error.message });
+    res.status(500).json({ success: false, message: 'Error fetching activity summary' });
   }
 };

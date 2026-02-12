@@ -176,7 +176,7 @@ const eventRequestController = {
     } catch (error) {
       console.error('Error creating event request:', error.message);
       console.error('Error stack:', error.stack);
-      res.status(500).json({ error: 'Failed to create event request', details: error.message });
+      res.status(500).json({ error: 'Failed to create event request' });
     }
   },
 
@@ -451,7 +451,7 @@ const eventRequestController = {
       }
     } catch (error) {
       console.error('Error submitting proposed dates:', error);
-      res.status(500).json({ error: error.message || 'Failed to submit proposed dates' });
+      res.status(500).json({ error: 'Failed to submit proposed dates' });
     }
   },
 

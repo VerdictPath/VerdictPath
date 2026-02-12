@@ -11,6 +11,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const securityHeaders = require('./middleware/securityHeaders');
+const { apiLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
 const lawfirmRoutes = require('./routes/lawfirm');
@@ -130,10 +131,13 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(securityHeaders);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Use cookieParser with secret for signed cookies (uses JWT_SECRET if COOKIE_SECRET not set)
-const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.JWT_SECRET || 'verdict-path-cookie-secret';
+const COOKIE_SECRET = process.env.COOKIE_SECRET || process.env.JWT_SECRET;
+if (!COOKIE_SECRET) {
+  console.error('WARNING: No COOKIE_SECRET or JWT_SECRET set. Cookies will not be properly signed.');
+}
 app.use(cookieParser(COOKIE_SECRET));
 
 app.set('view engine', 'ejs');
@@ -178,6 +182,7 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/lawfirm', lawfirmRoutes);
 app.use('/api/lawfirm/users', lawfirmUsersRoutes);
@@ -263,7 +268,7 @@ app.post('/portal/login', async (req, res) => {
     const data = await response.json();
     
     if (response.ok) {
-      res.cookie('token', data.token, { httpOnly: true, signed: true, sameSite: 'lax' });
+      res.cookie('token', data.token, { httpOnly: true, signed: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.redirect('/portal/dashboard');
     } else {
       res.render('lawfirm-login', { 
