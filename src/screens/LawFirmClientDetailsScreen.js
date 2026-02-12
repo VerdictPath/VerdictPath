@@ -19,7 +19,20 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [loadingBills, setLoadingBills] = useState(false);
   const [viewingDocId, setViewingDocId] = useState(null);
+  const [showRecordTypeModal, setShowRecordTypeModal] = useState(false);
+  const [selectedRecordType, setSelectedRecordType] = useState('Medical Record');
   
+  const RECORD_TYPE_OPTIONS = [
+    { label: 'Medical Record', value: 'Medical Record' },
+    { label: 'HIPAA Release', value: 'HIPAA Release' },
+    { label: 'Imaging / Radiology', value: 'Imaging / Radiology' },
+    { label: 'Lab Results', value: 'Lab Results' },
+    { label: 'Surgical Report', value: 'Surgical Report' },
+    { label: 'Physician Notes', value: 'Physician Notes' },
+    { label: 'Discharge Summary', value: 'Discharge Summary' },
+    { label: 'Other', value: 'Other' },
+  ];
+
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
   const isDesktop = width >= 1024;
@@ -132,6 +145,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   };
 
   const handleUploadForClient = (category) => {
+    if (category === 'records') {
+      setSelectedRecordType('Medical Record');
+      setShowRecordTypeModal(true);
+    } else {
+      proceedWithUpload(category);
+    }
+  };
+
+  const proceedWithUpload = (category) => {
     if (Platform.OS === 'web') {
       pickFileFromWebForClient(category);
     } else {
@@ -217,7 +239,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       if (category === 'bills') {
         formData.append('billingType', 'Medical Bill');
       } else {
-        formData.append('recordType', 'Medical Record');
+        formData.append('recordType', selectedRecordType || 'Medical Record');
       }
 
       const uploadResponse = await fetch(endpoint, {
@@ -1002,6 +1024,68 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showRecordTypeModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRecordTypeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.imageModalContent, { maxWidth: 400, maxHeight: 500 }]}>
+            <View style={styles.imageModalHeader}>
+              <Text style={styles.imageModalTitle}>Select Record Type</Text>
+              <TouchableOpacity 
+                style={styles.imageModalCloseBtn}
+                onPress={() => setShowRecordTypeModal(false)}
+              >
+                <Text style={styles.imageModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ padding: 16 }}>
+              {RECORD_TYPE_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={{
+                    padding: 14,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    backgroundColor: selectedRecordType === option.value ? '#1E3A5F' : '#f0f0f0',
+                    borderWidth: 1,
+                    borderColor: selectedRecordType === option.value ? '#1E3A5F' : '#ddd',
+                  }}
+                  onPress={() => setSelectedRecordType(option.value)}
+                >
+                  <Text style={{
+                    fontSize: 15,
+                    fontWeight: selectedRecordType === option.value ? '700' : '400',
+                    color: selectedRecordType === option.value ? '#fff' : '#333',
+                  }}>
+                    {option.value === 'HIPAA Release' ? '🔒 ' : '📄 '}{option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, gap: 12 }}>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
+                onPress={() => setShowRecordTypeModal(false)}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#1E3A5F', minWidth: 120, alignItems: 'center' }}
+                onPress={() => {
+                  setShowRecordTypeModal(false);
+                  proceedWithUpload('records');
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Choose File</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={viewingDocument !== null}

@@ -164,7 +164,7 @@ exports.getDashboard = async (req, res) => {
       };
     }));
     
-    // Get all medical records for consented patients
+    // Get all medical records for consented patients (exclude law firm uploads except HIPAA Release)
     const medicalRecordsResult = await db.query(
       `SELECT mr.id, mr.file_name, mr.mime_type, mr.uploaded_at, mr.record_type, mr.user_id,
               u.first_name, u.last_name, u.first_name_encrypted, u.last_name_encrypted
@@ -177,6 +177,11 @@ exports.getDashboard = async (req, res) => {
        LEFT JOIN medical_provider_patients mpp ON u.id = mpp.patient_id
          AND mpp.medical_provider_id = $1
        WHERE (cr.id IS NOT NULL OR mpp.id IS NOT NULL)
+         AND (
+           mr.uploaded_by_type IS NULL
+           OR mr.uploaded_by_type NOT IN ('lawfirm', 'law_firm')
+           OR LOWER(mr.record_type) LIKE '%hipaa%release%'
+         )
        ORDER BY mr.uploaded_at DESC
        LIMIT 50`,
       [providerId]
@@ -293,31 +298,47 @@ exports.getPatientDetails = async (req, res) => {
     const firstName = encryption.decrypt(patient.first_name_encrypted);
     const lastName = encryption.decrypt(patient.last_name_encrypted);
     
-    // Get medical records
+    // Get medical records - exclude law firm uploads except HIPAA Release documents
     const medicalRecordsResult = await db.query(
-      `SELECT id, file_name, mime_type, file_size, uploaded_at, record_type
+      `SELECT id, file_name, mime_type, file_size, uploaded_at, record_type,
+              uploaded_by, uploaded_by_type
        FROM medical_records
        WHERE user_id = $1
+         AND (
+           uploaded_by_type IS NULL 
+           OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
+           OR LOWER(record_type) LIKE '%hipaa%release%'
+         )
        ORDER BY uploaded_at DESC`,
       [patientId]
     );
     
-    // Get medical billing
+    // Get medical billing - exclude law firm uploads entirely
     const billingResult = await db.query(
-      `SELECT id, total_amount, amount_due, bill_date, facility_name, description
+      `SELECT id, total_amount, amount_due, bill_date, facility_name, description,
+              uploaded_by, uploaded_by_type
        FROM medical_billing
        WHERE user_id = $1
+         AND (
+           uploaded_by_type IS NULL 
+           OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
+         )
        ORDER BY bill_date DESC`,
       [patientId]
     );
     
-    // Get evidence documents
+    // Get evidence documents - exclude law firm uploads entirely
     const evidenceResult = await db.query(
       `SELECT id, file_name, mime_type, file_size, uploaded_at, evidence_type,
               title, title_encrypted, description, description_encrypted, 
-              location, location_encrypted, date_of_incident
+              location, location_encrypted, date_of_incident,
+              uploaded_by, uploaded_by_type
        FROM evidence
        WHERE user_id = $1
+         AND (
+           uploaded_by_type IS NULL 
+           OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
+         )
        ORDER BY uploaded_at DESC`,
       [patientId]
     );

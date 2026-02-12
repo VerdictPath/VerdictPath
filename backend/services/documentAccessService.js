@@ -307,9 +307,25 @@ async function authorizeMedicalProviderDocumentAccess(providerId, patientId, doc
     };
   }
 
+  const doc = docResult.rows[0];
+
+  // Medical providers cannot view documents uploaded by law firms,
+  // except for HIPAA Release medical records
+  if (doc.uploaded_by_type === 'lawfirm' || doc.uploaded_by_type === 'law_firm') {
+    const isHipaaRelease = documentType === 'medical_records' && 
+      doc.record_type && doc.record_type.toLowerCase().includes('hipaa') && 
+      doc.record_type.toLowerCase().includes('release');
+    if (!isHipaaRelease) {
+      return {
+        authorized: false,
+        reason: 'Medical providers cannot access documents uploaded by law firms'
+      };
+    }
+  }
+
   return {
     authorized: true,
-    document: docResult.rows[0],
+    document: doc,
     consentType: consent.consent_type
   };
 }
