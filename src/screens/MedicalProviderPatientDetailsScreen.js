@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground, Platform, Linking
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground, Platform, Linking, Modal
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
@@ -19,6 +19,19 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [activeTab, setActiveTab] = useState('roadmap');
   const [uploadingType, setUploadingType] = useState(null);
   const [viewingDocId, setViewingDocId] = useState(null);
+  const [showRecordTypeModal, setShowRecordTypeModal] = useState(false);
+  const [selectedRecordType, setSelectedRecordType] = useState('Medical Record');
+
+  const RECORD_TYPE_OPTIONS = [
+    { label: 'Medical Record', value: 'Medical Record' },
+    { label: 'HIPAA Release', value: 'HIPAA Release' },
+    { label: 'Imaging / Radiology', value: 'Imaging / Radiology' },
+    { label: 'Lab Results', value: 'Lab Results' },
+    { label: 'Surgical Report', value: 'Surgical Report' },
+    { label: 'Physician Notes', value: 'Physician Notes' },
+    { label: 'Discharge Summary', value: 'Discharge Summary' },
+    { label: 'Other', value: 'Other' },
+  ];
 
   useEffect(() => {
     fetchPatientDetails();
@@ -364,6 +377,15 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   };
 
   const handleUploadForPatient = (category) => {
+    if (category === 'records') {
+      setSelectedRecordType('Medical Record');
+      setShowRecordTypeModal(true);
+    } else {
+      proceedWithUploadForPatient(category);
+    }
+  };
+
+  const proceedWithUploadForPatient = (category) => {
     if (Platform.OS === 'web') {
       pickFileFromWebForPatient(category);
     } else {
@@ -449,7 +471,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       if (category === 'bills') {
         formData.append('billingType', 'Medical Bill');
       } else {
-        formData.append('recordType', 'Medical Record');
+        formData.append('recordType', selectedRecordType || 'Medical Record');
       }
 
       const uploadResponse = await fetch(endpoint, {
@@ -497,11 +519,18 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       }
       const data = await response.json();
       if (data.url) {
+        let docUrl = data.url;
+        if (docUrl.startsWith('/')) {
+          docUrl = `${API_BASE_URL}${docUrl}`;
+        }
+        if (docUrl.includes('/api/uploads/stream/')) {
+          docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+        }
         if (Platform.OS === 'web') {
-          const newWin = window.open(data.url, '_blank');
-          if (!newWin) window.location.href = data.url;
+          const newWin = window.open(docUrl, '_blank');
+          if (!newWin) window.location.href = docUrl;
         } else {
-          await Linking.openURL(data.url);
+          await Linking.openURL(docUrl);
         }
       } else {
         alert('Error', 'Document URL not available.');
@@ -531,11 +560,18 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       }
       const data = await response.json();
       if (data.url) {
+        let docUrl = data.url;
+        if (docUrl.startsWith('/')) {
+          docUrl = `${API_BASE_URL}${docUrl}`;
+        }
+        if (docUrl.includes('/api/uploads/stream/')) {
+          docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+        }
         if (Platform.OS === 'web') {
-          const newWin = window.open(data.url, '_blank');
-          if (!newWin) window.location.href = data.url;
+          const newWin = window.open(docUrl, '_blank');
+          if (!newWin) window.location.href = docUrl;
         } else {
-          await Linking.openURL(data.url);
+          await Linking.openURL(docUrl);
         }
       } else {
         alert('Error', 'Document URL not available.');
@@ -907,6 +943,67 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showRecordTypeModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRecordTypeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.recordTypeModalContent}>
+            <View style={styles.recordTypeModalHeader}>
+              <Text style={styles.recordTypeModalTitle}>Select Record Type</Text>
+              <TouchableOpacity 
+                onPress={() => setShowRecordTypeModal(false)}
+              >
+                <Text style={{ fontSize: 20, color: '#666', fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ padding: 16 }}>
+              {RECORD_TYPE_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={{
+                    padding: 14,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    backgroundColor: selectedRecordType === option.value ? theme.colors.primary : '#f0f0f0',
+                    borderWidth: 1,
+                    borderColor: selectedRecordType === option.value ? theme.colors.primary : '#ddd',
+                  }}
+                  onPress={() => setSelectedRecordType(option.value)}
+                >
+                  <Text style={{
+                    fontSize: 15,
+                    fontWeight: selectedRecordType === option.value ? '700' : '400',
+                    color: selectedRecordType === option.value ? '#fff' : '#333',
+                  }}>
+                    {option.value === 'HIPAA Release' ? '🔒 ' : '📄 '}{option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, gap: 12 }}>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
+                onPress={() => setShowRecordTypeModal(false)}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: theme.colors.primary, minWidth: 120, alignItems: 'center' }}
+                onPress={() => {
+                  setShowRecordTypeModal(false);
+                  proceedWithUploadForPatient('records');
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Choose File</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1372,6 +1469,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderColor: '#FFD700',
     borderWidth: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordTypeModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: 500,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  recordTypeModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  recordTypeModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
   },
 });
 

@@ -402,14 +402,21 @@ const RoadmapScreen = ({
       console.log('[RoadmapView] Got URL:', data.url ? 'yes' : 'no');
 
       if (data.url) {
+        let docUrl = data.url;
+        if (docUrl.startsWith('/')) {
+          docUrl = `${API_BASE_URL}${docUrl}`;
+        }
+        if (docUrl.includes('/api/uploads/stream/')) {
+          docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${authToken}`;
+        }
         if (Platform.OS === 'web') {
-          const newWin = window.open(data.url, '_blank');
+          const newWin = window.open(docUrl, '_blank');
           if (!newWin) {
-            window.location.href = data.url;
+            window.location.href = docUrl;
           }
         } else {
           const { Linking } = require('react-native');
-          await Linking.openURL(data.url);
+          await Linking.openURL(docUrl);
         }
       } else {
         alert('Error', 'Document URL not available.');

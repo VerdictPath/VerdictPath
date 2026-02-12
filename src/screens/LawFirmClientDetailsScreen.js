@@ -292,11 +292,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       }
       const data = await response.json();
       if (data.url) {
+        let docUrl = data.url;
+        if (docUrl.startsWith('/')) {
+          docUrl = `${API_BASE_URL}${docUrl}`;
+        }
+        if (docUrl.includes('/api/uploads/stream/')) {
+          docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+        }
         if (Platform.OS === 'web') {
-          const newWin = window.open(data.url, '_blank');
-          if (!newWin) window.location.href = data.url;
+          const newWin = window.open(docUrl, '_blank');
+          if (!newWin) window.location.href = docUrl;
         } else {
-          await Linking.openURL(data.url);
+          await Linking.openURL(docUrl);
         }
       } else {
         alert('Error', 'Document URL not available.');
@@ -411,11 +418,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
             }
           }
         } else {
+          let nonImageUrl = data.presignedUrl;
+          if (nonImageUrl && nonImageUrl.startsWith('/')) {
+            nonImageUrl = `${API_BASE_URL}${nonImageUrl}`;
+          }
+          if (nonImageUrl && nonImageUrl.includes('/api/uploads/stream/')) {
+            nonImageUrl = `${nonImageUrl}${nonImageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+          }
           if (Platform.OS === 'web') {
-            const newWin = window.open(data.presignedUrl, '_blank');
-            if (!newWin) window.location.href = data.presignedUrl;
+            const newWin = window.open(nonImageUrl, '_blank');
+            if (!newWin) window.location.href = nonImageUrl;
           } else {
-            Linking.openURL(data.presignedUrl);
+            Linking.openURL(nonImageUrl);
           }
         }
       } else {
@@ -471,11 +485,18 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
       if (response.ok) {
         const data = await response.json();
+        let downloadUrl = data.presignedUrl;
+        if (downloadUrl && downloadUrl.startsWith('/')) {
+          downloadUrl = `${API_BASE_URL}${downloadUrl}`;
+        }
+        if (downloadUrl && downloadUrl.includes('/api/uploads/stream/')) {
+          downloadUrl = `${downloadUrl}${downloadUrl.includes('?') ? '&' : '?'}token=${user.token}`;
+        }
         if (Platform.OS === 'web') {
-          const newWin = window.open(data.presignedUrl, '_blank');
-          if (!newWin) window.location.href = data.presignedUrl;
+          const newWin = window.open(downloadUrl, '_blank');
+          if (!newWin) window.location.href = downloadUrl;
         } else {
-          Linking.openURL(data.presignedUrl);
+          Linking.openURL(downloadUrl);
         }
       } else {
         const errText = await response.text();

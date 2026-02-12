@@ -139,7 +139,7 @@ class StorageService {
   }
 
   _generateLocalDownloadUrl(localKey, originalFilename) {
-    const url = `/api/uploads/download/${encodeURIComponent(localKey)}`;
+    const url = `/api/uploads/stream/${localKey}`;
     return {
       url: url,
       expiresIn: null,
