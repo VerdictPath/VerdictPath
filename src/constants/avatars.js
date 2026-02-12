@@ -9,6 +9,9 @@ export const AVATARS = {
     thumbnailWeb: '/videos/avatars/captain-thumbnail.png',
     primaryColor: '#1E40AF',
     accentColor: '#60A5FA',
+    musicFile: require('../../assets/audio/avatars/captain-theme.mp3'),
+    musicFileWeb: '/audio/avatars/captain-theme.mp3',
+    musicTitle: 'The Advocate\'s Anthem',
   },
   NAVIGATOR: {
     id: 'navigator',
@@ -20,6 +23,9 @@ export const AVATARS = {
     thumbnailWeb: '/videos/avatars/navigator-thumbnail.png',
     primaryColor: '#0F766E',
     accentColor: '#5EEAD4',
+    musicFile: require('../../assets/audio/avatars/navigator-theme.mp3'),
+    musicFileWeb: '/audio/avatars/navigator-theme.mp3',
+    musicTitle: 'Lady Justice\'s Ballad',
   },
   STRATEGIST: {
     id: 'strategist',
@@ -31,6 +37,9 @@ export const AVATARS = {
     thumbnailWeb: '/videos/avatars/strategist-thumbnail.png',
     primaryColor: '#7C3AED',
     accentColor: '#C4B5FD',
+    musicFile: require('../../assets/audio/avatars/strategist-theme.mp3'),
+    musicFileWeb: '/audio/avatars/strategist-theme.mp3',
+    musicTitle: 'The Paralegal\'s March',
   },
   ADVOCATE: {
     id: 'advocate',
@@ -42,6 +51,9 @@ export const AVATARS = {
     thumbnailWeb: '/videos/avatars/advocate-thumbnail.png',
     primaryColor: '#DC2626',
     accentColor: '#FCA5A5',
+    musicFile: require('../../assets/audio/avatars/advocate-theme.mp3'),
+    musicFileWeb: '/audio/avatars/advocate-theme.mp3',
+    musicTitle: 'The Judge\'s Decree',
   },
   POLLY: {
     id: 'polly',
@@ -53,7 +65,24 @@ export const AVATARS = {
     thumbnailWeb: '/videos/avatars/polly-thumbnail.png',
     primaryColor: '#22C55E',
     accentColor: '#86EFAC',
+    musicFile: require('../../assets/audio/avatars/polly-theme.mp3'),
+    musicFileWeb: '/audio/avatars/polly-theme.mp3',
+    musicTitle: 'Polly\'s Sea Shanty',
   },
+};
+
+export const AMBIENT_SOUNDS = {
+  id: 'ambient',
+  title: 'Ocean Voyage',
+  description: 'Peaceful ocean waves, creaking ship, and nautical winds',
+  file: require('../../assets/audio/ambient/ocean-ambient.mp3'),
+  fileWeb: '/audio/ambient/ocean-ambient.mp3',
+};
+
+export const MUSIC_PREFERENCES = {
+  AVATAR: 'avatar',
+  AMBIENT: 'ambient',
+  OFF: 'off',
 };
 
 export const ACTION_TRIGGERS = {

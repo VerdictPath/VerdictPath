@@ -172,6 +172,11 @@ export const API_ENDPOINTS = {
     CURRENT: `${API_BASE_URL}/api/avatar/current`,
   },
 
+  // Music
+  MUSIC: {
+    PREFERENCE: `${API_BASE_URL}/api/music/preference`,
+  },
+
   // Law Firm Users (Multi-User Management)
   LAWFIRM_USERS: {
     CREATE: `${API_BASE_URL}/api/lawfirm/users`,

@@ -17,6 +17,7 @@ import { calculateDailyBonus, calculateCreditsFromCoins, calculateCoinsNeeded } 
 import { apiRequest, API_ENDPOINTS, API_BASE_URL } from './src/config/api';
 import { applyWebFixes, isWeb } from './src/utils/webUtils';
 import { NotificationProvider, useNotifications } from './src/contexts/NotificationContext';
+import { MusicProvider, useMusic } from './src/contexts/MusicContext';
 import NotificationService from './src/services/NotificationService';
 import { AVATARS } from './src/constants/avatars';
 import useSessionTimeout from './src/hooks/useSessionTimeout';
@@ -97,6 +98,7 @@ import FloatingParrotButton from './src/components/FloatingParrotButton';
 
 const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   const notificationContext = useNotifications();
+  const musicContext = useMusic();
   const [userType, setUserType] = useState(USER_TYPES.INDIVIDUAL);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [coins, setCoins] = useState(0);
@@ -1284,6 +1286,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     };
     setUser(updatedUser);
     await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    if (musicContext.onAvatarChanged) {
+      musicContext.onAvatarChanged(avatarType);
+    }
   };
 
   return (
@@ -2283,14 +2288,16 @@ const CaseCompassApp = () => {
 
   const appContent = (
     <SafeAreaProvider>
-      <NotificationProvider user={user} onNavigate={handleNavigate}>
-        <AppContent 
-          user={user} 
-          setUser={setUser} 
-          currentScreen={currentScreen}
-          setCurrentScreen={setCurrentScreen}
-        />
-      </NotificationProvider>
+      <MusicProvider user={user}>
+        <NotificationProvider user={user} onNavigate={handleNavigate}>
+          <AppContent 
+            user={user} 
+            setUser={setUser} 
+            currentScreen={currentScreen}
+            setCurrentScreen={setCurrentScreen}
+          />
+        </NotificationProvider>
+      </MusicProvider>
     </SafeAreaProvider>
   );
 

@@ -84,6 +84,21 @@ Key technical features include:
 - **Legacy unsigned cookie removed** - authenticateToken no longer falls back to unsigned cookies. Only signed httpOnly cookies and Bearer tokens accepted.
 - **Admin portal unaffected** - Uses separate `adminToken` signed cookie with its own auth middleware.
 
+### Background Music System (February 2026)
+- **Individual users only** - Law firm and medical provider portals have no music
+- **Three preference options**: Avatar theme song, Ambient ocean sounds, or Off (default: off)
+- **Each avatar has an assigned theme**: captain-theme.mp3, navigator-theme.mp3, strategist-theme.mp3, advocate-theme.mp3, polly-theme.mp3
+- **Ambient sounds**: ocean-ambient.mp3 (ocean waves, ship creaking, nautical winds)
+- **Service**: `src/services/BackgroundMusicService.js` - singleton managing expo-av (native) and HTML5 Audio (web) with looping, volume control, fade in/out
+- **Context**: `src/contexts/MusicContext.js` - React context wrapping the app, persists preference via AsyncStorage + server sync
+- **Settings UI**: Music controls section in SettingsScreen.js with radio options, volume slider, now-playing indicator with pause/play
+- **Database**: `music_preference` column on users table (varchar, default 'off')
+- **API**: GET/PUT `/api/music/preference` (individual users only)
+- **Audio files**: Native assets in `assets/audio/avatars/` and `assets/audio/ambient/`, web files in `backend/public/audio/`
+- **Switching avatar auto-switches music** when avatar preference is selected
+- **Web autoplay handling**: Falls back to user interaction listener if browser blocks autoplay
+- **IMPORTANT**: Replace placeholder MP3 files with real music files before release. Placeholders are silent.
+
 ### AWS S3 Requirements
 - Medical Hub document upload requires AWS S3 credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION)
 
