@@ -230,7 +230,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       if (response.ok) {
         const data = await response.json();
         setBlockedTimes(data.blockedTimes || []);
-        updateMarkedDates(appointments, data.blockedTimes || []);
       }
     } catch (error) {
       console.error('Error fetching blocked times:', error);
@@ -248,7 +247,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       if (response.ok) {
         const data = await response.json();
         setAppointments(data.appointments || []);
-        updateMarkedDates(data.appointments || [], blockedTimes);
       }
     } catch (error) {
       console.error('Error fetching appointments:', error);
@@ -296,10 +294,10 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
-  const updateMarkedDates = (appts, blocked) => {
+  useEffect(() => {
     const marked = {};
     
-    appts.forEach(appt => {
+    appointments.forEach(appt => {
       const date = appt.appointment_date;
       if (!marked[date]) {
         marked[date] = { dots: [] };
@@ -309,7 +307,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       marked[date].dots.push({ key: `appt-${appt.id}`, color });
     });
 
-    blocked.forEach(block => {
+    blockedTimes.forEach(block => {
       const startDate = moment(block.start_datetime).format('YYYY-MM-DD');
       const endDate = moment(block.end_datetime).format('YYYY-MM-DD');
       let current = moment(startDate);
@@ -333,7 +331,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     });
 
     setMarkedDates(marked);
-  };
+  }, [appointments, blockedTimes, calendarEvents]);
 
   const handleAddAvailability = async () => {
     try {
