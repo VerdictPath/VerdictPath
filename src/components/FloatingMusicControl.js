@@ -54,7 +54,11 @@ const FloatingMusicControl = ({ user }) => {
   };
 
   const handleSelectOption = (pref) => {
-    music.updatePreference(pref);
+    if (pref === music.musicPreference && !music.isPlaying && pref !== MUSIC_PREFERENCES.OFF) {
+      music.togglePlayPause();
+    } else {
+      music.updatePreference(pref);
+    }
     setTimeout(() => {
       setExpanded(false);
       Animated.spring(expandAnim, {
@@ -164,14 +168,14 @@ const FloatingMusicControl = ({ user }) => {
             )}
           </TouchableOpacity>
 
-          {music.isPlaying && (
+          {music.musicPreference !== MUSIC_PREFERENCES.OFF && (
             <TouchableOpacity
               style={styles.pauseButton}
               onPress={music.togglePlayPause}
               activeOpacity={0.7}
             >
-              <Text style={styles.pauseIcon}>⏸</Text>
-              <Text style={styles.pauseLabel}>Pause</Text>
+              <Text style={styles.pauseIcon}>{music.isPlaying ? '⏸' : '▶️'}</Text>
+              <Text style={styles.pauseLabel}>{music.isPlaying ? 'Pause' : 'Resume'}</Text>
             </TouchableOpacity>
           )}
         </Animated.View>

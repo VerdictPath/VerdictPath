@@ -83,6 +83,11 @@ class BackgroundMusicService {
       return;
     }
 
+    if (this.currentSource === sourceKey && !this.isPlaying) {
+      await this.resume();
+      return;
+    }
+
     this.isLoading = true;
 
     try {
@@ -313,8 +318,18 @@ class BackgroundMusicService {
 
   async fadeIn(preference, avatarType, duration = 1000) {
     const targetVolume = this.volume;
-    this.volume = 0;
-    await this.play(preference, avatarType);
+    const source = this.getSourceForPreference(preference, avatarType);
+    const sourceKey = Platform.OS === 'web' ? source : JSON.stringify(source);
+    const isSameSource = this.currentSource === sourceKey;
+    const hasExistingAudio = Platform.OS === 'web' ? !!this.webAudio : !!this.sound;
+
+    if (isSameSource && hasExistingAudio && !this.isPlaying) {
+      await this.setVolume(0);
+      await this.resume();
+    } else {
+      this.volume = 0;
+      await this.play(preference, avatarType);
+    }
 
     return new Promise((resolve) => {
       this.clearFade();
@@ -330,6 +345,7 @@ class BackgroundMusicService {
 
         if (currentStep >= steps) {
           this.clearFade();
+          this.volume = targetVolume;
           resolve();
         }
       }, stepDuration);
