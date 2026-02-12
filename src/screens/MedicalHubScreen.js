@@ -441,18 +441,18 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
   const handleViewDocument = async (type, docId, fileName) => {
     setViewingDocId(docId);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
       const docType = type === 'bills' ? 'bill' : 'record';
-      console.log('[MedicalHub] Requesting view for', docType, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${docType}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
-      console.log('[MedicalHub] Response status:', response.status);
-
       if (!response.ok) {
         const errText = await response.text();
-        console.error('[MedicalHub] Error response:', errText);
         let errMsg = 'Failed to retrieve document';
         try {
           const errData = JSON.parse(errText);
@@ -462,7 +462,6 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       }
 
       const data = await response.json();
-      console.log('[MedicalHub] Got URL:', data.url ? 'yes' : 'no');
 
       if (data.url) {
         let docUrl = data.url;
@@ -473,18 +472,27 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${authToken}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(docUrl, '_blank');
-          if (!newWin) {
-            window.location.href = docUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = docUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = docUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
           }
         } else {
           const { Linking } = require('react-native');
           await Linking.openURL(docUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {

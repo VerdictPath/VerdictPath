@@ -276,16 +276,17 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const handleViewMedicalDoc = async (docId, docType, fileName) => {
     setViewingDocId(docId);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
       const type = docType === 'bill' ? 'bill' : 'record';
-      console.log('[LawFirmView] Requesting medical doc view:', type, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
-      console.log('[LawFirmView] Response status:', response.status);
       if (!response.ok) {
         const errText = await response.text();
-        console.error('[LawFirmView] Error response:', errText);
         let errMsg = 'Failed to retrieve document';
         try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
         throw new Error(errMsg);
@@ -300,15 +301,26 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(docUrl, '_blank');
-          if (!newWin) window.location.href = docUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = docUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = docUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
         } else {
           await Linking.openURL(docUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing medical document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
@@ -344,8 +356,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const proceedWithViewDocument = async (doc) => {
     setDocumentLoading(true);
     setImageLoading(true);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web' && !isImageFile(doc.mime_type)) {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
-      console.log('[LawFirmEvidence] Requesting download URL for evidence:', doc.id);
       const response = await fetch(
         `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
         {
@@ -354,8 +369,6 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           }
         }
       );
-
-      console.log('[LawFirmEvidence] Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
@@ -426,20 +439,30 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
             nonImageUrl = `${nonImageUrl}${nonImageUrl.includes('?') ? '&' : '?'}token=${user.token}`;
           }
           if (Platform.OS === 'web') {
-            const newWin = window.open(nonImageUrl, '_blank');
-            if (!newWin) window.location.href = nonImageUrl;
+            if (preOpenedWindow) {
+              preOpenedWindow.location.href = nonImageUrl;
+            } else {
+              const a = document.createElement('a');
+              a.href = nonImageUrl;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }
           } else {
             Linking.openURL(nonImageUrl);
           }
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         const errText = await response.text();
-        console.error('[LawFirmEvidence] Error response:', errText);
         let errMsg = 'Failed to load document. Please try again.';
         try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
         alert('View Error', errMsg);
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing document:', error.message || error);
       alert('View Error', 'Failed to load document. Please try again.');
     } finally {
@@ -470,8 +493,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const proceedWithDownloadDocument = async (doc) => {
     setDocumentLoading(true);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
-      console.log('[LawFirmDownload] Requesting download URL for evidence:', doc.id);
       const response = await fetch(
         `${API_BASE_URL}/api/uploads/download/evidence/${doc.id}`,
         {
@@ -480,8 +506,6 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           }
         }
       );
-
-      console.log('[LawFirmDownload] Response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
@@ -493,19 +517,29 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           downloadUrl = `${downloadUrl}${downloadUrl.includes('?') ? '&' : '?'}token=${user.token}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(downloadUrl, '_blank');
-          if (!newWin) window.location.href = downloadUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = downloadUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
         } else {
           Linking.openURL(downloadUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         const errText = await response.text();
-        console.error('[LawFirmDownload] Error response:', errText);
         let errMsg = 'Failed to download document. Please try again.';
         try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
         alert('Download Error', errMsg);
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error downloading document:', error.message || error);
       alert('Download Error', 'Failed to download document. Please try again.');
     } finally {

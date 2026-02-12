@@ -503,16 +503,17 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const handleViewMedicalDoc = async (docId, docType, fileName) => {
     setViewingDocId(docId);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
       const type = docType === 'bill' ? 'bill' : 'record';
-      console.log('[MedProviderView] Requesting medical doc view:', type, docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
-      console.log('[MedProviderView] Response status:', response.status);
       if (!response.ok) {
         const errText = await response.text();
-        console.error('[MedProviderView] Error response:', errText);
         let errMsg = 'Failed to retrieve document';
         try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
         throw new Error(errMsg);
@@ -527,15 +528,26 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(docUrl, '_blank');
-          if (!newWin) window.location.href = docUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = docUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = docUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
         } else {
           await Linking.openURL(docUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing medical document:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
@@ -545,15 +557,16 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
 
   const handleViewEvidence = async (docId, fileName) => {
     setViewingDocId(docId);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
-      console.log('[MedProviderView] Requesting evidence view:', docId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${docId}/view`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
-      console.log('[MedProviderView] Evidence response status:', response.status);
       if (!response.ok) {
         const errText = await response.text();
-        console.error('[MedProviderView] Evidence error response:', errText);
         let errMsg = 'Failed to retrieve document';
         try { const errData = JSON.parse(errText); errMsg = errData.error || errMsg; } catch (e) {}
         throw new Error(errMsg);
@@ -568,15 +581,26 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
           docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${user.token}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(docUrl, '_blank');
-          if (!newWin) window.location.href = docUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = docUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = docUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }
         } else {
           await Linking.openURL(docUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing evidence:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {

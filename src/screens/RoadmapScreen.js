@@ -379,17 +379,17 @@ const RoadmapScreen = ({
 
   const handleViewEvidence = async (evidenceId, fileName) => {
     setViewingEvidenceId(evidenceId);
+    let preOpenedWindow = null;
+    if (Platform.OS === 'web') {
+      preOpenedWindow = window.open('about:blank', '_blank');
+    }
     try {
-      console.log('[RoadmapView] Requesting evidence view for id:', evidenceId);
       const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${evidenceId}/view`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
-      console.log('[RoadmapView] Response status:', response.status);
-
       if (!response.ok) {
         const errText = await response.text();
-        console.error('[RoadmapView] Error response:', errText);
         let errMsg = 'Failed to retrieve document';
         try {
           const errData = JSON.parse(errText);
@@ -399,7 +399,6 @@ const RoadmapScreen = ({
       }
 
       const data = await response.json();
-      console.log('[RoadmapView] Got URL:', data.url ? 'yes' : 'no');
 
       if (data.url) {
         let docUrl = data.url;
@@ -410,18 +409,27 @@ const RoadmapScreen = ({
           docUrl = `${docUrl}${docUrl.includes('?') ? '&' : '?'}token=${authToken}`;
         }
         if (Platform.OS === 'web') {
-          const newWin = window.open(docUrl, '_blank');
-          if (!newWin) {
-            window.location.href = docUrl;
+          if (preOpenedWindow) {
+            preOpenedWindow.location.href = docUrl;
+          } else {
+            const a = document.createElement('a');
+            a.href = docUrl;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
           }
         } else {
           const { Linking } = require('react-native');
           await Linking.openURL(docUrl);
         }
       } else {
+        if (preOpenedWindow) preOpenedWindow.close();
         alert('Error', 'Document URL not available.');
       }
     } catch (error) {
+      if (preOpenedWindow) preOpenedWindow.close();
       console.error('Error viewing evidence:', error.message || error);
       alert('View Error', error.message || 'Failed to open document.');
     } finally {
