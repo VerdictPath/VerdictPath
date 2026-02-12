@@ -6,7 +6,7 @@ import moment from 'moment';
 const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, minDate, maxDate, style }) => {
   const [showCalendar, setShowCalendar] = useState(false);
 
-  const displayValue = value ? moment(value, ['YYYY-MM-DD', 'MM/DD/YYYY']).format('MMM D, YYYY') : '';
+  const displayValue = value ? moment(value, ['YYYY-MM-DD', 'MM/DD/YYYY']).format('MM/DD/YYYY') : '';
   const calendarValue = value ? moment(value, ['YYYY-MM-DD', 'MM/DD/YYYY']).format('YYYY-MM-DD') : '';
 
   return (
