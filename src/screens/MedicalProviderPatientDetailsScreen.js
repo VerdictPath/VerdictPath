@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, ImageBackground, Platform, Linking
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
@@ -17,10 +17,19 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [medicalBilling, setMedicalBilling] = useState([]);
   const [evidence, setEvidence] = useState([]);
   const [activeTab, setActiveTab] = useState('roadmap');
+  const [uploadingType, setUploadingType] = useState(null);
+  const [viewingDocId, setViewingDocId] = useState(null);
 
   useEffect(() => {
     fetchPatientDetails();
   }, [patientId]);
+
+  useEffect(() => {
+    if (activeTab === 'medical' && patientId && user?.token) {
+      fetchPatientRecords();
+      fetchPatientBills();
+    }
+  }, [activeTab, patientId]);
 
   const fetchPatientDetails = async () => {
     try {
@@ -312,41 +321,219 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     );
   };
 
-  const handleUploadMedicalBills = () => {
-    alert(
-      '🏴‍☠️ Ahoy There, Matey!',
-      'Blimey! This treasure chest be still under construction by our crew! The Medical Bills upload feature ain\'t ready to set sail just yet. Keep yer eyes on the horizon - we\'ll have it shipshape soon! ⚓'
-    );
+  const fetchPatientRecords = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/client/${patientId}/medical-records`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalRecords(data.records || []);
+      }
+    } catch (error) {
+      console.error('Error fetching patient medical records:', error);
+    }
   };
 
-  const handleUploadMedicalRecords = () => {
-    alert(
-      '🏴‍☠️ Shiver Me Timbers!',
-      'Arrr! The Medical Records vault be locked up tighter than Davy Jones\' locker! Our ship\'s carpenter be workin\' hard to get this feature ready for ye. Check back soon, savvy? ⚓'
-    );
+  const fetchPatientBills = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/client/${patientId}/medical-bills`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalBilling(data.bills || []);
+      }
+    } catch (error) {
+      console.error('Error fetching patient medical bills:', error);
+    }
   };
 
-  // DISABLED: Upload functionality under development
-  // Will be re-enabled when Medical Hub upload feature is complete
-  const pickImageFromCamera = async (documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const getMimeTypeFromExtension = (filename) => {
+    const ext = (filename || '').toLowerCase().split('.').pop();
+    const mimeMap = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'heic': 'image/heic',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    return mimeMap[ext] || null;
   };
 
-  const pickDocumentFromDevice = async (documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const handleUploadForPatient = (category) => {
+    if (Platform.OS === 'web') {
+      pickFileFromWebForPatient(category);
+    } else {
+      alert('Upload', 'Choose an option', [
+        { text: 'Choose File', onPress: () => pickDocumentForPatient(category) },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    }
   };
 
-  const uploadFile = async (file, documentType) => {
-    alert(
-      '🏴‍☠️ Feature Coming Soon!',
-      'Medical document uploads are currently under development. Stay tuned, matey! ⚓'
-    );
+  const pickFileFromWebForPatient = (category) => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+
+      input.onchange = async (e) => {
+        try {
+          const file = e.target.files[0];
+          if (file) {
+            let mimeType = file.type;
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              mimeType = getMimeTypeFromExtension(file.name) || 'application/octet-stream';
+            }
+            const properFile = mimeType !== file.type
+              ? new File([file], file.name, { type: mimeType })
+              : file;
+
+            await uploadFileForPatient(properFile, file.name, mimeType, category);
+          }
+        } catch (err) {
+          console.error('Error in file onchange:', err);
+          alert('Upload Error', err.message || 'Failed to process selected file.');
+          setUploadingType(null);
+        } finally {
+          document.body.removeChild(input);
+        }
+      };
+      input.click();
+    } catch (err) {
+      console.error('Error creating file picker:', err);
+      alert('Error', 'Failed to open file picker.');
+    }
+  };
+
+  const pickDocumentForPatient = async (category) => {
+    try {
+      const DocumentPicker = require('expo-document-picker');
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await uploadFileForPatient(null, asset.name || asset.fileName, asset.mimeType || asset.type, category, asset);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error', 'Failed to pick document.');
+    }
+  };
+
+  const uploadFileForPatient = async (webFile, fileName, mimeType, category, nativeAsset) => {
+    setUploadingType(category);
+    try {
+      const formData = new FormData();
+      if (Platform.OS === 'web' && webFile) {
+        formData.append('file', webFile, fileName);
+      } else if (nativeAsset) {
+        formData.append('file', {
+          uri: nativeAsset.uri,
+          name: fileName,
+          type: mimeType,
+        });
+      }
+
+      const endpoint = category === 'bills'
+        ? `${API_BASE_URL}/api/uploads/client/${patientId}/medical-bill`
+        : `${API_BASE_URL}/api/uploads/client/${patientId}/medical-record`;
+
+      if (category === 'bills') {
+        formData.append('billingType', 'Medical Bill');
+      } else {
+        formData.append('recordType', 'Medical Record');
+      }
+
+      const uploadResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      alert('Success', `${category === 'bills' ? 'Medical bill' : 'Medical record'} uploaded successfully for patient.`);
+
+      if (category === 'bills') {
+        fetchPatientBills();
+      } else {
+        fetchPatientRecords();
+      }
+    } catch (error) {
+      console.error('Error uploading file for patient:', error);
+      alert('Upload Error', error.message || 'Failed to upload document.');
+    } finally {
+      setUploadingType(null);
+    }
+  };
+
+  const handleViewMedicalDoc = async (docId, docType, fileName) => {
+    setViewingDocId(docId);
+    try {
+      const type = docType === 'bill' ? 'bill' : 'record';
+      const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to retrieve document');
+      }
+      const data = await response.json();
+      if (data.url) {
+        if (Platform.OS === 'web') {
+          window.open(data.url, '_blank');
+        } else {
+          await Linking.openURL(data.url);
+        }
+      } else {
+        alert('Error', 'Document URL not available.');
+      }
+    } catch (error) {
+      console.error('Error viewing medical document:', error);
+      alert('View Error', error.message || 'Failed to open document.');
+    } finally {
+      setViewingDocId(null);
+    }
+  };
+
+  const handleViewEvidence = async (docId, fileName) => {
+    setViewingDocId(docId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/evidence/${docId}/view`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to retrieve document');
+      }
+      const data = await response.json();
+      if (data.url) {
+        if (Platform.OS === 'web') {
+          window.open(data.url, '_blank');
+        } else {
+          await Linking.openURL(data.url);
+        }
+      } else {
+        alert('Error', 'Document URL not available.');
+      }
+    } catch (error) {
+      console.error('Error viewing evidence:', error);
+      alert('View Error', error.message || 'Failed to open document.');
+    } finally {
+      setViewingDocId(null);
+    }
   };
 
   const renderMedicalHubTab = () => {
@@ -376,10 +563,17 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                   styles.medicalHubSectionTitle,
                   { fontSize: isDesktop ? 24 : 20 }
                 ]}>📋 Medical Records</Text>
-                <Text style={[
-                  styles.comingSoonBadge,
-                  { fontSize: isDesktop ? 13 : 11 }
-                ]}>🏴‍☠️ Coming Soon</Text>
+                <TouchableOpacity
+                  style={styles.uploadBtn}
+                  onPress={() => handleUploadForPatient('records')}
+                  disabled={uploadingType === 'records'}
+                >
+                  {uploadingType === 'records' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.uploadBtnText}>+ Upload Record</Text>
+                  )}
+                </TouchableOpacity>
               </View>
               
               {medicalRecords.length === 0 ? (
@@ -389,10 +583,19 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                 </View>
               ) : (
                 medicalRecords.map((record) => (
-                  <View key={record.id} style={styles.documentCard}>
+                  <TouchableOpacity 
+                    key={record.id} 
+                    style={styles.documentCard}
+                    onPress={() => handleViewMedicalDoc(record.id, 'record', record.file_name)}
+                    disabled={viewingDocId === record.id}
+                  >
                     <View style={styles.documentHeader}>
                       <Text style={styles.documentTitle}>📄 {record.record_type || 'Medical Record'}</Text>
-                      <Text style={styles.documentBadge}>{record.file_name}</Text>
+                      {viewingDocId === record.id ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      ) : (
+                        <Text style={styles.documentBadge}>{record.file_name}</Text>
+                      )}
                     </View>
                     {record.facility_name && (
                       <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
@@ -408,7 +611,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                     <Text style={styles.documentDate}>
                       Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US')}
                     </Text>
-                  </View>
+                    <Text style={styles.tapToView}>Tap to view</Text>
+                  </TouchableOpacity>
                 ))
               )}
             </View>
@@ -420,10 +624,17 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                   styles.medicalHubSectionTitle,
                   { fontSize: isDesktop ? 24 : 20 }
                 ]}>💊 Medical Billing</Text>
-                <Text style={[
-                  styles.comingSoonBadge,
-                  { fontSize: isDesktop ? 13 : 11 }
-                ]}>🏴‍☠️ Coming Soon</Text>
+                <TouchableOpacity
+                  style={styles.uploadBtn}
+                  onPress={() => handleUploadForPatient('bills')}
+                  disabled={uploadingType === 'bills'}
+                >
+                  {uploadingType === 'bills' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.uploadBtnText}>+ Upload Bill</Text>
+                  )}
+                </TouchableOpacity>
               </View>
               
               {medicalBilling.length === 0 ? (
@@ -445,10 +656,19 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                   </View>
                   
                   {medicalBilling.map((bill) => (
-                    <View key={bill.id} style={styles.documentCard}>
+                    <TouchableOpacity 
+                      key={bill.id} 
+                      style={styles.documentCard}
+                      onPress={() => handleViewMedicalDoc(bill.id, 'bill', bill.file_name)}
+                      disabled={viewingDocId === bill.id}
+                    >
                       <View style={styles.documentHeader}>
                         <Text style={styles.documentTitle}>💰 {bill.billing_type || 'Medical Bill'}</Text>
-                        <Text style={styles.documentBadge}>${parseFloat(bill.total_amount || 0).toFixed(2)}</Text>
+                        {viewingDocId === bill.id ? (
+                          <ActivityIndicator size="small" color={theme.colors.primary} />
+                        ) : (
+                          <Text style={styles.documentBadge}>${parseFloat(bill.total_amount || 0).toFixed(2)}</Text>
+                        )}
                       </View>
                       {bill.facility_name && (
                         <Text style={styles.documentDetail}>🏥 {bill.facility_name}</Text>
@@ -464,7 +684,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                       <Text style={styles.documentDate}>
                         Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US')}
                       </Text>
-                    </View>
+                      <Text style={styles.tapToView}>Tap to view</Text>
+                    </TouchableOpacity>
                   ))}
                 </>
               )}
@@ -832,6 +1053,23 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     borderWidth: 1,
     borderColor: theme.colors.silver,
+  },
+  uploadBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  uploadBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tapToView: {
+    fontSize: 11,
+    color: theme.colors.primary,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   documentCard: {
     backgroundColor: theme.colors.offWhite,

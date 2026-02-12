@@ -1036,35 +1036,72 @@ const deleteMedicalDocument = async (req, res) => {
 const viewMedicalDocument = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
     const { type, id } = req.params;
 
     let tableName;
+    let documentType;
     if (type === 'record') {
       tableName = 'medical_records';
+      documentType = 'medical_records';
     } else if (type === 'bill') {
       tableName = 'medical_billing';
+      documentType = 'medical_billing';
     } else {
       return res.status(400).json({ error: 'Invalid document type' });
     }
 
-    const result = await pool.query(
+    let doc = null;
+    let accessReason = 'OWNER_ACCESS';
+
+    const ownerCheck = await pool.query(
       `SELECT id, file_name, mime_type, s3_key, storage_type, document_url FROM ${tableName} WHERE id = $1 AND user_id = $2`,
       [id, userId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Document not found' });
+    if (ownerCheck.rows.length > 0) {
+      doc = ownerCheck.rows[0];
+    } else if (userType === 'lawfirm' || userType === 'law_firm') {
+      const lawFirmResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lawFirmResult.rows.length > 0) {
+        const lawFirmId = lawFirmResult.rows[0].id;
+        const docResult = await pool.query(`SELECT user_id FROM ${tableName} WHERE id = $1`, [id]);
+        if (docResult.rows.length > 0) {
+          const patientId = docResult.rows[0].user_id;
+          const authResult = await documentAccessService.authorizeLawFirmDocumentAccess(lawFirmId, patientId, documentType, id);
+          if (authResult.authorized) {
+            doc = authResult.document;
+            accessReason = `LAW_FIRM_ACCESS_${authResult.consentType}`;
+          }
+        }
+      }
+    } else if (userType === 'medical_provider') {
+      const providerResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (providerResult.rows.length > 0) {
+        const providerId = providerResult.rows[0].id;
+        const docResult = await pool.query(`SELECT user_id FROM ${tableName} WHERE id = $1`, [id]);
+        if (docResult.rows.length > 0) {
+          const patientId = docResult.rows[0].user_id;
+          const authResult = await documentAccessService.authorizeMedicalProviderDocumentAccess(providerId, patientId, documentType, id);
+          if (authResult.authorized) {
+            doc = authResult.document;
+            accessReason = `MEDICAL_PROVIDER_ACCESS_${authResult.consentType}`;
+          }
+        }
+      }
     }
 
-    const doc = result.rows[0];
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found or access denied' });
+    }
 
     await auditLogger.log({
       actorId: userId,
-      actorType: req.user?.userType || 'client',
+      actorType: userType || 'client',
       action: 'VIEW_MEDICAL_DOCUMENT',
       entityType: tableName,
       entityId: id,
-      metadata: { fileName: doc.file_name, documentType: type },
+      metadata: { fileName: doc.file_name, documentType: type, accessReason },
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -1090,26 +1127,60 @@ const viewMedicalDocument = async (req, res) => {
 const viewEvidenceDocument = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userType = req.user.userType;
     const { id } = req.params;
 
-    const result = await pool.query(
+    let doc = null;
+    let accessReason = 'OWNER_ACCESS';
+
+    const ownerCheck = await pool.query(
       `SELECT id, file_name, mime_type, s3_key, storage_type, document_url FROM evidence WHERE id = $1 AND user_id = $2`,
       [id, userId]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Document not found' });
+    if (ownerCheck.rows.length > 0) {
+      doc = ownerCheck.rows[0];
+    } else if (userType === 'lawfirm' || userType === 'law_firm') {
+      const lawFirmResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lawFirmResult.rows.length > 0) {
+        const lawFirmId = lawFirmResult.rows[0].id;
+        const docResult = await pool.query('SELECT user_id FROM evidence WHERE id = $1', [id]);
+        if (docResult.rows.length > 0) {
+          const patientId = docResult.rows[0].user_id;
+          const authResult = await documentAccessService.authorizeLawFirmDocumentAccess(lawFirmId, patientId, 'evidence', id);
+          if (authResult.authorized) {
+            doc = authResult.document;
+            accessReason = `LAW_FIRM_ACCESS_${authResult.consentType}`;
+          }
+        }
+      }
+    } else if (userType === 'medical_provider') {
+      const providerResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (providerResult.rows.length > 0) {
+        const providerId = providerResult.rows[0].id;
+        const docResult = await pool.query('SELECT user_id FROM evidence WHERE id = $1', [id]);
+        if (docResult.rows.length > 0) {
+          const patientId = docResult.rows[0].user_id;
+          const authResult = await documentAccessService.authorizeMedicalProviderDocumentAccess(providerId, patientId, 'evidence', id);
+          if (authResult.authorized) {
+            doc = authResult.document;
+            accessReason = `MEDICAL_PROVIDER_ACCESS_${authResult.consentType}`;
+          }
+        }
+      }
     }
 
-    const doc = result.rows[0];
+    if (!doc) {
+      return res.status(404).json({ error: 'Document not found or access denied' });
+    }
 
     await auditLogger.log({
       actorId: userId,
-      actorType: req.user?.userType || 'client',
+      actorType: userType || 'client',
       action: 'VIEW_EVIDENCE_DOCUMENT',
       entityType: 'evidence',
       entityId: id,
-      metadata: { fileName: doc.file_name },
+      metadata: { fileName: doc.file_name, accessReason },
       ipAddress: req.ip,
       userAgent: req.get('user-agent')
     });
@@ -1132,6 +1203,347 @@ const viewEvidenceDocument = async (req, res) => {
   }
 };
 
+const uploadMedicalRecordOnBehalf = async (req, res) => {
+  try {
+    const uploaderUserId = req.user.id;
+    const uploaderType = req.user.userType;
+    const { clientId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    let isAuthorized = false;
+    let uploaderEntityId = null;
+
+    if (uploaderType === 'lawfirm' || uploaderType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        uploaderEntityId = lfResult.rows[0].id;
+        isAuthorized = await documentAccessService.verifyLawFirmClientRelationship(uploaderEntityId, clientId);
+      }
+    } else if (uploaderType === 'medical_provider') {
+      const mpResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (mpResult.rows.length > 0) {
+        uploaderEntityId = mpResult.rows[0].id;
+        isAuthorized = await documentAccessService.verifyMedicalProviderPatientRelationship(uploaderEntityId, clientId);
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Access denied. Not authorized to upload for this user.' });
+    }
+
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      await auditLogger.log({
+        actorId: uploaderUserId,
+        actorType: uploaderType,
+        action: 'UPLOAD_REJECTED_ON_BEHALF',
+        entityType: 'medical_record',
+        status: 'FAILURE',
+        metadata: { fileName: file.originalname, clientId, rejectionReasons: validation.errors },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      return res.status(400).json({ error: 'File validation failed', details: validation.errors });
+    }
+
+    const { recordType, facilityName, providerName, dateOfService, description } = req.body;
+
+    const uploadResult = await storageService.uploadFile(file.buffer, clientId, 'medical-records', file.originalname, file.mimetype);
+
+    const result = await pool.query(
+      `INSERT INTO medical_records 
+       (user_id, record_type, facility_name, provider_name, date_of_service, description, 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type, uploaded_by, uploaded_by_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
+       RETURNING *`,
+      [
+        clientId,
+        recordType || 'Medical Record',
+        facilityName || null,
+        providerName || null,
+        dateOfService || null,
+        description || null,
+        uploadResult.location,
+        file.originalname,
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType,
+        uploaderUserId,
+        uploaderType
+      ]
+    );
+
+    await auditLogger.log({
+      actorId: uploaderUserId,
+      actorType: uploaderType,
+      action: 'UPLOAD_MEDICAL_RECORD_ON_BEHALF',
+      entityType: 'medical_record',
+      entityId: result.rows[0].id,
+      metadata: { fileName: file.originalname, clientId, uploaderType, storageType: uploadResult.storageType },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({
+      success: true,
+      message: `Medical record uploaded on behalf of client (${uploadResult.storageType})`,
+      document: result.rows[0],
+      storageType: uploadResult.storageType
+    });
+  } catch (error) {
+    console.error('Error uploading medical record on behalf:', error);
+    res.status(500).json({ error: 'Failed to upload medical record' });
+  }
+};
+
+const uploadMedicalBillOnBehalf = async (req, res) => {
+  try {
+    const uploaderUserId = req.user.id;
+    const uploaderType = req.user.userType;
+    const { clientId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    let isAuthorized = false;
+    let uploaderEntityId = null;
+
+    if (uploaderType === 'lawfirm' || uploaderType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        uploaderEntityId = lfResult.rows[0].id;
+        isAuthorized = await documentAccessService.verifyLawFirmClientRelationship(uploaderEntityId, clientId);
+      }
+    } else if (uploaderType === 'medical_provider') {
+      const mpResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (mpResult.rows.length > 0) {
+        uploaderEntityId = mpResult.rows[0].id;
+        isAuthorized = await documentAccessService.verifyMedicalProviderPatientRelationship(uploaderEntityId, clientId);
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Access denied. Not authorized to upload for this user.' });
+    }
+
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      return res.status(400).json({ error: 'File validation failed', details: validation.errors });
+    }
+
+    const { billingType, facilityName, billNumber, dateOfService, billDate, totalAmount, description } = req.body;
+
+    const uploadResult = await storageService.uploadFile(file.buffer, clientId, 'medical-bills', file.originalname, file.mimetype);
+
+    const result = await pool.query(
+      `INSERT INTO medical_billing 
+       (user_id, billing_type, facility_name, bill_number, date_of_service, bill_date,
+        total_amount, amount_due, description, document_url, file_name, file_size, mime_type, 
+        s3_bucket, s3_key, s3_region, s3_etag, storage_type, uploaded_by, uploaded_by_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+       RETURNING *`,
+      [
+        clientId,
+        billingType || 'Medical Bill',
+        facilityName || null,
+        billNumber || null,
+        dateOfService || null,
+        billDate || null,
+        totalAmount || 0,
+        totalAmount || 0,
+        description || null,
+        uploadResult.location,
+        file.originalname,
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType,
+        uploaderUserId,
+        uploaderType
+      ]
+    );
+
+    await auditLogger.log({
+      actorId: uploaderUserId,
+      actorType: uploaderType,
+      action: 'UPLOAD_MEDICAL_BILL_ON_BEHALF',
+      entityType: 'medical_billing',
+      entityId: result.rows[0].id,
+      metadata: { fileName: file.originalname, clientId, uploaderType, storageType: uploadResult.storageType },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({
+      success: true,
+      message: `Medical bill uploaded on behalf of client (${uploadResult.storageType})`,
+      document: result.rows[0],
+      storageType: uploadResult.storageType
+    });
+  } catch (error) {
+    console.error('Error uploading medical bill on behalf:', error);
+    res.status(500).json({ error: 'Failed to upload medical bill' });
+  }
+};
+
+const getClientMedicalRecords = async (req, res) => {
+  try {
+    const userType = req.user.userType;
+    const { clientId } = req.params;
+
+    let hasConsent = false;
+    let accessibleFilter = '';
+
+    if (userType === 'lawfirm' || userType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        const lawFirmId = lfResult.rows[0].id;
+        const isClient = await documentAccessService.verifyLawFirmClientRelationship(lawFirmId, clientId);
+        if (!isClient) return res.status(403).json({ error: 'Access denied' });
+        const consent = await documentAccessService.verifyLawFirmConsent(lawFirmId, clientId, 'medical_records');
+        if (!consent) return res.status(403).json({ error: 'No active consent for medical records' });
+        hasConsent = true;
+        accessibleFilter = 'AND accessible_by_law_firm = TRUE';
+        await auditLogger.log({
+          actorId: req.user.id,
+          actorType: 'lawfirm',
+          action: 'LIST_CLIENT_MEDICAL_RECORDS',
+          entityType: 'MedicalRecord',
+          targetUserId: parseInt(clientId),
+          status: 'SUCCESS',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+          metadata: { lawFirmId, consentType: consent.consent_type }
+        });
+      }
+    } else if (userType === 'medical_provider') {
+      const mpResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (mpResult.rows.length > 0) {
+        const providerId = mpResult.rows[0].id;
+        const isPatient = await documentAccessService.verifyMedicalProviderPatientRelationship(providerId, clientId);
+        if (!isPatient) return res.status(403).json({ error: 'Access denied' });
+        const consent = await documentAccessService.verifyMedicalProviderConsent(providerId, clientId, 'medical_records');
+        if (!consent) return res.status(403).json({ error: 'No active consent for medical records' });
+        hasConsent = true;
+        await auditLogger.log({
+          actorId: req.user.id,
+          actorType: 'medical_provider',
+          action: 'LIST_PATIENT_MEDICAL_RECORDS',
+          entityType: 'MedicalRecord',
+          targetUserId: parseInt(clientId),
+          status: 'SUCCESS',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+          metadata: { providerId, consentType: consent.consent_type }
+        });
+      }
+    }
+
+    if (!hasConsent) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, record_type, facility_name, provider_name, date_of_service, description,
+              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
+       FROM medical_records
+       WHERE user_id = $1 ${accessibleFilter}
+       ORDER BY uploaded_at DESC`,
+      [clientId]
+    );
+    res.json({ records: result.rows });
+  } catch (error) {
+    console.error('Error fetching client medical records:', error);
+    res.status(500).json({ error: 'Failed to fetch medical records' });
+  }
+};
+
+const getClientMedicalBills = async (req, res) => {
+  try {
+    const userType = req.user.userType;
+    const { clientId } = req.params;
+
+    let hasConsent = false;
+    let accessibleFilter = '';
+
+    if (userType === 'lawfirm' || userType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        const lawFirmId = lfResult.rows[0].id;
+        const isClient = await documentAccessService.verifyLawFirmClientRelationship(lawFirmId, clientId);
+        if (!isClient) return res.status(403).json({ error: 'Access denied' });
+        const consent = await documentAccessService.verifyLawFirmConsent(lawFirmId, clientId, 'medical_billing');
+        if (!consent) return res.status(403).json({ error: 'No active consent for medical billing' });
+        hasConsent = true;
+        accessibleFilter = 'AND accessible_by_law_firm = TRUE';
+        await auditLogger.log({
+          actorId: req.user.id,
+          actorType: 'lawfirm',
+          action: 'LIST_CLIENT_MEDICAL_BILLS',
+          entityType: 'MedicalBilling',
+          targetUserId: parseInt(clientId),
+          status: 'SUCCESS',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+          metadata: { lawFirmId, consentType: consent.consent_type }
+        });
+      }
+    } else if (userType === 'medical_provider') {
+      const mpResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+      if (mpResult.rows.length > 0) {
+        const providerId = mpResult.rows[0].id;
+        const isPatient = await documentAccessService.verifyMedicalProviderPatientRelationship(providerId, clientId);
+        if (!isPatient) return res.status(403).json({ error: 'Access denied' });
+        const consent = await documentAccessService.verifyMedicalProviderConsent(providerId, clientId, 'medical_billing');
+        if (!consent) return res.status(403).json({ error: 'No active consent for medical billing' });
+        hasConsent = true;
+        await auditLogger.log({
+          actorId: req.user.id,
+          actorType: 'medical_provider',
+          action: 'LIST_PATIENT_MEDICAL_BILLS',
+          entityType: 'MedicalBilling',
+          targetUserId: parseInt(clientId),
+          status: 'SUCCESS',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+          metadata: { providerId, consentType: consent.consent_type }
+        });
+      }
+    }
+
+    if (!hasConsent) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, billing_type, facility_name, bill_number, date_of_service, bill_date, 
+              due_date, total_amount, amount_paid, amount_due, description,
+              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
+       FROM medical_billing
+       WHERE user_id = $1 ${accessibleFilter}
+       ORDER BY uploaded_at DESC`,
+      [clientId]
+    );
+    res.json({ bills: result.rows });
+  } catch (error) {
+    console.error('Error fetching client medical bills:', error);
+    res.status(500).json({ error: 'Failed to fetch medical bills' });
+  }
+};
+
 module.exports = {
   uploadMedicalRecord,
   uploadMedicalBill,
@@ -1141,5 +1553,9 @@ module.exports = {
   getMyMedicalBills,
   deleteMedicalDocument,
   viewMedicalDocument,
-  viewEvidenceDocument
+  viewEvidenceDocument,
+  uploadMedicalRecordOnBehalf,
+  uploadMedicalBillOnBehalf,
+  getClientMedicalRecords,
+  getClientMedicalBills
 };

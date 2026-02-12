@@ -143,6 +143,25 @@ router.get('/medical/:type/:id/view', uploadController.viewMedicalDocument);
 router.get('/evidence/:id/view', uploadController.viewEvidenceDocument);
 router.delete('/medical/:type/:id', uploadController.deleteMedicalDocument);
 
+router.post('/client/:clientId/medical-record',
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  wrapUpload(upload.single('file')),
+  uploadController.uploadMedicalRecordOnBehalf
+);
+
+router.post('/client/:clientId/medical-bill',
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  wrapUpload(upload.single('file')),
+  uploadController.uploadMedicalBillOnBehalf
+);
+
+router.get('/client/:clientId/medical-records', uploadController.getClientMedicalRecords);
+router.get('/client/:clientId/medical-bills', uploadController.getClientMedicalBills);
+
 router.get('/my-evidence', async (req, res) => {
   try {
     const db = require('../config/db');

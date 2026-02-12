@@ -13,6 +13,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [viewingDocument, setViewingDocument] = useState(null);
   const [documentLoading, setDocumentLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [uploadingType, setUploadingType] = useState(null);
+  const [medicalRecordsList, setMedicalRecordsList] = useState([]);
+  const [medicalBillsList, setMedicalBillsList] = useState([]);
+  const [loadingRecords, setLoadingRecords] = useState(false);
+  const [loadingBills, setLoadingBills] = useState(false);
+  const [viewingDocId, setViewingDocId] = useState(null);
   
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
@@ -21,6 +27,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   useEffect(() => {
     fetchClientDetails();
     fetchClientLitigationProgress();
+    fetchClientRecords();
+    fetchClientBills();
   }, [clientId]);
 
   const fetchClientDetails = async () => {
@@ -72,6 +80,201 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       }
     } catch (error) {
       console.error('[ClientDetails] Error fetching client litigation progress:', error);
+    }
+  };
+
+  const fetchClientRecords = async () => {
+    setLoadingRecords(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/client/${clientId}/medical-records`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalRecordsList(data.records || []);
+      }
+    } catch (error) {
+      console.error('Error fetching client medical records:', error);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
+
+  const fetchClientBills = async () => {
+    setLoadingBills(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/client/${clientId}/medical-bills`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalBillsList(data.bills || []);
+      }
+    } catch (error) {
+      console.error('Error fetching client medical bills:', error);
+    } finally {
+      setLoadingBills(false);
+    }
+  };
+
+  const getMimeTypeFromExtension = (filename) => {
+    const ext = (filename || '').toLowerCase().split('.').pop();
+    const mimeMap = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'heic': 'image/heic',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    };
+    return mimeMap[ext] || null;
+  };
+
+  const handleUploadForClient = (category) => {
+    if (Platform.OS === 'web') {
+      pickFileFromWebForClient(category);
+    } else {
+      alert('Upload', 'Choose an option', [
+        { text: 'Choose File', onPress: () => pickDocumentForClient(category) },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    }
+  };
+
+  const pickFileFromWebForClient = (category) => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+
+      input.onchange = async (e) => {
+        try {
+          const file = e.target.files[0];
+          if (file) {
+            let mimeType = file.type;
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              mimeType = getMimeTypeFromExtension(file.name) || 'application/octet-stream';
+            }
+            const properFile = mimeType !== file.type
+              ? new File([file], file.name, { type: mimeType })
+              : file;
+
+            await uploadFileForClient(properFile, file.name, mimeType, category);
+          }
+        } catch (err) {
+          console.error('Error in file onchange:', err);
+          alert('Upload Error', err.message || 'Failed to process selected file.');
+          setUploadingType(null);
+        } finally {
+          document.body.removeChild(input);
+        }
+      };
+      input.click();
+    } catch (err) {
+      console.error('Error creating file picker:', err);
+      alert('Error', 'Failed to open file picker.');
+    }
+  };
+
+  const pickDocumentForClient = async (category) => {
+    try {
+      const DocumentPicker = require('expo-document-picker');
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await uploadFileForClient(null, asset.name || asset.fileName, asset.mimeType || asset.type, category, asset);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error', 'Failed to pick document.');
+    }
+  };
+
+  const uploadFileForClient = async (webFile, fileName, mimeType, category, nativeAsset) => {
+    setUploadingType(category);
+    try {
+      const formData = new FormData();
+      if (Platform.OS === 'web' && webFile) {
+        formData.append('file', webFile, fileName);
+      } else if (nativeAsset) {
+        formData.append('file', {
+          uri: nativeAsset.uri,
+          name: fileName,
+          type: mimeType,
+        });
+      }
+
+      const endpoint = category === 'bills'
+        ? `${API_BASE_URL}/api/uploads/client/${clientId}/medical-bill`
+        : `${API_BASE_URL}/api/uploads/client/${clientId}/medical-record`;
+
+      if (category === 'bills') {
+        formData.append('billingType', 'Medical Bill');
+      } else {
+        formData.append('recordType', 'Medical Record');
+      }
+
+      const uploadResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await uploadResponse.json();
+      alert('Success', `${category === 'bills' ? 'Medical bill' : 'Medical record'} uploaded successfully for client.`);
+
+      if (category === 'bills') {
+        fetchClientBills();
+      } else {
+        fetchClientRecords();
+      }
+      fetchClientDetails();
+    } catch (error) {
+      console.error('Error uploading file for client:', error);
+      alert('Upload Error', error.message || 'Failed to upload document.');
+    } finally {
+      setUploadingType(null);
+    }
+  };
+
+  const handleViewMedicalDoc = async (docId, docType, fileName) => {
+    setViewingDocId(docId);
+    try {
+      const type = docType === 'bill' ? 'bill' : 'record';
+      const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${docId}/view`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to retrieve document');
+      }
+      const data = await response.json();
+      if (data.url) {
+        if (Platform.OS === 'web') {
+          window.open(data.url, '_blank');
+        } else {
+          await Linking.openURL(data.url);
+        }
+      } else {
+        alert('Error', 'Document URL not available.');
+      }
+    } catch (error) {
+      console.error('Error viewing medical document:', error);
+      alert('View Error', error.message || 'Failed to open document.');
+    } finally {
+      setViewingDocId(null);
     }
   };
 
@@ -445,7 +648,11 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
 
   const renderMedicalHubTab = () => {
     if (!clientData) return null;
-    const { client, medicalRecords, medicalBilling } = clientData;
+    const { client } = clientData;
+    const records = medicalRecordsList;
+    const bills = medicalBillsList;
+    const totalBilled = bills.reduce((sum, b) => sum + (parseFloat(b.total_amount) || 0), 0);
+    const totalDue = bills.reduce((sum, b) => sum + (parseFloat(b.amount_due) || 0), 0);
 
     return (
       <View style={styles.tabContent}>
@@ -457,49 +664,81 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           }
         ]}>
             <View style={styles.section}>
-              <Text style={[
-                styles.sectionTitle,
-                { fontSize: isDesktop ? 24 : 20 }
-              ]}>📋 Medical Records</Text>
-              {medicalRecords.records.length === 0 ? (
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { fontSize: isDesktop ? 24 : 20 }]}>📋 Medical Records</Text>
+                <TouchableOpacity 
+                  style={styles.uploadButton}
+                  onPress={() => handleUploadForClient('records')}
+                  disabled={uploadingType === 'records'}
+                >
+                  {uploadingType === 'records' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.uploadButtonText}>+ Upload Record</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              {loadingRecords ? (
+                <ActivityIndicator size="small" color="#C0C0C0" style={{ marginVertical: 20 }} />
+              ) : records.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>📋</Text>
                   <Text style={styles.emptyText}>No medical records uploaded yet</Text>
                 </View>
               ) : (
-                <>
-                  {medicalRecords.records.map((record) => (
-                    <View key={record.id} style={styles.documentCard}>
-                      <View style={styles.documentHeader}>
-                        <Text style={styles.documentTitle}>📋 {record.record_type?.replace(/_/g, ' ').toUpperCase()}</Text>
+                records.map((record) => (
+                  <TouchableOpacity 
+                    key={record.id} 
+                    style={styles.documentCard}
+                    onPress={() => handleViewMedicalDoc(record.id, 'record', record.file_name)}
+                    disabled={viewingDocId === record.id}
+                  >
+                    <View style={styles.documentHeader}>
+                      <Text style={styles.documentTitle}>📋 {record.record_type?.replace(/_/g, ' ').toUpperCase()}</Text>
+                      {viewingDocId === record.id ? (
+                        <ActivityIndicator size="small" color="#1E3A5F" />
+                      ) : (
                         <Text style={styles.documentBadge}>{record.file_name}</Text>
-                      </View>
-                      {record.facility_name && (
-                        <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
                       )}
-                      {record.date_of_service && (
-                        <Text style={styles.documentDetail}>
-                          📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
-                        </Text>
-                      )}
-                      {record.description && (
-                        <Text style={styles.documentDetail}>📝 {record.description}</Text>
-                      )}
-                      <Text style={styles.documentDate}>
-                        Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
-                      </Text>
                     </View>
-                  ))}
-                </>
+                    {record.facility_name && (
+                      <Text style={styles.documentDetail}>🏥 {record.facility_name}</Text>
+                    )}
+                    {record.date_of_service && (
+                      <Text style={styles.documentDetail}>
+                        📅 Service: {new Date(record.date_of_service).toLocaleDateString()}
+                      </Text>
+                    )}
+                    {record.description && (
+                      <Text style={styles.documentDetail}>📝 {record.description}</Text>
+                    )}
+                    <Text style={styles.documentDate}>
+                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
+                    </Text>
+                    <Text style={styles.tapToViewHint}>Tap to view</Text>
+                  </TouchableOpacity>
+                ))
               )}
             </View>
 
             <View style={styles.section}>
-              <Text style={[
-                styles.sectionTitle,
-                { fontSize: isDesktop ? 24 : 20 }
-              ]}>💰 Medical Billing</Text>
-              {medicalBilling.bills.length === 0 ? (
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, { fontSize: isDesktop ? 24 : 20 }]}>💰 Medical Billing</Text>
+                <TouchableOpacity 
+                  style={styles.uploadButton}
+                  onPress={() => handleUploadForClient('bills')}
+                  disabled={uploadingType === 'bills'}
+                >
+                  {uploadingType === 'bills' ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.uploadButtonText}>+ Upload Bill</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              {loadingBills ? (
+                <ActivityIndicator size="small" color="#C0C0C0" style={{ marginVertical: 20 }} />
+              ) : bills.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyIcon}>💰</Text>
                   <Text style={styles.emptyText}>No medical bills uploaded yet</Text>
@@ -508,18 +747,27 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 <>
                   <View style={styles.billingSummaryContainer}>
                     <Text style={styles.billingSummary}>
-                      Total Billed: ${medicalBilling.totalAmountBilled?.toFixed(2) || '0.00'}
+                      Total Billed: ${totalBilled.toFixed(2)}
                     </Text>
                     <Text style={styles.billingSummary}>
-                      Total Due: ${medicalBilling.totalAmountDue?.toFixed(2) || '0.00'}
+                      Total Due: ${totalDue.toFixed(2)}
                     </Text>
                   </View>
                   
-                  {medicalBilling.bills.map((bill) => (
-                    <View key={bill.id} style={styles.documentCard}>
+                  {bills.map((bill) => (
+                    <TouchableOpacity 
+                      key={bill.id} 
+                      style={styles.documentCard}
+                      onPress={() => handleViewMedicalDoc(bill.id, 'bill', bill.file_name)}
+                      disabled={viewingDocId === bill.id}
+                    >
                       <View style={styles.documentHeader}>
                         <Text style={styles.documentTitle}>💰 {bill.billing_type?.replace(/_/g, ' ').toUpperCase()}</Text>
-                        <Text style={styles.documentBadge}>${parseFloat(bill.total_amount).toFixed(2)}</Text>
+                        {viewingDocId === bill.id ? (
+                          <ActivityIndicator size="small" color="#1E3A5F" />
+                        ) : (
+                          <Text style={styles.documentBadge}>${parseFloat(bill.total_amount).toFixed(2)}</Text>
+                        )}
                       </View>
                       {bill.facility_name && (
                         <Text style={styles.documentDetail}>🏥 {bill.facility_name}</Text>
@@ -535,7 +783,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                       <Text style={styles.documentDate}>
                         Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
                       </Text>
-                    </View>
+                      <Text style={styles.tapToViewHint}>Tap to view</Text>
+                    </TouchableOpacity>
                   ))}
                 </>
               )}
@@ -1081,6 +1330,29 @@ const styles = StyleSheet.create({
   documentDate: {
     fontSize: 12,
     color: '#888',
+    marginTop: 4,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  uploadButton: {
+    backgroundColor: '#1E3A5F',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tapToViewHint: {
+    fontSize: 11,
+    color: '#1E3A5F',
+    fontStyle: 'italic',
     marginTop: 4,
   },
   billingSummaryContainer: {
