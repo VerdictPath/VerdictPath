@@ -10,9 +10,12 @@ import {
  Platform,
  ActivityIndicator
 } from 'react-native';
+import moment from 'moment';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import CalendarService from '../services/CalendarService';
+import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 
 const CalendarScreen = ({ user, onBack }) => {
   const [events, setEvents] = useState([]);
@@ -25,7 +28,9 @@ const CalendarScreen = ({ user, onBack }) => {
     description: '',
     location: '',
     eventType: 'reminder',
+    startDate: '',
     startTime: '',
+    endDate: '',
     endTime: '',
     allDay: false,
     reminderEnabled: true,
@@ -55,16 +60,21 @@ const CalendarScreen = ({ user, onBack }) => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startTime) {
-      alert('Validation Error', 'Please provide a title and start time');
+    if (!newEvent.title || !newEvent.startDate || !newEvent.startTime) {
+      alert('Validation Error', 'Please provide a title, start date, and start time');
       return;
     }
 
     try {
+      const combinedStart = moment(newEvent.startDate + ' ' + newEvent.startTime, 'YYYY-MM-DD HH:mm').toISOString();
+      const combinedEnd = (newEvent.endDate && newEvent.endTime)
+        ? moment(newEvent.endDate + ' ' + newEvent.endTime, 'YYYY-MM-DD HH:mm').toISOString()
+        : null;
+
       const eventData = {
         ...newEvent,
-        startTime: newEvent.startTime || new Date().toISOString(),
-        endTime: newEvent.endTime || null
+        startTime: combinedStart,
+        endTime: combinedEnd
       };
 
       const createdEvent = await CalendarService.createEventInBackend(eventData, user.token);
@@ -163,7 +173,9 @@ const CalendarScreen = ({ user, onBack }) => {
       description: '',
       location: '',
       eventType: 'reminder',
+      startDate: '',
       startTime: '',
+      endDate: '',
       endTime: '',
       allDay: false,
       reminderEnabled: true,
@@ -363,24 +375,36 @@ const CalendarScreen = ({ user, onBack }) => {
               />
 
               <Text style={styles.label}>Start Date & Time *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD HH:MM (e.g., 2025-11-15 14:00)"
-                value={newEvent.startTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, startTime: text })}
-              />
+              <View style={styles.dateTimeRow}>
+                <DatePickerInput
+                  value={newEvent.startDate}
+                  onChange={(date) => setNewEvent({ ...newEvent, startDate: date })}
+                  placeholder="Select date"
+                  style={styles.dateTimeHalf}
+                />
+                <TimePickerInput
+                  value={newEvent.startTime}
+                  onChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
+                  placeholder="Select time"
+                  style={styles.dateTimeHalf}
+                />
+              </View>
 
               <Text style={styles.label}>End Date & Time (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD HH:MM"
-                value={newEvent.endTime}
-                onChangeText={(text) => setNewEvent({ ...newEvent, endTime: text })}
-              />
-
-              <Text style={styles.note}>
-                Note: Use format YYYY-MM-DD HH:MM (e.g., 2025-11-15 14:00)
-              </Text>
+              <View style={styles.dateTimeRow}>
+                <DatePickerInput
+                  value={newEvent.endDate}
+                  onChange={(date) => setNewEvent({ ...newEvent, endDate: date })}
+                  placeholder="Select date"
+                  style={styles.dateTimeHalf}
+                />
+                <TimePickerInput
+                  value={newEvent.endTime}
+                  onChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
+                  placeholder="Select time"
+                  style={styles.dateTimeHalf}
+                />
+              </View>
 
               <View style={styles.modalActions}>
                 <TouchableOpacity
@@ -662,6 +686,14 @@ const styles = StyleSheet.create({
   typeOptionTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 4,
+  },
+  dateTimeHalf: {
+    flex: 1,
   },
   note: {
     fontSize: 12,

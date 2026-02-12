@@ -7,6 +7,8 @@ import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import Icon from '../components/CrossPlatformIcon';
+import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL } from '../config/api';
 
@@ -45,6 +47,7 @@ const formatDateUSA = (dateString) => {
 
 const parseUSADate = (usaDate) => {
   if (!usaDate) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(usaDate)) return usaDate;
   const parts = usaDate.split('/');
   if (parts.length !== 3) return '';
   const [month, day, year] = parts;
@@ -83,7 +86,7 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'appointment',
-    eventDate: moment().format('MM/DD/YYYY'),
+    eventDate: moment().format('YYYY-MM-DD'),
     startTime: '09:00',
     endTime: '10:00',
     reminderEnabled: true,
@@ -129,8 +132,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [bulkMode, setBulkMode] = useState(true);
   
   const [newBlockedTime, setNewBlockedTime] = useState({
-    startDate: moment().format('MM/DD/YYYY'),
-    endDate: moment().format('MM/DD/YYYY'),
+    startDate: moment().format('YYYY-MM-DD'),
+    endDate: moment().format('YYYY-MM-DD'),
     reason: '',
     blockType: 'personal',
     isAllDay: true
@@ -138,9 +141,6 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const [showPatientPicker, setShowPatientPicker] = useState(false);
   const [patientSearchQuery, setPatientSearchQuery] = useState('');
-  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
-  const [showEventStartTimePicker, setShowEventStartTimePicker] = useState(false);
-  const [showEventEndTimePicker, setShowEventEndTimePicker] = useState(false);
 
   const providerId = user?.medicalProviderId || user?.id;
 
@@ -402,12 +402,11 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
       return;
     }
     
-    // Parse MM/DD/YYYY format to YYYY-MM-DD for API
-    const parsedStartDate = moment(newBlockedTime.startDate, 'MM/DD/YYYY');
-    const parsedEndDate = moment(newBlockedTime.endDate, 'MM/DD/YYYY');
+    const parsedStartDate = moment(newBlockedTime.startDate, 'YYYY-MM-DD');
+    const parsedEndDate = moment(newBlockedTime.endDate, 'YYYY-MM-DD');
     
     if (!parsedStartDate.isValid() || !parsedEndDate.isValid()) {
-      alert('Error', 'Invalid date format. Use MM/DD/YYYY');
+      alert('Error', 'Invalid date format');
       return;
     }
     
@@ -421,8 +420,8 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            startDatetime: `${parsedStartDate.format('YYYY-MM-DD')}T00:00:00`,
-            endDatetime: `${parsedEndDate.format('YYYY-MM-DD')}T23:59:59`,
+            startDatetime: `${newBlockedTime.startDate}T00:00:00`,
+            endDatetime: `${newBlockedTime.endDate}T23:59:59`,
             reason: newBlockedTime.reason,
             blockType: newBlockedTime.blockType,
             isAllDay: newBlockedTime.isAllDay
@@ -467,21 +466,20 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startDate || !newEvent.startTimeValue) {
+    if (!newEvent.title || !newEvent.eventDate || !newEvent.startTime) {
       alert('Error', 'Please enter a title, date, and time');
       return;
     }
 
-    // Parse MM/DD/YYYY date and HH:mm time separately
-    const parsedStartMoment = moment(`${newEvent.startDate} ${newEvent.startTimeValue}`, 'MM/DD/YYYY HH:mm');
+    const parsedStartMoment = moment(`${newEvent.eventDate} ${newEvent.startTime}`, 'YYYY-MM-DD HH:mm');
     if (!parsedStartMoment.isValid()) {
       alert('Error', 'Invalid date or time format');
       return;
     }
     const parsedStartTime = parsedStartMoment.toDate();
 
-    // Calculate end time based on duration
-    const parsedEndTime = new Date(parsedStartTime.getTime() + (newEvent.duration * 60 * 1000));
+    const parsedEndMoment = moment(`${newEvent.eventDate} ${newEvent.endTime}`, 'YYYY-MM-DD HH:mm');
+    const parsedEndTime = parsedEndMoment.isValid() ? parsedEndMoment.toDate() : new Date(parsedStartTime.getTime() + 60 * 60 * 1000);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/calendar/events`, {
@@ -511,9 +509,9 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           location: '',
           eventType: 'appointment',
-          startDate: moment().format('MM/DD/YYYY'),
-          startTimeValue: '09:00',
-          duration: 60,
+          eventDate: moment().format('YYYY-MM-DD'),
+          startTime: '09:00',
+          endTime: '10:00',
           reminderEnabled: true,
           selectedPatientId: ''
         });
@@ -1036,23 +1034,22 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               </>
             )}
 
-            <Text style={styles.modalLabel}>Start Time</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAvailability.startTime}
-              onChangeText={(text) => setNewAvailability({ ...newAvailability, startTime: text })}
-              placeholder="09:00"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.modalLabel}>End Time</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAvailability.endTime}
-              onChangeText={(text) => setNewAvailability({ ...newAvailability, endTime: text })}
-              placeholder="17:00"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.dateTimeRow}>
+              <TimePickerInput
+                label="Start Time"
+                value={newAvailability.startTime}
+                onChange={(time) => setNewAvailability({ ...newAvailability, startTime: time })}
+                placeholder="Select start time"
+                style={styles.dateTimeHalf}
+              />
+              <TimePickerInput
+                label="End Time"
+                value={newAvailability.endTime}
+                onChange={(time) => setNewAvailability({ ...newAvailability, endTime: time })}
+                placeholder="Select end time"
+                style={styles.dateTimeHalf}
+              />
+            </View>
 
             <View style={styles.timeRow}>
               <View style={styles.timeInput}>
@@ -1127,23 +1124,23 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalLabel}>Start Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newBlockedTime.startDate}
-              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, startDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.modalLabel}>End Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newBlockedTime.endDate}
-              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, endDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.dateTimeRow}>
+              <DatePickerInput
+                label="Start Date"
+                value={newBlockedTime.startDate}
+                onChange={(date) => setNewBlockedTime({ ...newBlockedTime, startDate: date })}
+                placeholder="Select start date"
+                style={styles.dateTimeHalf}
+              />
+              <DatePickerInput
+                label="End Date"
+                value={newBlockedTime.endDate}
+                onChange={(date) => setNewBlockedTime({ ...newBlockedTime, endDate: date })}
+                placeholder="Select end date"
+                minDate={newBlockedTime.startDate}
+                style={styles.dateTimeHalf}
+              />
+            </View>
 
             <Text style={styles.modalLabel}>Reason</Text>
             <TextInput
@@ -1587,125 +1584,30 @@ const MedicalProviderCalendarScreen = ({ user, onNavigate, onBack }) => {
               )}
             </View>
 
-            <View style={[styles.inputGroup, { zIndex: 100 }]}>
-              <Text style={styles.modalLabel}>Date *</Text>
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => {
-                  setShowEventDatePicker(!showEventDatePicker);
-                  setShowEventStartTimePicker(false);
-                  setShowEventEndTimePicker(false);
-                }}
-              >
-                <Text style={styles.datePickerButtonText}>
-                  {newEvent.eventDate || '📅 Select Date'}
-                </Text>
-              </TouchableOpacity>
-              {showEventDatePicker && (
-                <View style={styles.calendarDropdown}>
-                  <Calendar
-                    onDayPress={(day) => {
-                      setNewEvent({ ...newEvent, eventDate: formatDateUSA(day.dateString) });
-                      setShowEventDatePicker(false);
-                    }}
-                    markedDates={{
-                      [parseUSADate(newEvent.eventDate) || '']: { selected: true, selectedColor: theme.colors.primary }
-                    }}
-                    theme={{
-                      backgroundColor: '#FFFFFF',
-                      calendarBackground: '#FFFFFF',
-                      todayTextColor: theme.colors.primary,
-                      selectedDayBackgroundColor: theme.colors.primary,
-                      arrowColor: theme.colors.primary
-                    }}
-                  />
-                </View>
-              )}
+            <View style={styles.inputGroup}>
+              <DatePickerInput
+                label="Date *"
+                value={newEvent.eventDate}
+                onChange={(date) => setNewEvent({ ...newEvent, eventDate: date })}
+                placeholder="Select date"
+              />
             </View>
 
-            <View style={[styles.timeRow, { zIndex: 10 }]}>
-              <View style={[styles.timeInput, { zIndex: 11 }]}>
-                <Text style={styles.modalLabel}>Start Time *</Text>
-                <TouchableOpacity
-                  style={styles.datePickerButton}
-                  onPress={() => {
-                    setShowEventStartTimePicker(!showEventStartTimePicker);
-                    setShowEventEndTimePicker(false);
-                    setShowEventDatePicker(false);
-                  }}
-                >
-                  <Text style={styles.datePickerButtonText}>
-                    {TIME_SLOTS.find(t => t.value === newEvent.startTime)?.label || '9:00 AM'}
-                  </Text>
-                </TouchableOpacity>
-                {showEventStartTimePicker && (
-                  <View style={styles.timePickerDropdown}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                      {TIME_SLOTS.map((slot) => (
-                        <TouchableOpacity
-                          key={slot.value}
-                          style={[
-                            styles.timeSlotOption,
-                            newEvent.startTime === slot.value && styles.timeSlotOptionSelected
-                          ]}
-                          onPress={() => {
-                            setNewEvent({ ...newEvent, startTime: slot.value });
-                            setShowEventStartTimePicker(false);
-                          }}
-                        >
-                          <Text style={[
-                            styles.timeSlotOptionText,
-                            newEvent.startTime === slot.value && styles.timeSlotOptionTextSelected
-                          ]}>
-                            {slot.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-              <View style={[styles.timeInput, { zIndex: 10 }]}>
-                <Text style={styles.modalLabel}>End Time *</Text>
-                <TouchableOpacity
-                  style={styles.datePickerButton}
-                  onPress={() => {
-                    setShowEventEndTimePicker(!showEventEndTimePicker);
-                    setShowEventStartTimePicker(false);
-                    setShowEventDatePicker(false);
-                  }}
-                >
-                  <Text style={styles.datePickerButtonText}>
-                    {TIME_SLOTS.find(t => t.value === newEvent.endTime)?.label || '10:00 AM'}
-                  </Text>
-                </TouchableOpacity>
-                {showEventEndTimePicker && (
-                  <View style={styles.timePickerDropdown}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                      {TIME_SLOTS.map((slot) => (
-                        <TouchableOpacity
-                          key={slot.value}
-                          style={[
-                            styles.timeSlotOption,
-                            newEvent.endTime === slot.value && styles.timeSlotOptionSelected
-                          ]}
-                          onPress={() => {
-                            setNewEvent({ ...newEvent, endTime: slot.value });
-                            setShowEventEndTimePicker(false);
-                          }}
-                        >
-                          <Text style={[
-                            styles.timeSlotOptionText,
-                            newEvent.endTime === slot.value && styles.timeSlotOptionTextSelected
-                          ]}>
-                            {slot.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
+            <View style={styles.dateTimeRow}>
+              <TimePickerInput
+                label="Start Time *"
+                value={newEvent.startTime}
+                onChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
+                placeholder="Select start time"
+                style={styles.dateTimeHalf}
+              />
+              <TimePickerInput
+                label="End Time *"
+                value={newEvent.endTime}
+                onChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
+                placeholder="Select end time"
+                style={styles.dateTimeHalf}
+              />
             </View>
 
             <View style={styles.inputGroup}>
@@ -2645,70 +2547,13 @@ const styles = StyleSheet.create({
   maxBookingsOptionTextActive: {
     color: '#FFD700'
   },
-  datePickerButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.backgroundDark,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  dateTimeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
+    gap: 10,
+    marginBottom: 4
   },
-  datePickerButtonText: {
-    color: theme.colors.textPrimary,
-    fontSize: 16
-  },
-  calendarDropdown: {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.backgroundDark,
-    zIndex: 9999,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12
-  },
-  timePickerDropdown: {
-    position: 'absolute',
-    top: 70,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.backgroundDark,
-    zIndex: 9999,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    maxHeight: 200
-  },
-  timeSlotOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.backgroundDark
-  },
-  timeSlotOptionSelected: {
-    backgroundColor: theme.colors.offWhite
-  },
-  timeSlotOptionText: {
-    color: theme.colors.textPrimary,
-    fontSize: 14
-  },
-  timeSlotOptionTextSelected: {
-    color: theme.colors.primary,
-    fontWeight: '600'
+  dateTimeHalf: {
+    flex: 1
   }
 });
 

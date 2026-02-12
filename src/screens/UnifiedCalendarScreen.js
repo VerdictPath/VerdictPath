@@ -7,6 +7,8 @@ import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import Icon from '../components/CrossPlatformIcon';
+import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 import { API_BASE_URL } from '../config/api';
 import CalendarService from '../services/CalendarService';
 
@@ -105,7 +107,7 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
 
   const [newEvent, setNewEvent] = useState({
     title: '', description: '', location: '',
-    eventType: 'reminder', startTime: '', endTime: '',
+    eventType: 'reminder', startDate: '', startTime: '', endDate: '', endTime: '',
     allDay: false, reminderEnabled: true, reminderMinutesBefore: 60
   });
 
@@ -576,16 +578,21 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.title || !newEvent.startTime) {
-      alert('Required', 'Please provide a title and start date/time');
+    if (!newEvent.title || !newEvent.startDate || !newEvent.startTime) {
+      alert('Required', 'Please provide a title, start date, and start time');
       return;
     }
-    const parsedStartTime = parseDateTime(newEvent.startTime);
-    if (!parsedStartTime) {
-      alert('Invalid Date', 'Please enter a valid date (YYYY-MM-DD HH:MM)');
+    const parsedStart = moment(newEvent.startDate + ' ' + newEvent.startTime, 'YYYY-MM-DD HH:mm');
+    if (!parsedStart.isValid()) {
+      alert('Invalid Date', 'Please select a valid start date and time');
       return;
     }
-    const parsedEndTime = newEvent.endTime ? parseDateTime(newEvent.endTime) : null;
+    const parsedStartTime = parsedStart.toISOString();
+    let parsedEndTime = null;
+    if (newEvent.endDate && newEvent.endTime) {
+      const parsedEnd = moment(newEvent.endDate + ' ' + newEvent.endTime, 'YYYY-MM-DD HH:mm');
+      parsedEndTime = parsedEnd.isValid() ? parsedEnd.toISOString() : null;
+    }
     try {
       await CalendarService.createEventInBackend({
         title: newEvent.title, description: newEvent.description, location: newEvent.location,
@@ -691,7 +698,7 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
   const resetNewEvent = () => {
     setNewEvent({
       title: '', description: '', location: '', eventType: 'reminder',
-      startTime: '', endTime: '', allDay: false, reminderEnabled: true, reminderMinutesBefore: 60
+      startDate: '', startTime: '', endDate: '', endTime: '', allDay: false, reminderEnabled: true, reminderMinutesBefore: 60
     });
   };
 
@@ -1031,13 +1038,23 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
             <TextInput style={styles.modalInput} value={newEvent.location}
               onChangeText={t => setNewEvent({ ...newEvent, location: t })} placeholder="e.g., Courthouse Room 101" placeholderTextColor="#999" />
 
-            <Text style={styles.modalLabel}>Start Date & Time *</Text>
-            <TextInput style={styles.modalInput} value={newEvent.startTime}
-              onChangeText={t => setNewEvent({ ...newEvent, startTime: t })} placeholder="YYYY-MM-DD HH:MM (e.g., 2026-03-15 14:00)" placeholderTextColor="#999" />
+            <View style={styles.dateTimeRow}>
+              <DatePickerInput label="Start Date *" value={newEvent.startDate}
+                onChange={d => setNewEvent({ ...newEvent, startDate: d })}
+                placeholder="Select date" minDate={moment().format('YYYY-MM-DD')} style={styles.dateTimeHalf} />
+              <TimePickerInput label="Start Time *" value={newEvent.startTime}
+                onChange={t => setNewEvent({ ...newEvent, startTime: t })}
+                placeholder="Select time" style={styles.dateTimeHalf} />
+            </View>
 
-            <Text style={styles.modalLabel}>End Date & Time (Optional)</Text>
-            <TextInput style={styles.modalInput} value={newEvent.endTime}
-              onChangeText={t => setNewEvent({ ...newEvent, endTime: t })} placeholder="YYYY-MM-DD HH:MM" placeholderTextColor="#999" />
+            <View style={styles.dateTimeRow}>
+              <DatePickerInput label="End Date" value={newEvent.endDate}
+                onChange={d => setNewEvent({ ...newEvent, endDate: d })}
+                placeholder="Select date" minDate={newEvent.startDate || moment().format('YYYY-MM-DD')} style={styles.dateTimeHalf} />
+              <TimePickerInput label="End Time" value={newEvent.endTime}
+                onChange={t => setNewEvent({ ...newEvent, endTime: t })}
+                placeholder="Select time" style={styles.dateTimeHalf} />
+            </View>
 
             <TouchableOpacity style={styles.confirmButton} onPress={handleAddEvent}>
               <Icon name="check" size={20} color="#fff" />
@@ -1080,29 +1097,56 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
               {req.status === 'pending' && (
                 <View style={styles.proposeDatesSection}>
                   <Text style={styles.modalLabel}>Propose 3 Available Dates</Text>
-                  <Text style={styles.hintText}>Enter dates in YYYY-MM-DD HH:MM format</Text>
+                  <Text style={styles.hintText}>Select dates and times for your availability</Text>
                   {proposedDates.map((d, i) => (
                     <View key={i} style={styles.dateProposalRow}>
                       <Text style={styles.dateProposalLabel}>Option {i + 1}</Text>
-                      <TextInput style={styles.dateProposalInput} placeholder="Start: YYYY-MM-DD HH:MM" placeholderTextColor="#666"
-                        value={d.startTime ? moment(d.startTime).format('YYYY-MM-DD HH:mm') : ''}
-                        onChangeText={t => {
-                          const newDates = [...proposedDates];
-                          const parsed = moment(t, 'YYYY-MM-DD HH:mm', true);
-                          newDates[i].startTime = parsed.isValid() ? parsed.toDate() : null;
-                          if (parsed.isValid() && req.durationMinutes) {
-                            newDates[i].endTime = moment(parsed).add(req.durationMinutes, 'minutes').toDate();
-                          }
-                          setProposedDates(newDates);
-                        }} />
-                      <TextInput style={styles.dateProposalInput} placeholder="End: YYYY-MM-DD HH:MM" placeholderTextColor="#666"
-                        value={d.endTime ? moment(d.endTime).format('YYYY-MM-DD HH:mm') : ''}
-                        onChangeText={t => {
-                          const newDates = [...proposedDates];
-                          const parsed = moment(t, 'YYYY-MM-DD HH:mm', true);
-                          newDates[i].endTime = parsed.isValid() ? parsed.toDate() : null;
-                          setProposedDates(newDates);
-                        }} />
+                      <View style={styles.dateTimeRow}>
+                        <DatePickerInput label="Start Date" value={d.startTime ? moment(d.startTime).format('YYYY-MM-DD') : ''}
+                          onChange={dateStr => {
+                            const newDates = [...proposedDates];
+                            const existingTime = d.startTime ? moment(d.startTime).format('HH:mm') : '09:00';
+                            const parsed = moment(dateStr + ' ' + existingTime, 'YYYY-MM-DD HH:mm');
+                            newDates[i].startTime = parsed.isValid() ? parsed.toDate() : null;
+                            if (parsed.isValid() && req.durationMinutes) {
+                              newDates[i].endTime = moment(parsed).add(req.durationMinutes, 'minutes').toDate();
+                            }
+                            setProposedDates(newDates);
+                          }}
+                          placeholder="Select date" minDate={moment().format('YYYY-MM-DD')} style={styles.dateTimeHalf} />
+                        <TimePickerInput label="Start Time" value={d.startTime ? moment(d.startTime).format('HH:mm') : ''}
+                          onChange={timeStr => {
+                            const newDates = [...proposedDates];
+                            const existingDate = d.startTime ? moment(d.startTime).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                            const parsed = moment(existingDate + ' ' + timeStr, 'YYYY-MM-DD HH:mm');
+                            newDates[i].startTime = parsed.isValid() ? parsed.toDate() : null;
+                            if (parsed.isValid() && req.durationMinutes) {
+                              newDates[i].endTime = moment(parsed).add(req.durationMinutes, 'minutes').toDate();
+                            }
+                            setProposedDates(newDates);
+                          }}
+                          placeholder="Select time" style={styles.dateTimeHalf} />
+                      </View>
+                      <View style={styles.dateTimeRow}>
+                        <DatePickerInput label="End Date" value={d.endTime ? moment(d.endTime).format('YYYY-MM-DD') : ''}
+                          onChange={dateStr => {
+                            const newDates = [...proposedDates];
+                            const existingTime = d.endTime ? moment(d.endTime).format('HH:mm') : '10:00';
+                            const parsed = moment(dateStr + ' ' + existingTime, 'YYYY-MM-DD HH:mm');
+                            newDates[i].endTime = parsed.isValid() ? parsed.toDate() : null;
+                            setProposedDates(newDates);
+                          }}
+                          placeholder="Select date" minDate={moment().format('YYYY-MM-DD')} style={styles.dateTimeHalf} />
+                        <TimePickerInput label="End Time" value={d.endTime ? moment(d.endTime).format('HH:mm') : ''}
+                          onChange={timeStr => {
+                            const newDates = [...proposedDates];
+                            const existingDate = d.endTime ? moment(d.endTime).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                            const parsed = moment(existingDate + ' ' + timeStr, 'YYYY-MM-DD HH:mm');
+                            newDates[i].endTime = parsed.isValid() ? parsed.toDate() : null;
+                            setProposedDates(newDates);
+                          }}
+                          placeholder="Select time" style={styles.dateTimeHalf} />
+                      </View>
                     </View>
                   ))}
                   <TouchableOpacity style={styles.confirmButton} onPress={handleSubmitDates}>
@@ -1452,6 +1496,8 @@ const styles = StyleSheet.create({
   agendaDateInfo: { flex: 1 },
   agendaDateLabel: { color: '#fff', fontSize: 15, fontWeight: '600' },
   agendaDateSublabel: { color: '#a0aec0', fontSize: 12, marginTop: 2 },
+  dateTimeRow: { flexDirection: 'row', gap: 10, marginBottom: 4 },
+  dateTimeHalf: { flex: 1 },
 });
 
 export default UnifiedCalendarScreen;

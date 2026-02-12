@@ -8,6 +8,8 @@ import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
+import DatePickerInput from '../components/DatePickerInput';
+import TimePickerInput from '../components/TimePickerInput';
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const APPOINTMENT_TYPES = ['consultation', 'case_review', 'deposition', 'mediation', 'court_hearing', 'settlement_conference'];
@@ -51,9 +53,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [showAvailabilityRequestModal, setShowAvailabilityRequestModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
-  const [showEventStartTimePicker, setShowEventStartTimePicker] = useState(false);
-  const [showEventEndTimePicker, setShowEventEndTimePicker] = useState(false);
-  const [showEventDatePicker, setShowEventDatePicker] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
   const [newEvent, setNewEvent] = useState({
@@ -61,7 +60,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     description: '',
     location: '',
     eventType: 'meeting',
-    eventDate: moment().format('MM/DD/YYYY'),
+    eventDate: moment().format('YYYY-MM-DD'),
     startTime: '09:00',
     endTime: '10:00',
     reminderEnabled: true,
@@ -100,8 +99,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [bulkMode, setBulkMode] = useState(true);
   
   const [newBlockedTime, setNewBlockedTime] = useState({
-    startDate: moment().format('MM/DD/YYYY'),
-    endDate: moment().format('MM/DD/YYYY'),
+    startDate: moment().format('YYYY-MM-DD'),
+    endDate: moment().format('YYYY-MM-DD'),
     reason: '',
     blockType: 'personal',
     isAllDay: true
@@ -109,7 +108,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
 
   const [newAppointment, setNewAppointment] = useState({
     clientId: '',
-    appointmentDate: moment().format('MM/DD/YYYY'),
+    appointmentDate: moment().format('YYYY-MM-DD'),
     startTime: '09:00',
     endTime: '09:30',
     appointmentType: 'consultation',
@@ -133,13 +132,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     option3Date: '',
     option3Time: '11:00'
   });
-  
-  const [showDatePicker1, setShowDatePicker1] = useState(false);
-  const [showDatePicker2, setShowDatePicker2] = useState(false);
-  const [showDatePicker3, setShowDatePicker3] = useState(false);
-  const [showTimePicker1, setShowTimePicker1] = useState(false);
-  const [showTimePicker2, setShowTimePicker2] = useState(false);
-  const [showTimePicker3, setShowTimePicker3] = useState(false);
   
   const TIME_SLOTS = [
     { label: '8:00 AM', value: '08:00' },
@@ -475,8 +467,8 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         setShowBlockTimeModal(false);
         fetchBlockedTimes();
         setNewBlockedTime({
-          startDate: moment().format('MM/DD/YYYY'),
-          endDate: moment().format('MM/DD/YYYY'),
+          startDate: moment().format('YYYY-MM-DD'),
+          endDate: moment().format('YYYY-MM-DD'),
           reason: '',
           blockType: 'personal',
           isAllDay: true
@@ -517,7 +509,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     const startDateTime = `${isoDate}T${newEvent.startTime}`;
     const parsedStartTime = new Date(startDateTime);
     if (isNaN(parsedStartTime.getTime())) {
-      alert('Error', 'Invalid date or start time format. Use MM/DD/YYYY');
+      alert('Error', 'Invalid date or start time format');
       return;
     }
 
@@ -565,7 +557,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           description: '',
           location: '',
           eventType: 'meeting',
-          eventDate: moment().format('MM/DD/YYYY'),
+          eventDate: moment().format('YYYY-MM-DD'),
           startTime: '09:00',
           endTime: '10:00',
           reminderEnabled: true,
@@ -611,7 +603,7 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         fetchAppointments();
         setNewAppointment({
           clientId: '',
-          appointmentDate: moment().format('MM/DD/YYYY'),
+          appointmentDate: moment().format('YYYY-MM-DD'),
           startTime: '09:00',
           endTime: '09:30',
           appointmentType: 'consultation',
@@ -676,8 +668,10 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     
     
     for (const opt of options) {
-      if (!validateDateFormat(opt.date)) {
-        showAlert('Error', `${opt.label}: Invalid date format. Use MM/DD/YYYY`);
+      const isISO = /^\d{4}-\d{2}-\d{2}$/.test(opt.date);
+      const isUSA = validateDateFormat(opt.date);
+      if (!isISO && !isUSA) {
+        showAlert('Error', `${opt.label}: Please select a valid date`);
         return;
       }
     }
@@ -718,12 +712,6 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
         const data = await response.json();
         showAlert('Success', 'Availability request with 3 options sent to client!');
         setShowAvailabilityRequestModal(false);
-        setShowDatePicker1(false);
-        setShowDatePicker2(false);
-        setShowDatePicker3(false);
-        setShowTimePicker1(false);
-        setShowTimePicker2(false);
-        setShowTimePicker3(false);
         setNewAvailabilityRequest({
           clientId: '',
           title: '',
@@ -1299,23 +1287,22 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               </>
             )}
 
-            <Text style={styles.modalLabel}>Start Time</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAvailability.startTime}
-              onChangeText={(text) => setNewAvailability({ ...newAvailability, startTime: text })}
-              placeholder="09:00"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.modalLabel}>End Time</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAvailability.endTime}
-              onChangeText={(text) => setNewAvailability({ ...newAvailability, endTime: text })}
-              placeholder="17:00"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.dateTimeRow}>
+              <TimePickerInput
+                label="Start Time"
+                value={newAvailability.startTime}
+                onChange={(time) => setNewAvailability({ ...newAvailability, startTime: time })}
+                placeholder="09:00"
+                style={styles.dateTimeHalf}
+              />
+              <TimePickerInput
+                label="End Time"
+                value={newAvailability.endTime}
+                onChange={(time) => setNewAvailability({ ...newAvailability, endTime: time })}
+                placeholder="17:00"
+                style={styles.dateTimeHalf}
+              />
+            </View>
 
             <View style={styles.timeRow}>
               <View style={styles.timeInput}>
@@ -1388,23 +1375,23 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalLabel}>Start Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newBlockedTime.startDate}
-              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, startDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
-
-            <Text style={styles.modalLabel}>End Date</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newBlockedTime.endDate}
-              onChangeText={(text) => setNewBlockedTime({ ...newBlockedTime, endDate: text })}
-              placeholder="MM/DD/YYYY"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.dateTimeRow}>
+              <DatePickerInput
+                label="Start Date"
+                value={newBlockedTime.startDate}
+                onChange={(date) => setNewBlockedTime({ ...newBlockedTime, startDate: date })}
+                placeholder="Select start date"
+                style={styles.dateTimeHalf}
+              />
+              <DatePickerInput
+                label="End Date"
+                value={newBlockedTime.endDate}
+                onChange={(date) => setNewBlockedTime({ ...newBlockedTime, endDate: date })}
+                placeholder="Select end date"
+                minDate={newBlockedTime.startDate}
+                style={styles.dateTimeHalf}
+              />
+            </View>
 
             <Text style={styles.modalLabel}>Reason</Text>
             <TextInput
@@ -1543,213 +1530,60 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
             <Text style={styles.optionsSectionTitle}>Provide 3 Date/Time Options</Text>
             <Text style={styles.optionsSectionSubtitle}>Your client will select one of these options</Text>
 
-            <View style={[styles.optionBox, showDatePicker1 && { zIndex: 100 }]}>
+            <View style={styles.optionBox}>
               <Text style={styles.optionLabel}>Option 1</Text>
               <View style={styles.dateTimeRow}>
-                <View style={styles.dateInputContainer}>
-                  <Text style={styles.inputSubLabel}>Date</Text>
-                  <TouchableOpacity 
-                    style={styles.datePickerButton}
-                    onPress={() => setShowDatePicker1(!showDatePicker1)}
-                  >
-                    <Text style={styles.datePickerButtonText}>
-                      {newAvailabilityRequest.option1Date || '📅 Select Date'}
-                    </Text>
-                  </TouchableOpacity>
-                  {showDatePicker1 && (
-                    <View style={styles.calendarDropdown}>
-                      <Calendar
-                        onDayPress={(day) => {
-                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: formatDateUSA(day.dateString) });
-                          setShowDatePicker1(false);
-                        }}
-                        minDate={moment().format('YYYY-MM-DD')}
-                        theme={{
-                          backgroundColor: '#FFFFFF',
-                          calendarBackground: '#FFFFFF',
-                          textSectionTitleColor: '#666',
-                          dayTextColor: '#333',
-                          todayTextColor: '#1E3A5F',
-                          selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1E3A5F',
-                          monthTextColor: '#1E3A5F',
-                          arrowColor: '#1E3A5F'
-                        }}
-                      />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.timeInputContainer}>
-                  <Text style={styles.inputSubLabel}>Time</Text>
-                  <TouchableOpacity 
-                    style={styles.timePickerButton}
-                    onPress={() => setShowTimePicker1(!showTimePicker1)}
-                  >
-                    <Text style={styles.timePickerButtonText}>
-                      {getTimeLabel(newAvailabilityRequest.option1Time)}
-                    </Text>
-                  </TouchableOpacity>
-                  {showTimePicker1 && (
-                    <View style={styles.timeDropdown}>
-                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
-                        {TIME_SLOTS.map((slot) => (
-                          <TouchableOpacity
-                            key={slot.value}
-                            style={[styles.timeSlotOption, newAvailabilityRequest.option1Time === slot.value && styles.timeSlotOptionActive]}
-                            onPress={() => {
-                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: slot.value });
-                              setShowTimePicker1(false);
-                            }}
-                          >
-                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option1Time === slot.value && styles.timeSlotTextActive]}>
-                              {slot.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                </View>
+                <DatePickerInput
+                  value={newAvailabilityRequest.option1Date}
+                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: date })}
+                  placeholder="Select date"
+                  minDate={moment().format('YYYY-MM-DD')}
+                  style={styles.dateTimeHalf}
+                />
+                <TimePickerInput
+                  value={newAvailabilityRequest.option1Time}
+                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: time })}
+                  placeholder="Select time"
+                  style={styles.dateTimeHalf}
+                />
               </View>
             </View>
 
-            <View style={[styles.optionBox, showDatePicker2 && { zIndex: 100 }]}>
+            <View style={styles.optionBox}>
               <Text style={styles.optionLabel}>Option 2</Text>
               <View style={styles.dateTimeRow}>
-                <View style={styles.dateInputContainer}>
-                  <Text style={styles.inputSubLabel}>Date</Text>
-                  <TouchableOpacity 
-                    style={styles.datePickerButton}
-                    onPress={() => setShowDatePicker2(!showDatePicker2)}
-                  >
-                    <Text style={styles.datePickerButtonText}>
-                      {newAvailabilityRequest.option2Date || '📅 Select Date'}
-                    </Text>
-                  </TouchableOpacity>
-                  {showDatePicker2 && (
-                    <View style={styles.calendarDropdown}>
-                      <Calendar
-                        onDayPress={(day) => {
-                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: formatDateUSA(day.dateString) });
-                          setShowDatePicker2(false);
-                        }}
-                        minDate={moment().format('YYYY-MM-DD')}
-                        theme={{
-                          backgroundColor: '#FFFFFF',
-                          calendarBackground: '#FFFFFF',
-                          textSectionTitleColor: '#666',
-                          dayTextColor: '#333',
-                          todayTextColor: '#1E3A5F',
-                          selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1E3A5F',
-                          monthTextColor: '#1E3A5F',
-                          arrowColor: '#1E3A5F'
-                        }}
-                      />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.timeInputContainer}>
-                  <Text style={styles.inputSubLabel}>Time</Text>
-                  <TouchableOpacity 
-                    style={styles.timePickerButton}
-                    onPress={() => setShowTimePicker2(!showTimePicker2)}
-                  >
-                    <Text style={styles.timePickerButtonText}>
-                      {getTimeLabel(newAvailabilityRequest.option2Time)}
-                    </Text>
-                  </TouchableOpacity>
-                  {showTimePicker2 && (
-                    <View style={styles.timeDropdown}>
-                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
-                        {TIME_SLOTS.map((slot) => (
-                          <TouchableOpacity
-                            key={slot.value}
-                            style={[styles.timeSlotOption, newAvailabilityRequest.option2Time === slot.value && styles.timeSlotOptionActive]}
-                            onPress={() => {
-                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: slot.value });
-                              setShowTimePicker2(false);
-                            }}
-                          >
-                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option2Time === slot.value && styles.timeSlotTextActive]}>
-                              {slot.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                </View>
+                <DatePickerInput
+                  value={newAvailabilityRequest.option2Date}
+                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: date })}
+                  placeholder="Select date"
+                  minDate={moment().format('YYYY-MM-DD')}
+                  style={styles.dateTimeHalf}
+                />
+                <TimePickerInput
+                  value={newAvailabilityRequest.option2Time}
+                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: time })}
+                  placeholder="Select time"
+                  style={styles.dateTimeHalf}
+                />
               </View>
             </View>
 
-            <View style={[styles.optionBox, showDatePicker3 && { zIndex: 100 }]}>
+            <View style={styles.optionBox}>
               <Text style={styles.optionLabel}>Option 3</Text>
               <View style={styles.dateTimeRow}>
-                <View style={styles.dateInputContainer}>
-                  <Text style={styles.inputSubLabel}>Date</Text>
-                  <TouchableOpacity 
-                    style={styles.datePickerButton}
-                    onPress={() => setShowDatePicker3(!showDatePicker3)}
-                  >
-                    <Text style={styles.datePickerButtonText}>
-                      {newAvailabilityRequest.option3Date || '📅 Select Date'}
-                    </Text>
-                  </TouchableOpacity>
-                  {showDatePicker3 && (
-                    <View style={styles.calendarDropdown}>
-                      <Calendar
-                        onDayPress={(day) => {
-                          setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: formatDateUSA(day.dateString) });
-                          setShowDatePicker3(false);
-                        }}
-                        minDate={moment().format('YYYY-MM-DD')}
-                        theme={{
-                          backgroundColor: '#FFFFFF',
-                          calendarBackground: '#FFFFFF',
-                          textSectionTitleColor: '#666',
-                          dayTextColor: '#333',
-                          todayTextColor: '#1E3A5F',
-                          selectedDayTextColor: '#fff',
-                          selectedDayBackgroundColor: '#1E3A5F',
-                          monthTextColor: '#1E3A5F',
-                          arrowColor: '#1E3A5F'
-                        }}
-                      />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.timeInputContainer}>
-                  <Text style={styles.inputSubLabel}>Time</Text>
-                  <TouchableOpacity 
-                    style={styles.timePickerButton}
-                    onPress={() => setShowTimePicker3(!showTimePicker3)}
-                  >
-                    <Text style={styles.timePickerButtonText}>
-                      {getTimeLabel(newAvailabilityRequest.option3Time)}
-                    </Text>
-                  </TouchableOpacity>
-                  {showTimePicker3 && (
-                    <View style={styles.timeDropdown}>
-                      <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled>
-                        {TIME_SLOTS.map((slot) => (
-                          <TouchableOpacity
-                            key={slot.value}
-                            style={[styles.timeSlotOption, newAvailabilityRequest.option3Time === slot.value && styles.timeSlotOptionActive]}
-                            onPress={() => {
-                              setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: slot.value });
-                              setShowTimePicker3(false);
-                            }}
-                          >
-                            <Text style={[styles.timeSlotText, newAvailabilityRequest.option3Time === slot.value && styles.timeSlotTextActive]}>
-                              {slot.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                </View>
+                <DatePickerInput
+                  value={newAvailabilityRequest.option3Date}
+                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: date })}
+                  placeholder="Select date"
+                  minDate={moment().format('YYYY-MM-DD')}
+                  style={styles.dateTimeHalf}
+                />
+                <TimePickerInput
+                  value={newAvailabilityRequest.option3Time}
+                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: time })}
+                  placeholder="Select time"
+                  style={styles.dateTimeHalf}
+                />
               </View>
             </View>
 
@@ -2115,119 +1949,28 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
               ))}
             </View>
 
-            <Text style={styles.modalLabel}>Date</Text>
-            <View style={styles.dateInputContainer}>
-              <TouchableOpacity
-                style={styles.datePickerButton}
-                onPress={() => setShowEventDatePicker(!showEventDatePicker)}
-              >
-                <Text style={styles.datePickerButtonText}>
-                  {newEvent.eventDate || '📅 Select Date'}
-                </Text>
-              </TouchableOpacity>
-              {showEventDatePicker && (
-                <View style={styles.calendarDropdown}>
-                  <Calendar
-                    onDayPress={(day) => {
-                      setNewEvent({ ...newEvent, eventDate: formatDateUSA(day.dateString) });
-                      setShowEventDatePicker(false);
-                    }}
-                    markedDates={{
-                      [parseUSADate(newEvent.eventDate) || '']: { selected: true, selectedColor: '#1E3A5F' }
-                    }}
-                    theme={{
-                      backgroundColor: '#FFFFFF',
-                      calendarBackground: '#FFFFFF',
-                      todayTextColor: '#1E3A5F',
-                      selectedDayBackgroundColor: '#1E3A5F',
-                      arrowColor: '#1E3A5F'
-                    }}
-                  />
-                </View>
-              )}
-            </View>
+            <DatePickerInput
+              label="Date"
+              value={newEvent.eventDate}
+              onChange={(date) => setNewEvent({ ...newEvent, eventDate: date })}
+              placeholder="Select date"
+            />
 
-            <View style={[styles.timeRow, { zIndex: 10 }]}>
-              <View style={[styles.timeInput, { zIndex: 11 }]}>
-                <Text style={styles.modalLabel}>Start Time</Text>
-                <TouchableOpacity
-                  style={styles.datePickerButton}
-                  onPress={() => {
-                    setShowEventStartTimePicker(!showEventStartTimePicker);
-                    setShowEventEndTimePicker(false);
-                  }}
-                >
-                  <Text style={styles.datePickerButtonText}>
-                    {TIME_SLOTS.find(t => t.value === newEvent.startTime)?.label || '09:00 AM'}
-                  </Text>
-                </TouchableOpacity>
-                {showEventStartTimePicker && (
-                  <View style={styles.timePickerDropdown}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                      {TIME_SLOTS.map((slot) => (
-                        <TouchableOpacity
-                          key={slot.value}
-                          style={[
-                            styles.timeSlotOption,
-                            newEvent.startTime === slot.value && styles.timeSlotOptionSelected
-                          ]}
-                          onPress={() => {
-                            setNewEvent({ ...newEvent, startTime: slot.value });
-                            setShowEventStartTimePicker(false);
-                          }}
-                        >
-                          <Text style={[
-                            styles.timeSlotOptionText,
-                            newEvent.startTime === slot.value && styles.timeSlotOptionTextSelected
-                          ]}>
-                            {slot.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-              <View style={[styles.timeInput, { zIndex: 10 }]}>
-                <Text style={styles.modalLabel}>End Time</Text>
-                <TouchableOpacity
-                  style={styles.datePickerButton}
-                  onPress={() => {
-                    setShowEventEndTimePicker(!showEventEndTimePicker);
-                    setShowEventStartTimePicker(false);
-                  }}
-                >
-                  <Text style={styles.datePickerButtonText}>
-                    {TIME_SLOTS.find(t => t.value === newEvent.endTime)?.label || '10:00 AM'}
-                  </Text>
-                </TouchableOpacity>
-                {showEventEndTimePicker && (
-                  <View style={styles.timePickerDropdown}>
-                    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                      {TIME_SLOTS.map((slot) => (
-                        <TouchableOpacity
-                          key={slot.value}
-                          style={[
-                            styles.timeSlotOption,
-                            newEvent.endTime === slot.value && styles.timeSlotOptionSelected
-                          ]}
-                          onPress={() => {
-                            setNewEvent({ ...newEvent, endTime: slot.value });
-                            setShowEventEndTimePicker(false);
-                          }}
-                        >
-                          <Text style={[
-                            styles.timeSlotOptionText,
-                            newEvent.endTime === slot.value && styles.timeSlotOptionTextSelected
-                          ]}>
-                            {slot.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
+            <View style={styles.dateTimeRow}>
+              <TimePickerInput
+                label="Start Time"
+                value={newEvent.startTime}
+                onChange={(time) => setNewEvent({ ...newEvent, startTime: time })}
+                placeholder="Select start time"
+                style={styles.dateTimeHalf}
+              />
+              <TimePickerInput
+                label="End Time"
+                value={newEvent.endTime}
+                onChange={(time) => setNewEvent({ ...newEvent, endTime: time })}
+                placeholder="Select end time"
+                style={styles.dateTimeHalf}
+              />
             </View>
 
             <Text style={styles.modalLabel}>Title</Text>
@@ -3354,8 +3097,12 @@ const styles = StyleSheet.create({
   },
   dateTimeRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    marginBottom: 4,
     zIndex: 1
+  },
+  dateTimeHalf: {
+    flex: 1
   },
   dateInputContainer: {
     flex: 2,
