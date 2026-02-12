@@ -1,6 +1,30 @@
 const { pool } = require('../config/db');
 const encryptionService = require('./encryption');
 
+const MEDICAL_PROVIDER_RESTRICTED_RECORD_TYPES = [
+  'police report',
+  'pictures',
+  'photos',
+  'accident photos',
+  'health insurance',
+  'health insurance card',
+  'insurance card',
+  'body cam footage',
+  'dash cam footage',
+  'demand sent',
+  'demand rejected',
+  'auto insurance company',
+  'auto insurance policy number'
+];
+
+function isRestrictedRecordTypeForProvider(recordType) {
+  if (!recordType) return false;
+  const normalized = recordType.toLowerCase().trim();
+  return MEDICAL_PROVIDER_RESTRICTED_RECORD_TYPES.some(restricted => 
+    normalized === restricted || normalized.includes(restricted)
+  );
+}
+
 async function verifyLawFirmClientRelationship(lawFirmId, clientId) {
   const result = await pool.query(
     `SELECT 1 FROM law_firm_clients 
@@ -323,6 +347,15 @@ async function authorizeMedicalProviderDocumentAccess(providerId, patientId, doc
     }
   }
 
+  // Medical providers cannot view certain non-medical record types
+  // (police reports, pictures, insurance cards, etc.) regardless of uploader
+  if (documentType === 'medical_records' && isRestrictedRecordTypeForProvider(doc.record_type)) {
+    return {
+      authorized: false,
+      reason: 'This document type is not accessible to medical providers'
+    };
+  }
+
   return {
     authorized: true,
     document: doc,
@@ -368,5 +401,7 @@ module.exports = {
   verifyLawFirmConsent,
   verifyMedicalProviderPatientRelationship,
   verifyMedicalProviderConsent,
-  logDocumentAccess
+  logDocumentAccess,
+  isRestrictedRecordTypeForProvider,
+  MEDICAL_PROVIDER_RESTRICTED_RECORD_TYPES
 };
