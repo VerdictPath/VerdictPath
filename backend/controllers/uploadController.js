@@ -162,7 +162,7 @@ const autoCompleteSubstage = async (userId, documentType) => {
       `INSERT INTO litigation_substage_completions 
        (user_id, stage_id, stage_name, substage_id, substage_name, substage_type, completed_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW())
-       ON CONFLICT (user_id, substage_id) DO NOTHING
+       ON CONFLICT (user_id, stage_id, substage_id) DO NOTHING
        RETURNING *`,
       [userId, metadata.stageId, metadata.stageName, substageId, metadata.substageName, metadata.substageType]
     );
@@ -1033,6 +1033,60 @@ const deleteMedicalDocument = async (req, res) => {
   }
 };
 
+const viewMedicalDocument = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { type, id } = req.params;
+
+    let tableName;
+    if (type === 'record') {
+      tableName = 'medical_records';
+    } else if (type === 'bill') {
+      tableName = 'medical_billing';
+    } else {
+      return res.status(400).json({ error: 'Invalid document type' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, file_name, mime_type, s3_key, storage_type, document_url FROM ${tableName} WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = result.rows[0];
+
+    await auditLogger.log({
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
+      action: 'VIEW_MEDICAL_DOCUMENT',
+      entityType: tableName,
+      entityId: id,
+      metadata: { fileName: doc.file_name, documentType: type },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    if (doc.storage_type === 's3' && doc.s3_key) {
+      const s3Service = require('../services/s3Service');
+      const presigned = await s3Service.generatePresignedDownloadUrl(doc.s3_key, 300, doc.file_name);
+      return res.json({ success: true, url: presigned.url, expiresIn: presigned.expiresIn, fileName: doc.file_name, mimeType: doc.mime_type });
+    } else if (doc.storage_type === 'local' && doc.s3_key) {
+      const streamUrl = `/api/uploads/stream/${doc.s3_key}`;
+      return res.json({ success: true, url: streamUrl, fileName: doc.file_name, mimeType: doc.mime_type });
+    } else if (doc.document_url) {
+      return res.json({ success: true, url: doc.document_url, fileName: doc.file_name, mimeType: doc.mime_type });
+    }
+
+    return res.status(404).json({ error: 'Document file not available' });
+  } catch (error) {
+    console.error('Error viewing medical document:', error);
+    res.status(500).json({ error: 'Failed to retrieve document' });
+  }
+};
+
 module.exports = {
   uploadMedicalRecord,
   uploadMedicalBill,
@@ -1040,5 +1094,6 @@ module.exports = {
   downloadFile,
   getMyMedicalRecords,
   getMyMedicalBills,
-  deleteMedicalDocument
+  deleteMedicalDocument,
+  viewMedicalDocument
 };

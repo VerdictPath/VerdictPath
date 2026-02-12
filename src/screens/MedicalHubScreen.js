@@ -437,6 +437,41 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     return width;
   };
 
+  const [viewingDocId, setViewingDocId] = useState(null);
+
+  const handleViewDocument = async (type, docId, fileName) => {
+    setViewingDocId(docId);
+    try {
+      const docType = type === 'bills' ? 'bill' : 'record';
+      const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${docType}/${docId}/view`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to retrieve document');
+      }
+
+      const data = await response.json();
+
+      if (data.url) {
+        if (Platform.OS === 'web') {
+          window.open(data.url, '_blank');
+        } else {
+          const { Linking } = require('react-native');
+          await Linking.openURL(data.url);
+        }
+      } else {
+        alert('Error', 'Document URL not available.');
+      }
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert('View Error', error.message || 'Failed to open document.');
+    } finally {
+      setViewingDocId(null);
+    }
+  };
+
   const renderDocumentList = (documents, type) => {
     if (documents.length === 0) {
       return (
@@ -450,8 +485,16 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
     return documents.map((doc) => (
       <View key={doc.id} style={styles.documentCard}>
-        <View style={styles.documentCardLeft}>
-          <Text style={styles.documentIcon}>{getFileIcon(doc.mime_type)}</Text>
+        <TouchableOpacity
+          style={styles.documentCardLeft}
+          onPress={() => handleViewDocument(type, doc.id, doc.file_name)}
+          disabled={viewingDocId === doc.id}
+        >
+          {viewingDocId === doc.id ? (
+            <ActivityIndicator size="small" color="#FFD700" style={{ marginRight: 10 }} />
+          ) : (
+            <Text style={styles.documentIcon}>{getFileIcon(doc.mime_type)}</Text>
+          )}
           <View style={styles.documentDetails}>
             <Text style={[styles.documentName, { fontSize: isDesktop ? 15 : 13 }]} numberOfLines={1}>
               {doc.file_name}
@@ -459,8 +502,9 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
             <Text style={styles.documentMeta}>
               {formatFileSize(doc.file_size)} {doc.uploaded_at ? `• ${formatDate(doc.uploaded_at)}` : ''}
             </Text>
+            <Text style={styles.tapToView}>Tap to view</Text>
           </View>
-        </View>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteDocButton}
           onPress={() => handleDeleteDocument(type === 'bills' ? 'bill' : 'record', doc.id, doc.file_name)}
@@ -975,6 +1019,12 @@ const styles = StyleSheet.create({
   documentName: {
     color: '#E8D5B0',
     fontWeight: '600',
+  },
+  tapToView: {
+    color: '#90CAF9',
+    fontSize: 11,
+    marginTop: 3,
+    fontStyle: 'italic',
   },
   documentMeta: {
     color: '#8B7355',
