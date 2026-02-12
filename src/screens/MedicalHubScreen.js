@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ImageBackground, useWindowDimensions, Modal, TextInput, ActivityIndicator, Platform } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { commonStyles } from '../styles/commonStyles';
 import alert from '../utils/alert';
 import { API_BASE_URL } from '../config/api';
@@ -17,8 +19,18 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const [connectedProviders, setConnectedProviders] = useState([]);
   const [fetchingProviders, setFetchingProviders] = useState(true);
 
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [medicalBills, setMedicalBills] = useState([]);
+  const [loadingRecords, setLoadingRecords] = useState(true);
+  const [loadingBills, setLoadingBills] = useState(true);
+  const [uploadingType, setUploadingType] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState(null);
+
   useEffect(() => {
     fetchConnectedProviders();
+    fetchMedicalRecords();
+    fetchMedicalBills();
   }, []);
 
   const fetchConnectedProviders = async () => {
@@ -39,6 +51,40 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       console.error('Error fetching connected providers:', error);
     } finally {
       setFetchingProviders(false);
+    }
+  };
+
+  const fetchMedicalRecords = async () => {
+    try {
+      setLoadingRecords(true);
+      const response = await fetch(`${API_BASE_URL}/api/uploads/my-medical-records`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalRecords(data.records || []);
+      }
+    } catch (error) {
+      console.error('Error fetching medical records:', error);
+    } finally {
+      setLoadingRecords(false);
+    }
+  };
+
+  const fetchMedicalBills = async () => {
+    try {
+      setLoadingBills(true);
+      const response = await fetch(`${API_BASE_URL}/api/uploads/my-medical-bills`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalBills(data.bills || []);
+      }
+    } catch (error) {
+      console.error('Error fetching medical bills:', error);
+    } finally {
+      setLoadingBills(false);
     }
   };
 
@@ -71,21 +117,18 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         setProviderCode('');
         await fetchConnectedProviders();
         alert(
-          '🏴‍☠️ Ahoy, Success!',
-          `Ye be now connected to ${data.medicalProvider?.provider_name || 'yer medical provider'}! Yer crew be growin\' stronger! ⚓`
+          'Ahoy, Success!',
+          `Ye be now connected to ${data.medicalProvider?.provider_name || 'yer medical provider'}! Yer crew be growin\' stronger!`
         );
       } else {
         alert(
-          '🏴‍☠️ Blimey!',
-          data.error || 'Failed to connect with the medical provider. Check yer code and try again, matey!'
+          'Connection Failed',
+          data.error || 'Failed to connect with the medical provider. Check the code and try again.'
         );
       }
     } catch (error) {
       console.error('Error connecting to medical provider:', error);
-      alert(
-        '🏴‍☠️ Stormy Seas!',
-        'The connection be lost in a storm! Please check yer internet and try again.'
-      );
+      alert('Connection Error', 'Please check your internet and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -93,12 +136,12 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
   const handleRemoveProvider = async (providerId, providerName) => {
     alert(
-      '🏴‍☠️ Remove Provider?',
-      `Are ye sure ye want to disconnect from ${providerName}? This will remove them from yer crew!`,
+      'Remove Provider?',
+      `Are you sure you want to disconnect from ${providerName}?`,
       [
-        { text: 'Nay, Keep Em\'', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Aye, Remove', 
+          text: 'Remove', 
           style: 'destructive',
           onPress: async () => {
             try {
@@ -113,14 +156,14 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
               if (response.ok) {
                 await fetchConnectedProviders();
-                alert('🏴‍☠️ Success!', `${providerName} has been removed from yer crew.`);
+                alert('Success', `${providerName} has been removed.`);
               } else {
                 const data = await response.json();
-                alert('🏴‍☠️ Error!', data.error || 'Failed to remove provider.');
+                alert('Error', data.error || 'Failed to remove provider.');
               }
             } catch (error) {
               console.error('Error removing provider:', error);
-              alert('🏴‍☠️ Error!', 'Failed to remove provider. Please try again.');
+              alert('Error', 'Failed to remove provider. Please try again.');
             }
           }
         }
@@ -128,10 +171,250 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     );
   };
 
+  const openUploadOptions = (category) => {
+    setUploadCategory(category);
+    setShowUploadModal(true);
+  };
+
+  const pickFileFromWeb = (category) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,image/*';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const webFile = {
+          uri: URL.createObjectURL(file),
+          name: file.name,
+          fileName: file.name,
+          type: file.type,
+          mimeType: file.type,
+          file: file,
+        };
+        await uploadMedicalFile(webFile, category);
+      }
+    };
+    input.click();
+  };
+
+  const handleTakePhoto = async () => {
+    setShowUploadModal(false);
+    if (Platform.OS === 'web') {
+      alert('Camera Not Available', 'Camera is not available on web. Please use Choose Files instead.');
+      return;
+    }
+
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        alert('Permission Required', 'Please grant camera permission to take photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadMedicalFile(result.assets[0], uploadCategory);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      alert('Error', 'Failed to take photo. Please try again.');
+    }
+  };
+
+  const handleChooseFile = async () => {
+    setShowUploadModal(false);
+
+    if (Platform.OS === 'web') {
+      pickFileFromWeb(uploadCategory);
+      return;
+    }
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadMedicalFile(result.assets[0], uploadCategory);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      alert('Error', 'Failed to pick document. Please try again.');
+    }
+  };
+
+  const uploadMedicalFile = async (file, category) => {
+    if (!authToken) {
+      alert('Error', 'You must be logged in to upload files.');
+      return;
+    }
+
+    setUploadingType(category);
+
+    try {
+      const formData = new FormData();
+      const fileName = file.fileName || file.name || `${category}_${Date.now()}.jpg`;
+      const fileType = file.mimeType || file.type || 'application/octet-stream';
+
+      if (Platform.OS === 'web') {
+        if (file.file) {
+          formData.append('file', file.file, fileName);
+        } else {
+          const response = await fetch(file.uri);
+          const blob = await response.blob();
+          formData.append('file', blob, fileName);
+        }
+      } else {
+        formData.append('file', {
+          uri: file.uri,
+          name: fileName,
+          type: fileType,
+        });
+      }
+
+      const endpoint = category === 'bills'
+        ? `${API_BASE_URL}/api/uploads/medical-bill`
+        : `${API_BASE_URL}/api/uploads/medical-record`;
+
+      if (category === 'bills') {
+        formData.append('billingType', 'Medical Bill');
+      } else {
+        formData.append('recordType', 'Medical Record');
+      }
+
+      const uploadResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${Array.isArray(errorData.details) ? errorData.details.join(', ') : errorData.details}`
+          : (errorData.error || 'Upload failed');
+        throw new Error(errorMessage);
+      }
+
+      alert('Upload Successful!', `Your ${category === 'bills' ? 'medical bill' : 'medical record'} "${fileName}" has been securely uploaded.`);
+
+      if (category === 'bills') {
+        await fetchMedicalBills();
+      } else {
+        await fetchMedicalRecords();
+      }
+    } catch (error) {
+      console.error('Error uploading medical file:', error);
+      alert('Upload Failed', error.message || 'Failed to upload file. Please try again.');
+    } finally {
+      setUploadingType(null);
+    }
+  };
+
+  const handleDeleteDocument = (type, id, fileName) => {
+    alert(
+      'Delete Document?',
+      `Are you sure you want to delete "${fileName}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/uploads/medical/${type}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+              });
+
+              if (response.ok) {
+                alert('Deleted', 'Document has been removed.');
+                if (type === 'bill') {
+                  await fetchMedicalBills();
+                } else {
+                  await fetchMedicalRecords();
+                }
+              } else {
+                const data = await response.json();
+                alert('Error', data.error || 'Failed to delete document.');
+              }
+            } catch (error) {
+              console.error('Error deleting document:', error);
+              alert('Error', 'Failed to delete document. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return '📄';
+    if (mimeType.startsWith('image/')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📕';
+    if (mimeType.includes('word') || mimeType.includes('document')) return '📘';
+    return '📄';
+  };
+
   const getContentWidth = () => {
     if (isDesktop) return Math.min(width * 0.6, 800);
     if (isTablet) return width * 0.85;
     return width;
+  };
+
+  const renderDocumentList = (documents, type) => {
+    if (documents.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            No {type === 'bills' ? 'medical bills' : 'medical records'} uploaded yet
+          </Text>
+        </View>
+      );
+    }
+
+    return documents.map((doc) => (
+      <View key={doc.id} style={styles.documentCard}>
+        <View style={styles.documentCardLeft}>
+          <Text style={styles.documentIcon}>{getFileIcon(doc.mime_type)}</Text>
+          <View style={styles.documentDetails}>
+            <Text style={[styles.documentName, { fontSize: isDesktop ? 15 : 13 }]} numberOfLines={1}>
+              {doc.file_name}
+            </Text>
+            <Text style={styles.documentMeta}>
+              {formatFileSize(doc.file_size)} {doc.uploaded_at ? `• ${formatDate(doc.uploaded_at)}` : ''}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.deleteDocButton}
+          onPress={() => handleDeleteDocument(type === 'bills' ? 'bill' : 'record', doc.id, doc.file_name)}
+        >
+          <Text style={styles.deleteDocText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+    ));
   };
 
   return (
@@ -194,19 +477,37 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                       styles.sectionTitle,
                       { fontSize: isDesktop ? 24 : 20 }
                     ]}>💵 Medical Bills</Text>
-                    <Text style={[
-                      styles.comingSoonBadge,
-                      { fontSize: isDesktop ? 13 : 11 }
-                    ]}>🏴‍☠️ Coming Soon</Text>
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>{medicalBills.length}</Text>
+                    </View>
                   </View>
-                  <View style={styles.comingSoonMessage}>
-                    <Text style={[
-                      styles.comingSoonText,
-                      { fontSize: isDesktop ? 16 : 14 }
-                    ]}>
-                      Blimey! This treasure chest be still under construction. Medical Bills upload will be ready soon! ⚓
-                    </Text>
-                  </View>
+                  <Text style={[styles.sectionDescription, { fontSize: isDesktop ? 15 : 13 }]}>
+                    Upload and store your medical bills securely
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.uploadButton, uploadingType === 'bills' && styles.uploadButtonDisabled]}
+                    onPress={() => openUploadOptions('bills')}
+                    disabled={uploadingType === 'bills'}
+                  >
+                    {uploadingType === 'bills' ? (
+                      <View style={styles.uploadingRow}>
+                        <ActivityIndicator size="small" color="#FFD700" />
+                        <Text style={styles.uploadButtonText}>  Uploading...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.uploadButtonText}>📤 Upload Medical Bill</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {loadingBills ? (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color="#FFD700" />
+                      <Text style={styles.loadingText}>Loading bills...</Text>
+                    </View>
+                  ) : (
+                    renderDocumentList(medicalBills, 'bills')
+                  )}
                 </View>
 
                 <View style={[
@@ -218,19 +519,37 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                       styles.sectionTitle,
                       { fontSize: isDesktop ? 24 : 20 }
                     ]}>📋 Medical Records</Text>
-                    <Text style={[
-                      styles.comingSoonBadge,
-                      { fontSize: isDesktop ? 13 : 11 }
-                    ]}>🏴‍☠️ Coming Soon</Text>
+                    <View style={styles.countBadge}>
+                      <Text style={styles.countBadgeText}>{medicalRecords.length}</Text>
+                    </View>
                   </View>
-                  <View style={styles.comingSoonMessage}>
-                    <Text style={[
-                      styles.comingSoonText,
-                      { fontSize: isDesktop ? 16 : 14 }
-                    ]}>
-                      Arrr! The Medical Records vault be locked tighter than Davy Jones' locker! Upload feature coming soon, savvy? ⚓
-                    </Text>
-                  </View>
+                  <Text style={[styles.sectionDescription, { fontSize: isDesktop ? 15 : 13 }]}>
+                    Upload and store your medical records securely
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.uploadButton, uploadingType === 'records' && styles.uploadButtonDisabled]}
+                    onPress={() => openUploadOptions('records')}
+                    disabled={uploadingType === 'records'}
+                  >
+                    {uploadingType === 'records' ? (
+                      <View style={styles.uploadingRow}>
+                        <ActivityIndicator size="small" color="#FFD700" />
+                        <Text style={styles.uploadButtonText}>  Uploading...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.uploadButtonText}>📤 Upload Medical Record</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {loadingRecords ? (
+                    <View style={styles.loadingRow}>
+                      <ActivityIndicator size="small" color="#FFD700" />
+                      <Text style={styles.loadingText}>Loading records...</Text>
+                    </View>
+                  ) : (
+                    renderDocumentList(medicalRecords, 'records')
+                  )}
                 </View>
 
                 <TouchableOpacity 
@@ -289,7 +608,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
                 {!fetchingProviders && connectedProviders.length === 0 && (
                   <View style={[styles.noProvidersContainer, { marginBottom: isDesktop ? 35 : 30 }]}>
                     <Text style={styles.noProvidersText}>
-                      🏴‍☠️ No medical providers in yer crew yet! Tap the button above to add one.
+                      No medical providers connected yet. Tap the button above to add one.
                     </Text>
                   </View>
                 )}
@@ -328,6 +647,62 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       </ImageBackground>
 
       <Modal
+        visible={showUploadModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowUploadModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowUploadModal(false)}
+        >
+          <View style={[
+            styles.modalContent,
+            { width: isDesktop ? 420 : isTablet ? 380 : width * 0.9 }
+          ]}>
+            <Text style={styles.modalTitle}>
+              📤 Upload {uploadCategory === 'bills' ? 'Medical Bill' : 'Medical Record'}
+            </Text>
+            <Text style={styles.modalDescription}>
+              Choose how to add your document. Files are encrypted and stored securely.
+            </Text>
+
+            <TouchableOpacity style={styles.uploadOptionRow} onPress={handleTakePhoto}>
+              <Text style={styles.uploadOptionIcon}>📷</Text>
+              <View style={styles.uploadOptionContent}>
+                <Text style={styles.uploadOptionTitle}>Take Photo</Text>
+                <Text style={styles.uploadOptionDesc}>Use your camera to capture a document</Text>
+              </View>
+              <Text style={styles.uploadOptionArrow}>›</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.uploadOptionRow} onPress={handleChooseFile}>
+              <Text style={styles.uploadOptionIcon}>📁</Text>
+              <View style={styles.uploadOptionContent}>
+                <Text style={styles.uploadOptionTitle}>Choose File</Text>
+                <Text style={styles.uploadOptionDesc}>Select PDF, image, or document from your device</Text>
+              </View>
+              <Text style={styles.uploadOptionArrow}>›</Text>
+            </TouchableOpacity>
+
+            <View style={styles.fileTypesInfo}>
+              <Text style={styles.fileTypesText}>
+                Accepted: PDF, JPG, PNG, HEIC, DOC, DOCX
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.cancelUploadButton}
+              onPress={() => setShowUploadModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
         visible={showProviderModal}
         transparent={true}
         animationType="fade"
@@ -340,7 +715,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
           ]}>
             <Text style={styles.modalTitle}>🏥 Add Medical Provider</Text>
             <Text style={styles.modalDescription}>
-              Enter the provider code given to ye by yer medical provider to join their crew!
+              Enter the provider code given to you by your medical provider to connect.
             </Text>
             
             <TextInput
@@ -355,11 +730,11 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelBtn]}
                 onPress={() => setShowProviderModal(false)}
                 disabled={isLoading}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -463,7 +838,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 8,
   },
   sectionTitle: {
     fontWeight: 'bold',
@@ -472,34 +847,110 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  comingSoonBadge: {
-    backgroundColor: 'rgba(180, 120, 40, 0.9)',
+  countBadge: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    fontWeight: '700',
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+  },
+  countBadgeText: {
     color: '#FFD700',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.5)',
-    overflow: 'hidden',
-  },
-  comingSoonMessage: {
-    backgroundColor: 'rgba(60, 50, 30, 0.85)',
-    padding: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
-  },
-  comingSoonText: {
-    color: '#E8D5B0',
-    textAlign: 'center',
-    lineHeight: 22,
-    fontStyle: 'italic',
+    fontSize: 13,
+    fontWeight: '700',
   },
   sectionDescription: {
     color: '#B8A080',
     marginBottom: 15,
-    lineHeight: 22,
+    lineHeight: 20,
+  },
+  uploadButton: {
+    backgroundColor: 'rgba(40, 100, 60, 0.9)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(80, 200, 120, 0.5)',
+    marginBottom: 15,
+  },
+  uploadButtonDisabled: {
+    opacity: 0.6,
+  },
+  uploadButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  uploadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  emptyState: {
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#8B7355',
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  documentCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(60, 50, 30, 0.7)',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  documentCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  documentIcon: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  documentDetails: {
+    flex: 1,
+  },
+  documentName: {
+    color: '#E8D5B0',
+    fontWeight: '600',
+  },
+  documentMeta: {
+    color: '#8B7355',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  deleteDocButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(180, 60, 60, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  deleteDocText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  loadingText: {
+    color: '#FFD700',
+    marginLeft: 10,
+    fontSize: 13,
   },
   addProviderButton: {
     backgroundColor: 'rgba(80, 70, 60, 0.9)',
@@ -538,11 +989,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 15,
     marginBottom: 20,
-  },
-  loadingText: {
-    color: '#FFD700',
-    marginLeft: 10,
-    fontSize: 14,
   },
   providerCard: {
     flexDirection: 'row',
@@ -638,13 +1084,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  cancelButton: {
+  cancelBtn: {
     backgroundColor: 'rgba(80, 70, 60, 0.9)',
     marginRight: 10,
     borderWidth: 1,
     borderColor: 'rgba(150, 140, 130, 0.5)',
   },
-  cancelButtonText: {
+  cancelBtnText: {
     color: '#B8A080',
     fontWeight: '600',
     fontSize: 16,
@@ -659,6 +1105,59 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '700',
     fontSize: 16,
+  },
+  uploadOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 50, 30, 0.85)',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  uploadOptionIcon: {
+    fontSize: 28,
+    marginRight: 14,
+  },
+  uploadOptionContent: {
+    flex: 1,
+  },
+  uploadOptionTitle: {
+    color: '#FFD700',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  uploadOptionDesc: {
+    color: '#B8A080',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  uploadOptionArrow: {
+    color: '#FFD700',
+    fontSize: 24,
+    fontWeight: '300',
+    marginLeft: 8,
+  },
+  fileTypesInfo: {
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  fileTypesText: {
+    color: '#8B7355',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  cancelUploadButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  cancelButtonText: {
+    color: '#B8A080',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
 

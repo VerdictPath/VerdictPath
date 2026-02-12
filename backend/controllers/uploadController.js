@@ -943,9 +943,102 @@ const downloadFile = async (req, res) => {
   }
 };
 
+const getMyMedicalRecords = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query(
+      `SELECT id, record_type, facility_name, provider_name, date_of_service, description,
+              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
+       FROM medical_records
+       WHERE user_id = $1
+       ORDER BY uploaded_at DESC`,
+      [userId]
+    );
+    res.json({ records: result.rows });
+  } catch (error) {
+    console.error('Error fetching medical records:', error);
+    res.status(500).json({ error: 'Failed to fetch medical records' });
+  }
+};
+
+const getMyMedicalBills = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query(
+      `SELECT id, billing_type, facility_name, bill_number, date_of_service, bill_date, 
+              due_date, total_amount, amount_paid, amount_due, description,
+              file_name, file_size, mime_type, uploaded_at, storage_type, s3_key
+       FROM medical_billing
+       WHERE user_id = $1
+       ORDER BY uploaded_at DESC`,
+      [userId]
+    );
+    res.json({ bills: result.rows });
+  } catch (error) {
+    console.error('Error fetching medical bills:', error);
+    res.status(500).json({ error: 'Failed to fetch medical bills' });
+  }
+};
+
+const deleteMedicalDocument = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { type, id } = req.params;
+
+    let tableName;
+    if (type === 'record') {
+      tableName = 'medical_records';
+    } else if (type === 'bill') {
+      tableName = 'medical_billing';
+    } else {
+      return res.status(400).json({ error: 'Invalid document type' });
+    }
+
+    const existing = await pool.query(
+      `SELECT id, file_name, s3_key, storage_type FROM ${tableName} WHERE id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = existing.rows[0];
+
+    if (doc.s3_key) {
+      try {
+        await storageService.deleteFile(doc.s3_key, doc.storage_type);
+      } catch (e) {
+        console.warn('Failed to delete file from storage:', e.message);
+      }
+    }
+
+    await pool.query(`DELETE FROM ${tableName} WHERE id = $1 AND user_id = $2`, [id, userId]);
+
+    await auditLogger.log({
+      actorId: userId,
+      actorType: req.user?.userType || 'client',
+      action: 'DELETE_MEDICAL_DOCUMENT',
+      entityType: tableName,
+      entityId: id,
+      metadata: { fileName: doc.file_name, documentType: type },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting medical document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+};
+
 module.exports = {
   uploadMedicalRecord,
   uploadMedicalBill,
   uploadEvidence,
-  downloadFile
+  downloadFile,
+  getMyMedicalRecords,
+  getMyMedicalBills,
+  deleteMedicalDocument
 };

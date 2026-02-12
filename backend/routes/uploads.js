@@ -101,6 +101,10 @@ router.post('/evidence',
   uploadController.uploadEvidence
 );
 
+router.get('/my-medical-records', uploadController.getMyMedicalRecords);
+router.get('/my-medical-bills', uploadController.getMyMedicalBills);
+router.delete('/medical/:type/:id', uploadController.deleteMedicalDocument);
+
 router.get('/my-evidence', async (req, res) => {
   try {
     const db = require('../config/db');
