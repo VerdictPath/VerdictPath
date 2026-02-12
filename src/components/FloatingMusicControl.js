@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Animated,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { useMusic } from '../contexts/MusicContext';
 import { MUSIC_PREFERENCES, AVATARS } from '../constants/avatars';
@@ -17,9 +16,8 @@ const FloatingMusicControl = ({ user }) => {
   const expandAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  if (!music.isIndividualUser) return null;
-
   useEffect(() => {
+    if (!music.isIndividualUser) return;
     if (music.isPlaying) {
       const pulse = Animated.loop(
         Animated.sequence([
@@ -40,7 +38,9 @@ const FloatingMusicControl = ({ user }) => {
     } else {
       pulseAnim.setValue(1);
     }
-  }, [music.isPlaying]);
+  }, [music.isPlaying, music.isIndividualUser]);
+
+  if (!music.isIndividualUser) return null;
 
   const toggleExpand = () => {
     const toValue = expanded ? 0 : 1;
@@ -170,8 +170,8 @@ const FloatingMusicControl = ({ user }) => {
               onPress={music.togglePlayPause}
               activeOpacity={0.7}
             >
-              <Text style={styles.pauseIcon}>{music.isPlaying ? '⏸' : '▶️'}</Text>
-              <Text style={styles.pauseLabel}>{music.isPlaying ? 'Pause' : 'Resume'}</Text>
+              <Text style={styles.pauseIcon}>⏸</Text>
+              <Text style={styles.pauseLabel}>Pause</Text>
             </TouchableOpacity>
           )}
         </Animated.View>
