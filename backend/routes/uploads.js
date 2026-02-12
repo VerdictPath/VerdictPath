@@ -77,11 +77,47 @@ router.get('/stream/*', async (req, res) => {
 // All other routes require authentication
 router.use(authenticateToken);
 
+const multer = require('multer');
+
+const handleMulterError = (req, res, next) => {
+  return (err) => {
+    if (err instanceof multer.MulterError) {
+      console.error('[Upload] Multer error:', err.code, err.message);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 50MB.' });
+      }
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      console.error('[Upload] File filter error:', err.message);
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  };
+};
+
+const wrapUpload = (uploadMiddleware) => (req, res, next) => {
+  console.log('[Upload] Processing upload request:', req.path);
+  uploadMiddleware(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      console.error('[Upload] Multer error:', err.code, err.message);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Maximum size is 50MB.' });
+      }
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      console.error('[Upload] File filter error:', err.message);
+      return res.status(400).json({ error: err.message });
+    }
+    console.log('[Upload] File received:', req.file ? { name: req.file.originalname, size: req.file.size, mime: req.file.mimetype } : 'NO FILE');
+    next();
+  });
+};
+
 router.post('/medical-record', 
   burstProtectionLimiter,
   uploadRateLimiter,
   strictUploadRateLimiter,
-  upload.single('file'), 
+  wrapUpload(upload.single('file')), 
   uploadController.uploadMedicalRecord
 );
 
@@ -89,7 +125,7 @@ router.post('/medical-bill',
   burstProtectionLimiter,
   uploadRateLimiter,
   strictUploadRateLimiter,
-  upload.single('file'), 
+  wrapUpload(upload.single('file')), 
   uploadController.uploadMedicalBill
 );
 
@@ -97,7 +133,7 @@ router.post('/evidence',
   burstProtectionLimiter,
   uploadRateLimiter,
   strictUploadRateLimiter,
-  upload.single('file'), 
+  wrapUpload(upload.single('file')), 
   uploadController.uploadEvidence
 );
 

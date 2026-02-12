@@ -176,25 +176,66 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     setShowUploadModal(true);
   };
 
-  const pickFileFromWeb = (category) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,image/*';
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const webFile = {
-          uri: URL.createObjectURL(file),
-          name: file.name,
-          fileName: file.name,
-          type: file.type,
-          mimeType: file.type,
-          file: file,
-        };
-        await uploadMedicalFile(webFile, category);
-      }
+  const getMimeTypeFromExtension = (filename) => {
+    const ext = (filename || '').toLowerCase().split('.').pop();
+    const mimeMap = {
+      'pdf': 'application/pdf',
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'heic': 'image/heic',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     };
-    input.click();
+    return mimeMap[ext] || null;
+  };
+
+  const pickFileFromWeb = (category) => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.doc,.docx,.jpg,.jpeg,.png,.heic,image/*';
+      input.style.display = 'none';
+      document.body.appendChild(input);
+
+      input.onchange = async (e) => {
+        try {
+          const file = e.target.files[0];
+          if (file) {
+            let mimeType = file.type;
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              mimeType = getMimeTypeFromExtension(file.name) || 'application/octet-stream';
+            }
+
+            const properFile = mimeType !== file.type
+              ? new File([file], file.name, { type: mimeType })
+              : file;
+
+            const webFile = {
+              uri: URL.createObjectURL(properFile),
+              name: file.name,
+              fileName: file.name,
+              type: mimeType,
+              mimeType: mimeType,
+              file: properFile,
+            };
+            console.log('[MedicalHub] Web file selected:', { name: file.name, browserType: file.type, resolvedType: mimeType, size: file.size });
+            await uploadMedicalFile(webFile, category);
+          }
+        } catch (err) {
+          console.error('[MedicalHub] Error in file onchange:', err);
+          alert('Upload Error', err.message || 'Failed to process selected file.');
+          setUploadingType(null);
+        } finally {
+          document.body.removeChild(input);
+        }
+      };
+
+      input.click();
+    } catch (err) {
+      console.error('[MedicalHub] Error creating file picker:', err);
+      alert('Error', 'Failed to open file picker.');
+    }
   };
 
   const handleTakePhoto = async () => {
@@ -249,7 +290,10 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   };
 
   const uploadMedicalFile = async (file, category) => {
+    console.log('[MedicalHub] uploadMedicalFile called', { category, hasFile: !!file, hasAuthToken: !!authToken });
+    
     if (!authToken) {
+      console.error('[MedicalHub] No auth token available');
       alert('Error', 'You must be logged in to upload files.');
       return;
     }
@@ -260,6 +304,8 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       const formData = new FormData();
       const fileName = file.fileName || file.name || `${category}_${Date.now()}.jpg`;
       const fileType = file.mimeType || file.type || 'application/octet-stream';
+
+      console.log('[MedicalHub] File details:', { fileName, fileType, hasFileObj: !!file.file, uri: file.uri?.substring(0, 50) });
 
       if (Platform.OS === 'web') {
         if (file.file) {
@@ -287,6 +333,8 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         formData.append('recordType', 'Medical Record');
       }
 
+      console.log('[MedicalHub] Uploading to:', endpoint);
+
       const uploadResponse = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -296,13 +344,19 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         body: formData,
       });
 
+      console.log('[MedicalHub] Upload response status:', uploadResponse.status);
+
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({}));
+        console.error('[MedicalHub] Upload error response:', errorData);
         const errorMessage = errorData.details 
           ? `${errorData.error}: ${Array.isArray(errorData.details) ? errorData.details.join(', ') : errorData.details}`
           : (errorData.error || 'Upload failed');
         throw new Error(errorMessage);
       }
+
+      const responseData = await uploadResponse.json().catch(() => ({}));
+      console.log('[MedicalHub] Upload success:', responseData);
 
       alert('Upload Successful!', `Your ${category === 'bills' ? 'medical bill' : 'medical record'} "${fileName}" has been securely uploaded.`);
 
@@ -312,7 +366,7 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
         await fetchMedicalRecords();
       }
     } catch (error) {
-      console.error('Error uploading medical file:', error);
+      console.error('[MedicalHub] Error uploading medical file:', error);
       alert('Upload Failed', error.message || 'Failed to upload file. Please try again.');
     } finally {
       setUploadingType(null);
