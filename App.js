@@ -166,7 +166,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
     setCurrentScreen('landing');
   };
 
-  const { showWarning: showSessionWarning, timeRemaining, extendSession } = useSessionTimeout(isLoggedIn, handleSessionLogout);
+  const { showWarning: showSessionWarning, timeRemaining, extendSession, onUserActivity } = useSessionTimeout(isLoggedIn, handleSessionLogout);
 
   // Apply web-specific fixes on mount
   useEffect(() => {
@@ -1294,7 +1294,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   return (
-    <SafeAreaView style={[commonStyles.safeArea, Platform.OS === 'web' && ['landing', 'login', 'register', 'forgotPassword', 'resetPassword', 'view-pricing', 'change-password', 'lawfirm-registration', 'medicalprovider-registration', 'subscription', 'lawfirm-subscription-selection', 'medicalprovider-subscription-selection'].includes(currentScreen) && { backgroundColor: 'transparent' }]}>
+    <SafeAreaView 
+      style={[commonStyles.safeArea, Platform.OS === 'web' && ['landing', 'login', 'register', 'forgotPassword', 'resetPassword', 'view-pricing', 'change-password', 'lawfirm-registration', 'medicalprovider-registration', 'subscription', 'lawfirm-subscription-selection', 'medicalprovider-subscription-selection'].includes(currentScreen) && { backgroundColor: 'transparent' }]}
+      onStartShouldSetResponderCapture={() => {
+        if (Platform.OS !== 'web') {
+          onUserActivity();
+        }
+        return false;
+      }}
+    >
         <StatusBar 
           barStyle="dark-content" 
           backgroundColor={theme.colors.background}

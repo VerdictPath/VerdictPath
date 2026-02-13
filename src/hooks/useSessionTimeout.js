@@ -2,14 +2,16 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { Platform, AppState } from 'react-native';
 import alert from '../utils/alert';
 
-const INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE_TIMEOUT = 2 * 60 * 1000; // Show warning 2 min before timeout
+const ACTIVITY_THROTTLE = 5000; // Throttle activity resets to every 5 seconds
 
 export const useSessionTimeout = (isLoggedIn, onLogout) => {
   const timeoutRef = useRef(null);
   const warningRef = useRef(null);
   const countdownIntervalRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
+  const lastResetRef = useRef(Date.now());
   const appStateRef = useRef(AppState.currentState);
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -72,6 +74,7 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
     if (!isLoggedIn) return;
     
     lastActivityRef.current = Date.now();
+    lastResetRef.current = Date.now();
     setShowWarning(false);
     clearTimers();
     
@@ -83,6 +86,15 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
       handleTimeout();
     }, INACTIVITY_TIMEOUT);
   }, [isLoggedIn, clearTimers, showTimeoutWarning, handleTimeout]);
+
+  const onUserActivity = useCallback(() => {
+    if (!isLoggedIn) return;
+    const now = Date.now();
+    lastActivityRef.current = now;
+    if (now - lastResetRef.current > ACTIVITY_THROTTLE) {
+      resetTimer();
+    }
+  }, [isLoggedIn, resetTimer]);
 
   const extendSession = useCallback(() => {
     setShowWarning(false);
@@ -147,7 +159,8 @@ export const useSessionTimeout = (isLoggedIn, onLogout) => {
     showWarning,
     timeRemaining,
     extendSession,
-    resetTimer
+    resetTimer,
+    onUserActivity
   };
 };
 
