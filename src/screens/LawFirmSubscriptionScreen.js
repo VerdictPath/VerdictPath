@@ -1309,15 +1309,15 @@ const styles = StyleSheet.create({
     marginTop: 24
   },
   pricingTableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
     marginBottom: 16
   },
   pricingTableTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.text
+    color: theme.colors.text,
+    marginBottom: 4
   },
   pricingTableToggle: {
     flexDirection: 'row',
@@ -1422,7 +1422,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    marginTop: 8
+    marginTop: 4,
+    alignSelf: 'stretch'
   },
   tablePromoBannerText: {
     color: '#fff',
