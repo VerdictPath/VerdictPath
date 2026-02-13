@@ -131,7 +131,7 @@ const gamificationController = {
           );
 
           const userResult = await pool.query(
-            `UPDATE users SET coins = LEAST(coins + $1, 25000) WHERE id = $2 RETURNING coins`,
+            `UPDATE users SET total_coins = LEAST(total_coins + $1, 25000) WHERE id = $2 RETURNING total_coins`,
             [achievement.coin_reward, userId]
           );
 
@@ -151,7 +151,7 @@ const gamificationController = {
             message: 'Achievement completed!',
             completed: true,
             coinsAwarded: achievement.coin_reward,
-            totalCoins: userResult.rows[0]?.coins || 0,
+            totalCoins: userResult.rows[0]?.total_coins || 0,
             achievement: {
               ...achievement,
               completed: true,
@@ -298,11 +298,11 @@ const gamificationController = {
           SELECT 
             u.id,
             CONCAT(u.first_name, ' ', u.last_name) as user_name,
-            u.coins as score,
-            ROW_NUMBER() OVER (ORDER BY u.coins DESC) as rank
+            u.total_coins as score,
+            ROW_NUMBER() OVER (ORDER BY u.total_coins DESC) as rank
           FROM users u
           WHERE u.user_type = 'individual'
-          ORDER BY u.coins DESC
+          ORDER BY u.total_coins DESC
           LIMIT $1
         `;
         params.push(limit);
@@ -378,7 +378,7 @@ const gamificationController = {
 
       const statsQuery = `
         SELECT 
-          u.coins,
+          u.total_coins,
           u.login_streak,
           (SELECT COUNT(*) FROM user_achievements WHERE user_id = u.id AND is_completed = true) as achievements_completed,
           (SELECT COUNT(*) FROM achievements WHERE is_active = true) as total_achievements,
@@ -400,7 +400,7 @@ const gamificationController = {
       res.json({
         success: true,
         stats: {
-          coins: parseInt(stats.coins) || 0,
+          coins: parseInt(stats.total_coins) || 0,
           loginStreak: parseInt(stats.login_streak) || 0,
           achievementsCompleted: parseInt(stats.achievements_completed) || 0,
           totalAchievements: parseInt(stats.total_achievements) || 0,

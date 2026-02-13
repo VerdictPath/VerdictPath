@@ -129,8 +129,164 @@ async function ensureTablesExist() {
       console.log('✅ password_reset_tokens table created');
     }
     
+    // Ensure gamification tables exist
+    const achievementsCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'achievements'
+      );
+    `);
+
+    if (!achievementsCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS achievements (
+          id SERIAL PRIMARY KEY,
+          achievement_key VARCHAR(100) UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          category VARCHAR(50),
+          icon VARCHAR(50),
+          color VARCHAR(20),
+          rarity VARCHAR(20) DEFAULT 'common',
+          coin_reward INTEGER DEFAULT 0,
+          requirement_value INTEGER DEFAULT 1,
+          badge_id INTEGER,
+          is_hidden BOOLEAN DEFAULT false,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('✅ achievements table created');
+    }
+
+    const userAchievementsCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'user_achievements'
+      );
+    `);
+
+    if (!userAchievementsCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_achievements (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          achievement_id INTEGER NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
+          progress_current INTEGER DEFAULT 0,
+          progress_required INTEGER DEFAULT 1,
+          is_completed BOOLEAN DEFAULT false,
+          completed_at TIMESTAMP,
+          coins_awarded INTEGER DEFAULT 0,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, achievement_id)
+        );
+      `);
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);`);
+      console.log('✅ user_achievements table created');
+    }
+
+    const badgesCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'badges'
+      );
+    `);
+
+    if (!badgesCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS badges (
+          id SERIAL PRIMARY KEY,
+          badge_key VARCHAR(100) UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          icon VARCHAR(50),
+          image_url VARCHAR(500),
+          rarity VARCHAR(20) DEFAULT 'common',
+          is_special BOOLEAN DEFAULT false,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('✅ badges table created');
+    }
+
+    const userBadgesCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'user_badges'
+      );
+    `);
+
+    if (!userBadgesCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_badges (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          badge_id INTEGER NOT NULL REFERENCES badges(id) ON DELETE CASCADE,
+          unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          is_displayed BOOLEAN DEFAULT false,
+          unlocked_via VARCHAR(255),
+          UNIQUE(user_id, badge_id)
+        );
+      `);
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_user_badges_user_id ON user_badges(user_id);`);
+      console.log('✅ user_badges table created');
+    }
+
+    const dailyChallengesCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'daily_challenges'
+      );
+    `);
+
+    if (!dailyChallengesCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS daily_challenges (
+          id SERIAL PRIMARY KEY,
+          challenge_key VARCHAR(100) NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          challenge_type VARCHAR(50),
+          challenge_target INTEGER DEFAULT 1,
+          coin_reward INTEGER DEFAULT 0,
+          difficulty VARCHAR(20) DEFAULT 'easy',
+          active_date DATE,
+          expires_at TIMESTAMP,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      console.log('✅ daily_challenges table created');
+    }
+
+    const userDailyChallengesCheck = await db.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'user_daily_challenges'
+      );
+    `);
+
+    if (!userDailyChallengesCheck.rows[0].exists) {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_daily_challenges (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          challenge_id INTEGER NOT NULL REFERENCES daily_challenges(id) ON DELETE CASCADE,
+          progress_current INTEGER DEFAULT 0,
+          progress_target INTEGER DEFAULT 1,
+          is_completed BOOLEAN DEFAULT false,
+          completed_at TIMESTAMP,
+          coins_awarded INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, challenge_id)
+        );
+      `);
+      await db.query(`CREATE INDEX IF NOT EXISTS idx_user_daily_challenges_user_id ON user_daily_challenges(user_id);`);
+      console.log('✅ user_daily_challenges table created');
+    }
+
     console.log('✅ Database schema check complete');
-    
+
   } catch (error) {
     console.error('⚠️ Database migration warning:', error.message);
   }

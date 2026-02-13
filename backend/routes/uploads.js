@@ -134,22 +134,6 @@ router.use(authenticateToken);
 
 const multer = require('multer');
 
-const handleMulterError = (req, res, next) => {
-  return (err) => {
-    if (err instanceof multer.MulterError) {
-      console.error('[Upload] Multer error:', err.code, err.message);
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({ error: 'File too large. Maximum size is 50MB.' });
-      }
-      return res.status(400).json({ error: `Upload error: ${err.message}` });
-    } else if (err) {
-      console.error('[Upload] File filter error:', err.message);
-      return res.status(400).json({ error: err.message });
-    }
-    next();
-  };
-};
-
 const wrapUpload = (uploadMiddleware) => (req, res, next) => {
   console.log('[Upload] Processing upload request:', req.path);
   uploadMiddleware(req, res, (err) => {

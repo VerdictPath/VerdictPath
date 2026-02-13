@@ -368,7 +368,8 @@ app.get('/portal/forms', async (req, res) => {
 
 // Stripe Connect/Customer return pages
 app.get('/stripe/complete', (req, res) => {
-  const type = req.query.type || 'onboarding';
+  const allowedTypes = ['onboarding', 'billing'];
+  const type = allowedTypes.includes(req.query.type) ? req.query.type : 'onboarding';
   res.send(`
     <!DOCTYPE html>
     <html>

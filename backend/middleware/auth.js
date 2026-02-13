@@ -1,13 +1,16 @@
 const jwt = require('jsonwebtoken');
 
 if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('CRITICAL: JWT_SECRET environment variable must be set in production!');
+  }
   console.warn('⚠️  SECURITY WARNING: JWT_SECRET environment variable is not set!');
   console.warn('⚠️  Using fallback secret for DEVELOPMENT ONLY.');
   console.warn('⚠️  This is a CRITICAL SECURITY RISK in production - tokens can be forged!');
   console.warn('⚠️  Please set JWT_SECRET in your environment variables immediately.');
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-dev-only-secret-' + require('crypto').randomBytes(16).toString('hex');
 
 exports.authenticateToken = (req, res, next) => {
   let token = req.signedCookies?.authToken;
