@@ -106,7 +106,7 @@ const LegalDisclaimerScreen = ({ onBack, onNavigate }) => {
             If you have questions about this Legal Disclaimer, please contact us at:
           </Text>
           <Text style={styles.paragraph}>
-            Email: legal@verdictpath.io
+            Email: support@verdictpath.io
           </Text>
 
           <Text style={styles.copyright}>

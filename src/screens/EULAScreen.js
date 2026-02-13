@@ -185,7 +185,7 @@ const EULAScreen = ({ onBack, onNavigate }) => {
 
           <Text style={styles.sectionTitle}>12. DISPUTE RESOLUTION</Text>
           <Text style={styles.paragraph}>
-            Before filing a claim, contact contact@verdictpath.io for informal resolution. If unsuccessful, disputes will be resolved through binding arbitration administered by the American Arbitration Association.
+            Before filing a claim, contact support@verdictpath.io for informal resolution. If unsuccessful, disputes will be resolved through binding arbitration administered by the American Arbitration Association.
           </Text>
           <Text style={styles.bold}>CLASS ACTION WAIVER:</Text>
           <Text style={styles.paragraph}>
@@ -198,7 +198,7 @@ const EULAScreen = ({ onBack, onNavigate }) => {
           <Text style={styles.paragraph}>
             If you have questions about this EULA:
           </Text>
-          <Text style={styles.bold}>Email: contact@verdictpath.io</Text>
+          <Text style={styles.bold}>Email: support@verdictpath.io</Text>
           <Text style={styles.paragraph}>We will respond within 30 days.</Text>
 
           <View style={styles.divider} />

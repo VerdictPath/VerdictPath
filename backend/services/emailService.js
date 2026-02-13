@@ -59,7 +59,7 @@ const emailFooter = `
 
 async function sendEmail(toEmail, subject, htmlContent) {
   const mailOptions = {
-    from: `"Verdict Path" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    from: `"Verdict Path" <${process.env.SMTP_FROM || 'noreply@verdictpath.io'}>`,
     to: toEmail,
     subject: subject,
     html: htmlContent
