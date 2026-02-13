@@ -224,7 +224,7 @@ const calendarController = {
       }
 
       let ownerColumn;
-      if (userType === 'law_firm') {
+      if (userType === 'law_firm' || userType === 'lawfirm') {
         ownerColumn = 'law_firm_id';
       } else if (userType === 'medical_provider') {
         ownerColumn = 'medical_provider_id';
@@ -249,7 +249,7 @@ const calendarController = {
       ]);
 
       let appointmentConflicts = [];
-      if (userType === 'law_firm') {
+      if (userType === 'law_firm' || userType === 'lawfirm') {
         const apptResult = await pool.query(
           `SELECT id, title, appointment_type as event_type, 
             (appointment_date + start_time) as start_time,
