@@ -1,6 +1,6 @@
 {
   "name": "verdict-path",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "node backend/server.js",
