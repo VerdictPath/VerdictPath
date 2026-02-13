@@ -524,7 +524,10 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       <View style={styles.header}>
         <View style={styles.firmInfo}>
           <Text style={styles.firmName}>{firmData?.firmName || 'Law Firm Portal'}</Text>
-          <Text style={styles.firmCode}>Firm Code: {firmData?.firmCode}</Text>
+          <View style={styles.firmCodeBadge}>
+            <Text style={styles.firmCodeLabel}>Firm Code:</Text>
+            <Text style={styles.firmCodeValue}>{firmData?.firmCode || '...'}</Text>
+          </View>
         </View>
         <TouchableOpacity 
           style={styles.inviteButton} 
@@ -697,10 +700,27 @@ const styles = StyleSheet.create({
     color: theme.lawFirm.surface,
     marginBottom: 5,
   },
-  firmCode: {
-    fontSize: 14,
-    color: theme.lawFirm.accentLight,
+  firmCodeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  firmCodeLabel: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginRight: 6,
+  },
+  firmCodeValue: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   inviteButton: {
     backgroundColor: theme.lawFirm.accent,
