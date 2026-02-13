@@ -185,8 +185,8 @@ async function sendPasswordChangeConfirmation(toEmail, userName, userType) {
 }
 
 async function sendWelcomeEmail(toEmail, userName, userType) {
-  const appName = userType === 'individual' ? 'Verdict Path Mobile App' : 
-                  userType === 'lawfirm' ? 'Law Firm Portal' : 'Medical Provider Portal';
+  const appName = (userType === 'lawfirm' || userType === 'law_firm') ? 'Law Firm Portal' : 
+                  (userType === 'medical_provider') ? 'Medical Provider Portal' : 'Verdict Path Mobile App';
   
   const html = `
     <!DOCTYPE html>
