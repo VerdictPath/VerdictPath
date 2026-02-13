@@ -205,12 +205,22 @@ async function sendWelcomeEmail(toEmail, userName, userType) {
           
           <div class="info-box">
             <h3>What's Next?</h3>
+            ${(userType === 'lawfirm' || userType === 'law_firm') ? `
+            <ul>
+              <li>Complete your profile setup</li>
+              <li>Invite and manage your clients</li>
+              <li>Disburse funds directly to your clients and medical providers</li>
+              <li>Negotiate with medical providers</li>
+              <li>Experience the Medical Hub and Evidence Vault</li>
+            </ul>
+            ` : `
             <ul>
               <li>Complete your profile setup</li>
               <li>Explore the interactive case roadmap</li>
               <li>Connect with your legal team</li>
               <li>Upload important documents securely</li>
             </ul>
+            `}
           </div>
           
           <div style="text-align: center;">
