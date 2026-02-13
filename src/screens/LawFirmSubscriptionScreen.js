@@ -48,7 +48,7 @@ const LAW_FIRM_PRICING = {
         annual: 637,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -76,7 +76,7 @@ const LAW_FIRM_PRICING = {
         annual: 1123,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -104,7 +104,7 @@ const LAW_FIRM_PRICING = {
         annual: 1890,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -132,7 +132,7 @@ const LAW_FIRM_PRICING = {
         annual: 3240,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -160,7 +160,7 @@ const LAW_FIRM_PRICING = {
         annual: 5292,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -188,7 +188,7 @@ const LAW_FIRM_PRICING = {
         annual: 8100,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -216,7 +216,7 @@ const LAW_FIRM_PRICING = {
         annual: 12960,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -244,7 +244,7 @@ const LAW_FIRM_PRICING = {
         annual: 19440,
         features: [
           'Everything in Basic',
-          '🏥 Medical Hub (COMING SOON)',
+          '🏥 Medical Hub',
           '📈 Premium Analytics Dashboard',
           '💰 Disbursements to Client',
           '🏥 Disbursements to Medical Providers'
@@ -593,8 +593,8 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
       '📈 Premium Analytics Dashboard',
       '💰 Settlement Disbursements',
       '🤝 Negotiations Portal',
-      '🏥 Medical Hub (COMING SOON)',
-      '🏥 Medical Provider Payments (COMING SOON)'
+      '🏥 Medical Hub',
+      '🏥 Medical Provider Payments'
     ];
 
     return (
