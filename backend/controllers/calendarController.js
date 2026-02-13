@@ -19,7 +19,9 @@ const calendarController = {
       let query = '';
       const params = [];
       
-      if (userType === 'individual') {
+      const isIndividualUser = userType === 'individual' || userType === 'client';
+      const isLawFirmUser = userType === 'law_firm' || userType === 'lawfirm';
+      if (isIndividualUser) {
         query = `
           SELECT DISTINCT ON (id) * FROM (
             SELECT ce.*, 
@@ -339,9 +341,10 @@ const calendarController = {
         });
       }
 
-      if (userType === 'individual' && userId) {
+      const isIndividual = userType === 'individual' || userType === 'client';
+      if (isIndividual && userId) {
         // Valid
-      } else if (userType === 'law_firm' && userId) {
+      } else if (userType === 'law_firm' || userType === 'lawfirm') {
         // Valid  
       } else if (userType === 'medical_provider' && userId) {
         // Valid
@@ -358,10 +361,10 @@ const calendarController = {
       const values = [];
       const columns = [];
 
-      if (userType === 'individual') {
+      if (isIndividual) {
         columns.push('user_id');
         values.push(userId);
-      } else if (userType === 'law_firm') {
+      } else if (userType === 'law_firm' || userType === 'lawfirm') {
         columns.push('law_firm_id');
         values.push(userId);
       } else if (userType === 'medical_provider') {
@@ -573,8 +576,8 @@ const calendarController = {
       const event = eventCheck.rows[0];
       
       const isOwner = 
-        (userType === 'individual' && event.user_id === userId) ||
-        (userType === 'law_firm' && event.law_firm_id === userId) ||
+        ((userType === 'individual' || userType === 'client') && event.user_id === userId) ||
+        ((userType === 'law_firm' || userType === 'lawfirm') && event.law_firm_id === userId) ||
         (userType === 'medical_provider' && event.medical_provider_id === userId);
 
       if (!isOwner) {
@@ -643,9 +646,8 @@ const calendarController = {
       const event = eventCheck.rows[0];
       
       const isOwner = 
-        (userType === 'individual' && String(event.user_id) === String(userId)) ||
-        (userType === 'law_firm' && String(event.law_firm_id) === String(userId)) ||
-        (userType === 'lawfirm' && String(event.law_firm_id) === String(userId)) ||
+        ((userType === 'individual' || userType === 'client') && String(event.user_id) === String(userId)) ||
+        ((userType === 'law_firm' || userType === 'lawfirm') && String(event.law_firm_id) === String(userId)) ||
         (userType === 'medical_provider' && String(event.medical_provider_id) === String(userId));
 
       if (!isOwner) {
@@ -694,8 +696,8 @@ const calendarController = {
       const event = eventCheck.rows[0];
       
       const isOwner = 
-        (userType === 'individual' && event.user_id === userId) ||
-        (userType === 'law_firm' && event.law_firm_id === userId) ||
+        ((userType === 'individual' || userType === 'client') && event.user_id === userId) ||
+        ((userType === 'law_firm' || userType === 'lawfirm') && event.law_firm_id === userId) ||
         (userType === 'medical_provider' && event.medical_provider_id === userId);
 
       if (!isOwner) {
