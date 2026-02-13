@@ -50,8 +50,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Perfect for solo practitioners'
@@ -78,8 +78,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Small specialized firms'
@@ -106,8 +106,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Growing practice'
@@ -134,8 +134,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Established regional firms'
@@ -162,8 +162,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Multi-location firms'
@@ -190,8 +190,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Large metropolitan firms'
@@ -218,8 +218,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'Multi-state operations'
@@ -246,8 +246,8 @@ const LAW_FIRM_PRICING = {
           'Everything in Basic',
           '🏥 Medical Hub (COMING SOON)',
           '📈 Premium Analytics Dashboard',
-          '💰 Disbursements to Client Unlocked (COMING SOON)',
-          '🏥 Disbursements to Medical Providers Unlocked (COMING SOON)'
+          '💰 Disbursements to Client',
+          '🏥 Disbursements to Medical Providers'
         ]
       },
       description: 'National firms and corporations'
@@ -902,15 +902,6 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           </View>
         </View>
 
-        <View style={styles.additionalRevenueBox}>
-          <Text style={styles.revenueBoxTitle}>💰 Unlock Disbursements with Premium</Text>
-          <Text style={styles.revenueBoxText}>
-            Premium plan unlocks the ability to process settlement disbursements and pay clients and participating medical providers through the app.
-          </Text>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>🚀 COMING SOON</Text>
-          </View>
-        </View>
       </View>
     </ScrollView>
   );
