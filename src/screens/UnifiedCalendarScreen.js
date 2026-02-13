@@ -233,6 +233,7 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     const items = [];
 
     medicalAppointments.forEach(a => {
+      if (!a || !a.appointment_date) return;
       items.push({
         id: `med-${a.id}`, type: 'medical', category: 'medical',
         title: a.provider_name || 'Medical Appointment',
@@ -247,6 +248,7 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     });
 
     lawFirmAppointments.forEach(a => {
+      if (!a || !a.appointment_date) return;
       items.push({
         id: `law-${a.id}`, type: 'lawfirm', category: 'lawfirm',
         title: a.firm_name || 'Law Firm Appointment',
@@ -261,15 +263,18 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     });
 
     personalEvents.forEach(e => {
-      const eventDate = moment(e.start_time).format('YYYY-MM-DD');
+      if (!e || !e.start_time) return;
+      const parsedDate = moment(e.start_time);
+      if (!parsedDate.isValid()) return;
+      const eventDate = parsedDate.format('YYYY-MM-DD');
       const sourceLabel = e.event_source === 'law_firm' ? `From: ${e.shared_by_name || 'Law Firm'}` :
                           e.event_source === 'medical_provider' ? `From: ${e.shared_by_name || 'Provider'}` : null;
       items.push({
         id: `evt-${e.id}`, type: 'personal', category: 'personal',
-        title: e.title,
+        title: e.title || 'Untitled Event',
         subtitle: sourceLabel || (e.event_type || '').replace('_', ' ').toUpperCase(),
         date: eventDate,
-        time: moment(e.start_time).format('h:mm A'),
+        time: parsedDate.format('h:mm A'),
         status: null,
         color: e.is_shared ? '#8b5cf6' : (CATEGORY_COLORS[e.event_type] || '#FFD700'),
         icon: getEventTypeIcon(e.event_type),
@@ -280,10 +285,13 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     });
 
     tasks.forEach(t => {
-      const taskDate = moment(t.due_date).format('YYYY-MM-DD');
+      if (!t || !t.due_date) return;
+      const parsedTaskDate = moment(t.due_date);
+      if (!parsedTaskDate.isValid()) return;
+      const taskDate = parsedTaskDate.format('YYYY-MM-DD');
       items.push({
         id: `task-${t.id}`, type: 'task', category: 'tasks',
-        title: t.title,
+        title: t.title || 'Untitled Task',
         subtitle: `Priority: ${t.priority || 'Normal'}`,
         date: taskDate,
         time: '',
@@ -295,11 +303,13 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     });
 
     eventRequests.forEach(r => {
+      if (!r) return;
+      const parsedReqDate = moment(r.createdAt);
       items.push({
         id: `req-${r.id}`, type: 'request', category: 'requests',
-        title: r.title,
+        title: r.title || 'Event Request',
         subtitle: `From: ${r.lawFirmName || 'Unknown'}`,
-        date: moment(r.createdAt).format('YYYY-MM-DD'),
+        date: parsedReqDate.isValid() ? parsedReqDate.format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'),
         time: '',
         status: r.status,
         color: '#8b5cf6',

@@ -51,6 +51,7 @@ import IndividualSendNotificationScreen from './src/screens/IndividualSendNotifi
 import ActionDashboardScreen from './src/screens/ActionDashboardScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import UnifiedCalendarScreen from './src/screens/UnifiedCalendarScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import AchievementsScreen from './src/screens/AchievementsScreen';
 import BadgeCollectionScreen from './src/screens/BadgeCollectionScreen';
 import LawFirmEventRequestsScreen from './src/screens/LawFirmEventRequestsScreen';
@@ -1623,11 +1624,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'calendar' && (
-        <UnifiedCalendarScreen 
-          user={user}
-          onNavigate={handleNavigateInternal}
-          onBack={() => setCurrentScreen('dashboard')}
-        />
+        <ErrorBoundary fallbackMessage="Calendar encountered an error. Please try again." onBack={() => setCurrentScreen('dashboard')}>
+          <UnifiedCalendarScreen 
+            user={user}
+            onNavigate={handleNavigateInternal}
+            onBack={() => setCurrentScreen('dashboard')}
+          />
+        </ErrorBoundary>
       )}
 
       {currentScreen === 'achievements' && (
@@ -1646,11 +1649,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'event-requests' && (
-        <UnifiedCalendarScreen 
-          user={user}
-          onNavigate={handleNavigateInternal}
-          onBack={() => setCurrentScreen('dashboard')}
-        />
+        <ErrorBoundary fallbackMessage="Calendar encountered an error. Please try again." onBack={() => setCurrentScreen('dashboard')}>
+          <UnifiedCalendarScreen 
+            user={user}
+            onNavigate={handleNavigateInternal}
+            onBack={() => setCurrentScreen('dashboard')}
+          />
+        </ErrorBoundary>
       )}
       
       {currentScreen === 'hipaaForms' && (
@@ -2050,11 +2055,13 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'appointments' && (
-        <UnifiedCalendarScreen
-          user={user}
-          onNavigate={handleNavigateInternal}
-          onBack={() => setCurrentScreen('dashboard')}
-        />
+        <ErrorBoundary fallbackMessage="Calendar encountered an error. Please try again." onBack={() => setCurrentScreen('dashboard')}>
+          <UnifiedCalendarScreen
+            user={user}
+            onNavigate={handleNavigateInternal}
+            onBack={() => setCurrentScreen('dashboard')}
+          />
+        </ErrorBoundary>
       )}
 
       {/* Notification Screens */}
