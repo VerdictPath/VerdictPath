@@ -4,7 +4,6 @@ dist/
 backend/
 .expo/
 web-build/
-attached_assets/
 *.log
 .cache/
 tmp/
