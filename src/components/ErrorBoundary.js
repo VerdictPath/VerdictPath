@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -28,6 +28,11 @@ class ErrorBoundary extends React.Component {
           <Text style={styles.message}>
             {this.props.fallbackMessage || 'An unexpected error occurred. Please try again.'}
           </Text>
+          {this.state.error && (
+            <Text style={styles.errorDetail}>
+              {String(this.state.error.message || this.state.error).substring(0, 300)}
+            </Text>
+          )}
           <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
             <Text style={styles.retryText}>Try Again</Text>
           </TouchableOpacity>
@@ -88,6 +93,14 @@ const styles = StyleSheet.create({
   backText: {
     color: '#FFD700',
     fontSize: 14,
+  },
+  errorDetail: {
+    fontSize: 11,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
+    maxWidth: '90%',
   },
 });
 

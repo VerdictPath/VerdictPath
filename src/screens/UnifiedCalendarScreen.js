@@ -113,6 +113,21 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
 
   const patientId = user?.id;
 
+  const getEventTypeIcon = (type) => {
+    const found = EVENT_TYPES.find(t => t.value === type);
+    return found ? found.icon : 'calendar';
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'confirmed': return '#10b981';
+      case 'pending': return '#f59e0b';
+      case 'completed': return '#6366f1';
+      case 'cancelled': return '#ef4444';
+      default: return '#6b7280';
+    }
+  };
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -365,21 +380,6 @@ const UnifiedCalendarScreen = ({ user, onBack, onNavigate }) => {
     }
     return marked;
   }, [filteredItems, selectedDate]);
-
-  const getEventTypeIcon = (type) => {
-    const found = EVENT_TYPES.find(t => t.value === type);
-    return found ? found.icon : 'calendar';
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed': return '#10b981';
-      case 'pending': return '#f59e0b';
-      case 'completed': return '#6366f1';
-      case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
 
   const getRequestStatusLabel = (status) => {
     switch (status) {
