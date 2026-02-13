@@ -20,10 +20,7 @@ router.get('/my-code', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType;
 
-    // Get the domain from request headers or environment
-    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-    const host = req.headers['x-forwarded-host'] || req.headers.host || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = process.env.APP_URL || 'https://www.verdictpath.io';
 
     // For law firms and medical providers, use their unique codes
     if (userType === 'lawfirm') {
