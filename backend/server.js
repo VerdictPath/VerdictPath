@@ -231,8 +231,10 @@ app.use('/api/*', notFoundHandler);
 // Serve mobile app at root
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, 'public/app/index.html');
-  // Check if static build exists
   if (require('fs').existsSync(indexPath)) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.sendFile(indexPath);
   } else {
     // Return API info if static build doesn't exist
@@ -490,6 +492,9 @@ app.get('/stripe/reauth', (req, res) => {
 app.get('*', (req, res) => {
   const indexPath = path.join(__dirname, 'public/app/index.html');
   if (require('fs').existsSync(indexPath)) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.sendFile(indexPath);
   } else {
     res.status(404).json({ 
