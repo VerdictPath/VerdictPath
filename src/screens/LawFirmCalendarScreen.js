@@ -974,12 +974,12 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     <View style={styles.header}>
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Text style={styles.headerIcon}>⛵</Text>
+          <Text style={styles.backArrowText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerIcon}>⚖️</Text>
-        <Text style={styles.headerTitle}>Law Firm Calendar</Text>
-        <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-          <Text style={styles.headerIcon}>➖</Text>
+        <Text style={styles.headerTitle}>Calendar</Text>
+        <TouchableOpacity onPress={() => setShowSettingsModal(true)} style={styles.minimizeButton}>
+          <Text style={styles.headerIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
       <Text style={styles.headerSubtitle}>Manage Your Schedule</Text>
@@ -1006,31 +1006,29 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   );
 
   const renderActionButtons = () => (
-    <View style={styles.actionButtons}>
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityModal(true)}>
-        <Text style={styles.actionIcon}>🕐</Text>
-        <Text style={styles.actionButtonText}>Set Hours</Text>
-      </TouchableOpacity>
+    <View style={styles.actionButtonsWrapper}>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddEventModal(true)}>
+          <Text style={styles.actionIcon}>➕</Text>
+          <Text style={styles.actionButtonText}>Add Event</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowBlockTimeModal(true)}>
-        <Text style={styles.actionIcon}>🚫</Text>
-        <Text style={styles.actionButtonText}>Block Time</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityModal(true)}>
+          <Text style={styles.actionIcon}>🕐</Text>
+          <Text style={styles.actionButtonText}>Set Hours</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAvailabilityRequestModal(true)}>
-        <Text style={styles.actionIcon}>📨</Text>
-        <Text style={styles.actionButtonText}>Request</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddEventModal(true)}>
-        <Text style={styles.actionIcon}>⭐</Text>
-        <Text style={styles.actionButtonText}>Add Event</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.actionButton} onPress={() => setShowSettingsModal(true)}>
-        <Text style={styles.actionIcon}>⚙️</Text>
-        <Text style={styles.actionButtonText}>Settings</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setShowBlockTimeModal(true)}>
+          <Text style={styles.actionIcon}>🚫</Text>
+          <Text style={styles.actionButtonText}>Block Time</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.actionButtonsSecondRow}>
+        <TouchableOpacity style={styles.actionButtonWide} onPress={() => setShowAvailabilityRequestModal(true)}>
+          <Text style={styles.actionIcon}>📨</Text>
+          <Text style={styles.actionButtonText}>Request Availability</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -2248,10 +2246,18 @@ const styles = StyleSheet.create({
     color: '#C0C0C0',
     fontWeight: 'bold'
   },
+  actionButtonsWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 8
+  },
   actionButtons: {
     flexDirection: 'row',
-    padding: 16,
-    paddingBottom: 8,
+    gap: 8
+  },
+  actionButtonsSecondRow: {
+    flexDirection: 'row',
     gap: 8
   },
   actionButton: {
@@ -2260,9 +2266,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: 12,
     backgroundColor: 'rgba(26, 84, 144, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)'
+  },
+  actionButtonWide: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(192, 192, 192, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(192, 192, 192, 0.3)'
   },
@@ -2288,6 +2308,12 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#C0C0C0',
+  },
+  backArrowText: {
+    fontSize: 28,
+    color: '#C0C0C0',
+    fontWeight: '300',
+    lineHeight: 28,
   },
   headerIcon: {
     fontSize: 24,
