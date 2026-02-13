@@ -10,12 +10,18 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
   const [lawFirmCode, setLawFirmCode] = useState('');
   const [medicalProviderCode, setMedicalProviderCode] = useState('');
   const [currentConnections, setCurrentConnections] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
   
   const isLawFirm = userType === 'lawfirm';
+
+  const hasNoConnections = currentConnections && 
+    !currentConnections.lawFirm && 
+    (!currentConnections.medicalProviders || currentConnections.medicalProviders.length === 0);
 
   useEffect(() => {
     if (visible && user?.token) {
       fetchCurrentConnections();
+      setShowAddForm(false);
     }
   }, [visible, user]);
 
@@ -24,7 +30,6 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       setLoading(true);
       
       if (isLawFirm) {
-        // Law firm fetches medical provider connections
         const response = await fetch(`${API_BASE_URL}/api/connections/medical-providers`, {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -38,7 +43,6 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           });
         }
       } else {
-        // Individual user fetches both law firm and medical provider connections
         const response = await fetch(`${API_BASE_URL}/api/connections/my-connections`, {
           headers: {
             'Authorization': `Bearer ${user.token}`
@@ -79,6 +83,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
 
       if (response.ok) {
         alert('Success', data.message || 'Law firm connection updated successfully');
+        setShowAddForm(false);
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
@@ -101,7 +106,6 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     try {
       setSaving(true);
       
-      // Use different endpoint based on user type
       const endpoint = isLawFirm 
         ? `${API_BASE_URL}/api/connections/add-medical-provider-lawfirm`
         : `${API_BASE_URL}/api/connections/add-medical-provider`;
@@ -120,6 +124,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       if (response.ok) {
         alert('Success', data.message || 'Medical provider added successfully');
         setMedicalProviderCode('');
+        setShowAddForm(false);
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
@@ -137,7 +142,6 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     try {
       setSaving(true);
       
-      // Use different endpoint based on user type
       const endpoint = isLawFirm
         ? `${API_BASE_URL}/api/connections/remove-medical-provider-lawfirm`
         : `${API_BASE_URL}/api/connections/remove-medical-provider`;
@@ -168,6 +172,168 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     }
   };
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyStateContainer}>
+      <Text style={styles.emptyStateIcon}>🔗</Text>
+      <Text style={styles.emptyStateTitle}>No Connections Yet</Text>
+      <Text style={styles.emptyStateMessage}>
+        {isLawFirm
+          ? 'You haven\'t connected with any medical providers yet. Add a connection to start collaborating on client cases.'
+          : 'You haven\'t connected with a law firm or medical provider yet. Adding connections lets you securely share case information and medical records.'}
+      </Text>
+
+      <View style={styles.emptyStateSteps}>
+        <View style={styles.stepItem}>
+          <View style={styles.stepNumber}><Text style={styles.stepNumberText}>1</Text></View>
+          <Text style={styles.stepText}>
+            {isLawFirm 
+              ? 'Get a connection code from your medical provider' 
+              : 'Ask your law firm or medical provider for their connection code'}
+          </Text>
+        </View>
+        <View style={styles.stepItem}>
+          <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
+          <Text style={styles.stepText}>Enter the code below to create a secure connection</Text>
+        </View>
+        <View style={styles.stepItem}>
+          <View style={styles.stepNumber}><Text style={styles.stepNumberText}>3</Text></View>
+          <Text style={styles.stepText}>
+            {isLawFirm
+              ? 'Access shared medical records and billing information'
+              : 'Start sharing documents and tracking your case together'}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.getStartedButton}
+        onPress={() => setShowAddForm(true)}
+      >
+        <Text style={styles.getStartedButtonText}>Add a Connection</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderAddForm = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={true}
+      bounces={false}
+    >
+      <Text style={styles.description}>
+        {isLawFirm 
+          ? 'Manage your medical provider connections to access client medical records and billing information.'
+          : 'Connect with your law firm and medical provider to share your case information securely.'
+        }
+      </Text>
+
+      {!isLawFirm && (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>⚖️ Law Firm Connection</Text>
+        {currentConnections?.lawFirm ? (
+          <View style={styles.currentConnection}>
+            <Text style={styles.connectedLabel}>Currently Connected:</Text>
+            <Text style={styles.connectedName}>{currentConnections.lawFirm.firm_name || currentConnections.lawFirm.email}</Text>
+            <Text style={styles.connectedEmail}>{currentConnections.lawFirm.email}</Text>
+          </View>
+        ) : (
+          <View style={styles.emptyConnectionCard}>
+            <Text style={styles.emptyConnectionIcon}>⚖️</Text>
+            <Text style={styles.emptyConnectionText}>No law firm connected</Text>
+            <Text style={styles.emptyConnectionHint}>Enter your law firm's code below to connect</Text>
+          </View>
+        )}
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Enter law firm code"
+          value={lawFirmCode}
+          onChangeText={(text) => setLawFirmCode(text.toUpperCase())}
+          autoCapitalize="characters"
+          maxLength={20}
+        />
+        
+        <TouchableOpacity 
+          style={[styles.updateButton, saving && styles.updateButtonDisabled]}
+          onPress={handleUpdateLawFirm}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.updateButtonText}>
+              {currentConnections?.lawFirm ? 'Change Law Firm' : 'Connect Law Firm'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      )}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🏥 Medical Provider Connections</Text>
+        {currentConnections?.medicalProviders?.length > 0 ? (
+          <View style={styles.providersList}>
+            <Text style={styles.connectedLabel}>Connected Providers:</Text>
+            {currentConnections.medicalProviders.map((provider) => (
+              <View key={provider.id} style={styles.providerItem}>
+                <View style={styles.providerInfo}>
+                  <Text style={styles.providerName}>{provider.provider_name || provider.email}</Text>
+                  <Text style={styles.providerEmail}>{provider.email}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.removeButton}
+                  onPress={() => handleRemoveMedicalProvider(provider.id)}
+                  disabled={saving}
+                >
+                  <Text style={styles.removeButtonText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyConnectionCard}>
+            <Text style={styles.emptyConnectionIcon}>🏥</Text>
+            <Text style={styles.emptyConnectionText}>No medical providers connected</Text>
+            <Text style={styles.emptyConnectionHint}>Enter a provider's code below to connect</Text>
+          </View>
+        )}
+        
+        <Text style={styles.addLabel}>Add Medical Provider:</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter medical provider code"
+          value={medicalProviderCode}
+          onChangeText={(text) => setMedicalProviderCode(text.toUpperCase())}
+          autoCapitalize="characters"
+          maxLength={20}
+        />
+        
+        <TouchableOpacity 
+          style={[styles.addButton, saving && styles.addButtonDisabled]}
+          onPress={handleAddMedicalProvider}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.addButtonText}>Add Medical Provider</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.infoBox}>
+        <Text style={styles.infoIcon}>ℹ️</Text>
+        <Text style={styles.infoText}>
+          {isLawFirm
+            ? 'Connect with medical providers using their connection codes. This allows you to access client medical records and negotiate bills directly.'
+            : 'You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.'
+          }
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -196,116 +362,10 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
               <ActivityIndicator size="large" color={theme.colors.mahogany} />
               <Text style={styles.loadingText}>Loading your connections...</Text>
             </View>
+          ) : hasNoConnections && !showAddForm ? (
+            renderEmptyState()
           ) : (
-            <ScrollView 
-              style={styles.scrollView}
-              contentContainerStyle={styles.content}
-              showsVerticalScrollIndicator={true}
-              bounces={false}
-            >
-              <Text style={styles.description}>
-                {isLawFirm 
-                  ? 'Manage your medical provider connections to access client medical records and billing information.'
-                  : 'Connect with your law firm and medical provider to share your case information securely.'
-                }
-              </Text>
-
-              {!isLawFirm && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>⚖️ Law Firm Connection</Text>
-                {currentConnections?.lawFirm ? (
-                  <View style={styles.currentConnection}>
-                    <Text style={styles.connectedLabel}>Currently Connected:</Text>
-                    <Text style={styles.connectedName}>{currentConnections.lawFirm.firm_name || currentConnections.lawFirm.email}</Text>
-                    <Text style={styles.connectedEmail}>{currentConnections.lawFirm.email}</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.notConnected}>Not connected to a law firm</Text>
-                )}
-                
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter law firm code"
-                  value={lawFirmCode}
-                  onChangeText={(text) => setLawFirmCode(text.toUpperCase())}
-                  autoCapitalize="characters"
-                  maxLength={20}
-                />
-                
-                <TouchableOpacity 
-                  style={[styles.updateButton, saving && styles.updateButtonDisabled]}
-                  onPress={handleUpdateLawFirm}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.updateButtonText}>
-                      {currentConnections?.lawFirm ? 'Change Law Firm' : 'Connect Law Firm'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-              )}
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🏥 Medical Provider Connections</Text>
-                {currentConnections?.medicalProviders?.length > 0 ? (
-                  <View style={styles.providersList}>
-                    <Text style={styles.connectedLabel}>Connected Providers:</Text>
-                    {currentConnections.medicalProviders.map((provider) => (
-                      <View key={provider.id} style={styles.providerItem}>
-                        <View style={styles.providerInfo}>
-                          <Text style={styles.providerName}>{provider.provider_name || provider.email}</Text>
-                          <Text style={styles.providerEmail}>{provider.email}</Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.removeButton}
-                          onPress={() => handleRemoveMedicalProvider(provider.id)}
-                          disabled={saving}
-                        >
-                          <Text style={styles.removeButtonText}>Remove</Text>
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Text style={styles.notConnected}>No medical providers connected</Text>
-                )}
-                
-                <Text style={styles.addLabel}>Add Medical Provider:</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter medical provider code"
-                  value={medicalProviderCode}
-                  onChangeText={(text) => setMedicalProviderCode(text.toUpperCase())}
-                  autoCapitalize="characters"
-                  maxLength={20}
-                />
-                
-                <TouchableOpacity 
-                  style={[styles.addButton, saving && styles.addButtonDisabled]}
-                  onPress={handleAddMedicalProvider}
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.addButtonText}>Add Medical Provider</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.infoBox}>
-                <Text style={styles.infoIcon}>ℹ️</Text>
-                <Text style={styles.infoText}>
-                  {isLawFirm
-                    ? 'Connect with medical providers using their connection codes. This allows you to access client medical records and negotiate bills directly.'
-                    : 'You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.'
-                  }
-                </Text>
-              </View>
-            </ScrollView>
+            renderAddForm()
           )}
         </View>
       </Pressable>
@@ -365,6 +425,106 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 14,
     color: theme.colors.textSecondary,
+  },
+  emptyStateContainer: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: theme.colors.navy,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateMessage: {
+    fontSize: 15,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+  emptyStateSteps: {
+    width: '100%',
+    backgroundColor: theme.colors.lightCream,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  stepNumber: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: theme.colors.mahogany,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 1,
+  },
+  stepNumberText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.colors.navy,
+    lineHeight: 20,
+  },
+  getStartedButton: {
+    backgroundColor: theme.colors.mahogany,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  getStartedButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  emptyConnectionCard: {
+    backgroundColor: theme.colors.cream,
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    borderStyle: 'dashed',
+  },
+  emptyConnectionIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+    opacity: 0.5,
+  },
+  emptyConnectionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.navy,
+    marginBottom: 4,
+  },
+  emptyConnectionHint: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
