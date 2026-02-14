@@ -2367,7 +2367,7 @@ exports.sendToConnection = async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType || req.user.type;
 
-    if (userType !== 'individual') {
+    if (userType !== 'individual' && userType !== 'client') {
       return res.status(403).json({ error: 'Only individual users can use this endpoint' });
     }
 
@@ -2531,7 +2531,7 @@ exports.getMyConnectionsForNotification = async (req, res) => {
     const userId = req.user.id;
     const userType = req.user.userType || req.user.type;
 
-    if (userType !== 'individual') {
+    if (userType !== 'individual' && userType !== 'client') {
       return res.status(403).json({ error: 'Only individual users can use this endpoint' });
     }
 
