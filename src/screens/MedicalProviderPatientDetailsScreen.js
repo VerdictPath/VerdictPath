@@ -684,11 +684,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                       </Text>
                     )}
                     <Text style={styles.documentDate}>
-                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US')}
+                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(record.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {record.uploaded_by_name ? ` by ${record.uploaded_by_name}` : ''}
                     </Text>
-                    {record.uploaded_by_name && (
-                      <Text style={styles.uploaderInfo}>By: {record.uploaded_by_name}</Text>
-                    )}
                     <Text style={styles.tapToView}>Tap to view</Text>
                   </TouchableOpacity>
                 ))
@@ -760,11 +758,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                         </Text>
                       )}
                       <Text style={styles.documentDate}>
-                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US')}
+                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(bill.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        {bill.uploaded_by_name ? ` by ${bill.uploaded_by_name}` : ''}
                       </Text>
-                      {bill.uploaded_by_name && (
-                        <Text style={styles.uploaderInfo}>By: {bill.uploaded_by_name}</Text>
-                      )}
                       <Text style={styles.tapToView}>Tap to view</Text>
                     </TouchableOpacity>
                   ))}
@@ -819,7 +815,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                 </Text>
               )}
               <Text style={styles.documentDate}>
-                Uploaded: {new Date(item.uploaded_at).toLocaleDateString('en-US')}
+                Uploaded: {new Date(item.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(item.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                {item.uploaded_by_name ? ` by ${item.uploaded_by_name}` : ''}
               </Text>
             </View>
           ))

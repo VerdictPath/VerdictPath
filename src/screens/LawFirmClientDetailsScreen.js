@@ -847,11 +847,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                       <Text style={styles.documentDetail}>📝 {record.description}</Text>
                     )}
                     <Text style={styles.documentDate}>
-                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString()}
+                      Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(record.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {record.uploaded_by_name ? ` by ${record.uploaded_by_name}` : ''}
                     </Text>
-                    {record.uploaded_by_name && (
-                      <Text style={styles.uploaderInfo}>By: {record.uploaded_by_name}</Text>
-                    )}
                     <Text style={styles.tapToViewHint}>Tap to view</Text>
                   </TouchableOpacity>
                 ))
@@ -918,11 +916,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                         </Text>
                       )}
                       <Text style={styles.documentDate}>
-                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString()}
+                        Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(bill.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        {bill.uploaded_by_name ? ` by ${bill.uploaded_by_name}` : ''}
                       </Text>
-                      {bill.uploaded_by_name && (
-                        <Text style={styles.uploaderInfo}>By: {bill.uploaded_by_name}</Text>
-                      )}
                       <Text style={styles.tapToViewHint}>Tap to view</Text>
                     </TouchableOpacity>
                   ))}
@@ -1019,7 +1015,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                   </Text>
                 )}
                 <Text style={styles.documentDate}>
-                  Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+                  Uploaded: {new Date(doc.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(doc.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                  {doc.uploaded_by_name ? ` by ${doc.uploaded_by_name}` : ''}
                   {expired && (
                     <Text style={styles.expiredText}> • Expired</Text>
                   )}

@@ -129,6 +129,7 @@ const RoadmapScreen = ({
             fileName: doc.file_name,
             title: doc.title,
             uploadedAt: doc.uploaded_at,
+            uploadedByName: doc.uploaded_by_name,
             mimeType: doc.mime_type
           });
         });
@@ -991,6 +992,12 @@ const RoadmapScreen = ({
                                       )}
                                       <View style={styles.uploadedFileInfo}>
                                         <Text style={styles.uploadedFileName} numberOfLines={1}>{file.fileName}</Text>
+                                        {file.uploadedAt && (
+                                          <Text style={styles.uploadedFileMeta}>
+                                            {new Date(file.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(file.uploadedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                            {file.uploadedByName ? ` by ${file.uploadedByName}` : ''}
+                                          </Text>
+                                        )}
                                         <Text style={styles.uploadedFileTap}>Tap to view</Text>
                                       </View>
                                     </TouchableOpacity>
@@ -1778,6 +1785,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#333',
     fontWeight: '500',
+  },
+  uploadedFileMeta: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 1,
   },
   uploadedFileTap: {
     fontSize: 10,
