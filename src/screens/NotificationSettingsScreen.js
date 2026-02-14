@@ -54,7 +54,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   const [preferences, setPreferences] = useState({
     pushNotificationsEnabled: true,
     emailNotificationsEnabled: true,
-    smsNotificationsEnabled: false,
+    smsNotificationsEnabled: true,
     quietHoursEnabled: false,
     quietHoursStart: '22:00:00',
     quietHoursEnd: '08:00:00',
@@ -62,10 +62,10 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     urgentNotifications: true,
     taskNotifications: true,
     systemNotifications: true,
-    marketingNotifications: false
+    marketingNotifications: true
   });
   const [emailCCPrefs, setEmailCCPrefs] = useState({
-    emailCCEnabled: false,
+    emailCCEnabled: true,
     ccEmailAddress: '',
     ccCaseUpdates: false,
     ccAppointmentReminders: true,
