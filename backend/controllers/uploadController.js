@@ -617,8 +617,9 @@ const uploadEvidence = async (req, res) => {
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
-        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type,
+        uploaded_by, uploaded_by_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
        RETURNING *`,
       [
         userId,
@@ -638,7 +639,9 @@ const uploadEvidence = async (req, res) => {
         uploadResult.key,
         uploadResult.region,
         uploadResult.etag,
-        uploadResult.storageType
+        uploadResult.storageType,
+        userId,
+        'individual'
       ]
     );
 
@@ -972,6 +975,8 @@ const getMyMedicalRecords = async (req, res) => {
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 WHEN mr.uploaded_by_type = 'medical_provider' THEN 
                   (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                WHEN mr.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = mr.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_records mr
@@ -999,6 +1004,8 @@ const getMyMedicalBills = async (req, res) => {
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 WHEN mb.uploaded_by_type = 'medical_provider' THEN 
                   (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                WHEN mb.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = mb.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_billing mb
@@ -1523,6 +1530,8 @@ const getClientMedicalRecords = async (req, res) => {
                   (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mr.uploaded_by LIMIT 1)
                 WHEN mr.uploaded_by_type = 'lawfirm' OR mr.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mr.uploaded_by LIMIT 1)
+                WHEN mr.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = mr.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_records mr
@@ -1605,6 +1614,8 @@ const getClientMedicalBills = async (req, res) => {
                   (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = mb.uploaded_by LIMIT 1)
                 WHEN mb.uploaded_by_type = 'lawfirm' OR mb.uploaded_by_type = 'law_firm' THEN 
                   (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = mb.uploaded_by LIMIT 1)
+                WHEN mb.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = mb.uploaded_by LIMIT 1)
                 ELSE NULL
               END as uploaded_by_name
        FROM medical_billing mb
@@ -1673,8 +1684,9 @@ const uploadEvidenceOnBehalf = async (req, res) => {
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
-        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type,
+        uploaded_by, uploaded_by_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
        RETURNING *`,
       [
         clientId,
@@ -1694,7 +1706,9 @@ const uploadEvidenceOnBehalf = async (req, res) => {
         uploadResult.key,
         uploadResult.region,
         uploadResult.etag,
-        uploadResult.storageType
+        uploadResult.storageType,
+        uploaderEntityId,
+        uploaderType === 'lawfirm' || uploaderType === 'law_firm' ? 'law_firm' : uploaderType
       ]
     );
 
@@ -1740,10 +1754,20 @@ const getClientEvidence = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, evidence_type, title, description, file_name, mime_type, uploaded_at, date_of_incident, location
-       FROM evidence 
-       WHERE user_id = $1 
-       ORDER BY uploaded_at DESC`,
+      `SELECT e.id, e.evidence_type, e.title, e.description, e.file_name, e.mime_type, e.uploaded_at, 
+              e.date_of_incident, e.location, e.uploaded_by, e.uploaded_by_type,
+              CASE 
+                WHEN e.uploaded_by_type = 'law_firm' OR e.uploaded_by_type = 'lawfirm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = e.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM evidence e
+       WHERE e.user_id = $1 
+       ORDER BY e.uploaded_at DESC`,
       [clientId]
     );
 

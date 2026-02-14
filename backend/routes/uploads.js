@@ -233,10 +233,20 @@ router.get('/my-evidence', async (req, res) => {
     const userId = req.user.id;
     
     const result = await db.query(
-      `SELECT id, evidence_type, title, description, file_name, mime_type, uploaded_at 
-       FROM evidence 
-       WHERE user_id = $1 
-       ORDER BY uploaded_at DESC`,
+      `SELECT e.id, e.evidence_type, e.title, e.description, e.file_name, e.mime_type, e.uploaded_at,
+              e.uploaded_by, e.uploaded_by_type,
+              CASE 
+                WHEN e.uploaded_by_type = 'law_firm' OR e.uploaded_by_type = 'lawfirm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = e.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM evidence e
+       WHERE e.user_id = $1 
+       ORDER BY e.uploaded_at DESC`,
       [userId]
     );
     
