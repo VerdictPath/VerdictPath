@@ -94,7 +94,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
 
       if (response.ok && data.success) {
         setEmailCCPrefs({
-          emailCCEnabled: data.email_cc_enabled ?? false,
+          emailCCEnabled: data.email_cc_enabled ?? true,
           ccEmailAddress: data.cc_email_address ?? '',
           ccCaseUpdates: data.cc_case_updates ?? false,
           ccAppointmentReminders: data.cc_appointment_reminders ?? true,
@@ -174,7 +174,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         setPreferences({
           pushNotificationsEnabled: data.push_notifications_enabled ?? true,
           emailNotificationsEnabled: data.email_notifications_enabled ?? true,
-          smsNotificationsEnabled: data.sms_notifications_enabled ?? false,
+          smsNotificationsEnabled: data.sms_notifications_enabled ?? true,
           quietHoursEnabled: data.quiet_hours_enabled ?? false,
           quietHoursStart: data.quiet_hours_start ?? '22:00:00',
           quietHoursEnd: data.quiet_hours_end ?? '08:00:00',
@@ -182,7 +182,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
           urgentNotifications: data.urgent_notifications ?? true,
           taskNotifications: data.task_notifications ?? true,
           systemNotifications: data.system_notifications ?? true,
-          marketingNotifications: data.marketing_notifications ?? false
+          marketingNotifications: data.marketing_notifications ?? true
         });
       } else {
         alert('Error', data.error || 'Failed to load notification preferences');

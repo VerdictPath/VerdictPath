@@ -446,7 +446,7 @@ exports.sendNotification = async (req, res) => {
       if (recipientType === 'user') {
         // Get user phone number and SMS preferences
         const userQuery = await pool.query(
-          `SELECT NULL as phone_encrypted, COALESCE(np.sms_notifications_enabled, false) as sms_notifications_enabled 
+          `SELECT NULL as phone_encrypted, COALESCE(np.sms_notifications_enabled, true) as sms_notifications_enabled 
            FROM users u
            LEFT JOIN notification_preferences np ON np.user_id = u.id
            WHERE u.id = $1`,
@@ -2040,7 +2040,7 @@ exports.updatePreferences = async (req, res) => {
         entityId,
         push_notifications_enabled !== undefined ? push_notifications_enabled : true,
         email_notifications_enabled !== undefined ? email_notifications_enabled : true,
-        sms_notifications_enabled !== undefined ? sms_notifications_enabled : false,
+        sms_notifications_enabled !== undefined ? sms_notifications_enabled : true,
         quiet_hours_enabled !== undefined ? quiet_hours_enabled : false,
         quiet_hours_start || '22:00:00',
         quiet_hours_end || '08:00:00',
@@ -2048,7 +2048,7 @@ exports.updatePreferences = async (req, res) => {
         urgent_notifications !== undefined ? urgent_notifications : true,
         task_notifications !== undefined ? task_notifications : true,
         system_notifications !== undefined ? system_notifications : true,
-        marketing_notifications !== undefined ? marketing_notifications : false
+        marketing_notifications !== undefined ? marketing_notifications : true
       ]);
     } else {
       const updates = [];
@@ -2712,7 +2712,7 @@ exports.getEmailCCPreferences = async (req, res) => {
     if (result.rows.length === 0) {
       return res.json({
         success: true,
-        email_cc_enabled: false,
+        email_cc_enabled: true,
         cc_email_address: null,
         cc_case_updates: false,
         cc_appointment_reminders: true,
@@ -2780,7 +2780,7 @@ exports.updateEmailCCPreferences = async (req, res) => {
           cc_appointment_reminders, cc_payment_notifications, cc_document_requests, cc_system_alerts)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
-        [entityId, userTypeValue, email_cc_enabled || false, cc_email_address || null,
+        [entityId, userTypeValue, email_cc_enabled !== undefined ? email_cc_enabled : true, cc_email_address || null,
          cc_case_updates !== undefined ? cc_case_updates : false,
          cc_appointment_reminders !== undefined ? cc_appointment_reminders : true,
          cc_payment_notifications !== undefined ? cc_payment_notifications : false,
