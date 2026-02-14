@@ -130,6 +130,7 @@ async function ensureTablesExist() {
     }
     
     await seedRolePermissions();
+    await seedMissingConsentRecords();
     
     console.log('✅ Database schema check complete');
     
@@ -205,6 +206,41 @@ async function seedRolePermissions() {
     console.log('✅ Role permissions seeded');
   } catch (error) {
     console.error('⚠️ Role permissions seeding warning:', error.message);
+  }
+}
+
+async function seedMissingConsentRecords() {
+  try {
+    const lfResult = await db.query(
+      `INSERT INTO consent_records (patient_id, granted_to_type, granted_to_id, consent_type, status, consent_method)
+       SELECT lfc.client_id, 'lawfirm', lfc.law_firm_id, 'FULL_ACCESS', 'active', 'connection_grant'
+       FROM law_firm_clients lfc
+       WHERE NOT EXISTS (
+         SELECT 1 FROM consent_records cr 
+         WHERE cr.patient_id = lfc.client_id 
+         AND cr.granted_to_type = 'lawfirm' 
+         AND cr.granted_to_id = lfc.law_firm_id 
+         AND cr.status = 'active'
+       )`
+    );
+    const mpResult = await db.query(
+      `INSERT INTO consent_records (patient_id, granted_to_type, granted_to_id, consent_type, status, consent_method)
+       SELECT mpp.patient_id, 'medical_provider', mpp.medical_provider_id, 'FULL_ACCESS', 'active', 'connection_grant'
+       FROM medical_provider_patients mpp
+       WHERE NOT EXISTS (
+         SELECT 1 FROM consent_records cr 
+         WHERE cr.patient_id = mpp.patient_id 
+         AND cr.granted_to_type = 'medical_provider' 
+         AND cr.granted_to_id = mpp.medical_provider_id 
+         AND cr.status = 'active'
+       )`
+    );
+    const total = (lfResult.rowCount || 0) + (mpResult.rowCount || 0);
+    if (total > 0) {
+      console.log(`✅ Created ${total} missing consent records`);
+    }
+  } catch (error) {
+    console.error('⚠️ Consent records seeding warning:', error.message);
   }
 }
 

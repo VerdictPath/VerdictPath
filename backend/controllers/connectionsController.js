@@ -2,6 +2,38 @@ const db = require('../config/db');
 const { checkLawFirmLimit, checkMedicalProviderLimit } = require('../utils/subscriptionLimits');
 const { sendConnectionRequestEmail, sendConnectionAcceptedEmail } = require('../services/emailService');
 
+async function createConsentRecords(patientId, grantedToType, grantedToId, ipAddress) {
+  try {
+    const existing = await db.query(
+      `SELECT id FROM consent_records 
+       WHERE patient_id = $1 AND granted_to_type = $2 AND granted_to_id = $3 AND status = 'active'`,
+      [patientId, grantedToType, grantedToId]
+    );
+    if (existing.rows.length > 0) return;
+
+    await db.query(
+      `INSERT INTO consent_records (patient_id, granted_to_type, granted_to_id, consent_type, status, consent_method, ip_address)
+       VALUES ($1, $2, $3, 'FULL_ACCESS', 'active', 'connection_grant', $4)`,
+      [patientId, grantedToType, grantedToId, ipAddress || null]
+    );
+  } catch (error) {
+    console.error('Error creating consent records:', error.message);
+  }
+}
+
+async function revokeConsentRecords(patientId, grantedToType, grantedToId) {
+  try {
+    await db.query(
+      `UPDATE consent_records 
+       SET status = 'revoked', revoked_at = NOW(), revoked_reason = 'Connection disconnected'
+       WHERE patient_id = $1 AND granted_to_type = $2 AND granted_to_id = $3 AND status = 'active'`,
+      [patientId, grantedToType, grantedToId]
+    );
+  } catch (error) {
+    console.error('Error revoking consent records:', error.message);
+  }
+}
+
 const getMyConnections = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -129,10 +161,12 @@ const updateLawFirm = async (req, res) => {
       );
       
       if (oldLawFirmResult.rows.length > 0) {
+        const oldLawFirmId = oldLawFirmResult.rows[0].id;
         await db.query(
           'DELETE FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
-          [oldLawFirmResult.rows[0].id, userId]
+          [oldLawFirmId, userId]
         );
+        await revokeConsentRecords(userId, 'lawfirm', oldLawFirmId);
       }
     }
 
@@ -155,6 +189,8 @@ const updateLawFirm = async (req, res) => {
         VALUES ($1, $2, NOW())`,
         [lawFirm.id, userId]
       );
+
+      await createConsentRecords(userId, 'lawfirm', lawFirm.id, req.ip);
 
       // Send email notification to law firm about new client connection (non-blocking)
       if (lawFirm.email) {
@@ -265,6 +301,8 @@ const addMedicalProvider = async (req, res) => {
       [provider.id, userId]
     );
 
+    await createConsentRecords(userId, 'medical_provider', provider.id, req.ip);
+
     // Send email notification to medical provider about new patient connection (non-blocking)
     if (provider.email) {
       try {
@@ -334,10 +372,13 @@ const disconnectLawFirm = async (req, res) => {
     );
 
     if (lawFirmResult.rows.length > 0) {
+      const lawFirmId = lawFirmResult.rows[0].id;
       await db.query(
         'DELETE FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
-        [lawFirmResult.rows[0].id, userId]
+        [lawFirmId, userId]
       );
+
+      await revokeConsentRecords(userId, 'lawfirm', lawFirmId);
     }
 
     await db.query(
@@ -391,6 +432,8 @@ const removeMedicalProvider = async (req, res) => {
       'DELETE FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2',
       [providerId, userId]
     );
+
+    await revokeConsentRecords(userId, 'medical_provider', providerId);
 
     res.json({
       success: true,
