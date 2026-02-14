@@ -217,6 +217,16 @@ router.post('/client/:clientId/medical-bill',
 router.get('/client/:clientId/medical-records', uploadController.getClientMedicalRecords);
 router.get('/client/:clientId/medical-bills', uploadController.getClientMedicalBills);
 
+router.post('/client/:clientId/evidence',
+  burstProtectionLimiter,
+  uploadRateLimiter,
+  strictUploadRateLimiter,
+  wrapUpload(upload.single('file')),
+  uploadController.uploadEvidenceOnBehalf
+);
+
+router.get('/client/:clientId/evidence', uploadController.getClientEvidence);
+
 router.get('/my-evidence', async (req, res) => {
   try {
     const db = require('../config/db');

@@ -1619,6 +1619,141 @@ const getClientMedicalBills = async (req, res) => {
   }
 };
 
+const uploadEvidenceOnBehalf = async (req, res) => {
+  try {
+    const uploaderUserId = req.user.id;
+    const uploaderType = req.user.userType;
+    const { clientId } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    let isAuthorized = false;
+    let uploaderEntityId = null;
+
+    if (uploaderType === 'lawfirm' || uploaderType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        uploaderEntityId = lfResult.rows[0].id;
+        isAuthorized = await documentAccessService.verifyLawFirmClientRelationship(uploaderEntityId, clientId);
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Access denied. Not authorized to upload evidence for this client.' });
+    }
+
+    const validation = await validateFileContent(file.buffer, file.mimetype, file.originalname);
+    if (!validation.valid) {
+      await auditLogger.log({
+        actorId: uploaderUserId,
+        actorType: uploaderType,
+        action: 'UPLOAD_REJECTED_ON_BEHALF',
+        entityType: 'evidence',
+        status: 'FAILURE',
+        metadata: { fileName: file.originalname, clientId, rejectionReasons: validation.errors },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+      return res.status(400).json({ error: 'File validation failed', details: validation.errors });
+    }
+
+    const { evidenceType, title, description, dateOfIncident, location } = req.body;
+
+    const uploadResult = await storageService.uploadFile(file.buffer, clientId, 'evidence', file.originalname, file.mimetype);
+
+    const titleValue = title || file.originalname;
+    const titleEncrypted = encryptionService.encrypt(titleValue);
+    const descriptionEncrypted = description ? encryptionService.encrypt(description) : null;
+    const locationEncrypted = location ? encryptionService.encrypt(location) : null;
+
+    const result = await pool.query(
+      `INSERT INTO evidence 
+       (user_id, evidence_type, title, description, date_of_incident, location,
+        title_encrypted, description_encrypted, location_encrypted,
+        document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+       RETURNING *`,
+      [
+        clientId,
+        evidenceType || 'Document',
+        titleValue,
+        description || null,
+        dateOfIncident || null,
+        location || null,
+        titleEncrypted,
+        descriptionEncrypted,
+        locationEncrypted,
+        uploadResult.location,
+        file.originalname,
+        uploadResult.fileSize,
+        uploadResult.mimeType,
+        uploadResult.bucket,
+        uploadResult.key,
+        uploadResult.region,
+        uploadResult.etag,
+        uploadResult.storageType
+      ]
+    );
+
+    await auditLogger.log({
+      actorId: uploaderUserId,
+      actorType: uploaderType,
+      action: 'UPLOAD_EVIDENCE_ON_BEHALF',
+      entityType: 'evidence',
+      entityId: result.rows[0].id,
+      metadata: { fileName: file.originalname, clientId, uploaderType, evidenceType: evidenceType || 'Document', storageType: uploadResult.storageType },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({
+      success: true,
+      message: `Evidence uploaded on behalf of client (${uploadResult.storageType})`,
+      document: result.rows[0],
+      storageType: uploadResult.storageType
+    });
+  } catch (error) {
+    console.error('Error uploading evidence on behalf:', error);
+    res.status(500).json({ error: 'Failed to upload evidence' });
+  }
+};
+
+const getClientEvidence = async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const userType = req.user.userType;
+
+    let isAuthorized = false;
+
+    if (userType === 'lawfirm' || userType === 'law_firm') {
+      const lfResult = await pool.query('SELECT id FROM law_firms WHERE email = $1', [req.user.email]);
+      if (lfResult.rows.length > 0) {
+        isAuthorized = await documentAccessService.verifyLawFirmClientRelationship(lfResult.rows[0].id, clientId);
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, evidence_type, title, description, file_name, mime_type, uploaded_at, date_of_incident, location
+       FROM evidence 
+       WHERE user_id = $1 
+       ORDER BY uploaded_at DESC`,
+      [clientId]
+    );
+
+    res.json({ evidence: result.rows });
+  } catch (error) {
+    console.error('Error fetching client evidence:', error);
+    res.status(500).json({ error: 'Failed to fetch evidence' });
+  }
+};
+
 module.exports = {
   uploadMedicalRecord,
   uploadMedicalBill,
@@ -1631,6 +1766,8 @@ module.exports = {
   viewEvidenceDocument,
   uploadMedicalRecordOnBehalf,
   uploadMedicalBillOnBehalf,
+  uploadEvidenceOnBehalf,
   getClientMedicalRecords,
-  getClientMedicalBills
+  getClientMedicalBills,
+  getClientEvidence
 };

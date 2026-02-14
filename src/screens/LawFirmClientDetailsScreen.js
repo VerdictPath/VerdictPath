@@ -21,7 +21,25 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [viewingDocId, setViewingDocId] = useState(null);
   const [showRecordTypeModal, setShowRecordTypeModal] = useState(false);
   const [selectedRecordType, setSelectedRecordType] = useState('Medical Record');
-  
+  const [showEvidenceTypeModal, setShowEvidenceTypeModal] = useState(false);
+  const [selectedEvidenceType, setSelectedEvidenceType] = useState('Document');
+  const [evidenceList, setEvidenceList] = useState([]);
+  const [loadingEvidence, setLoadingEvidence] = useState(false);
+
+  const EVIDENCE_TYPE_OPTIONS = [
+    { label: 'Document', value: 'Document' },
+    { label: 'Photograph', value: 'Photograph' },
+    { label: 'Video', value: 'Video' },
+    { label: 'Police Report', value: 'Police Report' },
+    { label: 'Witness Statement', value: 'Witness Statement' },
+    { label: 'Accident Report', value: 'Accident Report' },
+    { label: 'Insurance Correspondence', value: 'Insurance Correspondence' },
+    { label: 'Property Damage', value: 'Property Damage' },
+    { label: 'Surveillance Footage', value: 'Surveillance Footage' },
+    { label: 'Expert Report', value: 'Expert Report' },
+    { label: 'Other', value: 'Other' },
+  ];
+
   const RECORD_TYPE_OPTIONS = [
     { label: 'Medical Record', value: 'Medical Record' },
     { label: 'HIPAA Release', value: 'HIPAA Release' },
@@ -48,6 +66,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     fetchClientLitigationProgress();
     fetchClientRecords();
     fetchClientBills();
+    fetchClientEvidence();
   }, [clientId]);
 
   const fetchClientDetails = async () => {
@@ -136,6 +155,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     }
   };
 
+  const fetchClientEvidence = async () => {
+    setLoadingEvidence(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/uploads/client/${clientId}/evidence`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setEvidenceList(data.evidence || []);
+      }
+    } catch (error) {
+      console.error('Error fetching client evidence:', error);
+    } finally {
+      setLoadingEvidence(false);
+    }
+  };
+
   const getMimeTypeFromExtension = (filename) => {
     const ext = (filename || '').toLowerCase().split('.').pop();
     const mimeMap = {
@@ -154,6 +190,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     if (category === 'records') {
       setSelectedRecordType('Medical Record');
       setShowRecordTypeModal(true);
+    } else if (category === 'evidence') {
+      setSelectedEvidenceType('Document');
+      setShowEvidenceTypeModal(true);
     } else {
       proceedWithUpload(category);
     }
@@ -238,13 +277,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         });
       }
 
-      const endpoint = category === 'bills'
-        ? `${API_BASE_URL}/api/uploads/client/${clientId}/medical-bill`
-        : `${API_BASE_URL}/api/uploads/client/${clientId}/medical-record`;
-
+      let endpoint;
       if (category === 'bills') {
+        endpoint = `${API_BASE_URL}/api/uploads/client/${clientId}/medical-bill`;
         formData.append('billingType', 'Medical Bill');
+      } else if (category === 'evidence') {
+        endpoint = `${API_BASE_URL}/api/uploads/client/${clientId}/evidence`;
+        formData.append('evidenceType', selectedEvidenceType || 'Document');
       } else {
+        endpoint = `${API_BASE_URL}/api/uploads/client/${clientId}/medical-record`;
         formData.append('recordType', selectedRecordType || 'Medical Record');
       }
 
@@ -261,10 +302,13 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       }
 
       const data = await uploadResponse.json();
-      alert('Success', `${category === 'bills' ? 'Medical bill' : 'Medical record'} uploaded successfully for client.`);
+      const categoryLabel = category === 'bills' ? 'Medical bill' : category === 'evidence' ? 'Evidence' : 'Medical record';
+      alert('Success', `${categoryLabel} uploaded successfully for client.`);
 
       if (category === 'bills') {
         fetchClientBills();
+      } else if (category === 'evidence') {
+        fetchClientEvidence();
       } else {
         fetchClientRecords();
       }
@@ -911,21 +955,38 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     if (!clientData) return null;
     const { client, evidenceDocuments } = clientData;
 
+    const existingIds = new Set((evidenceDocuments?.documents || []).map(d => d.id));
+    const extraEvidence = evidenceList.filter(e => !existingIds.has(e.id));
+    const allEvidence = [...(evidenceDocuments?.documents || []), ...extraEvidence];
+
     return (
       <View style={styles.tabContent}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🗃️ Evidence Locker</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={styles.sectionTitle}>🗃️ Evidence Locker</Text>
+            <TouchableOpacity
+              style={[styles.uploadButton, uploadingType === 'evidence' && styles.uploadButtonDisabled]}
+              onPress={() => handleUploadForClient('evidence')}
+              disabled={uploadingType === 'evidence'}
+            >
+              {uploadingType === 'evidence' ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.uploadButtonText}>📤 Upload Evidence</Text>
+              )}
+            </TouchableOpacity>
+          </View>
           
-          {evidenceDocuments.documents.length === 0 ? (
+          {allEvidence.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>🗃️</Text>
               <Text style={styles.emptyText}>Evidence locker is empty</Text>
               <Text style={styles.emptySubtext}>
-                Evidence documents will appear here when uploaded by {client.displayName}
+                Upload evidence documents or they will appear here when uploaded by {client.displayName}
               </Text>
             </View>
           ) : (
-            evidenceDocuments.documents.map((doc) => {
+            allEvidence.map((doc) => {
               const expired = isEvidenceExpired(doc.uploaded_at);
               
               return (
@@ -1139,6 +1200,68 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
                 onPress={() => {
                   setShowRecordTypeModal(false);
                   proceedWithUpload('records');
+                }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Choose File</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showEvidenceTypeModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowEvidenceTypeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.imageModalContent, { maxWidth: 400, maxHeight: 500 }]}>
+            <View style={styles.imageModalHeader}>
+              <Text style={styles.imageModalTitle}>Select Evidence Type</Text>
+              <TouchableOpacity 
+                style={styles.imageModalCloseBtn}
+                onPress={() => setShowEvidenceTypeModal(false)}
+              >
+                <Text style={styles.imageModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ padding: 16 }}>
+              {EVIDENCE_TYPE_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={{
+                    padding: 14,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    backgroundColor: selectedEvidenceType === option.value ? '#1E3A5F' : '#f0f0f0',
+                    borderWidth: 1,
+                    borderColor: selectedEvidenceType === option.value ? '#1E3A5F' : '#ddd',
+                  }}
+                  onPress={() => setSelectedEvidenceType(option.value)}
+                >
+                  <Text style={{
+                    fontSize: 15,
+                    fontWeight: selectedEvidenceType === option.value ? '700' : '400',
+                    color: selectedEvidenceType === option.value ? '#fff' : '#333',
+                  }}>
+                    📂 {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, gap: 12 }}>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
+                onPress={() => setShowEvidenceTypeModal(false)}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#1E3A5F', minWidth: 120, alignItems: 'center' }}
+                onPress={() => {
+                  setShowEvidenceTypeModal(false);
+                  proceedWithUpload('evidence');
                 }}
               >
                 <Text style={{ color: '#fff', fontWeight: '700' }}>Choose File</Text>
