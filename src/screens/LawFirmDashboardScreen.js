@@ -75,11 +75,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     <TouchableOpacity
       style={[styles.tab, activeTab === tabName && styles.activeTab]}
       onPress={() => {
-        if (tabName === 'notifications') {
-          onNavigate && onNavigate('lawfirm-notifications');
-        } else {
-          setActiveTab(tabName);
-        }
+        setActiveTab(tabName);
       }}
     >
       <View style={styles.tabIconContainer}>
@@ -548,7 +544,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
-        {renderTabButton('notifications', 'Alerts', '🔔')}
+        {renderTabButton('notifications', 'Actions', '⚡')}
         {renderTabButton('subscription', 'Plan', '💳')}
         {renderTabButton('settings', 'Settings', '⚙️')}
       </View>
