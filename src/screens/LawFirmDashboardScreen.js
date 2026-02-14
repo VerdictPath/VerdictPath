@@ -322,7 +322,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               <Text style={styles.notificationActionIconText}>📅</Text>
             </View>
             <View style={styles.notificationActionContent}>
-              <Text style={styles.notificationActionTitle}>Event Requests</Text>
+              <Text style={styles.notificationActionTitle}>Request Availability</Text>
               <Text style={styles.notificationActionDescription}>
                 Request depositions, mediations, and consultations from clients
               </Text>
@@ -636,7 +636,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             >
               <Text style={styles.clientTrackingModalOptionIcon}>📅</Text>
               <View style={styles.clientTrackingModalOptionContent}>
-                <Text style={styles.clientTrackingModalOptionTitle}>Event Requests</Text>
+                <Text style={styles.clientTrackingModalOptionTitle}>Request Availability</Text>
                 <Text style={styles.clientTrackingModalOptionDescription}>
                   Request depositions, mediations, and consultations
                 </Text>
