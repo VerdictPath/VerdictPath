@@ -769,7 +769,31 @@ exports.login = async (req, res) => {
     }
     
     if (result.rows.length === 0) {
-      // HIPAA: Log failed login attempt
+      const emailLower = email.toLowerCase();
+      let correctPortal = null;
+
+      if (userType !== 'lawfirm') {
+        const lfCheck = await db.query(
+          'SELECT 1 FROM law_firms WHERE email = $1 UNION SELECT 1 FROM law_firm_users WHERE email = $1 LIMIT 1',
+          [emailLower]
+        );
+        if (lfCheck.rows.length > 0) correctPortal = 'Law Firm';
+      }
+      if (!correctPortal && userType !== 'medical_provider') {
+        const mpCheck = await db.query(
+          'SELECT 1 FROM medical_providers WHERE email = $1 UNION SELECT 1 FROM medical_provider_users WHERE email = $1 LIMIT 1',
+          [emailLower]
+        );
+        if (mpCheck.rows.length > 0) correctPortal = 'Medical Provider';
+      }
+      if (!correctPortal && userType !== 'individual') {
+        const indCheck = await db.query(
+          'SELECT 1 FROM users WHERE email = $1 LIMIT 1',
+          [emailLower]
+        );
+        if (indCheck.rows.length > 0) correctPortal = 'Individual';
+      }
+
       await auditLogger.logAuth({
         userId: null,
         email: email,
@@ -777,8 +801,19 @@ exports.login = async (req, res) => {
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.get('user-agent'),
         success: false,
-        failureReason: 'User not found'
+        failureReason: correctPortal ? 'Wrong portal selected' : 'User not found'
       });
+
+      if (correctPortal) {
+        const selectedPortalName = userType === 'lawfirm' ? 'Law Firm' : 
+                                    userType === 'medical_provider' ? 'Medical Provider' : 'Individual';
+        return res.status(401).json({ 
+          message: `This email is registered under the ${correctPortal} portal, but you selected ${selectedPortalName}. Please switch to the ${correctPortal} portal and try again.`,
+          code: 'WRONG_PORTAL',
+          correctPortal: correctPortal.toLowerCase().replace(' ', '_')
+        });
+      }
+
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     

@@ -760,7 +760,28 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       const responseData = error.response || {};
       const errorMessage = error.message || 'Login failed. Please check your credentials.';
 
-      if (responseData.locked || error.status === 423) {
+      if (responseData.code === 'WRONG_PORTAL') {
+        const portalMap = {
+          'law_firm': USER_TYPES.LAW_FIRM,
+          'medical_provider': USER_TYPES.MEDICAL_PROVIDER,
+          'individual': USER_TYPES.INDIVIDUAL
+        };
+        const correctType = portalMap[responseData.correctPortal];
+        const portalLabel = responseData.correctPortal === 'law_firm' ? 'Law Firm' :
+                            responseData.correctPortal === 'medical_provider' ? 'Medical Provider' : 'Individual';
+        alert(
+          'Wrong Portal Selected',
+          errorMessage,
+          [
+            { text: 'Cancel' },
+            { text: `Switch to ${portalLabel}`, onPress: () => {
+              if (correctType) {
+                setUserType(correctType);
+              }
+            }}
+          ]
+        );
+      } else if (responseData.locked || error.status === 423) {
         alert(
           'Account Locked',
           errorMessage,
