@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Platform } from 'react-native';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
@@ -96,6 +96,20 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [taskCoinsReward, setTaskCoinsReward] = useState('50');
   const [searchQuery, setSearchQuery] = useState('');
   const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
+  const [showNativeDatePicker, setShowNativeDatePicker] = useState(false);
+
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[1]}/${parts[2]}/${parts[0]}`;
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   useEffect(() => {
     fetchClients();
@@ -525,13 +539,63 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
               </View>
 
               <Text style={styles.inputLabel}>Due Date (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={taskDueDate}
-                onChangeText={setTaskDueDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#999"
-              />
+              {Platform.OS === 'web' ? (
+                <View style={styles.datePickerContainer}>
+                  <input
+                    type="date"
+                    value={taskDueDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setTaskDueDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      fontSize: 16,
+                      borderRadius: 8,
+                      border: `1px solid ${theme.lawFirm.cardBorder || '#ddd'}`,
+                      backgroundColor: '#fff',
+                      color: theme.lawFirm.text || '#333',
+                      fontFamily: 'inherit',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  {taskDueDate ? (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={() => setTaskDueDate('')}
+                    >
+                      <Text style={styles.clearDateText}>✕</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.dateSelectButton}
+                  onPress={() => {
+                    try {
+                      const DateTimePickerAndroid = require('@react-native-community/datetimepicker');
+                      if (DateTimePickerAndroid) {
+                        setShowNativeDatePicker(true);
+                      }
+                    } catch (e) {
+                      alert('Date Selection', 'Please enter date in YYYY-MM-DD format');
+                    }
+                  }}
+                >
+                  <Text style={styles.dateSelectIcon}>📅</Text>
+                  <Text style={[styles.dateSelectText, !taskDueDate && { color: '#999' }]}>
+                    {taskDueDate ? formatDisplayDate(taskDueDate) : 'Tap to select due date'}
+                  </Text>
+                  {taskDueDate ? (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={(e) => { e.stopPropagation(); setTaskDueDate(''); }}
+                    >
+                      <Text style={styles.clearDateText}>✕</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </TouchableOpacity>
+              )}
 
               <Text style={styles.inputLabel}>Coin Reward</Text>
               <TextInput
@@ -564,6 +628,31 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      {Platform.OS !== 'web' && showNativeDatePicker && (() => {
+        try {
+          const DateTimePicker = require('@react-native-community/datetimepicker').default;
+          return (
+            <DateTimePicker
+              value={taskDueDate ? new Date(taskDueDate + 'T00:00:00') : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              minimumDate={new Date()}
+              onChange={(event, selectedDate) => {
+                setShowNativeDatePicker(false);
+                if (event.type !== 'dismissed' && selectedDate) {
+                  const year = selectedDate.getFullYear();
+                  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                  const day = String(selectedDate.getDate()).padStart(2, '0');
+                  setTaskDueDate(`${year}-${month}-${day}`);
+                }
+              }}
+            />
+          );
+        } catch (e) {
+          return null;
+        }
+      })()}
     </View>
   );
 };
@@ -758,6 +847,46 @@ const styles = StyleSheet.create({
     color: theme.lawFirm.text,
     borderWidth: 1,
     borderColor: theme.lawFirm.border,
+  },
+  datePickerContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateSelectButton: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateSelectIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  dateSelectText: {
+    fontSize: 16,
+    color: theme.lawFirm.text,
+    flex: 1,
+  },
+  clearDateButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    marginTop: -14,
+  },
+  clearDateText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: 'bold',
   },
   textArea: {
     height: 120,
