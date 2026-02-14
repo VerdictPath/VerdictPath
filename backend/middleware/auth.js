@@ -10,11 +10,11 @@ if (!process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || 'verdict-path-secret-key-change-in-production';
 
 exports.authenticateToken = (req, res, next) => {
-  let token = req.signedCookies?.authToken;
+  const authHeader = req.header('Authorization');
+  let token = authHeader?.replace('Bearer ', '') || null;
   
   if (!token) {
-    const authHeader = req.header('Authorization');
-    token = authHeader?.replace('Bearer ', '');
+    token = req.signedCookies?.authToken;
   }
   
   if (!token) {
