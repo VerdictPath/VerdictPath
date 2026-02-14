@@ -345,10 +345,9 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         style={styles.overlay} 
         onPress={onClose}
       >
-        <View 
+        <Pressable 
           style={styles.modalContainer} 
-          onStartShouldSetResponder={() => true}
-          onResponderRelease={(e) => e.stopPropagation()}
+          onPress={(e) => e.stopPropagation()}
         >
           <View style={styles.header}>
             <Text style={styles.title}>My Connections</Text>
@@ -367,7 +366,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           ) : (
             renderAddForm()
           )}
-        </View>
+        </Pressable>
       </Pressable>
     </Modal>
   );
