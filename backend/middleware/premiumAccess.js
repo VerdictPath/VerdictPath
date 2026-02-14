@@ -1,12 +1,9 @@
 const db = require('../config/db');
 
-/**
- * Middleware to require premium law firm plan for protected features
- * Returns 403 Forbidden for non-premium firms with upgrade messaging
- */
+const IS_LAUNCH_PROMO = true;
+
 const requirePremiumLawFirm = async (req, res, next) => {
   try {
-    // Only apply to law firms
     if (req.user.userType !== 'lawfirm') {
       return res.status(400).json({ 
         error: 'This endpoint is only accessible to law firms'
@@ -15,9 +12,8 @@ const requirePremiumLawFirm = async (req, res, next) => {
 
     const lawFirmId = req.user.id;
     
-    // Fetch law firm's subscription details
     const result = await db.query(
-      'SELECT plan_type, subscription_tier, firm_size FROM law_firms WHERE id = $1',
+      'SELECT plan_type, subscription_tier, firm_size, stripe_customer_id FROM law_firms WHERE id = $1',
       [lawFirmId]
     );
 
@@ -28,8 +24,7 @@ const requirePremiumLawFirm = async (req, res, next) => {
     const lawFirm = result.rows[0];
     const planType = lawFirm.plan_type || 'standard';
 
-    // Check if law firm has premium plan
-    if (planType !== 'premium') {
+    if (!IS_LAUNCH_PROMO && planType !== 'premium') {
       return res.status(403).json({ 
         error: 'Premium subscription required',
         message: 'Settlement disbursements are only available with a Premium plan. Upgrade your subscription to unlock this feature.',
@@ -38,12 +33,12 @@ const requirePremiumLawFirm = async (req, res, next) => {
       });
     }
 
-    // Cache law firm metadata on request for downstream handlers
     req.lawFirm = {
       id: lawFirmId,
-      planType: planType,
+      planType: IS_LAUNCH_PROMO ? 'premium' : planType,
       tier: lawFirm.subscription_tier,
-      firmSize: lawFirm.firm_size
+      firmSize: lawFirm.firm_size,
+      stripeCustomerId: lawFirm.stripe_customer_id
     };
 
     next();

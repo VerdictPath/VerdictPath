@@ -321,10 +321,34 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       }
     } catch (error) {
       console.error('Disbursement error:', error);
-      alert(
-        'Payment Failed',
-        error.message || 'Failed to process disbursement. Please try again.'
-      );
+      const responseData = error.response || {};
+      
+      if (responseData.requiresStripeSetup) {
+        alert(
+          'Payment Setup Required',
+          'Your firm has not set up banking or payment information yet. Please complete your payment setup in Stripe Connect before processing disbursements.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Set Up Payments',
+              onPress: () => {
+                setShowDisbursementModal(false);
+                if (onNavigate) onNavigate('StripeConnectOnboarding');
+              }
+            }
+          ]
+        );
+      } else if (responseData.requiresUpgrade) {
+        alert(
+          'Premium Feature',
+          'Settlement disbursements require a Premium plan. Please upgrade your subscription to access this feature.'
+        );
+      } else {
+        alert(
+          'Disbursement Error',
+          error.message || 'Failed to process disbursement. Please try again.'
+        );
+      }
     } finally {
       setProcessingPayment(false);
     }
