@@ -12,9 +12,9 @@ import LawFirmUserActivityTimelineScreen from './LawFirmUserActivityTimelineScre
 import SettingsScreen from './SettingsScreen';
 import { useNotifications } from '../contexts/NotificationContext';
 
-const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout }) => {
+const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout, initialTab }) => {
   const { width, height } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState('clients');
+  const [activeTab, setActiveTab] = useState(initialTab || 'clients');
   const [clients, setClients] = useState([]);
   const [firmData, setFirmData] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -68,6 +68,12 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Removed fetchUnreadNotificationCount - Firebase handles this automatically via NotificationContext
 

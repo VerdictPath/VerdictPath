@@ -1754,6 +1754,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           onNavigateToClient={handleNavigateToClient}
           onNavigate={handleNavigateInternal}
           onLogout={handleLogout}
+          initialTab={lawFirmReturnTab}
         />
       )}
       
@@ -1769,14 +1770,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'lawfirm-send-notification' && (
         <LawFirmSendNotificationScreen
           user={user}
-          onBack={handleBackToLawFirmDashboard}
+          onBack={() => handleBackToLawFirmDashboard('notifications')}
         />
       )}
 
       {currentScreen === 'lawfirm-assign-task' && (
         <LawFirmSendNotificationScreen
           user={user}
-          onBack={handleBackToLawFirmDashboard}
+          onBack={() => handleBackToLawFirmDashboard('notifications')}
           taskMode={true}
         />
       )}
@@ -1784,21 +1785,21 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'lawfirm-notification-analytics' && (
         <LawFirmNotificationAnalyticsScreen
           user={user}
-          onBack={handleBackToLawFirmDashboard}
+          onBack={() => handleBackToLawFirmDashboard('notifications')}
         />
       )}
 
       {currentScreen === 'lawfirm-notifications' && (
         <LawFirmNotificationsScreen
           user={user}
-          onBack={handleBackToLawFirmDashboard}
+          onBack={() => handleBackToLawFirmDashboard('notifications')}
         />
       )}
 
       {currentScreen === 'lawfirm-event-requests' && (
         <LawFirmEventRequestsScreen
           user={user}
-          onBack={handleBackToLawFirmDashboard}
+          onBack={() => handleBackToLawFirmDashboard('notifications')}
         />
       )}
 
@@ -1806,7 +1807,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
           <NegotiationsScreen
             user={user}
-            onBack={handleBackToLawFirmDashboard}
+            onBack={() => handleBackToLawFirmDashboard('notifications')}
           />
         </View>
       )}
@@ -1815,7 +1816,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
           <DisbursementDashboardScreen
             user={user}
-            onBack={handleBackToLawFirmDashboard}
+            onBack={() => handleBackToLawFirmDashboard('notifications')}
             onNavigate={handleNavigateInternal}
           />
         </View>
