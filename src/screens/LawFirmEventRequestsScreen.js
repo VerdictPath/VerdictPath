@@ -110,8 +110,8 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       
       setEventRequests(requestsData.eventRequests || []);
       const sortedClients = (clientsData.clients || []).sort((a, b) => {
-        const nameA = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
-        const nameB = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+        const nameA = `${a.firstName || a.first_name || ''} ${a.lastName || a.last_name || ''}`.trim().toLowerCase();
+        const nameB = `${b.firstName || b.first_name || ''} ${b.lastName || b.last_name || ''}`.trim().toLowerCase();
         return nameA.localeCompare(nameB);
       });
       setClients(sortedClients);
@@ -310,10 +310,19 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
     return found ? found.icon : '📋';
   };
 
+  const getClientFirstName = (client) => client.firstName || client.first_name || '';
+  const getClientLastName = (client) => client.lastName || client.last_name || '';
+  const getClientFullName = (client) => `${getClientFirstName(client)} ${getClientLastName(client)}`.trim();
+  const getClientInitials = (client) => {
+    const first = getClientFirstName(client);
+    const last = getClientLastName(client);
+    return `${first ? first[0] : ''}${last ? last[0] : ''}`.toUpperCase() || '?';
+  };
+
   const filteredClients = clients.filter(client => {
     if (!clientSearchQuery.trim()) return true;
     const query = clientSearchQuery.toLowerCase();
-    const fullName = `${client.first_name || ''} ${client.last_name || ''}`.trim().toLowerCase();
+    const fullName = getClientFullName(client).toLowerCase();
     const email = (client.email || '').toLowerCase();
     return fullName.includes(query) || email.includes(query);
   });
@@ -493,12 +502,12 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                     <View style={styles.selectedClientDisplay}>
                       <View style={styles.clientAvatar}>
                         <Text style={styles.clientAvatarText}>
-                          {(selectedClient.first_name || '?')[0]}{(selectedClient.last_name || '?')[0]}
+                          {getClientInitials(selectedClient)}
                         </Text>
                       </View>
                       <View style={styles.selectedClientInfo}>
                         <Text style={styles.selectedClientName}>
-                          {selectedClient.first_name} {selectedClient.last_name}
+                          {getClientFullName(selectedClient) || selectedClient.email}
                         </Text>
                         {selectedClient.email && (
                           <Text style={styles.selectedClientEmail}>{selectedClient.email}</Text>
@@ -559,12 +568,12 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                           >
                             <View style={[styles.dropdownAvatar, selectedClient?.id === client.id && styles.dropdownAvatarSelected]}>
                               <Text style={[styles.dropdownAvatarText, selectedClient?.id === client.id && styles.dropdownAvatarTextSelected]}>
-                                {(client.first_name || '?')[0]}{(client.last_name || '?')[0]}
+                                {getClientInitials(client)}
                               </Text>
                             </View>
                             <View style={styles.dropdownItemInfo}>
                               <Text style={[styles.dropdownItemName, selectedClient?.id === client.id && styles.dropdownItemNameSelected]}>
-                                {client.first_name} {client.last_name}
+                                {getClientFullName(client) || client.email}
                               </Text>
                               {client.email && (
                                 <Text style={styles.dropdownItemEmail}>{client.email}</Text>
@@ -681,32 +690,104 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                         </View>
                       </View>
                       <View style={styles.dateTimePickerRow}>
-                        <TouchableOpacity
-                          style={styles.dateTimePickerBtn}
-                          onPress={() => setShowDatePicker({ visible: true, index, type: 'date' })}
-                        >
-                          <Text style={styles.dateTimePickerIcon}>📅</Text>
-                          <View>
-                            <Text style={styles.dateTimePickerLabel}>Date</Text>
-                            <Text style={styles.dateTimePickerValue}>{formatDate(option.date)}</Text>
-                          </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.dateTimePickerBtn}
-                          onPress={() => setShowDatePicker({ visible: true, index, type: 'time' })}
-                        >
-                          <Text style={styles.dateTimePickerIcon}>🕐</Text>
-                          <View>
-                            <Text style={styles.dateTimePickerLabel}>Time</Text>
-                            <Text style={styles.dateTimePickerValue}>{formatTime(option.startTime)}</Text>
-                          </View>
-                        </TouchableOpacity>
+                        {Platform.OS === 'web' ? (
+                          <>
+                            <View style={styles.dateTimePickerBtn}>
+                              <Text style={styles.dateTimePickerIcon}>📅</Text>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.dateTimePickerLabel}>Date</Text>
+                                <input
+                                  type="date"
+                                  value={option.date ? `${option.date.getFullYear()}-${String(option.date.getMonth() + 1).padStart(2, '0')}-${String(option.date.getDate()).padStart(2, '0')}` : ''}
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      const parts = e.target.value.split('-');
+                                      const newDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]),
+                                        option.startTime.getHours(), option.startTime.getMinutes());
+                                      const newOptions = [...dateTimeOptions];
+                                      newOptions[index].date = newDate;
+                                      newOptions[index].startTime = newDate;
+                                      setDateTimeOptions(newOptions);
+                                    }
+                                  }}
+                                  min={new Date().toISOString().split('T')[0]}
+                                  style={{
+                                    border: 'none',
+                                    backgroundColor: 'transparent',
+                                    color: '#1E3A5F',
+                                    fontSize: 14,
+                                    fontWeight: '600',
+                                    fontFamily: 'inherit',
+                                    padding: 0,
+                                    width: '100%',
+                                    cursor: 'pointer',
+                                  }}
+                                />
+                              </View>
+                            </View>
+                            <View style={styles.dateTimePickerBtn}>
+                              <Text style={styles.dateTimePickerIcon}>🕐</Text>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.dateTimePickerLabel}>Time</Text>
+                                <input
+                                  type="time"
+                                  value={option.startTime ? `${String(option.startTime.getHours()).padStart(2, '0')}:${String(option.startTime.getMinutes()).padStart(2, '0')}` : ''}
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      const [hours, minutes] = e.target.value.split(':').map(Number);
+                                      const newOptions = [...dateTimeOptions];
+                                      newOptions[index].startTime = new Date(
+                                        option.date.getFullYear(), option.date.getMonth(), option.date.getDate(),
+                                        hours, minutes
+                                      );
+                                      setDateTimeOptions(newOptions);
+                                    }
+                                  }}
+                                  style={{
+                                    border: 'none',
+                                    backgroundColor: 'transparent',
+                                    color: '#1E3A5F',
+                                    fontSize: 14,
+                                    fontWeight: '600',
+                                    fontFamily: 'inherit',
+                                    padding: 0,
+                                    width: '100%',
+                                    cursor: 'pointer',
+                                  }}
+                                />
+                              </View>
+                            </View>
+                          </>
+                        ) : (
+                          <>
+                            <TouchableOpacity
+                              style={styles.dateTimePickerBtn}
+                              onPress={() => setShowDatePicker({ visible: true, index, type: 'date' })}
+                            >
+                              <Text style={styles.dateTimePickerIcon}>📅</Text>
+                              <View>
+                                <Text style={styles.dateTimePickerLabel}>Date</Text>
+                                <Text style={styles.dateTimePickerValue}>{formatDate(option.date)}</Text>
+                              </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.dateTimePickerBtn}
+                              onPress={() => setShowDatePicker({ visible: true, index, type: 'time' })}
+                            >
+                              <Text style={styles.dateTimePickerIcon}>🕐</Text>
+                              <View>
+                                <Text style={styles.dateTimePickerLabel}>Time</Text>
+                                <Text style={styles.dateTimePickerValue}>{formatTime(option.startTime)}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          </>
+                        )}
                       </View>
                     </View>
                   ))}
                 </View>
 
-                {showDatePicker.visible && (
+                {Platform.OS !== 'web' && showDatePicker.visible && (
                   <DateTimePicker
                     value={showDatePicker.type === 'date' 
                       ? dateTimeOptions[showDatePicker.index].date 
