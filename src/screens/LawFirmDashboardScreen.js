@@ -273,6 +273,31 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           </Text>
 
           <TouchableOpacity 
+            style={[styles.notificationActionCard, styles.notificationHubCard]}
+            onPress={() => onNavigate && onNavigate('lawfirm-notifications')}
+          >
+            <View style={[styles.notificationActionIcon, styles.notificationHubIcon]}>
+              <Text style={styles.notificationActionIconText}>🔔</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <View style={styles.notificationHubTitleRow}>
+                <Text style={[styles.notificationActionTitle, styles.notificationHubTitle]}>Notifications</Text>
+                {unreadNotificationCount > 0 && (
+                  <View style={styles.hubBadge}>
+                    <Text style={styles.hubBadgeText}>
+                      {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.notificationActionDescription}>
+                Inbox, sent messages, compose, and tracking — all in one place
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
             style={styles.notificationActionCard}
             onPress={() => onNavigate && onNavigate('lawfirm-assign-task')}
           >
@@ -283,38 +308,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               <Text style={styles.notificationActionTitle}>Assign Task</Text>
               <Text style={styles.notificationActionDescription}>
                 Create and assign tasks to your clients with due dates and rewards
-              </Text>
-            </View>
-            <Text style={styles.notificationActionArrow}>→</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('lawfirm-send-notification')}
-          >
-            <View style={styles.notificationActionIcon}>
-              <Text style={styles.notificationActionIconText}>📨</Text>
-            </View>
-            <View style={styles.notificationActionContent}>
-              <Text style={styles.notificationActionTitle}>Send Notification</Text>
-              <Text style={styles.notificationActionDescription}>
-                Compose and send notifications to your clients
-              </Text>
-            </View>
-            <Text style={styles.notificationActionArrow}>→</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.notificationActionCard}
-            onPress={() => onNavigate && onNavigate('lawfirm-notification-analytics')}
-          >
-            <View style={styles.notificationActionIcon}>
-              <Text style={styles.notificationActionIconText}>📊</Text>
-            </View>
-            <View style={styles.notificationActionContent}>
-              <Text style={styles.notificationActionTitle}>Client Tracking</Text>
-              <Text style={styles.notificationActionDescription}>
-                Track notification delivery, read, and click rates
               </Text>
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>
@@ -867,6 +860,39 @@ const styles = StyleSheet.create({
   notificationActionArrow: {
     fontSize: 24,
     color: theme.lawFirm.primary,
+    fontWeight: 'bold',
+  },
+  notificationHubCard: {
+    borderColor: theme.lawFirm.primary,
+    borderWidth: 2,
+    backgroundColor: theme.lawFirm.primary + '10',
+  },
+  notificationHubIcon: {
+    backgroundColor: theme.lawFirm.accent || theme.lawFirm.primary,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  notificationHubTitle: {
+    fontSize: 17,
+  },
+  notificationHubTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hubBadge: {
+    backgroundColor: theme.lawFirm.error || '#E53E3E',
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    marginLeft: 8,
+  },
+  hubBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
   },
   templatesList: {
