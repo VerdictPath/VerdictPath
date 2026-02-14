@@ -1285,6 +1285,11 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
   };
 
   const handleNavigateInternal = (screen, data) => {
+    if (screen === 'lawfirm-actions') {
+      setLawFirmReturnTab('notifications');
+      setCurrentScreen('lawfirm-dashboard');
+      return;
+    }
     if (screen === 'client-roadmap' && data) {
       setSelectedClientId(data.clientId);
       setClientRoadmapData(data.clientData);

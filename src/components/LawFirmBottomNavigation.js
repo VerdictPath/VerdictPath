@@ -6,6 +6,7 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
   
   const tabs = [
     { name: 'Dashboard', imageSource: require('../../attached_assets/ICON_1765571245006.jpeg'), screen: 'lawfirm-dashboard' },
+    { name: 'Actions', icon: '⚡', screen: 'lawfirm-actions' },
     { name: 'Calendars', icon: '📅', screen: 'lawfirm-calendar-selection' },
     { name: 'Users', icon: '👥', screen: 'lawfirm-user-management' },
     { name: 'Profile', icon: '👤', screen: 'lawfirm-profile' },
@@ -14,7 +15,10 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
-        const isActive = currentScreen === tab.screen;
+        const actionScreens = ['lawfirm-assign-task', 'lawfirm-send-notification', 'lawfirm-notification-analytics', 'lawfirm-notifications', 'lawfirm-event-requests', 'lawfirm-negotiations', 'lawfirm-disbursements'];
+        const isActive = tab.screen === 'lawfirm-actions'
+          ? actionScreens.includes(currentScreen)
+          : currentScreen === tab.screen;
         const showBadge = tab.badge && tab.badge > 0;
         
         return (
