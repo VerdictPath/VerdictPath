@@ -790,6 +790,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
             { text: 'OK' }
           ]
         );
+      } else if (responseData.code === 'INCORRECT_PASSWORD') {
+        alert(
+          'Incorrect Password',
+          errorMessage,
+          [
+            { text: 'Forgot Password', onPress: () => setCurrentScreen('forgotPassword') },
+            { text: 'Try Again' }
+          ]
+        );
       } else if (responseData.showForgotPassword) {
         alert(
           'Login Failed',

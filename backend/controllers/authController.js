@@ -873,15 +873,16 @@ exports.login = async (req, res) => {
       }
 
       const remaining = lockoutInfo ? lockoutInfo.remaining : null;
-      let warningMessage = 'Invalid credentials.';
+      let warningMessage = 'The password you entered is incorrect. Please try again.';
       if (remaining !== null && remaining <= 3) {
-        warningMessage += ` ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before your account is locked.`;
+        warningMessage = `Incorrect password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before your account is locked.`;
       }
 
       return res.status(401).json({
         message: warningMessage,
+        code: 'INCORRECT_PASSWORD',
         remainingAttempts: remaining,
-        showForgotPassword: remaining !== null && remaining <= 2
+        showForgotPassword: true
       });
     }
 
