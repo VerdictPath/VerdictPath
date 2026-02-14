@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, ImageBackground, useWindowDimensions, Image, Modal, Linking, Platform, TextInput } from 'react-native';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
@@ -25,6 +25,9 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [selectedEvidenceType, setSelectedEvidenceType] = useState('Document');
   const [evidenceList, setEvidenceList] = useState([]);
   const [loadingEvidence, setLoadingEvidence] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [billFormData, setBillFormData] = useState({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+  const [pendingBillFile, setPendingBillFile] = useState(null);
 
   const EVIDENCE_TYPE_OPTIONS = [
     { label: 'Document', value: 'Document' },
@@ -229,7 +232,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
               ? new File([file], file.name, { type: mimeType })
               : file;
 
-            await uploadFileForClient(properFile, file.name, mimeType, category);
+            if (category === 'bills') {
+              setPendingBillFile({ webFile: properFile, fileName: file.name, mimeType });
+              setShowBillModal(true);
+            } else {
+              await uploadFileForClient(properFile, file.name, mimeType, category);
+            }
           }
         } catch (err) {
           console.error('Error in file onchange:', err);
@@ -255,7 +263,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        await uploadFileForClient(null, asset.name || asset.fileName, asset.mimeType || asset.type, category, asset);
+        if (category === 'bills') {
+          setPendingBillFile({ nativeAsset: asset, fileName: asset.name || asset.fileName, mimeType: asset.mimeType || asset.type });
+          setShowBillModal(true);
+        } else {
+          await uploadFileForClient(null, asset.name || asset.fileName, asset.mimeType || asset.type, category, asset);
+        }
       }
     } catch (error) {
       console.error('Error picking document:', error);
@@ -263,7 +276,20 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     }
   };
 
-  const uploadFileForClient = async (webFile, fileName, mimeType, category, nativeAsset) => {
+  const handleBillUploadWithDetails = async () => {
+    if (!pendingBillFile) return;
+    const billMeta = { ...billFormData };
+    if (pendingBillFile.webFile) {
+      await uploadFileForClient(pendingBillFile.webFile, pendingBillFile.fileName, pendingBillFile.mimeType, 'bills', null, billMeta);
+    } else if (pendingBillFile.nativeAsset) {
+      await uploadFileForClient(null, pendingBillFile.fileName, pendingBillFile.mimeType, 'bills', pendingBillFile.nativeAsset, billMeta);
+    }
+    setShowBillModal(false);
+    setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+    setPendingBillFile(null);
+  };
+
+  const uploadFileForClient = async (webFile, fileName, mimeType, category, nativeAsset, billMeta) => {
     setUploadingType(category);
     try {
       const formData = new FormData();
@@ -281,6 +307,12 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       if (category === 'bills') {
         endpoint = `${API_BASE_URL}/api/uploads/client/${clientId}/medical-bill`;
         formData.append('billingType', 'Medical Bill');
+        if (billMeta) {
+          formData.append('totalAmount', billMeta.totalAmount || '0');
+          formData.append('facilityName', billMeta.facilityName || '');
+          formData.append('dateOfService', billMeta.dateOfService || '');
+          formData.append('description', billMeta.description || '');
+        }
       } else if (category === 'evidence') {
         endpoint = `${API_BASE_URL}/api/uploads/client/${clientId}/evidence`;
         formData.append('evidenceType', selectedEvidenceType || 'Document');
@@ -1143,6 +1175,83 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showBillModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => { setShowBillModal(false); setPendingBillFile(null); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.imageModalContent, { maxWidth: 450, maxHeight: 520 }]}>
+            <View style={styles.imageModalHeader}>
+              <Text style={styles.imageModalTitle}>Bill Details</Text>
+              <TouchableOpacity
+                style={styles.imageModalCloseBtn}
+                onPress={() => { setShowBillModal(false); setPendingBillFile(null); }}
+              >
+                <Text style={styles.imageModalCloseBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ padding: 16 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F', marginBottom: 6 }}>Bill Total Amount *</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+                placeholder="$0.00"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                value={billFormData.totalAmount}
+                onChangeText={(text) => setBillFormData(prev => ({ ...prev, totalAmount: text }))}
+              />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F', marginBottom: 6 }}>Facility / Provider Name</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+                placeholder="e.g. City Hospital"
+                placeholderTextColor="#999"
+                value={billFormData.facilityName}
+                onChangeText={(text) => setBillFormData(prev => ({ ...prev, facilityName: text }))}
+              />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F', marginBottom: 6 }}>Date of Service</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+                placeholder="MM/DD/YYYY"
+                placeholderTextColor="#999"
+                value={billFormData.dateOfService}
+                onChangeText={(text) => setBillFormData(prev => ({ ...prev, dateOfService: text }))}
+              />
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F', marginBottom: 6 }}>Description</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9', minHeight: 60 }}
+                placeholder="Optional description"
+                placeholderTextColor="#999"
+                multiline={true}
+                value={billFormData.description}
+                onChangeText={(text) => setBillFormData(prev => ({ ...prev, description: text }))}
+              />
+              {pendingBillFile && (
+                <Text style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>
+                  Selected file: {pendingBillFile.fileName}
+                </Text>
+              )}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, gap: 12 }}>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
+                onPress={() => { setShowBillModal(false); setPendingBillFile(null); setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' }); }}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#1E3A5F', minWidth: 120, alignItems: 'center', opacity: !billFormData.totalAmount ? 0.5 : 1 }}
+                disabled={!billFormData.totalAmount}
+                onPress={handleBillUploadWithDetails}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Upload</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showRecordTypeModal}

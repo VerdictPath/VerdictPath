@@ -26,6 +26,9 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
   const [uploadingType, setUploadingType] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadCategory, setUploadCategory] = useState(null);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [billFormData, setBillFormData] = useState({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+  const [pendingBillFile, setPendingBillFile] = useState(null);
 
   useEffect(() => {
     fetchConnectedProviders();
@@ -220,7 +223,12 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
               file: properFile,
             };
             console.log('[MedicalHub] Web file selected:', { name: file.name, browserType: file.type, resolvedType: mimeType, size: file.size });
-            await uploadMedicalFile(webFile, category);
+            if (category === 'bills') {
+              setPendingBillFile(webFile);
+              setShowBillModal(true);
+            } else {
+              await uploadMedicalFile(webFile, category);
+            }
           }
         } catch (err) {
           console.error('[MedicalHub] Error in file onchange:', err);
@@ -258,7 +266,12 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadMedicalFile(result.assets[0], uploadCategory);
+        if (uploadCategory === 'bills') {
+          setPendingBillFile(result.assets[0]);
+          setShowBillModal(true);
+        } else {
+          await uploadMedicalFile(result.assets[0], uploadCategory);
+        }
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -281,7 +294,12 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        await uploadMedicalFile(result.assets[0], uploadCategory);
+        if (uploadCategory === 'bills') {
+          setPendingBillFile(result.assets[0]);
+          setShowBillModal(true);
+        } else {
+          await uploadMedicalFile(result.assets[0], uploadCategory);
+        }
       }
     } catch (error) {
       console.error('Error picking document:', error);
@@ -289,7 +307,15 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
     }
   };
 
-  const uploadMedicalFile = async (file, category) => {
+  const handleBillUploadWithDetails = async () => {
+    if (!pendingBillFile) return;
+    setShowBillModal(false);
+    await uploadMedicalFile(pendingBillFile, 'bills', { ...billFormData });
+    setPendingBillFile(null);
+    setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+  };
+
+  const uploadMedicalFile = async (file, category, billMeta) => {
     console.log('[MedicalHub] uploadMedicalFile called', { category, hasFile: !!file, hasAuthToken: !!authToken });
     
     if (!authToken) {
@@ -329,6 +355,12 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
 
       if (category === 'bills') {
         formData.append('billingType', 'Medical Bill');
+        if (billMeta) {
+          formData.append('totalAmount', billMeta.totalAmount || '0');
+          formData.append('facilityName', billMeta.facilityName || '');
+          formData.append('dateOfService', billMeta.dateOfService || '');
+          formData.append('description', billMeta.description || '');
+        }
       } else {
         formData.append('recordType', 'Medical Record');
       }
@@ -830,6 +862,76 @@ const MedicalHubScreen = ({ onNavigate, onUploadMedicalDocument, medicalHubUploa
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={showBillModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => { setShowBillModal(false); setPendingBillFile(null); setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' }); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { width: isDesktop ? 440 : isTablet ? 400 : width * 0.92 }]}>
+            <Text style={styles.modalTitle}>Bill Details</Text>
+            <Text style={styles.modalDescription}>
+              Enter the bill information below. Bill total is required.
+            </Text>
+            {pendingBillFile && (
+              <View style={{ backgroundColor: '#f0f4f8', padding: 10, borderRadius: 8, marginBottom: 12 }}>
+                <Text style={{ fontSize: 13, color: '#555' }}>Selected: {pendingBillFile.name || pendingBillFile.fileName || 'File selected'}</Text>
+              </View>
+            )}
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4 }}>Bill Total Amount *</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+              placeholder="$0.00"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={billFormData.totalAmount}
+              onChangeText={(text) => setBillFormData(prev => ({ ...prev, totalAmount: text.replace(/[^0-9.]/g, '') }))}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4 }}>Facility / Provider Name</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+              placeholder="e.g. City Hospital"
+              placeholderTextColor="#999"
+              value={billFormData.facilityName}
+              onChangeText={(text) => setBillFormData(prev => ({ ...prev, facilityName: text }))}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4 }}>Date of Service</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
+              placeholder="MM/DD/YYYY"
+              placeholderTextColor="#999"
+              value={billFormData.dateOfService}
+              onChangeText={(text) => setBillFormData(prev => ({ ...prev, dateOfService: text }))}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 4 }}>Description</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9', minHeight: 60 }}
+              placeholder="Optional notes about this bill"
+              placeholderTextColor="#999"
+              multiline
+              value={billFormData.description}
+              onChangeText={(text) => setBillFormData(prev => ({ ...prev, description: text }))}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
+                onPress={() => { setShowBillModal(false); setPendingBillFile(null); setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' }); }}
+              >
+                <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ padding: 12, borderRadius: 8, backgroundColor: '#8B6914', minWidth: 120, alignItems: 'center', opacity: !billFormData.totalAmount ? 0.5 : 1 }}
+                disabled={!billFormData.totalAmount}
+                onPress={handleBillUploadWithDetails}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Upload Bill</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       <Modal
