@@ -216,7 +216,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 onPress={() => onNavigate && onNavigate('lawfirm-activity-dashboard')}
               >
                 <Text style={styles.quickActionIcon}>📊</Text>
-                <Text style={styles.quickActionText}>User Activity Logs</Text>
+                <Text style={styles.quickActionText}>Activity Logs</Text>
               </TouchableOpacity>
             </View>
             
@@ -226,7 +226,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 onPress={() => onNavigate && onNavigate('lawfirm-negotiations')}
               >
                 <Text style={styles.quickActionIcon}>💰</Text>
-                <Text style={styles.quickActionText}>Bill Negotiations</Text>
+                <Text style={styles.quickActionText}>Negotiations</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -244,7 +244,15 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 onPress={() => setClientTrackingModalVisible(true)}
               >
                 <Text style={styles.quickActionIcon}>📍</Text>
-                <Text style={styles.quickActionText}>Client Tracking</Text>
+                <Text style={styles.quickActionText}>Tracking</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.quickActionButton}
+                onPress={() => setConnectionsModalVisible(true)}
+              >
+                <Text style={styles.quickActionIcon}>🔗</Text>
+                <Text style={styles.quickActionText}>Connections</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -537,25 +545,11 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity 
-        style={styles.disbursementCTA} 
-        onPress={handleNavigateToDisbursements}
-      >
-        <View style={styles.disbursementCTAContent}>
-          <Text style={styles.disbursementCTAIcon}>💰</Text>
-          <View style={styles.disbursementCTATextContainer}>
-            <Text style={styles.disbursementCTATitle}>Settlement Disbursements</Text>
-            <Text style={styles.disbursementCTASubtitle}>Send payments to clients & medical providers</Text>
-          </View>
-          <Text style={styles.disbursementCTAArrow}>→</Text>
-        </View>
-      </TouchableOpacity>
-
       <View style={styles.tabBar}>
         {renderTabButton('clients', 'Clients', '👥')}
         {renderTabButton('analytics', 'Analytics', '📊')}
-        {renderTabButton('notifications', 'Notifications', '🔔')}
-        {renderTabButton('subscription', 'Subscription', '💳')}
+        {renderTabButton('notifications', 'Alerts', '🔔')}
+        {renderTabButton('subscription', 'Plan', '💳')}
         {renderTabButton('settings', 'Settings', '⚙️')}
       </View>
 
@@ -570,13 +564,6 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         {activeTab === 'notifications' && renderNotificationsTab()}
         {activeTab === 'subscription' && <LawFirmSubscriptionScreen token={user.token} />}
         {activeTab === 'settings' && <SettingsScreen user={user} onBack={() => setActiveTab('clients')} />}
-
-        <TouchableOpacity 
-          style={styles.connectionsButton} 
-          onPress={() => setConnectionsModalVisible(true)}
-        >
-          <Text style={styles.connectionsButtonText}>My Connections</Text>
-        </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutText}>Sign Out</Text>
