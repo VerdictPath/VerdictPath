@@ -101,12 +101,11 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
 
   const [clients, setClients] = useState([]);
   const [selectedClients, setSelectedClients] = useState([]);
-  const [selectedTaskType, setSelectedTaskType] = useState(null);
-  const [taskDescription, setTaskDescription] = useState('');
+  const [selectedTaskTypes, setSelectedTaskTypes] = useState([]);
+  const [taskDescriptions, setTaskDescriptions] = useState({});
   const [taskPriority, setTaskPriority] = useState('medium');
   const [taskDueDate, setTaskDueDate] = useState('');
   const [taskCoinsReward, setTaskCoinsReward] = useState('50');
-  const [additionalNotes, setAdditionalNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,9 +153,41 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
     }
   };
 
-  const handleTaskTypeSelect = (taskType) => {
-    setSelectedTaskType(taskType);
-    setTaskDescription(taskType.defaultDescription);
+  const toggleTaskTypeSelection = (taskType) => {
+    setSelectedTaskTypes(prev => {
+      const isAlreadySelected = prev.some(t => t.id === taskType.id);
+      if (isAlreadySelected) {
+        const updated = prev.filter(t => t.id !== taskType.id);
+        setTaskDescriptions(descs => {
+          const newDescs = { ...descs };
+          delete newDescs[taskType.id];
+          return newDescs;
+        });
+        return updated;
+      } else {
+        setTaskDescriptions(descs => ({
+          ...descs,
+          [taskType.id]: taskType.defaultDescription,
+        }));
+        return [...prev, taskType];
+      }
+    });
+  };
+
+  const selectAllTaskTypes = () => {
+    if (selectedTaskTypes.length === TASK_TYPES.length) {
+      setSelectedTaskTypes([]);
+      setTaskDescriptions({});
+    } else {
+      setSelectedTaskTypes([...TASK_TYPES]);
+      const descs = {};
+      TASK_TYPES.forEach(t => { descs[t.id] = t.defaultDescription; });
+      setTaskDescriptions(descs);
+    }
+  };
+
+  const updateTaskDescription = (taskTypeId, text) => {
+    setTaskDescriptions(prev => ({ ...prev, [taskTypeId]: text }));
   };
 
   const toggleClientSelection = (clientId) => {
@@ -187,68 +218,74 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
     });
   };
 
-  const handleAssignTask = async () => {
+  const handleAssignTasks = async () => {
     if (selectedClients.length === 0) {
       alert('Error', 'Please select at least one client');
       return;
     }
-    if (!selectedTaskType) {
-      alert('Error', 'Please select a task type');
+    if (selectedTaskTypes.length === 0) {
+      alert('Error', 'Please select at least one task type');
       return;
     }
-    if (selectedTaskType.id === 'other' && !taskDescription.trim()) {
-      alert('Error', 'Please enter a task description');
+    const otherTask = selectedTaskTypes.find(t => t.id === 'other');
+    if (otherTask && !(taskDescriptions['other'] || '').trim()) {
+      alert('Error', 'Please enter a description for the "Other" task');
       return;
     }
 
     try {
       setIsSending(true);
 
-      const taskPromises = selectedClients.map(clientId =>
-        apiRequest(API_ENDPOINTS.TASKS.CREATE, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${user.token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            clientId,
-            taskTitle: selectedTaskType.title,
-            taskDescription: taskDescription || selectedTaskType.defaultDescription,
-            taskType: selectedTaskType.id,
-            priority: taskPriority,
-            dueDate: taskDueDate || null,
-            coinsReward: parseInt(taskCoinsReward) || 0,
-            actionUrl: `verdictpath://${selectedTaskType.actionScreen}`,
-            sendNotification: true,
-          }),
-        })
-      );
+      const taskPromises = [];
+      for (const taskType of selectedTaskTypes) {
+        for (const clientId of selectedClients) {
+          taskPromises.push(
+            apiRequest(API_ENDPOINTS.TASKS.CREATE, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${user.token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                clientId,
+                taskTitle: taskType.title,
+                taskDescription: taskDescriptions[taskType.id] || taskType.defaultDescription,
+                taskType: taskType.id,
+                priority: taskPriority,
+                dueDate: taskDueDate || null,
+                coinsReward: parseInt(taskCoinsReward) || 0,
+                actionUrl: `verdictpath://${taskType.actionScreen}`,
+                sendNotification: true,
+              }),
+            })
+          );
+        }
+      }
 
       const results = await Promise.all(taskPromises);
       const successCount = results.filter(r => r && !r.error).length;
+      const totalExpected = selectedTaskTypes.length * selectedClients.length;
 
       alert(
-        'Task Assigned',
-        `Task "${selectedTaskType.title}" assigned to ${successCount} client(s) successfully.`,
+        'Tasks Assigned',
+        `${successCount} of ${totalExpected} task${totalExpected !== 1 ? 's' : ''} assigned successfully.\n\n${selectedTaskTypes.length} task type${selectedTaskTypes.length !== 1 ? 's' : ''} sent to ${selectedClients.length} client${selectedClients.length !== 1 ? 's' : ''}.`,
         [
           {
             text: 'OK',
             onPress: () => {
               setSelectedClients([]);
-              setSelectedTaskType(null);
-              setTaskDescription('');
+              setSelectedTaskTypes([]);
+              setTaskDescriptions({});
               setTaskPriority('medium');
               setTaskDueDate('');
               setTaskCoinsReward('50');
-              setAdditionalNotes('');
             },
           },
         ]
       );
     } catch (error) {
-      console.error('Error assigning task:', error);
-      alert('Error', 'Failed to assign task. Please try again.');
+      console.error('Error assigning tasks:', error);
+      alert('Error', 'Failed to assign tasks. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -269,7 +306,7 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Assign Task</Text>
+          <Text style={styles.headerTitle}>Assign Tasks</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
@@ -281,6 +318,7 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
   }
 
   const filteredClients = getFilteredClients();
+  const totalTasks = selectedTaskTypes.length * selectedClients.length;
 
   return (
     <View style={styles.container}>
@@ -288,7 +326,7 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Assign Task</Text>
+        <Text style={styles.headerTitle}>Assign Tasks</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -373,15 +411,29 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select Task Type</Text>
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Select Task Type(s)</Text>
+              <TouchableOpacity onPress={selectAllTaskTypes} style={styles.selectAllTasksBtn}>
+                <Text style={styles.selectAllTasksBtnText}>
+                  {selectedTaskTypes.length === TASK_TYPES.length ? 'Deselect All' : 'Select All'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {selectedTaskTypes.length > 0 && (
+              <View style={styles.taskCountBadge}>
+                <Text style={styles.taskCountBadgeText}>
+                  {selectedTaskTypes.length} task type{selectedTaskTypes.length !== 1 ? 's' : ''} selected
+                </Text>
+              </View>
+            )}
             <View style={styles.taskTypeGrid}>
               {TASK_TYPES.map(taskType => {
-                const isSelected = selectedTaskType?.id === taskType.id;
+                const isSelected = selectedTaskTypes.some(t => t.id === taskType.id);
                 return (
                   <TouchableOpacity
                     key={taskType.id}
                     style={[styles.taskTypeCard, isSelected && styles.taskTypeCardSelected]}
-                    onPress={() => handleTaskTypeSelect(taskType)}
+                    onPress={() => toggleTaskTypeSelection(taskType)}
                   >
                     <Text style={styles.taskTypeIcon}>{taskType.icon}</Text>
                     <Text style={[styles.taskTypeTitle, isSelected && styles.taskTypeTitleSelected]}>{taskType.title}</Text>
@@ -397,37 +449,31 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
             </View>
           </View>
 
-          {selectedTaskType && (
+          {selectedTaskTypes.length > 0 && (
             <>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Task Details</Text>
-                <Text style={styles.fieldLabel}>Description</Text>
-                <TextInput
-                  style={styles.textArea}
-                  placeholder="Enter task details for the client..."
-                  placeholderTextColor={theme.lawFirm.textLight}
-                  value={taskDescription}
-                  onChangeText={setTaskDescription}
-                  multiline
-                  numberOfLines={4}
-                  textAlignVertical="top"
-                />
-
-                {selectedTaskType.id === 'other' && (
-                  <>
-                    <Text style={styles.fieldLabel}>Additional Notes</Text>
+                <Text style={styles.sectionTitle}>Task Descriptions</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Edit the message each client will see for each task
+                </Text>
+                {selectedTaskTypes.map(taskType => (
+                  <View key={taskType.id} style={styles.taskDescriptionCard}>
+                    <View style={styles.taskDescriptionHeader}>
+                      <Text style={styles.taskDescriptionIcon}>{taskType.icon}</Text>
+                      <Text style={styles.taskDescriptionTitle}>{taskType.title}</Text>
+                    </View>
                     <TextInput
                       style={styles.textArea}
-                      placeholder="Any additional instructions..."
+                      placeholder={taskType.id === 'other' ? 'Enter task details...' : 'Edit description...'}
                       placeholderTextColor={theme.lawFirm.textLight}
-                      value={additionalNotes}
-                      onChangeText={setAdditionalNotes}
+                      value={taskDescriptions[taskType.id] || ''}
+                      onChangeText={(text) => updateTaskDescription(taskType.id, text)}
                       multiline
                       numberOfLines={3}
                       textAlignVertical="top"
                     />
-                  </>
-                )}
+                  </View>
+                ))}
               </View>
 
               <View style={styles.section}>
@@ -486,7 +532,7 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
                     )}
                   </View>
                   <View style={styles.fieldHalf}>
-                    <Text style={styles.fieldLabel}>Coin Reward</Text>
+                    <Text style={styles.fieldLabel}>Coin Reward (per task)</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="50"
@@ -500,14 +546,22 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
               </View>
 
               <View style={styles.summarySection}>
-                <Text style={styles.summaryTitle}>Task Summary</Text>
+                <Text style={styles.summaryTitle}>Assignment Summary</Text>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Task:</Text>
-                  <Text style={styles.summaryValue}>{selectedTaskType.title}</Text>
+                  <Text style={styles.summaryLabel}>Tasks:</Text>
+                  <Text style={styles.summaryValue}>
+                    {selectedTaskTypes.map(t => t.title).join(', ')}
+                  </Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Clients:</Text>
                   <Text style={styles.summaryValue}>{selectedClients.length} selected</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Total tasks:</Text>
+                  <Text style={[styles.summaryValue, styles.summaryHighlight]}>
+                    {totalTasks} ({selectedTaskTypes.length} type{selectedTaskTypes.length !== 1 ? 's' : ''} × {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''})
+                  </Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Priority:</Text>
@@ -522,21 +576,21 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
                   </View>
                 ) : null}
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Reward:</Text>
+                  <Text style={styles.summaryLabel}>Reward per task:</Text>
                   <Text style={styles.summaryValue}>{taskCoinsReward || '0'} coins</Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={[styles.assignButton, (isSending || selectedClients.length === 0) && styles.assignButtonDisabled]}
-                onPress={handleAssignTask}
-                disabled={isSending || selectedClients.length === 0}
+                style={[styles.assignButton, (isSending || selectedClients.length === 0 || selectedTaskTypes.length === 0) && styles.assignButtonDisabled]}
+                onPress={handleAssignTasks}
+                disabled={isSending || selectedClients.length === 0 || selectedTaskTypes.length === 0}
               >
                 {isSending ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.assignButtonText}>
-                    Assign Task to {selectedClients.length} Client{selectedClients.length !== 1 ? 's' : ''}
+                    Assign {totalTasks} Task{totalTasks !== 1 ? 's' : ''} to {selectedClients.length} Client{selectedClients.length !== 1 ? 's' : ''}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -606,11 +660,48 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: theme.lawFirm.text,
+    marginBottom: 0,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: theme.lawFirm.textSecondary,
     marginBottom: 12,
+  },
+  selectAllTasksBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+  },
+  selectAllTasksBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.lawFirm.primary,
+  },
+  taskCountBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(30, 58, 95, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  taskCountBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.lawFirm.primary,
   },
   recipientSelector: {
     flexDirection: 'row',
@@ -798,6 +889,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  taskDescriptionCard: {
+    backgroundColor: theme.lawFirm.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.lawFirm.border,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  taskDescriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.lawFirm.border,
+    backgroundColor: theme.lawFirm.surfaceAlt,
+  },
+  taskDescriptionIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  taskDescriptionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.lawFirm.text,
+  },
   fieldLabel: {
     fontSize: 13,
     fontWeight: '600',
@@ -806,15 +922,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   textArea: {
-    backgroundColor: theme.lawFirm.surface,
-    borderWidth: 1,
-    borderColor: theme.lawFirm.border,
-    borderRadius: 10,
     padding: 14,
     fontSize: 14,
     color: theme.lawFirm.text,
-    minHeight: 100,
-    marginBottom: 10,
+    minHeight: 80,
   },
   input: {
     backgroundColor: theme.lawFirm.surfaceAlt,
@@ -880,11 +991,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.lawFirm.textSecondary,
     fontWeight: '500',
+    flexShrink: 0,
+    marginRight: 8,
   },
   summaryValue: {
     fontSize: 13,
     color: theme.lawFirm.text,
     fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  summaryHighlight: {
+    color: theme.lawFirm.primary,
+    fontWeight: '700',
   },
   priorityBadge: {
     paddingHorizontal: 10,
