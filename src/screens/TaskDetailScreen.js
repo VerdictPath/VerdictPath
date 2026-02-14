@@ -80,9 +80,6 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
       if (newStatus === 'completed') {
         setCompletionData(data);
         setJustCompleted(true);
-        if (onTaskUpdated) {
-          onTaskUpdated();
-        }
       } else if (newStatus === 'in_progress') {
         alert('Success', 'Your attorney has been notified that you\'re working on this task.');
         if (onTaskUpdated) {
@@ -180,7 +177,12 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
 
                 <TouchableOpacity
                   style={styles.backToTasksButton}
-                  onPress={() => onNavigate('actions')}
+                  onPress={() => {
+                    if (onTaskUpdated) {
+                      onTaskUpdated();
+                    }
+                    onNavigate('actions');
+                  }}
                 >
                   <Text style={[styles.backToTasksButtonText, { fontSize: isDesktop ? 18 : 16 }]}>
                     Back to Tasks
