@@ -258,21 +258,16 @@ const CalendarScreen = ({ user, onBack }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.homeButton}>
-          <Text style={styles.navIcon}>🏠</Text>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📅 Calendar</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            style={styles.addButton}
-          >
-            <Text style={styles.addButtonText}>+ Add</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onBack} style={styles.minimizeButton}>
-            <Text style={styles.navIcon}>◀️</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Calendar</Text>
+        <TouchableOpacity
+          onPress={() => setShowAddModal(true)}
+          style={styles.addButton}
+        >
+          <Text style={styles.addButtonText}>+ Add Event</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.filterContainer}>
@@ -441,40 +436,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.primary,
-    borderBottomWidth: 2,
-    borderBottomColor: '#8B4513',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#1E3A5F',
+    borderBottomWidth: 1,
+    borderBottomColor: '#16304D',
   },
-  homeButton: {
-    padding: 8,
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  minimizeButton: {
-    padding: 8,
-  },
-  navIcon: {
-    fontSize: 24,
+  backButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   addButton: {
-    backgroundColor: '#2ECC71',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: '#D4A843',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   addButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   filterContainer: {
     backgroundColor: '#FFFFFF',
