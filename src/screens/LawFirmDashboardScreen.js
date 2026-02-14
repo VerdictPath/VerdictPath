@@ -531,10 +531,10 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.firmInfo}>
-          <Text style={styles.firmName}>{firmData?.firmName || 'Law Firm Portal'}</Text>
+          <Text style={styles.firmName}>{firmData?.firmName || user?.firmName || 'Law Firm Portal'}</Text>
           <View style={styles.firmCodeBadge}>
             <Text style={styles.firmCodeLabel}>Firm Code:</Text>
-            <Text style={styles.firmCodeValue}>{firmData?.firmCode || '...'}</Text>
+            <Text style={styles.firmCodeValue}>{firmData?.firmCode || user?.firmCode || '...'}</Text>
           </View>
         </View>
         <TouchableOpacity 
