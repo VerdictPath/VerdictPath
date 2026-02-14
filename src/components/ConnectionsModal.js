@@ -138,6 +138,35 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     }
   };
 
+  const handleDisconnectLawFirm = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/disconnect-lawfirm`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Success', data.message || 'Law firm disconnected successfully');
+        setLawFirmCode('');
+        fetchCurrentConnections();
+        if (onConnectionsUpdated) onConnectionsUpdated();
+      } else {
+        alert('Error', data.error || 'Failed to disconnect from law firm');
+      }
+    } catch (error) {
+      console.error('Error disconnecting law firm:', error);
+      alert('Error', 'Failed to disconnect from law firm');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRemoveMedicalProvider = async (providerId) => {
     try {
       setSaving(true);
@@ -233,9 +262,29 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         <Text style={styles.sectionTitle}>⚖️ Law Firm Connection</Text>
         {currentConnections?.lawFirm ? (
           <View style={styles.currentConnection}>
-            <Text style={styles.connectedLabel}>Currently Connected:</Text>
-            <Text style={styles.connectedName}>{currentConnections.lawFirm.firm_name || currentConnections.lawFirm.email}</Text>
-            <Text style={styles.connectedEmail}>{currentConnections.lawFirm.email}</Text>
+            <View style={styles.connectionRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.connectedLabel}>Currently Connected:</Text>
+                <Text style={styles.connectedName}>{currentConnections.lawFirm.firm_name || currentConnections.lawFirm.email}</Text>
+                <Text style={styles.connectedEmail}>{currentConnections.lawFirm.email}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.disconnectButton}
+                onPress={() => {
+                  alert(
+                    'Disconnect Law Firm',
+                    `Are you sure you want to disconnect from ${currentConnections.lawFirm.firm_name || currentConnections.lawFirm.email}?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Disconnect', style: 'destructive', onPress: handleDisconnectLawFirm }
+                    ]
+                  );
+                }}
+                disabled={saving}
+              >
+                <Text style={styles.disconnectButtonText}>Disconnect</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <View style={styles.emptyConnectionCard}>
@@ -644,6 +693,22 @@ const styles = StyleSheet.create({
   providerEmail: {
     fontSize: 13,
     color: theme.colors.textSecondary,
+  },
+  connectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  disconnectButton: {
+    backgroundColor: '#e74c3c',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  disconnectButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   removeButton: {
     backgroundColor: '#e74c3c',

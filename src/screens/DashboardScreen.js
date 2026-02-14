@@ -246,6 +246,7 @@ const DashboardScreen = ({
         visible={connectionsModalVisible}
         onClose={handleConnectionsClose}
         user={user}
+        onConnectionsUpdated={fetchConnections}
       />
     </View>
   );

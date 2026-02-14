@@ -129,10 +129,82 @@ async function ensureTablesExist() {
       console.log('✅ password_reset_tokens table created');
     }
     
+    await seedRolePermissions();
+    
     console.log('✅ Database schema check complete');
     
   } catch (error) {
     console.error('⚠️ Database migration warning:', error.message);
+  }
+}
+
+async function seedRolePermissions() {
+  try {
+    const existing = await db.query('SELECT COUNT(*) as count FROM role_permissions');
+    if (parseInt(existing.rows[0].count) > 0) return;
+
+    const rolePermissions = {
+      'LAW_FIRM_ADMIN': [
+        'VIEW_CLIENT_PHI', 'EDIT_CLIENT_PHI',
+        'VIEW_LITIGATION', 'EDIT_LITIGATION', 'MANAGE_LITIGATION',
+        'VIEW_MEDICAL_RECORDS', 'EDIT_MEDICAL_RECORDS', 'UPLOAD_MEDICAL_RECORDS', 'DELETE_MEDICAL_RECORDS',
+        'VIEW_BILLING', 'EDIT_BILLING', 'UPLOAD_BILLING',
+        'MANAGE_CONSENT', 'OVERRIDE_CONSENT',
+        'VIEW_AUDIT_LOGS', 'VIEW_ALL_AUDIT_LOGS',
+        'MANAGE_FIRM_USERS',
+        'SEND_NOTIFICATIONS', 'VIEW_NOTIFICATION_HISTORY', 'MANAGE_NOTIFICATION_TEMPLATES', 'VIEW_NOTIFICATION_ANALYTICS',
+        'CREATE_TASKS', 'ASSIGN_TASKS', 'VIEW_TASKS', 'COMPLETE_TASKS', 'MANAGE_TASK_TEMPLATES', 'VIEW_TASK_ANALYTICS'
+      ],
+      'LAW_FIRM_STAFF': [
+        'VIEW_CLIENT_PHI', 'VIEW_LITIGATION', 'VIEW_MEDICAL_RECORDS', 'VIEW_BILLING',
+        'VIEW_AUDIT_LOGS', 'VIEW_NOTIFICATION_HISTORY', 'VIEW_TASKS', 'COMPLETE_TASKS'
+      ],
+      'MEDICAL_PROVIDER_ADMIN': [
+        'VIEW_PATIENT_PHI', 'EDIT_PATIENT_PHI',
+        'VIEW_MEDICAL_RECORDS', 'EDIT_MEDICAL_RECORDS', 'UPLOAD_MEDICAL_RECORDS', 'DELETE_MEDICAL_RECORDS',
+        'VIEW_BILLING', 'EDIT_BILLING', 'UPLOAD_BILLING',
+        'MANAGE_CONSENT',
+        'VIEW_AUDIT_LOGS', 'VIEW_ALL_AUDIT_LOGS',
+        'MANAGE_PROVIDER_USERS',
+        'SEND_NOTIFICATIONS', 'VIEW_NOTIFICATION_HISTORY', 'MANAGE_NOTIFICATION_TEMPLATES', 'VIEW_NOTIFICATION_ANALYTICS',
+        'VIEW_TASKS'
+      ],
+      'MEDICAL_PROVIDER_STAFF': [
+        'VIEW_PATIENT_PHI', 'VIEW_MEDICAL_RECORDS', 'VIEW_BILLING',
+        'VIEW_AUDIT_LOGS', 'VIEW_NOTIFICATION_HISTORY', 'VIEW_TASKS'
+      ],
+      'CLIENT': [
+        'VIEW_OWN_PHI', 'EDIT_OWN_PHI',
+        'VIEW_MEDICAL_RECORDS', 'UPLOAD_MEDICAL_RECORDS',
+        'VIEW_BILLING', 'VIEW_LITIGATION', 'MANAGE_CONSENT',
+        'VIEW_AUDIT_LOGS', 'VIEW_TASKS', 'COMPLETE_TASKS'
+      ],
+      'SYSTEM_ADMIN': [
+        'VIEW_CLIENT_PHI', 'EDIT_CLIENT_PHI', 'VIEW_PATIENT_PHI', 'EDIT_PATIENT_PHI',
+        'VIEW_OWN_PHI', 'EDIT_OWN_PHI',
+        'VIEW_LITIGATION', 'EDIT_LITIGATION', 'MANAGE_LITIGATION',
+        'VIEW_MEDICAL_RECORDS', 'EDIT_MEDICAL_RECORDS', 'UPLOAD_MEDICAL_RECORDS', 'DELETE_MEDICAL_RECORDS',
+        'VIEW_BILLING', 'EDIT_BILLING', 'UPLOAD_BILLING',
+        'MANAGE_CONSENT', 'OVERRIDE_CONSENT',
+        'VIEW_AUDIT_LOGS', 'VIEW_ALL_AUDIT_LOGS',
+        'MANAGE_FIRM_USERS', 'MANAGE_PROVIDER_USERS', 'MANAGE_SYSTEM_USERS',
+        'SEND_NOTIFICATIONS', 'VIEW_NOTIFICATION_HISTORY', 'MANAGE_NOTIFICATION_TEMPLATES', 'VIEW_NOTIFICATION_ANALYTICS',
+        'CREATE_TASKS', 'ASSIGN_TASKS', 'VIEW_TASKS', 'COMPLETE_TASKS', 'MANAGE_TASK_TEMPLATES', 'VIEW_TASK_ANALYTICS'
+      ]
+    };
+
+    for (const [roleName, permissions] of Object.entries(rolePermissions)) {
+      await db.query(
+        `INSERT INTO role_permissions (role_id, permission_id)
+         SELECT r.id, p.id FROM roles r, permissions p
+         WHERE r.name = $1 AND p.name = ANY($2::text[])
+         ON CONFLICT DO NOTHING`,
+        [roleName, permissions]
+      );
+    }
+    console.log('✅ Role permissions seeded');
+  } catch (error) {
+    console.error('⚠️ Role permissions seeding warning:', error.message);
   }
 }
 
