@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, TextInput, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 import alert from '../utils/alert';
@@ -334,6 +334,16 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     </ScrollView>
   );
 
+  const handleOverlayPress = useCallback((e) => {
+    if (Platform.OS === 'web') {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  }, [onClose]);
+
   return (
     <Modal
       visible={visible}
@@ -343,11 +353,12 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     >
       <Pressable 
         style={styles.overlay} 
-        onPress={onClose}
+        onPress={handleOverlayPress}
       >
-        <Pressable 
-          style={styles.modalContainer} 
-          onPress={(e) => e.stopPropagation()}
+        <View 
+          style={styles.modalContainer}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={(e) => e.stopPropagation()}
         >
           <View style={styles.header}>
             <Text style={styles.title}>My Connections</Text>
@@ -366,7 +377,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           ) : (
             renderAddForm()
           )}
-        </Pressable>
+        </View>
       </Pressable>
     </Modal>
   );
