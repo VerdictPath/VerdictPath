@@ -327,7 +327,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
                 return (
                   <View key={clientId} style={styles.clientTag}>
                     <Text style={styles.clientTagText} numberOfLines={1}>
-                      {client.first_name} {client.last_name}
+                      {client.firstName || client.first_name} {client.lastName || client.last_name}
                     </Text>
                     <TouchableOpacity
                       style={styles.clientTagRemove}
@@ -390,8 +390,8 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
                   clients.filter(client => {
                     if (!searchQuery.trim()) return true;
                     const query = searchQuery.toLowerCase();
-                    const fullName = `${client.first_name} ${client.last_name}`.toLowerCase();
-                    const email = client.email.toLowerCase();
+                    const fullName = `${client.firstName || client.first_name || ''} ${client.lastName || client.last_name || ''}`.toLowerCase();
+                    const email = (client.email || '').toLowerCase();
                     return fullName.includes(query) || email.includes(query);
                   }).map(client => (
                     <TouchableOpacity
@@ -406,7 +406,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
                       </View>
                       <View style={styles.dropdownClientInfo}>
                         <Text style={styles.dropdownClientName}>
-                          {client.first_name} {client.last_name}
+                          {client.firstName || client.first_name} {client.lastName || client.last_name}
                         </Text>
                         <Text style={styles.dropdownClientEmail}>{client.email}</Text>
                       </View>
