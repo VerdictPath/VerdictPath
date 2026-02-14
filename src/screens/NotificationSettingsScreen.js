@@ -106,7 +106,7 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
         });
         setCCEmailInput(autoFilledEmail);
         if (!savedEmail && autoFilledEmail) {
-          updateEmailCCPreferences({ ccEmailAddress: autoFilledEmail });
+          updateEmailCCPreferences({ ccEmailAddress: autoFilledEmail }, true);
         }
       }
     } catch (error) {
@@ -114,9 +114,9 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     }
   };
 
-  const updateEmailCCPreferences = async (updates) => {
+  const updateEmailCCPreferences = async (updates, silent = false) => {
     try {
-      setSaving(true);
+      if (!silent) setSaving(true);
       
       const snakeCaseUpdates = {};
       Object.keys(updates).forEach(key => {
@@ -136,13 +136,13 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
       if (response.ok) {
         setEmailCCPrefs(prev => ({ ...prev, ...updates }));
       } else {
-        alert('Error', 'Failed to update email CC settings');
+        if (!silent) alert('Error', 'Failed to update email CC settings');
       }
     } catch (error) {
       console.error('Error updating email CC preferences:', error);
-      alert('Error', 'Failed to save email CC settings');
+      if (!silent) alert('Error', 'Failed to save email CC settings');
     } finally {
-      setSaving(false);
+      if (!silent) setSaving(false);
     }
   };
 
