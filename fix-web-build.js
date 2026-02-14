@@ -37,4 +37,32 @@ if (fs.existsSync(indexPath)) {
   console.log('⚠ Could not find index.html in dist/');
 }
 
-console.log('✅ Web build paths fixed!');
+function copyDirSync(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  const jsWebDir = path.join(dest, '_expo', 'static', 'js', 'web');
+  if (fs.existsSync(jsWebDir)) {
+    const oldBundles = fs.readdirSync(jsWebDir).filter(f => f.startsWith('AppEntry-') && f.endsWith('.js'));
+    oldBundles.forEach(f => {
+      fs.unlinkSync(path.join(jsWebDir, f));
+      console.log(`✓ Removed old bundle: ${f}`);
+    });
+  }
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+console.log('Copying build files to backend/public/app...');
+copyDirSync(distDir, buildDir);
+console.log('✅ Web build deployed to backend/public/app!');
