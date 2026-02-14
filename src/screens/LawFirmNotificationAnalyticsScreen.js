@@ -45,21 +45,41 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 };
 
-const getStatusColor = (status) => {
+const getNotificationStatusColor = (status) => {
   switch (status) {
-    case 'clicked': return '#9b59b6';
+    case 'responded': return '#27ae60';
     case 'read': return '#3498db';
-    case 'delivered': return '#27ae60';
-    default: return '#95a5a6';
+    case 'delivered': return '#95a5a6';
+    default: return '#bdc3c7';
   }
 };
 
-const getStatusIcon = (status) => {
+const getNotificationStatusIcon = (status) => {
   switch (status) {
-    case 'clicked': return '🖱';
+    case 'responded': return '💬';
     case 'read': return '👁';
     case 'delivered': return '✓';
     default: return '📤';
+  }
+};
+
+const getTaskStatusColor = (status) => {
+  switch (status) {
+    case 'completed': return '#27ae60';
+    case 'in_progress': return '#3498db';
+    case 'pending': return '#e67e22';
+    case 'cancelled': return '#95a5a6';
+    default: return '#bdc3c7';
+  }
+};
+
+const getTaskStatusIcon = (status) => {
+  switch (status) {
+    case 'completed': return '✅';
+    case 'in_progress': return '🔄';
+    case 'pending': return '⏳';
+    case 'cancelled': return '❌';
+    default: return '📋';
   }
 };
 
@@ -74,6 +94,16 @@ const getTypeIcon = (type) => {
   }
 };
 
+const getPriorityConfig = (priority) => {
+  switch (priority) {
+    case 'urgent': return { color: '#e74c3c', label: 'Urgent' };
+    case 'high': return { color: '#e67e22', label: 'High' };
+    case 'medium': return { color: '#3498db', label: 'Medium' };
+    case 'low': return { color: '#95a5a6', label: 'Low' };
+    default: return { color: '#bdc3c7', label: 'Normal' };
+  }
+};
+
 const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +113,7 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('notifications');
 
   // Determine if this is a medical provider user
   const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
@@ -308,6 +339,26 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Tab Selector */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'notifications' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('notifications')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'notifications' && styles.tabButtonTextActive]}>
+            📨 Notifications
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'tasks' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('tasks')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'tasks' && styles.tabButtonTextActive]}>
+            📋 Tasks
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.scrollContent}
         contentContainerStyle={styles.contentContainer}
@@ -319,178 +370,290 @@ const LawFirmNotificationAnalyticsScreen = ({ user, onBack }) => {
           />
         }
       >
-        {/* Overview Stats */}
-        <View style={styles.overviewSection}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{analytics?.totalSent || 0}</Text>
-              <Text style={styles.statLabel}>Total Sent</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: '#9b59b6' }]}>
-                {analytics?.totalClicked || 0}
-              </Text>
-              <Text style={styles.statLabel}>Clicked</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={[styles.statValue, { color: '#3498db' }]}>
-                {analytics?.totalRead || 0}
-              </Text>
-              <Text style={styles.statLabel}>Read</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Engagement Rates */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Engagement Rates</Text>
-          
-          <View style={styles.rateCard}>
-            <View style={styles.rateHeader}>
-              <Text style={styles.rateLabel}>Click Rate</Text>
-              <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalClicked, analytics?.totalSent)}%
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${calculatePercentage(analytics?.totalClicked, analytics?.totalSent)}%`,
-                    backgroundColor: '#9b59b6'
-                  }
-                ]}
-              />
-            </View>
-          </View>
-
-          <View style={styles.rateCard}>
-            <View style={styles.rateHeader}>
-              <Text style={styles.rateLabel}>Read Rate</Text>
-              <Text style={styles.ratePercentage}>
-                {calculatePercentage(analytics?.totalRead, analytics?.totalClicked)}%
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${calculatePercentage(analytics?.totalRead, analytics?.totalClicked)}%`,
-                    backgroundColor: '#3498db'
-                  }
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Individual Notification Items */}
-          {analytics?.recentNotifications && analytics.recentNotifications.length > 0 && (
-            <View style={styles.notificationItemsSection}>
-              <Text style={styles.itemsSectionTitle}>Individual Notifications</Text>
-              <View style={styles.statusLegend}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#95a5a6' }]} />
-                  <Text style={styles.legendText}>Sent</Text>
+        {activeTab === 'notifications' ? (
+          <>
+            {/* Notification Overview Stats */}
+            <View style={styles.overviewSection}>
+              <Text style={styles.sectionTitle}>Notification Overview</Text>
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>{analytics?.totalSent || 0}</Text>
+                  <Text style={styles.statLabel}>Total Sent</Text>
                 </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#9b59b6' }]} />
-                  <Text style={styles.legendText}>Clicked</Text>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statValue, { color: '#3498db' }]}>
+                    {analytics?.totalRead || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Read</Text>
                 </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
-                  <Text style={styles.legendText}>Read</Text>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statValue, { color: '#27ae60' }]}>
+                    {analytics?.totalResponded || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Responded</Text>
                 </View>
               </View>
+            </View>
+
+            {/* Notification Engagement Rates */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Engagement Rates</Text>
               
-              {analytics.recentNotifications.map((notification) => (
-                <View key={notification.id} style={styles.notificationItemCard}>
-                  <View style={styles.notificationItemHeader}>
-                    <View style={styles.notificationTypeIcon}>
-                      <Text style={styles.notificationTypeEmoji}>{getTypeIcon(notification.type)}</Text>
-                    </View>
-                    <View style={styles.notificationItemInfo}>
-                      <Text style={styles.notificationItemTitle} numberOfLines={1}>
-                        {notification.title}
-                      </Text>
-                      <Text style={styles.notificationItemRecipient}>
-                        To: {notification.recipientName}
-                      </Text>
-                    </View>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(notification.status) }]}>
-                      <Text style={styles.statusBadgeText}>
-                        {getStatusIcon(notification.status)} {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
-                      </Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.notificationTimeline}>
-                    <View style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, { backgroundColor: '#95a5a6' }]} />
-                      <View style={styles.timelineContent}>
-                        <Text style={styles.timelineLabel}>Sent</Text>
-                        <Text style={styles.timelineTime}>{formatDate(notification.createdAt)}</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.timelineConnector, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
-                    <View style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, { backgroundColor: notification.clickedAt ? '#9b59b6' : '#e0e0e0' }]} />
-                      <View style={styles.timelineContent}>
-                        <Text style={[styles.timelineLabel, !notification.clickedAt && styles.timelineLabelInactive]}>Clicked</Text>
-                        <Text style={[styles.timelineTime, !notification.clickedAt && styles.timelineTimeInactive]}>
-                          {formatDate(notification.clickedAt)}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
-                    <View style={styles.timelineItem}>
-                      <View style={[styles.timelineDot, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
-                      <View style={styles.timelineContent}>
-                        <Text style={[styles.timelineLabel, !notification.readAt && styles.timelineLabelInactive]}>Read</Text>
-                        <Text style={[styles.timelineTime, !notification.readAt && styles.timelineTimeInactive]}>
-                          {formatDate(notification.readAt)}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
+              <View style={styles.rateCard}>
+                <View style={styles.rateHeader}>
+                  <Text style={styles.rateLabel}>Read Rate</Text>
+                  <Text style={styles.ratePercentage}>
+                    {analytics?.readRate || 0}%
+                  </Text>
                 </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        {/* By Type */}
-        {analytics?.byType && analytics.byType.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>By Notification Type</Text>
-            {analytics.byType.map((item, index) => (
-              <View key={index} style={styles.typeCard}>
-                <View style={styles.typeHeader}>
-                  <Text style={styles.typeLabel}>
-                    {item.notification_type === 'deadline_reminder' ? '⏰ Deadline' :
-                     item.notification_type === 'task_reminder' ? '📋 Task' :
-                     item.notification_type === 'document_request' ? '📄 Document' :
-                     item.notification_type === 'appointment_reminder' ? '📅 Appointment' :
-                     '📢 General'}
-                  </Text>
-                  <Text style={styles.typeCount}>{item.count} sent</Text>
-                </View>
-                <View style={styles.typeStats}>
-                  <Text style={styles.typeStat}>
-                    ✓ {item.delivered || 0} delivered
-                  </Text>
-                  <Text style={styles.typeStat}>
-                    👁 {item.read || 0} read
-                  </Text>
-                  <Text style={styles.typeStat}>
-                    🖱 {item.clicked || 0} clicked
-                  </Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${analytics?.readRate || 0}%`,
+                        backgroundColor: '#3498db'
+                      }
+                    ]}
+                  />
                 </View>
               </View>
-            ))}
-          </View>
+
+              <View style={styles.rateCard}>
+                <View style={styles.rateHeader}>
+                  <Text style={styles.rateLabel}>Response Rate</Text>
+                  <Text style={styles.ratePercentage}>
+                    {analytics?.respondedRate || 0}%
+                  </Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${analytics?.respondedRate || 0}%`,
+                        backgroundColor: '#27ae60'
+                      }
+                    ]}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Recent Notifications */}
+            {analytics?.recentNotifications && analytics.recentNotifications.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Recent Notifications</Text>
+                <View style={styles.statusLegend}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#bdc3c7' }]} />
+                    <Text style={styles.legendText}>Sent</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#3498db' }]} />
+                    <Text style={styles.legendText}>Read</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#27ae60' }]} />
+                    <Text style={styles.legendText}>Responded</Text>
+                  </View>
+                </View>
+                
+                {analytics.recentNotifications.map((notification) => (
+                  <View key={notification.id} style={styles.notificationItemCard}>
+                    <View style={styles.notificationItemHeader}>
+                      <View style={styles.notificationTypeIcon}>
+                        <Text style={styles.notificationTypeEmoji}>{getTypeIcon(notification.type)}</Text>
+                      </View>
+                      <View style={styles.notificationItemInfo}>
+                        <Text style={styles.notificationItemTitle} numberOfLines={1}>
+                          {notification.title}
+                        </Text>
+                        <Text style={styles.notificationItemRecipient}>
+                          To: {notification.recipientName}
+                        </Text>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: getNotificationStatusColor(notification.status) }]}>
+                        <Text style={styles.statusBadgeText}>
+                          {getNotificationStatusIcon(notification.status)} {notification.status.charAt(0).toUpperCase() + notification.status.slice(1)}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.notificationTimeline}>
+                      <View style={styles.timelineItem}>
+                        <View style={[styles.timelineDot, { backgroundColor: '#bdc3c7' }]} />
+                        <View style={styles.timelineContent}>
+                          <Text style={styles.timelineLabel}>Sent</Text>
+                          <Text style={styles.timelineTime}>{formatDate(notification.createdAt)}</Text>
+                        </View>
+                      </View>
+                      <View style={[styles.timelineConnector, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                      <View style={styles.timelineItem}>
+                        <View style={[styles.timelineDot, { backgroundColor: notification.readAt ? '#3498db' : '#e0e0e0' }]} />
+                        <View style={styles.timelineContent}>
+                          <Text style={[styles.timelineLabel, !notification.readAt && styles.timelineLabelInactive]}>Read</Text>
+                          <Text style={[styles.timelineTime, !notification.readAt && styles.timelineTimeInactive]}>
+                            {formatDate(notification.readAt)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={[styles.timelineConnector, { backgroundColor: notification.respondedAt ? '#27ae60' : '#e0e0e0' }]} />
+                      <View style={styles.timelineItem}>
+                        <View style={[styles.timelineDot, { backgroundColor: notification.respondedAt ? '#27ae60' : '#e0e0e0' }]} />
+                        <View style={styles.timelineContent}>
+                          <Text style={[styles.timelineLabel, !notification.respondedAt && styles.timelineLabelInactive]}>Responded</Text>
+                          <Text style={[styles.timelineTime, !notification.respondedAt && styles.timelineTimeInactive]}>
+                            {formatDate(notification.respondedAt)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {(!analytics?.recentNotifications || analytics.recentNotifications.length === 0) && (
+              <View style={styles.emptySection}>
+                <Text style={styles.emptyIcon}>📨</Text>
+                <Text style={styles.emptyTitle}>No Notifications Yet</Text>
+                <Text style={styles.emptyText}>Notifications you send to {isMedicalProvider ? 'patients' : 'clients'} will appear here with tracking info.</Text>
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Task Overview Stats */}
+            <View style={styles.overviewSection}>
+              <Text style={styles.sectionTitle}>Task Overview</Text>
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>{analytics?.taskAnalytics?.totalTasks || 0}</Text>
+                  <Text style={styles.statLabel}>Total Assigned</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statValue, { color: '#27ae60' }]}>
+                    {analytics?.taskAnalytics?.totalCompleted || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Completed</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={[styles.statValue, { color: '#e67e22' }]}>
+                    {analytics?.taskAnalytics?.totalPending || 0}
+                  </Text>
+                  <Text style={styles.statLabel}>Pending</Text>
+                </View>
+              </View>
+              {(analytics?.taskAnalytics?.totalOverdue || 0) > 0 && (
+                <View style={styles.overdueAlert}>
+                  <Text style={styles.overdueAlertText}>
+                    ⚠️ {analytics.taskAnalytics.totalOverdue} overdue task{analytics.taskAnalytics.totalOverdue !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Task Completion Rate */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Completion Rate</Text>
+              <View style={styles.rateCard}>
+                <View style={styles.rateHeader}>
+                  <Text style={styles.rateLabel}>Tasks Completed</Text>
+                  <Text style={styles.ratePercentage}>
+                    {analytics?.taskAnalytics?.completionRate || 0}%
+                  </Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${analytics?.taskAnalytics?.completionRate || 0}%`,
+                        backgroundColor: '#27ae60'
+                      }
+                    ]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.taskStatusBreakdown}>
+                <View style={styles.taskStatusItem}>
+                  <View style={[styles.taskStatusDot, { backgroundColor: '#e67e22' }]} />
+                  <Text style={styles.taskStatusLabel}>Pending</Text>
+                  <Text style={styles.taskStatusCount}>{analytics?.taskAnalytics?.totalPending || 0}</Text>
+                </View>
+                <View style={styles.taskStatusItem}>
+                  <View style={[styles.taskStatusDot, { backgroundColor: '#3498db' }]} />
+                  <Text style={styles.taskStatusLabel}>In Progress</Text>
+                  <Text style={styles.taskStatusCount}>{analytics?.taskAnalytics?.totalInProgress || 0}</Text>
+                </View>
+                <View style={styles.taskStatusItem}>
+                  <View style={[styles.taskStatusDot, { backgroundColor: '#27ae60' }]} />
+                  <Text style={styles.taskStatusLabel}>Completed</Text>
+                  <Text style={styles.taskStatusCount}>{analytics?.taskAnalytics?.totalCompleted || 0}</Text>
+                </View>
+                <View style={styles.taskStatusItem}>
+                  <View style={[styles.taskStatusDot, { backgroundColor: '#95a5a6' }]} />
+                  <Text style={styles.taskStatusLabel}>Cancelled</Text>
+                  <Text style={styles.taskStatusCount}>{analytics?.taskAnalytics?.totalCancelled || 0}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Recent Tasks */}
+            {analytics?.recentTasks && analytics.recentTasks.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Recent Tasks</Text>
+                {analytics.recentTasks.map((task) => {
+                  const priorityConfig = getPriorityConfig(task.priority);
+                  const isOverdue = task.status !== 'completed' && task.status !== 'cancelled' && task.dueDate && new Date(task.dueDate) < new Date();
+                  return (
+                    <View key={task.id} style={[styles.taskItemCard, isOverdue && styles.taskItemOverdue]}>
+                      <View style={styles.taskItemHeader}>
+                        <View style={styles.taskItemLeft}>
+                          <Text style={styles.taskItemIcon}>{getTaskStatusIcon(task.status)}</Text>
+                          <View style={styles.taskItemInfo}>
+                            <Text style={styles.taskItemTitle} numberOfLines={1}>{task.title}</Text>
+                            <Text style={styles.taskItemRecipient}>Assigned to: {task.recipientName}</Text>
+                          </View>
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: getTaskStatusColor(task.status) }]}>
+                          <Text style={styles.statusBadgeText}>
+                            {task.status === 'in_progress' ? 'In Progress' : task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.taskItemMeta}>
+                        <View style={[styles.priorityBadge, { borderColor: priorityConfig.color }]}>
+                          <Text style={[styles.priorityBadgeText, { color: priorityConfig.color }]}>{priorityConfig.label}</Text>
+                        </View>
+                        {task.dueDate && (
+                          <Text style={[styles.taskDueDate, isOverdue && styles.taskDueDateOverdue]}>
+                            {isOverdue ? '⚠️ ' : '📅 '}Due: {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </Text>
+                        )}
+                        <Text style={styles.taskCreatedDate}>
+                          Created: {formatDate(task.createdAt)}
+                        </Text>
+                      </View>
+                      {task.completedAt && (
+                        <Text style={styles.taskCompletedDate}>Completed: {formatDate(task.completedAt)}</Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {(!analytics?.recentTasks || analytics.recentTasks.length === 0) && (
+              <View style={styles.emptySection}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyTitle}>No Tasks Yet</Text>
+                <Text style={styles.emptyText}>Tasks you assign to {isMedicalProvider ? 'patients' : 'clients'} will appear here with completion tracking.</Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -529,6 +692,36 @@ const createStyles = (colors) => StyleSheet.create({
   },
   placeholder: {
     width: 60,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tabButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  tabButtonTextActive: {
+    color: colors.activeText,
   },
   filterContainer: {
     backgroundColor: colors.surface,
@@ -751,38 +944,6 @@ const createStyles = (colors) => StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  typeCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  typeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  typeLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  typeCount: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  typeStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  typeStat: {
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -916,6 +1077,148 @@ const createStyles = (colors) => StyleSheet.create({
     height: 2,
     flex: 0.5,
     marginBottom: 20,
+  },
+  emptySection: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  overdueAlert: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    alignItems: 'center',
+  },
+  overdueAlertText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  taskStatusBreakdown: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  taskStatusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surfaceAlt,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  taskStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  taskStatusLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  taskStatusCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  taskItemCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  taskItemOverdue: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FFFBFB',
+  },
+  taskItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  taskItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 10,
+  },
+  taskItemIcon: {
+    fontSize: 20,
+  },
+  taskItemInfo: {
+    flex: 1,
+  },
+  taskItemTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  taskItemRecipient: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  taskItemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
+    flexWrap: 'wrap',
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  priorityBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  taskDueDate: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  taskDueDateOverdue: {
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  taskCreatedDate: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  taskCompletedDate: {
+    fontSize: 11,
+    color: '#27ae60',
+    fontWeight: '500',
+    marginTop: 6,
   },
 });
 

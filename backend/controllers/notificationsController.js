@@ -2276,14 +2276,80 @@ exports.getNotificationAnalytics = async (req, res) => {
       createdAt: n.created_at,
       deliveredAt: n.delivered_at,
       readAt: n.read_at,
-      clickedAt: n.clicked_at,
-      status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
+      respondedAt: n.clicked_at,
+      status: n.clicked_at ? 'responded' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
     }));
+
+    // Fetch task analytics
+    const taskConditions = [
+      deviceType === 'law_firm' ? 'law_firm_id = $1' : 'medical_provider_id = $1',
+      'created_at >= $2'
+    ];
+    const taskParams = [entityId, startDate];
+
+    if (clientId) {
+      taskConditions.push(`assigned_to_user_id = $${taskParams.length + 1}`);
+      taskParams.push(parseInt(clientId));
+    }
+
+    const taskWhereClause = taskConditions.join(' AND ');
+
+    const taskAnalyticsQuery = `
+      SELECT 
+        COUNT(*) as total_tasks,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) as total_completed,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as total_pending,
+        COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as total_in_progress,
+        COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as total_cancelled,
+        COUNT(CASE WHEN status != 'completed' AND status != 'cancelled' AND due_date IS NOT NULL AND due_date < NOW() THEN 1 END) as total_overdue
+      FROM tasks
+      WHERE ${taskWhereClause}
+    `;
+
+    let taskStats = { total_tasks: 0, total_completed: 0, total_pending: 0, total_in_progress: 0, total_cancelled: 0, total_overdue: 0 };
+    try {
+      const taskResult = await pool.query(taskAnalyticsQuery, taskParams);
+      taskStats = taskResult.rows[0] || taskStats;
+    } catch (e) {
+      console.log('Task analytics query error (table may not exist):', e.message);
+    }
+
+    const recentTasksQuery = `
+      SELECT 
+        t.id, t.title, t.task_type, t.status, t.priority, t.due_date,
+        t.created_at, t.completed_at, t.assigned_to_user_id,
+        u.first_name, u.last_name
+      FROM tasks t
+      LEFT JOIN users u ON t.assigned_to_user_id = u.id
+      WHERE ${taskWhereClause}
+      ORDER BY t.created_at DESC
+      LIMIT 50
+    `;
+
+    let recentTasks = [];
+    try {
+      const recentTasksResult = await pool.query(recentTasksQuery, taskParams);
+      recentTasks = recentTasksResult.rows.map(t => ({
+        id: t.id,
+        title: t.title,
+        taskType: t.task_type,
+        status: t.status,
+        priority: t.priority,
+        dueDate: t.due_date,
+        createdAt: t.created_at,
+        completedAt: t.completed_at,
+        recipientId: t.assigned_to_user_id,
+        recipientName: t.first_name ? `${t.first_name} ${t.last_name}` : 'Unknown',
+      }));
+    } catch (e) {
+      console.log('Recent tasks query error:', e.message);
+    }
 
     const allTimeStats = allTimeResult.rows[0];
     const totalSent = parseInt(stats.total_sent) || 0;
     const totalRead = parseInt(stats.total_read) || 0;
     const totalClicked = parseInt(stats.total_clicked) || 0;
+    const totalResponded = totalClicked;
     const urgentSent = parseInt(stats.is_urgent_count) || 0;
     const urgentRead = parseInt(stats.urgent_read_count) || 0;
     const urgentClicked = parseInt(stats.urgent_clicked_count) || 0;
@@ -2299,6 +2365,9 @@ exports.getNotificationAnalytics = async (req, res) => {
       return `${Math.round(seconds / 86400)}d`;
     };
 
+    const totalTasks = parseInt(taskStats.total_tasks) || 0;
+    const totalCompleted = parseInt(taskStats.total_completed) || 0;
+
     res.json({
       success: true,
       analytics: {
@@ -2306,16 +2375,20 @@ exports.getNotificationAnalytics = async (req, res) => {
         totalDelivered: parseInt(stats.total_delivered) || 0,
         totalRead,
         totalClicked,
+        totalResponded,
         clickRate: totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0,
         readRate: totalSent > 0 ? Math.round((totalRead / totalSent) * 100) : 0,
+        respondedRate: totalSent > 0 ? Math.round((totalResponded / totalSent) * 100) : 0,
         avgTimeToClick: formatTime(parseFloat(stats.avg_time_to_click_seconds)),
+        avgTimeToRespond: formatTime(parseFloat(stats.avg_time_to_click_seconds)),
         avgTimeToRead: formatTime(parseFloat(stats.avg_time_to_read_seconds)),
         avgTimeToClickSeconds: parseFloat(stats.avg_time_to_click_seconds) || null,
         avgTimeToReadSeconds: parseFloat(stats.avg_time_to_read_seconds) || null,
         allTime: {
           totalSent: parseInt(allTimeStats.total_sent) || 0,
           totalRead: parseInt(allTimeStats.total_read) || 0,
-          totalClicked: parseInt(allTimeStats.total_clicked) || 0
+          totalClicked: parseInt(allTimeStats.total_clicked) || 0,
+          totalResponded: parseInt(allTimeStats.total_clicked) || 0
         },
         urgentVsNormal: {
           urgent: {
@@ -2350,7 +2423,17 @@ exports.getNotificationAnalytics = async (req, res) => {
           deadlineReminder: parseInt(stats.deadline_reminder_count) || 0,
           general: parseInt(stats.general_count) || 0
         },
-        recentNotifications: recentNotifications
+        recentNotifications,
+        taskAnalytics: {
+          totalTasks,
+          totalCompleted,
+          totalPending: parseInt(taskStats.total_pending) || 0,
+          totalInProgress: parseInt(taskStats.total_in_progress) || 0,
+          totalCancelled: parseInt(taskStats.total_cancelled) || 0,
+          totalOverdue: parseInt(taskStats.total_overdue) || 0,
+          completionRate: totalTasks > 0 ? Math.round((totalCompleted / totalTasks) * 100) : 0,
+        },
+        recentTasks,
       },
       timeRange,
       clientId: clientId || null
