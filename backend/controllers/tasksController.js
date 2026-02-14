@@ -7,6 +7,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+pool.on('error', (err) => {
+  console.error('Tasks pool: unexpected error on idle client', err.message);
+});
+
 const SYSTEM_COIN_REWARDS = {
   urgent: 100,
   high: 75,

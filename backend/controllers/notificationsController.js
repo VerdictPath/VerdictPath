@@ -12,6 +12,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+pool.on('error', (err) => {
+  console.error('Notifications pool: unexpected error on idle client', err.message);
+});
+
 // Helper function to check if notification should be sent based on preferences and quiet hours
 async function checkNotificationPreferences(recipientType, recipientId, notificationType, priority) {
   try {
@@ -2281,14 +2285,19 @@ exports.getNotificationAnalytics = async (req, res) => {
     }));
 
     // Fetch task analytics
+    const isLawFirm = deviceType === 'law_firm';
+    const taskTableName = isLawFirm ? 'law_firm_tasks' : 'medical_provider_tasks';
+    const taskOwnerCol = isLawFirm ? 'law_firm_id' : 'medical_provider_id';
+    const taskClientCol = isLawFirm ? 'client_id' : 'patient_id';
+
     const taskConditions = [
-      deviceType === 'law_firm' ? 'law_firm_id = $1' : 'medical_provider_id = $1',
+      `${taskOwnerCol} = $1`,
       'created_at >= $2'
     ];
     const taskParams = [entityId, startDate];
 
     if (clientId) {
-      taskConditions.push(`assigned_to_user_id = $${taskParams.length + 1}`);
+      taskConditions.push(`${taskClientCol} = $${taskParams.length + 1}`);
       taskParams.push(parseInt(clientId));
     }
 
@@ -2302,7 +2311,7 @@ exports.getNotificationAnalytics = async (req, res) => {
         COUNT(CASE WHEN status = 'in_progress' THEN 1 END) as total_in_progress,
         COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as total_cancelled,
         COUNT(CASE WHEN status != 'completed' AND status != 'cancelled' AND due_date IS NOT NULL AND due_date < NOW() THEN 1 END) as total_overdue
-      FROM tasks
+      FROM ${taskTableName}
       WHERE ${taskWhereClause}
     `;
 
@@ -2311,16 +2320,16 @@ exports.getNotificationAnalytics = async (req, res) => {
       const taskResult = await pool.query(taskAnalyticsQuery, taskParams);
       taskStats = taskResult.rows[0] || taskStats;
     } catch (e) {
-      console.log('Task analytics query error (table may not exist):', e.message);
+      console.log('Task analytics query error:', e.message);
     }
 
     const recentTasksQuery = `
       SELECT 
-        t.id, t.title, t.task_type, t.status, t.priority, t.due_date,
-        t.created_at, t.completed_at, t.assigned_to_user_id,
+        t.id, t.task_title, t.task_type, t.status, t.priority, t.due_date,
+        t.created_at, t.completed_at, t.${taskClientCol} as recipient_id,
         u.first_name, u.last_name
-      FROM tasks t
-      LEFT JOIN users u ON t.assigned_to_user_id = u.id
+      FROM ${taskTableName} t
+      LEFT JOIN users u ON t.${taskClientCol} = u.id
       WHERE ${taskWhereClause}
       ORDER BY t.created_at DESC
       LIMIT 50
@@ -2331,14 +2340,14 @@ exports.getNotificationAnalytics = async (req, res) => {
       const recentTasksResult = await pool.query(recentTasksQuery, taskParams);
       recentTasks = recentTasksResult.rows.map(t => ({
         id: t.id,
-        title: t.title,
+        title: t.task_title,
         taskType: t.task_type,
         status: t.status,
         priority: t.priority,
         dueDate: t.due_date,
         createdAt: t.created_at,
         completedAt: t.completed_at,
-        recipientId: t.assigned_to_user_id,
+        recipientId: t.recipient_id,
         recipientName: t.first_name ? `${t.first_name} ${t.last_name}` : 'Unknown',
       }));
     } catch (e) {
@@ -2672,7 +2681,7 @@ exports.getSentNotifications = async (req, res) => {
     let whereClause = 'sender_type = $1 AND sender_id = $2';
     const params = [senderType, entityId];
 
-    if (filter === 'clicked') {
+    if (filter === 'clicked' || filter === 'responded') {
       whereClause += ' AND clicked_at IS NOT NULL';
     } else if (filter === 'read') {
       whereClause += ' AND read_at IS NOT NULL';
@@ -2752,9 +2761,9 @@ exports.getSentNotifications = async (req, res) => {
       sentAt: n.sent_at || n.created_at,
       deliveredAt: n.delivered_at,
       readAt: n.read_at,
-      clickedAt: n.clicked_at,
+      respondedAt: n.clicked_at,
       archived: n.archived,
-      status: n.clicked_at ? 'clicked' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
+      status: n.clicked_at ? 'responded' : n.read_at ? 'read' : n.delivered_at ? 'delivered' : 'sent'
     }));
 
     res.json({

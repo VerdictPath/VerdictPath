@@ -508,6 +508,14 @@ app.get('*', (req, res) => {
 const { globalErrorHandler } = require('./middleware/errorHandler');
 app.use(globalErrorHandler);
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception (non-fatal):', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection (non-fatal):', reason?.message || reason);
+});
+
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`VerdictPath Backend Server running on port ${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api`);
