@@ -273,14 +273,14 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           </Text>
 
           <TouchableOpacity 
-            style={[styles.notificationActionCard, styles.assignTaskCard]}
+            style={styles.notificationActionCard}
             onPress={() => onNavigate && onNavigate('lawfirm-assign-task')}
           >
-            <View style={[styles.notificationActionIcon, { backgroundColor: '#E8F5E9' }]}>
+            <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>📋</Text>
             </View>
             <View style={styles.notificationActionContent}>
-              <Text style={[styles.notificationActionTitle, { color: '#2E7D32' }]}>Assign Task</Text>
+              <Text style={styles.notificationActionTitle}>Assign Task</Text>
               <Text style={styles.notificationActionDescription}>
                 Create and assign tasks to your clients with due dates and rewards
               </Text>
@@ -838,11 +838,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.lawFirm.border,
-  },
-  assignTaskCard: {
-    borderColor: '#4CAF50',
-    borderWidth: 2,
-    backgroundColor: '#FAFFF5',
   },
   notificationActionIcon: {
     width: 48,
