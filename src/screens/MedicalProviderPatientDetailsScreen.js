@@ -30,6 +30,9 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     { label: 'Surgical Report', value: 'Surgical Report' },
     { label: 'Physician Notes', value: 'Physician Notes' },
     { label: 'Discharge Summary', value: 'Discharge Summary' },
+    { label: 'Chiropractor', value: 'Chiropractor' },
+    { label: 'Ortho', value: 'Ortho' },
+    { label: 'Physical Therapy', value: 'Physical Therapy' },
     { label: 'Other', value: 'Other' },
   ];
 
