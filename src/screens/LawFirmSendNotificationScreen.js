@@ -67,17 +67,7 @@ const NOTIFICATION_TEMPLATES = [
   },
 ];
 
-const getPriorityColor = (priority) => {
-  switch (priority) {
-    case 'urgent': return '#e74c3c';
-    case 'high': return '#e67e22';
-    case 'medium': return '#3498db';
-    case 'low': return '#95a5a6';
-    default: return '#999';
-  }
-};
-
-const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
+const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [clients, setClients] = useState([]);
   const [selectedClients, setSelectedClients] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -88,28 +78,8 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
   const [actionScreen, setActionScreen] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [createTask, setCreateTask] = useState(taskMode);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDescription, setTaskDescription] = useState('');
-  const [taskPriority, setTaskPriority] = useState('medium');
-  const [taskDueDate, setTaskDueDate] = useState('');
-  const [taskCoinsReward, setTaskCoinsReward] = useState('50');
   const [searchQuery, setSearchQuery] = useState('');
   const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
-  const [showNativeDatePicker, setShowNativeDatePicker] = useState(false);
-
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const parts = dateStr.split('-');
-      if (parts.length === 3) {
-        return `${parts[1]}/${parts[2]}/${parts[0]}`;
-      }
-      return dateStr;
-    } catch (e) {
-      return dateStr;
-    }
-  };
 
   useEffect(() => {
     fetchClients();
@@ -143,11 +113,6 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
     setActionButtonText(template.actionButton);
     setActionScreen(template.actionScreen);
     
-    if (template.id === 'task_reminder' || template.id === 'document_request') {
-      setCreateTask(true);
-      setTaskTitle(template.defaultTitle);
-      setTaskDescription(template.defaultBody);
-    }
   };
 
   const toggleClientSelection = (clientId) => {
@@ -202,35 +167,10 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
         }),
       });
 
-      if (createTask && taskTitle.trim()) {
-        const taskPromises = selectedClients.map(clientId =>
-          apiRequest(API_ENDPOINTS.TASKS.CREATE, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${user.token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              clientId,
-              taskTitle,
-              taskDescription,
-              taskType: selectedTemplate?.id || 'general',
-              priority: taskPriority,
-              dueDate: taskDueDate || null,
-              coinsReward: parseInt(taskCoinsReward) || 0,
-              actionUrl: `verdictpath://${actionScreen}`,
-              sendNotification: false
-            }),
-          })
-        );
-
-        await Promise.all(taskPromises);
-      }
-
       if (response.success) {
         alert(
           'Success',
-          `Notification ${createTask ? 'and task ' : ''}sent to ${response.results?.successful || selectedClients.length} client(s)`,
+          `Notification sent to ${response.results?.successful || selectedClients.length} client(s)`,
           [
             {
               text: 'OK',
@@ -241,12 +181,6 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
                 setNotificationBody('');
                 setActionButtonText('View Dashboard');
                 setActionScreen('dashboard');
-                setCreateTask(false);
-                setTaskTitle('');
-                setTaskDescription('');
-                setTaskPriority('medium');
-                setTaskDueDate('');
-                setTaskCoinsReward('50');
               },
             },
           ]
@@ -269,7 +203,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{taskMode ? 'Assign Task' : 'Send Notification'}</Text>
+          <Text style={styles.headerTitle}>Send Notification</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
@@ -287,7 +221,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{taskMode ? '📋 Assign Task' : '📨 Send Notification'}</Text>
+        <Text style={styles.headerTitle}>📨 Send Notification</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -475,141 +409,6 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
           />
         </View>
 
-        {/* Step 4: Optional Task Assignment */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Step 4: Assign Task (Optional)</Text>
-            <TouchableOpacity
-              style={[styles.toggleButton, createTask && styles.toggleButtonActive]}
-              onPress={() => setCreateTask(!createTask)}
-            >
-              <Text style={[styles.toggleButtonText, createTask && styles.toggleButtonTextActive]}>
-                {createTask ? '✓ Enabled' : 'Enable'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {createTask && (
-            <View style={styles.taskForm}>
-              <Text style={styles.taskFormHint}>
-                💡 Create an actionable task for clients to complete
-              </Text>
-
-              <Text style={styles.inputLabel}>Task Title *</Text>
-              <TextInput
-                style={styles.input}
-                value={taskTitle}
-                onChangeText={setTaskTitle}
-                placeholder="e.g., Upload Insurance Card"
-                placeholderTextColor="#999"
-              />
-
-              <Text style={styles.inputLabel}>Task Description</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={taskDescription}
-                onChangeText={setTaskDescription}
-                placeholder="Provide detailed instructions..."
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-
-              <Text style={styles.inputLabel}>Priority</Text>
-              <View style={styles.priorityButtons}>
-                {['urgent', 'high', 'medium', 'low'].map(priority => (
-                  <TouchableOpacity
-                    key={priority}
-                    style={[
-                      styles.priorityButton,
-                      taskPriority === priority && styles.priorityButtonActive,
-                      { borderColor: getPriorityColor(priority) }
-                    ]}
-                    onPress={() => setTaskPriority(priority)}
-                  >
-                    <Text style={[
-                      styles.priorityButtonText,
-                      taskPriority === priority && { color: getPriorityColor(priority) }
-                    ]}>
-                      {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.inputLabel}>Due Date (Optional)</Text>
-              {Platform.OS === 'web' ? (
-                <View style={styles.datePickerContainer}>
-                  <input
-                    type="date"
-                    value={taskDueDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setTaskDueDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: 12,
-                      fontSize: 16,
-                      borderRadius: 8,
-                      border: `1px solid ${theme.lawFirm.cardBorder || '#ddd'}`,
-                      backgroundColor: '#fff',
-                      color: theme.lawFirm.text || '#333',
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      cursor: 'pointer',
-                    }}
-                  />
-                  {taskDueDate ? (
-                    <TouchableOpacity
-                      style={styles.clearDateButton}
-                      onPress={() => setTaskDueDate('')}
-                    >
-                      <Text style={styles.clearDateText}>✕</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.dateSelectButton}
-                  onPress={() => {
-                    try {
-                      const DateTimePickerAndroid = require('@react-native-community/datetimepicker');
-                      if (DateTimePickerAndroid) {
-                        setShowNativeDatePicker(true);
-                      }
-                    } catch (e) {
-                      alert('Date Selection', 'Please enter date in YYYY-MM-DD format');
-                    }
-                  }}
-                >
-                  <Text style={styles.dateSelectIcon}>📅</Text>
-                  <Text style={[styles.dateSelectText, !taskDueDate && { color: '#999' }]}>
-                    {taskDueDate ? formatDisplayDate(taskDueDate) : 'Tap to select due date'}
-                  </Text>
-                  {taskDueDate ? (
-                    <TouchableOpacity
-                      style={styles.clearDateButton}
-                      onPress={(e) => { e.stopPropagation(); setTaskDueDate(''); }}
-                    >
-                      <Text style={styles.clearDateText}>✕</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </TouchableOpacity>
-              )}
-
-              <Text style={styles.inputLabel}>Coin Reward</Text>
-              <TextInput
-                style={styles.input}
-                value={taskCoinsReward}
-                onChangeText={setTaskCoinsReward}
-                placeholder="50"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-            </View>
-          )}
-        </View>
-
         {/* Send Button */}
         <TouchableOpacity
           style={[
@@ -629,30 +428,6 @@ const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
         </TouchableOpacity>
       </ScrollView>
 
-      {Platform.OS !== 'web' && showNativeDatePicker && (() => {
-        try {
-          const DateTimePicker = require('@react-native-community/datetimepicker').default;
-          return (
-            <DateTimePicker
-              value={taskDueDate ? new Date(taskDueDate + 'T00:00:00') : new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              minimumDate={new Date()}
-              onChange={(event, selectedDate) => {
-                setShowNativeDatePicker(false);
-                if (event.type !== 'dismissed' && selectedDate) {
-                  const year = selectedDate.getFullYear();
-                  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                  const day = String(selectedDate.getDate()).padStart(2, '0');
-                  setTaskDueDate(`${year}-${month}-${day}`);
-                }
-              }}
-            />
-          );
-        } catch (e) {
-          return null;
-        }
-      })()}
     </View>
   );
 };
@@ -915,62 +690,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: theme.lawFirm.textSecondary,
-  },
-  toggleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: theme.lawFirm.surfaceAlt,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.lawFirm.border,
-  },
-  toggleButtonActive: {
-    backgroundColor: theme.lawFirm.primary,
-    borderColor: theme.lawFirm.primary,
-  },
-  toggleButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.lawFirm.textSecondary,
-  },
-  toggleButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  taskForm: {
-    backgroundColor: theme.lawFirm.surfaceAlt,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.lawFirm.border,
-  },
-  taskFormHint: {
-    fontSize: 13,
-    color: theme.lawFirm.textSecondary,
-    marginBottom: 16,
-    fontStyle: 'italic',
-  },
-  priorityButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  priorityButton: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    backgroundColor: theme.lawFirm.surface,
-    borderColor: theme.lawFirm.border,
-  },
-  priorityButtonActive: {
-    backgroundColor: theme.lawFirm.surfaceAlt,
-  },
-  priorityButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
     color: theme.lawFirm.textSecondary,
   },
   recipientDropdownButton: {
