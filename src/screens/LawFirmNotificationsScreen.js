@@ -130,14 +130,14 @@ const LawFirmNotificationsScreen = ({ user, onBack }) => {
         {activeTab === 'inbox' && (
           <NotificationInboxScreen
             user={user}
-            onViewNotification={(id) => handleViewNotification(id, false)}
+            onNotificationPress={(id) => handleViewNotification(id, false)}
             embedded={true}
           />
         )}
         {activeTab === 'outbox' && (
           <NotificationOutboxScreen
             user={user}
-            onViewNotification={(id) => handleViewNotification(id, true)}
+            onNotificationPress={(id) => handleViewNotification(id, true)}
             embedded={true}
           />
         )}

@@ -273,15 +273,15 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
           </Text>
 
           <TouchableOpacity 
-            style={[styles.notificationActionCard, styles.notificationHubCard]}
+            style={styles.notificationActionCard}
             onPress={() => onNavigate && onNavigate('lawfirm-notifications')}
           >
-            <View style={[styles.notificationActionIcon, styles.notificationHubIcon]}>
+            <View style={styles.notificationActionIcon}>
               <Text style={styles.notificationActionIconText}>🔔</Text>
             </View>
             <View style={styles.notificationActionContent}>
               <View style={styles.notificationHubTitleRow}>
-                <Text style={[styles.notificationActionTitle, styles.notificationHubTitle]}>Notifications</Text>
+                <Text style={styles.notificationActionTitle}>Notifications</Text>
                 {unreadNotificationCount > 0 && (
                   <View style={styles.hubBadge}>
                     <Text style={styles.hubBadgeText}>
@@ -291,7 +291,7 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
                 )}
               </View>
               <Text style={styles.notificationActionDescription}>
-                Inbox, sent messages, compose, and tracking — all in one place
+                Inbox, sent messages, compose, and tracking
               </Text>
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>
@@ -861,20 +861,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: theme.lawFirm.primary,
     fontWeight: 'bold',
-  },
-  notificationHubCard: {
-    borderColor: theme.lawFirm.primary,
-    borderWidth: 2,
-    backgroundColor: theme.lawFirm.primary + '10',
-  },
-  notificationHubIcon: {
-    backgroundColor: theme.lawFirm.accent || theme.lawFirm.primary,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  notificationHubTitle: {
-    fontSize: 17,
   },
   notificationHubTitleRow: {
     flexDirection: 'row',

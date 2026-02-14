@@ -132,6 +132,10 @@ const getMedicalProviderStyles = () => ({
     borderBottomWidth: 1,
     borderBottomColor: medicalProviderTheme.colors.backgroundDark,
   },
+  clientFilterRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
   typeDropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -577,6 +581,10 @@ const getLawFirmStyles = () => ({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: theme.lawFirm.border,
+  },
+  clientFilterRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   typeDropdownButton: {
     flexDirection: 'row',
@@ -1051,13 +1059,14 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
   const mpStyles = isMedicalProvider ? getMedicalProviderStyles() : null;
   const lfStyles = isLawFirm ? getLawFirmStyles() : null;
   
-  // Use appropriate styles based on user type
   const currentStyles = isLawFirm ? lfStyles : (isMedicalProvider ? mpStyles : styles);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [total, setTotal] = useState(0);
@@ -1095,7 +1104,11 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
 
       const data = await response.json();
       if (data.success) {
-        setNotifications(data.notifications || []);
+        const mapped = (data.notifications || []).map(n => ({
+          ...n,
+          clickedAt: n.clickedAt || n.respondedAt,
+        }));
+        setNotifications(mapped);
         setTotal(data.total || 0);
       }
     } catch (error) {
@@ -1111,10 +1124,24 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
     setRefreshing(false);
   };
 
+  const uniqueClients = React.useMemo(() => {
+    const clientMap = {};
+    notifications.forEach(n => {
+      if (n.recipientName && n.recipientId) {
+        clientMap[n.recipientId] = n.recipientName;
+      }
+    });
+    return Object.entries(clientMap).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [notifications]);
+
   const filteredNotifications = notifications.filter(notification => {
     if (statusFilter === 'clicked' && !notification.clickedAt) return false;
     if (statusFilter === 'read' && !notification.readAt) return false;
     if (statusFilter === 'unread' && notification.readAt) return false;
+    
+    if (clientFilter !== 'all') {
+      if (String(notification.recipientId) !== String(clientFilter)) return false;
+    }
     
     if (typeFilter !== 'all') {
       const notificationType = notification.type || notification.notificationType;
@@ -1478,6 +1505,42 @@ const NotificationOutboxScreen = ({ user, onNavigate, onNotificationPress, onVie
         </View>
       )}
 
+      {uniqueClients.length > 0 && (
+        <View style={currentStyles.clientFilterRow}>
+          <TouchableOpacity
+            style={currentStyles.typeDropdownButton}
+            onPress={() => setShowClientDropdown(!showClientDropdown)}
+          >
+            <Text style={currentStyles.typeDropdownText}>
+              👤 {clientFilter === 'all' ? 'All Clients' : uniqueClients.find(c => String(c.id) === String(clientFilter))?.name || 'All Clients'}
+            </Text>
+            <Text style={currentStyles.dropdownArrow}>{showClientDropdown ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showClientDropdown && (
+        <View style={currentStyles.typeDropdownMenu}>
+          <TouchableOpacity
+            style={[currentStyles.typeDropdownItem, clientFilter === 'all' && currentStyles.activeTypeDropdownItem]}
+            onPress={() => { setClientFilter('all'); setShowClientDropdown(false); }}
+          >
+            <Text style={currentStyles.typeDropdownItemText}>👥 All Clients</Text>
+            {clientFilter === 'all' && <Text style={currentStyles.checkmark}>✓</Text>}
+          </TouchableOpacity>
+          {uniqueClients.map((client) => (
+            <TouchableOpacity
+              key={client.id}
+              style={[currentStyles.typeDropdownItem, String(clientFilter) === String(client.id) && currentStyles.activeTypeDropdownItem]}
+              onPress={() => { setClientFilter(client.id); setShowClientDropdown(false); }}
+            >
+              <Text style={currentStyles.typeDropdownItemText}>👤 {client.name}</Text>
+              {String(clientFilter) === String(client.id) && <Text style={currentStyles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       <View style={currentStyles.legendContainer}>
         <View style={currentStyles.legendItem}>
           <View style={[currentStyles.legendDot, { backgroundColor: '#9ca3af' }]} />
@@ -1664,6 +1727,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 0, 0.2)',
+  },
+  clientFilterRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   typeDropdownButton: {
     flexDirection: 'row',

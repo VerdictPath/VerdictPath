@@ -643,7 +643,6 @@ exports.getMyNotifications = async (req, res) => {
     `;
     const countResult = await pool.query(countQuery, [recipientType, recipientId]);
 
-    // Get sender names for all notifications
     const senderIds = {
       user: [],
       law_firm: [],
@@ -652,29 +651,30 @@ exports.getMyNotifications = async (req, res) => {
     
     result.rows.forEach(n => {
       if (n.sender_type && n.sender_id) {
-        if (!senderIds[n.sender_type]) {
-          senderIds[n.sender_type] = [];
+        const normalizedType = (n.sender_type === 'individual') ? 'user' : n.sender_type;
+        if (!senderIds[normalizedType]) {
+          senderIds[normalizedType] = [];
         }
-        if (!senderIds[n.sender_type].includes(n.sender_id)) {
-          senderIds[n.sender_type].push(n.sender_id);
+        if (!senderIds[normalizedType].includes(n.sender_id)) {
+          senderIds[normalizedType].push(n.sender_id);
         }
       }
     });
 
     const senderNames = {};
 
-    // Get user sender names
     if (senderIds.user.length > 0) {
       const userQuery = `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`;
       const userResult = await pool.query(userQuery, [senderIds.user]);
       userResult.rows.forEach(u => {
-        senderNames[`user_${u.id}`] = u.first_name && u.last_name 
+        const name = u.first_name && u.last_name 
           ? `${u.first_name} ${u.last_name}` 
           : u.email;
+        senderNames[`user_${u.id}`] = name;
+        senderNames[`individual_${u.id}`] = name;
       });
     }
 
-    // Get law firm sender names
     if (senderIds.law_firm.length > 0) {
       const lawFirmQuery = `SELECT id, firm_name FROM law_firms WHERE id = ANY($1)`;
       const lawFirmResult = await pool.query(lawFirmQuery, [senderIds.law_firm]);
@@ -683,7 +683,6 @@ exports.getMyNotifications = async (req, res) => {
       });
     }
 
-    // Get medical provider sender names
     if (senderIds.medical_provider.length > 0) {
       const medProviderQuery = `SELECT id, provider_name FROM medical_providers WHERE id = ANY($1)`;
       const medProviderResult = await pool.query(medProviderQuery, [senderIds.medical_provider]);
@@ -696,9 +695,10 @@ exports.getMyNotifications = async (req, res) => {
       ...notification,
       is_read: notification.status === 'read',
       is_clicked: notification.clicked,
-      sender_name: notification.sender_type && notification.sender_id 
-        ? senderNames[`${notification.sender_type}_${notification.sender_id}`] || 'Unknown'
-        : null
+      sender_name: notification.sender_name 
+        || (notification.sender_type && notification.sender_id 
+          ? senderNames[`${notification.sender_type}_${notification.sender_id}`] || null
+          : null)
     }));
 
     // Sync all fetched notifications to Firebase to ensure completeness
