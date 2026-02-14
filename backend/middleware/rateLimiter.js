@@ -69,7 +69,7 @@ const purchaseLimiter = rateLimit({
 // General API rate limit
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per 15 minutes
+  max: 1000, // 1000 requests per 15 minutes (generous for normal app usage)
   message: {
     message: 'Too many requests. Please slow down.',
     retryAfter: '15 minutes'
@@ -78,7 +78,6 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: getClientIdentifier,
   skip: (req) => {
-    // Skip rate limiting for health checks
     return req.path === '/health';
   }
 });
