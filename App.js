@@ -42,6 +42,7 @@ import NotificationInboxScreen from './src/screens/NotificationInboxScreen';
 import NotificationOutboxScreen from './src/screens/NotificationOutboxScreen';
 import NotificationDetailScreen from './src/screens/NotificationDetailScreen';
 import LawFirmSendNotificationScreen from './src/screens/LawFirmSendNotificationScreen';
+import LawFirmAssignTaskScreen from './src/screens/LawFirmAssignTaskScreen';
 import LawFirmNotificationAnalyticsScreen from './src/screens/LawFirmNotificationAnalyticsScreen';
 import LawFirmNotificationsScreen from './src/screens/LawFirmNotificationsScreen';
 import NotificationAnalyticsScreen from './src/screens/NotificationAnalyticsScreen';
@@ -1775,10 +1776,9 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       )}
 
       {currentScreen === 'lawfirm-assign-task' && (
-        <LawFirmSendNotificationScreen
+        <LawFirmAssignTaskScreen
           user={user}
           onBack={() => handleBackToLawFirmDashboard('notifications')}
-          taskMode={true}
         />
       )}
 
