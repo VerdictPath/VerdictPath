@@ -48,6 +48,26 @@ const DURATION_OPTIONS = [
   { value: '180', label: '3 hours' },
 ];
 
+const LOCATION_OPTIONS = [
+  { value: 'Virtual', label: 'Virtual', icon: '💻' },
+  { value: 'Office', label: 'Office', icon: '🏢' },
+  { value: 'Courthouse', label: 'Courthouse', icon: '🏛️' },
+];
+
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let h = 7; h <= 20; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const hour12 = h % 12 || 12;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const label = `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+      slots.push({ hours: h, minutes: m, label });
+    }
+  }
+  return slots;
+};
+const TIME_SLOTS = generateTimeSlots();
+
 export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -64,13 +84,15 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
 
   const [selectedClient, setSelectedClient] = useState(null);
   const [eventType, setEventType] = useState('deposition');
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('Deposition');
   const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
+  const [location, setLocation] = useState('Office');
   const [durationMinutes, setDurationMinutes] = useState('60');
   const [notes, setNotes] = useState('');
   const [clientSearchQuery, setClientSearchQuery] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [showTimeDropdown, setShowTimeDropdown] = useState({ visible: false, index: -1 });
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
 
   const getDefaultDateTime = (daysFromNow, hour) => {
     const date = new Date();
@@ -278,13 +300,15 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
   const resetForm = () => {
     setSelectedClient(null);
     setEventType('deposition');
-    setTitle('');
+    setTitle('Deposition');
     setDescription('');
-    setLocation('');
+    setLocation('Office');
     setDurationMinutes('60');
     setNotes('');
     setClientSearchQuery('');
     setShowClientDropdown(false);
+    setShowTimeDropdown({ visible: false, index: -1 });
+    setShowLocationDropdown(false);
     setDateTimeOptions([
       { date: getDefaultDateTime(7, 10), startTime: getDefaultDateTime(7, 10) },
       { date: getDefaultDateTime(8, 14), startTime: getDefaultDateTime(8, 14) },
@@ -292,6 +316,35 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
       { date: getDefaultDateTime(10, 14), startTime: getDefaultDateTime(10, 14) }
     ]);
     setShowDatePicker({ visible: false, index: -1, type: 'date' });
+  };
+
+  const handleEventTypeChange = (value) => {
+    setEventType(value);
+    const eventTypeObj = EVENT_TYPES.find(t => t.value === value);
+    if (eventTypeObj) {
+      setTitle(eventTypeObj.label);
+    }
+  };
+
+  const getTimeLabel = (date) => {
+    if (!date) return 'Select time';
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const hour12 = h % 12 || 12;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
+  const handleTimeSlotSelect = (index, slot) => {
+    const newOptions = [...dateTimeOptions];
+    newOptions[index].startTime = new Date(
+      newOptions[index].date.getFullYear(),
+      newOptions[index].date.getMonth(),
+      newOptions[index].date.getDate(),
+      slot.hours, slot.minutes
+    );
+    setDateTimeOptions(newOptions);
+    setShowTimeDropdown({ visible: false, index: -1 });
   };
 
   const getStatusConfig = (status) => {
@@ -598,7 +651,7 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                     <TouchableOpacity
                       key={type.value}
                       style={[styles.eventTypeCard, eventType === type.value && styles.eventTypeCardSelected]}
-                      onPress={() => setEventType(type.value)}
+                      onPress={() => handleEventTypeChange(type.value)}
                     >
                       <Text style={styles.eventTypeIcon}>{type.icon}</Text>
                       <Text style={[styles.eventTypeLabel, eventType === type.value && styles.eventTypeLabelSelected]}>
@@ -636,13 +689,37 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                 <View style={isDesktop ? styles.twoColRow : null}>
                   <View style={isDesktop ? styles.halfCol : null}>
                     <Text style={styles.fieldLabel}>Location</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={location}
-                      onChangeText={setLocation}
-                      placeholder="Office, virtual, courthouse..."
-                      placeholderTextColor="#9CA3AF"
-                    />
+                    <View style={{ position: 'relative', zIndex: showLocationDropdown ? 100 : 1 }}>
+                      <TouchableOpacity
+                        style={styles.locationSelector}
+                        onPress={() => setShowLocationDropdown(!showLocationDropdown)}
+                      >
+                        <Text style={styles.locationSelectorIcon}>
+                          {LOCATION_OPTIONS.find(l => l.value === location)?.icon || '📍'}
+                        </Text>
+                        <Text style={[styles.locationSelectorText, !location && { color: '#9CA3AF' }]}>
+                          {location || 'Select location'}
+                        </Text>
+                        <Text style={styles.dropdownArrowSmall}>{showLocationDropdown ? '▲' : '▼'}</Text>
+                      </TouchableOpacity>
+                      {showLocationDropdown && (
+                        <View style={styles.locationDropdown}>
+                          {LOCATION_OPTIONS.map(opt => (
+                            <TouchableOpacity
+                              key={opt.value}
+                              style={[styles.locationDropdownItem, location === opt.value && styles.locationDropdownItemSelected]}
+                              onPress={() => { setLocation(opt.value); setShowLocationDropdown(false); }}
+                            >
+                              <Text style={styles.locationDropdownIcon}>{opt.icon}</Text>
+                              <Text style={[styles.locationDropdownText, location === opt.value && styles.locationDropdownTextSelected]}>
+                                {opt.label}
+                              </Text>
+                              {location === opt.value && <Text style={styles.locationDropdownCheck}>✓</Text>}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <View style={isDesktop ? styles.halfCol : null}>
                     <Text style={styles.fieldLabel}>Duration</Text>
@@ -681,111 +758,103 @@ export default function LawFirmEventRequestsScreen({ user, onBack }) {
                   Provide 4 options for the client to choose from
                 </Text>
 
-                <View style={isDesktop ? styles.dateOptionsGrid : null}>
-                  {dateTimeOptions.map((option, index) => (
-                    <View key={index} style={[styles.dateOptionCard, isDesktop && styles.dateOptionCardDesktop]}>
-                      <View style={styles.dateOptionHeader}>
-                        <View style={styles.dateOptionBadge}>
-                          <Text style={styles.dateOptionBadgeText}>Option {index + 1}</Text>
-                        </View>
+                {dateTimeOptions.map((option, index) => (
+                  <View key={index} style={styles.dateOptionCard}>
+                    <View style={styles.dateOptionHeaderRow}>
+                      <View style={styles.dateOptionBadge}>
+                        <Text style={styles.dateOptionBadgeText}>Option {index + 1}</Text>
                       </View>
-                      <View style={styles.dateTimePickerRow}>
+                      <Text style={styles.dateOptionPreview}>
+                        {formatDate(option.date)} at {getTimeLabel(option.startTime)}
+                      </Text>
+                    </View>
+                    <View style={styles.dateTimeFieldsRow}>
+                      <View style={styles.dateFieldWrapper}>
+                        <Text style={styles.dateTimeFieldLabel}>Date</Text>
                         {Platform.OS === 'web' ? (
-                          <>
-                            <View style={styles.dateTimePickerBtn}>
-                              <Text style={styles.dateTimePickerIcon}>📅</Text>
-                              <View style={{ flex: 1 }}>
-                                <Text style={styles.dateTimePickerLabel}>Date</Text>
-                                <input
-                                  type="date"
-                                  value={option.date ? `${option.date.getFullYear()}-${String(option.date.getMonth() + 1).padStart(2, '0')}-${String(option.date.getDate()).padStart(2, '0')}` : ''}
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      const parts = e.target.value.split('-');
-                                      const newDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]),
-                                        option.startTime.getHours(), option.startTime.getMinutes());
-                                      const newOptions = [...dateTimeOptions];
-                                      newOptions[index].date = newDate;
-                                      newOptions[index].startTime = newDate;
-                                      setDateTimeOptions(newOptions);
-                                    }
-                                  }}
-                                  min={new Date().toISOString().split('T')[0]}
-                                  style={{
-                                    border: 'none',
-                                    backgroundColor: 'transparent',
-                                    color: '#1E3A5F',
-                                    fontSize: 14,
-                                    fontWeight: '600',
-                                    fontFamily: 'inherit',
-                                    padding: 0,
-                                    width: '100%',
-                                    cursor: 'pointer',
-                                  }}
-                                />
-                              </View>
-                            </View>
-                            <View style={styles.dateTimePickerBtn}>
-                              <Text style={styles.dateTimePickerIcon}>🕐</Text>
-                              <View style={{ flex: 1 }}>
-                                <Text style={styles.dateTimePickerLabel}>Time</Text>
-                                <input
-                                  type="time"
-                                  value={option.startTime ? `${String(option.startTime.getHours()).padStart(2, '0')}:${String(option.startTime.getMinutes()).padStart(2, '0')}` : ''}
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      const [hours, minutes] = e.target.value.split(':').map(Number);
-                                      const newOptions = [...dateTimeOptions];
-                                      newOptions[index].startTime = new Date(
-                                        option.date.getFullYear(), option.date.getMonth(), option.date.getDate(),
-                                        hours, minutes
-                                      );
-                                      setDateTimeOptions(newOptions);
-                                    }
-                                  }}
-                                  style={{
-                                    border: 'none',
-                                    backgroundColor: 'transparent',
-                                    color: '#1E3A5F',
-                                    fontSize: 14,
-                                    fontWeight: '600',
-                                    fontFamily: 'inherit',
-                                    padding: 0,
-                                    width: '100%',
-                                    cursor: 'pointer',
-                                  }}
-                                />
-                              </View>
-                            </View>
-                          </>
+                          <View style={styles.dateInputWrapper}>
+                            <Text style={styles.dateInputIcon}>📅</Text>
+                            <input
+                              type="date"
+                              value={option.date ? `${option.date.getFullYear()}-${String(option.date.getMonth() + 1).padStart(2, '0')}-${String(option.date.getDate()).padStart(2, '0')}` : ''}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  const parts = e.target.value.split('-');
+                                  const newDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]),
+                                    option.startTime.getHours(), option.startTime.getMinutes());
+                                  const newOptions = [...dateTimeOptions];
+                                  newOptions[index].date = newDate;
+                                  newOptions[index].startTime = newDate;
+                                  setDateTimeOptions(newOptions);
+                                }
+                              }}
+                              min={new Date().toISOString().split('T')[0]}
+                              style={{
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                color: '#1E3A5F',
+                                fontSize: 14,
+                                fontWeight: '600',
+                                fontFamily: 'inherit',
+                                padding: 0,
+                                flex: 1,
+                                cursor: 'pointer',
+                                outline: 'none',
+                              }}
+                            />
+                          </View>
                         ) : (
-                          <>
-                            <TouchableOpacity
-                              style={styles.dateTimePickerBtn}
-                              onPress={() => setShowDatePicker({ visible: true, index, type: 'date' })}
-                            >
-                              <Text style={styles.dateTimePickerIcon}>📅</Text>
-                              <View>
-                                <Text style={styles.dateTimePickerLabel}>Date</Text>
-                                <Text style={styles.dateTimePickerValue}>{formatDate(option.date)}</Text>
-                              </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={styles.dateTimePickerBtn}
-                              onPress={() => setShowDatePicker({ visible: true, index, type: 'time' })}
-                            >
-                              <Text style={styles.dateTimePickerIcon}>🕐</Text>
-                              <View>
-                                <Text style={styles.dateTimePickerLabel}>Time</Text>
-                                <Text style={styles.dateTimePickerValue}>{formatTime(option.startTime)}</Text>
-                              </View>
-                            </TouchableOpacity>
-                          </>
+                          <TouchableOpacity
+                            style={styles.dateInputWrapper}
+                            onPress={() => setShowDatePicker({ visible: true, index, type: 'date' })}
+                          >
+                            <Text style={styles.dateInputIcon}>📅</Text>
+                            <Text style={styles.dateInputValue}>{formatDate(option.date)}</Text>
+                          </TouchableOpacity>
                         )}
                       </View>
+                      <View style={styles.timeFieldWrapper}>
+                        <Text style={styles.dateTimeFieldLabel}>Time</Text>
+                        <View style={{ position: 'relative', zIndex: showTimeDropdown.visible && showTimeDropdown.index === index ? 200 : 1 }}>
+                          <TouchableOpacity
+                            style={styles.timeSelector}
+                            onPress={() => setShowTimeDropdown(prev => 
+                              prev.visible && prev.index === index 
+                                ? { visible: false, index: -1 } 
+                                : { visible: true, index }
+                            )}
+                          >
+                            <Text style={styles.timeSelectorIcon}>🕐</Text>
+                            <Text style={styles.timeSelectorText}>{getTimeLabel(option.startTime)}</Text>
+                            <Text style={styles.dropdownArrowSmall}>{showTimeDropdown.visible && showTimeDropdown.index === index ? '▲' : '▼'}</Text>
+                          </TouchableOpacity>
+                          {showTimeDropdown.visible && showTimeDropdown.index === index && (
+                            <View style={styles.timeDropdown}>
+                              <ScrollView style={styles.timeDropdownScroll} nestedScrollEnabled={true}>
+                                {TIME_SLOTS.map((slot, si) => {
+                                  const isActive = option.startTime && 
+                                    option.startTime.getHours() === slot.hours && 
+                                    option.startTime.getMinutes() === slot.minutes;
+                                  return (
+                                    <TouchableOpacity
+                                      key={si}
+                                      style={[styles.timeDropdownItem, isActive && styles.timeDropdownItemActive]}
+                                      onPress={() => handleTimeSlotSelect(index, slot)}
+                                    >
+                                      <Text style={[styles.timeDropdownText, isActive && styles.timeDropdownTextActive]}>
+                                        {slot.label}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  );
+                                })}
+                              </ScrollView>
+                            </View>
+                          )}
+                        </View>
+                      </View>
                     </View>
-                  ))}
-                </View>
+                  </View>
+                ))}
 
                 {Platform.OS !== 'web' && showDatePicker.visible && (
                   <DateTimePicker
@@ -1545,11 +1614,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  dateOptionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
   dateOptionCard: {
     backgroundColor: '#FAFBFC',
     borderRadius: 12,
@@ -1558,10 +1622,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  dateOptionCardDesktop: {
-    width: '48%',
-  },
-  dateOptionHeader: {
+  dateOptionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
   },
   dateOptionBadge: {
@@ -1569,7 +1633,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
-    alignSelf: 'flex-start',
   },
   dateOptionBadgeText: {
     fontSize: 11,
@@ -1577,12 +1640,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.5,
   },
-  dateTimePickerRow: {
+  dateOptionPreview: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  dateTimeFieldsRow: {
     flexDirection: 'row',
     gap: 10,
   },
-  dateTimePickerBtn: {
+  dateFieldWrapper: {
     flex: 1,
+  },
+  timeFieldWrapper: {
+    flex: 1,
+  },
+  dateTimeFieldLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  dateInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1592,21 +1673,141 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D1D5DB',
   },
-  dateTimePickerIcon: {
-    fontSize: 18,
+  dateInputIcon: {
+    fontSize: 16,
   },
-  dateTimePickerLabel: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  dateTimePickerValue: {
+  dateInputValue: {
     fontSize: 14,
     fontWeight: '600',
     color: '#1E3A5F',
-    marginTop: 2,
+  },
+  timeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  timeSelectorIcon: {
+    fontSize: 16,
+  },
+  timeSelectorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
+  timeDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginTop: 4,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    zIndex: 300,
+  },
+  timeDropdownScroll: {
+    maxHeight: 200,
+  },
+  timeDropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  timeDropdownItemActive: {
+    backgroundColor: '#EBF0F7',
+  },
+  timeDropdownText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  timeDropdownTextActive: {
+    fontWeight: '700',
+    color: '#1E3A5F',
+  },
+  dropdownArrowSmall: {
+    fontSize: 10,
+    color: '#9CA3AF',
+  },
+  locationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  locationSelectorIcon: {
+    fontSize: 18,
+  },
+  locationSelectorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
+  locationDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    marginTop: 4,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    zIndex: 200,
+    overflow: 'hidden',
+  },
+  locationDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  locationDropdownItemSelected: {
+    backgroundColor: '#EBF0F7',
+  },
+  locationDropdownIcon: {
+    fontSize: 18,
+  },
+  locationDropdownText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  locationDropdownTextSelected: {
+    fontWeight: '700',
+    color: '#1E3A5F',
+  },
+  locationDropdownCheck: {
+    fontSize: 14,
+    color: '#1E3A5F',
+    fontWeight: '700',
   },
 
   cancelBtn: {
