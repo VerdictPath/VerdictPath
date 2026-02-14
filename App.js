@@ -1695,6 +1695,14 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         />
       )}
 
+      {currentScreen === 'lawfirm-assign-task' && (
+        <LawFirmSendNotificationScreen
+          user={user}
+          onBack={handleBackToLawFirmDashboard}
+          taskMode={true}
+        />
+      )}
+
       {currentScreen === 'lawfirm-notification-analytics' && (
         <LawFirmNotificationAnalyticsScreen
           user={user}
@@ -2222,7 +2230,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         
         {/* Law Firm Bottom Navigation */}
         {(() => {
-          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-notifications', 'lawfirm-send-notification', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-calendar-selection', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
+          const lawFirmScreens = ['lawfirm-dashboard', 'lawfirm-notifications', 'lawfirm-send-notification', 'lawfirm-assign-task', 'lawfirm-user-management', 'lawfirm-messages', 'lawfirm-disbursements', 'lawfirm-negotiations', 'lawfirm-activity-dashboard', 'lawfirm-client-appointments', 'lawfirm-calendar', 'lawfirm-calendar-selection', 'lawfirm-profile', 'lawfirm-client-details', 'lawfirm-notification-analytics'];
           const shouldShow = lawFirmScreens.includes(currentScreen);
           return shouldShow;
         })() && (

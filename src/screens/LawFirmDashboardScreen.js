@@ -261,10 +261,26 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
     return (
       <View style={styles.tabContent}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔔 Client Notifications</Text>
+          <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
           <Text style={styles.sectionDescription}>
-            Send notifications to your clients about case updates, deadlines, and important tasks.
+            Manage your clients, assign tasks, send notifications, and handle case operations.
           </Text>
+
+          <TouchableOpacity 
+            style={[styles.notificationActionCard, styles.assignTaskCard]}
+            onPress={() => onNavigate && onNavigate('lawfirm-assign-task')}
+          >
+            <View style={[styles.notificationActionIcon, { backgroundColor: '#E8F5E9' }]}>
+              <Text style={styles.notificationActionIconText}>📋</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={[styles.notificationActionTitle, { color: '#2E7D32' }]}>Assign Task</Text>
+              <Text style={styles.notificationActionDescription}>
+                Create and assign tasks to your clients with due dates and rewards
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.notificationActionCard}
@@ -816,6 +832,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.lawFirm.border,
+  },
+  assignTaskCard: {
+    borderColor: '#4CAF50',
+    borderWidth: 2,
+    backgroundColor: '#FAFFF5',
   },
   notificationActionIcon: {
     width: 48,

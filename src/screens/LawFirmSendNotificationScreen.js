@@ -77,7 +77,7 @@ const getPriorityColor = (priority) => {
   }
 };
 
-const LawFirmSendNotificationScreen = ({ user, onBack }) => {
+const LawFirmSendNotificationScreen = ({ user, onBack, taskMode = false }) => {
   const [clients, setClients] = useState([]);
   const [selectedClients, setSelectedClients] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -88,7 +88,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
   const [actionScreen, setActionScreen] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  const [createTask, setCreateTask] = useState(false);
+  const [createTask, setCreateTask] = useState(taskMode);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [taskPriority, setTaskPriority] = useState('medium');
@@ -269,7 +269,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Send Notification</Text>
+          <Text style={styles.headerTitle}>{taskMode ? 'Assign Task' : 'Send Notification'}</Text>
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
@@ -287,7 +287,7 @@ const LawFirmSendNotificationScreen = ({ user, onBack }) => {
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📨 Send Notification</Text>
+        <Text style={styles.headerTitle}>{taskMode ? '📋 Assign Task' : '📨 Send Notification'}</Text>
         <View style={styles.placeholder} />
       </View>
 
