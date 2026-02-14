@@ -93,16 +93,21 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        const savedEmail = data.cc_email_address || '';
+        const autoFilledEmail = savedEmail || user.email || '';
         setEmailCCPrefs({
           emailCCEnabled: data.email_cc_enabled ?? true,
-          ccEmailAddress: data.cc_email_address ?? '',
+          ccEmailAddress: autoFilledEmail,
           ccCaseUpdates: data.cc_case_updates ?? false,
           ccAppointmentReminders: data.cc_appointment_reminders ?? true,
           ccPaymentNotifications: data.cc_payment_notifications ?? false,
           ccDocumentRequests: data.cc_document_requests ?? true,
           ccSystemAlerts: data.cc_system_alerts ?? false
         });
-        setCCEmailInput(data.cc_email_address ?? '');
+        setCCEmailInput(autoFilledEmail);
+        if (!savedEmail && autoFilledEmail) {
+          updateEmailCCPreferences({ ccEmailAddress: autoFilledEmail });
+        }
       }
     } catch (error) {
       console.error('Error fetching email CC preferences:', error);
