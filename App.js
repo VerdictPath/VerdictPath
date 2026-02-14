@@ -842,7 +842,10 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       console.error('Error clearing stored user data:', e);
     }
     
-    setCurrentScreen('landing');
+    setCurrentScreen('farewell');
+    setTimeout(() => {
+      setCurrentScreen('landing');
+    }, 3000);
   };
 
   const refreshUserProfile = async () => {
@@ -1339,6 +1342,51 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           translucent={false}
         />
         
+        {currentScreen === 'farewell' && (
+          <View style={{
+            flex: 1,
+            backgroundColor: '#1E3A5F',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 40,
+          }}>
+            <Text style={{
+              fontSize: 48,
+              marginBottom: 24,
+            }}>⚓</Text>
+            <Text style={{
+              fontSize: 26,
+              fontWeight: '700',
+              color: '#FFFFFF',
+              textAlign: 'center',
+              marginBottom: 12,
+              letterSpacing: 0.3,
+            }}>Until Next Time!</Text>
+            <Text style={{
+              fontSize: 16,
+              color: '#B0C4DE',
+              textAlign: 'center',
+              lineHeight: 24,
+              maxWidth: 340,
+              marginBottom: 32,
+            }}>
+              You've been signed out successfully.{'\n'}We look forward to seeing you again soon.
+            </Text>
+            <View style={{
+              width: 60,
+              height: 3,
+              backgroundColor: '#D4A843',
+              borderRadius: 2,
+              marginBottom: 24,
+            }} />
+            <Text style={{
+              fontSize: 13,
+              color: '#7A9CC6',
+              textAlign: 'center',
+            }}>Redirecting to home...</Text>
+          </View>
+        )}
+
         {currentScreen === 'landing' && (
           <LandingScreen onNavigate={handleNavigateInternal} />
         )}
