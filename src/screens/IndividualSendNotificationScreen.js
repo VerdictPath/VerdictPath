@@ -7,47 +7,56 @@ const NOTIFICATION_TYPES = [
   {
     id: 'case_update',
     type: 'case_update',
-    title: 'Case Update',
+    title: 'Request Case Update',
     icon: '📋',
-    defaultSubject: 'Case Update',
-    defaultMessage: 'I have an update regarding my case that I would like to share.',
-    description: 'Milestone completions, status changes'
+    defaultSubject: 'Requesting Case Update',
+    defaultMessage: 'I would like to request an update on the current status of my case. Please let me know of any progress, next steps, or actions needed from my end.',
+    description: 'Ask your attorney for a status update on your case'
   },
   {
     id: 'appointment_reminder',
     type: 'appointment_reminder',
-    title: 'Appointment',
+    title: 'Request Appointment',
     icon: '📅',
     defaultSubject: 'Appointment Request',
-    defaultMessage: 'I would like to schedule an appointment at your earliest convenience.',
-    description: 'Medical appointments, consultations'
+    defaultMessage: 'I would like to schedule a meeting or consultation with you at your earliest convenience. Please let me know your available times.',
+    description: 'Request a meeting or consultation with your attorney'
   },
   {
     id: 'payment_notification',
     type: 'payment_notification',
-    title: 'Payment',
+    title: 'Billing Question',
     icon: '💳',
-    defaultSubject: 'Payment Inquiry',
-    defaultMessage: 'I have a question regarding payments or billing.',
-    description: 'Invoices, payment confirmations'
+    defaultSubject: 'Billing Inquiry',
+    defaultMessage: 'I have a question regarding my billing, payments, or outstanding balance. Could you please provide clarification or an updated statement?',
+    description: 'Ask about billing, payments, or account balance'
   },
   {
     id: 'document_request',
     type: 'document_request',
-    title: 'Document',
+    title: 'Request Documents',
     icon: '📄',
-    defaultSubject: 'Document Submission',
-    defaultMessage: 'I have documents to submit or need assistance with document requests.',
-    description: 'Medical records, evidence, signatures'
+    defaultSubject: 'Document Request',
+    defaultMessage: 'I would like to request copies of documents related to my case. Please let me know what is available or if any additional information is needed from me.',
+    description: 'Request case documents or records from your attorney'
   },
   {
-    id: 'system_alert',
+    id: 'deadline_inquiry',
+    type: 'deadline_reminder',
+    title: 'Deadline Question',
+    icon: '⏰',
+    defaultSubject: 'Upcoming Deadlines Inquiry',
+    defaultMessage: 'I would like to know about any upcoming deadlines or important dates related to my case so I can prepare accordingly.',
+    description: 'Ask about upcoming deadlines or important case dates'
+  },
+  {
+    id: 'general_message',
     type: 'system_alert',
-    title: 'General',
-    icon: '📢',
+    title: 'General Message',
+    icon: '✉️',
     defaultSubject: 'General Message',
-    defaultMessage: 'I would like to send a general message.',
-    description: 'General inquiries, other matters'
+    defaultMessage: '',
+    description: 'Send a custom message to your attorney or provider'
   },
 ];
 
