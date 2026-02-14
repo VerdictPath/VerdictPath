@@ -15,4 +15,6 @@ router.delete('/:taskId', authenticateToken, tasksController.deleteTask);
 
 router.get('/templates', authenticateToken, tasksController.getTaskTemplates);
 
+router.get('/coin-config', authenticateToken, tasksController.getCoinRewardConfig);
+
 module.exports = router;

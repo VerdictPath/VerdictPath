@@ -7,6 +7,21 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+const SYSTEM_COIN_REWARDS = {
+  urgent: 100,
+  high: 75,
+  medium: 50,
+  low: 25,
+};
+
+const MAX_COIN_REWARD_PER_TASK = 100;
+
+function getSystemCoinReward(priority) {
+  const p = (priority || 'medium').toLowerCase();
+  const reward = SYSTEM_COIN_REWARDS[p] || SYSTEM_COIN_REWARDS.medium;
+  return Math.min(reward, MAX_COIN_REWARD_PER_TASK);
+}
+
 const tasksController = {
   async getMyTasks(req, res) {
     try {
@@ -107,12 +122,13 @@ const tasksController = {
         taskType,
         priority = 'medium',
         dueDate,
-        coinsReward = 0,
         actionUrl,
         attachments,
         taskData,
         sendNotification = true
       } = req.body;
+
+      const coinsReward = getSystemCoinReward(priority);
 
       if (!clientId || !taskTitle || !taskType) {
         return res.status(400).json({ 
@@ -615,7 +631,7 @@ const tasksController = {
         descriptionTemplate: t.task_description_template,
         type: t.task_type,
         defaultPriority: t.default_priority,
-        defaultCoinsReward: t.default_coins_reward,
+        defaultCoinsReward: getSystemCoinReward(t.default_priority || 'medium'),
         defaultDueDays: t.default_due_days,
         timesUsed: t.times_used
       }));
@@ -624,6 +640,21 @@ const tasksController = {
     } catch (error) {
       console.error('Error fetching task templates:', error);
       res.status(500).json({ error: 'Failed to fetch task templates' });
+    }
+  },
+
+  async getCoinRewardConfig(req, res) {
+    try {
+      res.json({
+        success: true,
+        coinRewards: SYSTEM_COIN_REWARDS,
+        maxPerTask: MAX_COIN_REWARD_PER_TASK,
+        maxTotalCoins: MAX_TOTAL_COINS,
+        note: 'Coin rewards are automatically determined by the system based on task priority to ensure fairness and prevent coin mining.'
+      });
+    } catch (error) {
+      console.error('Error fetching coin config:', error);
+      res.status(500).json({ error: 'Failed to fetch coin reward configuration' });
     }
   }
 };

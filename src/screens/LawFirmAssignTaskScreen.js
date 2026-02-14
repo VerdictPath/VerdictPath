@@ -94,6 +94,13 @@ const PRIORITIES = [
   { id: 'urgent', label: 'Urgent', color: '#EF4444' },
 ];
 
+const SYSTEM_COIN_REWARDS = {
+  urgent: 100,
+  high: 75,
+  medium: 50,
+  low: 25,
+};
+
 const LawFirmAssignTaskScreen = ({ user, onBack }) => {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -105,7 +112,6 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
   const [taskDescriptions, setTaskDescriptions] = useState({});
   const [taskPriority, setTaskPriority] = useState('medium');
   const [taskDueDate, setTaskDueDate] = useState('');
-  const [taskCoinsReward, setTaskCoinsReward] = useState('50');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -253,7 +259,6 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
                 taskType: taskType.id,
                 priority: taskPriority,
                 dueDate: taskDueDate || null,
-                coinsReward: parseInt(taskCoinsReward) || 0,
                 actionUrl: `verdictpath://${taskType.actionScreen}`,
                 sendNotification: true,
               }),
@@ -278,7 +283,6 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
               setTaskDescriptions({});
               setTaskPriority('medium');
               setTaskDueDate('');
-              setTaskCoinsReward('50');
             },
           },
         ]
@@ -532,15 +536,13 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
                     )}
                   </View>
                   <View style={styles.fieldHalf}>
-                    <Text style={styles.fieldLabel}>Coin Reward (per task)</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="50"
-                      placeholderTextColor={theme.lawFirm.textLight}
-                      value={taskCoinsReward}
-                      onChangeText={setTaskCoinsReward}
-                      keyboardType="numeric"
-                    />
+                    <Text style={styles.fieldLabel}>Coin Reward (auto)</Text>
+                    <View style={styles.coinRewardDisplay}>
+                      <Text style={styles.coinRewardIcon}>🪙</Text>
+                      <Text style={styles.coinRewardValue}>{SYSTEM_COIN_REWARDS[taskPriority] || 50}</Text>
+                      <Text style={styles.coinRewardUnit}>coins</Text>
+                    </View>
+                    <Text style={styles.coinRewardNote}>Set by system based on priority</Text>
                   </View>
                 </View>
               </View>
@@ -577,7 +579,7 @@ const LawFirmAssignTaskScreen = ({ user, onBack }) => {
                 ) : null}
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Reward per task:</Text>
-                  <Text style={styles.summaryValue}>{taskCoinsReward || '0'} coins</Text>
+                  <Text style={styles.summaryValue}>🪙 {SYSTEM_COIN_REWARDS[taskPriority] || 50} coins (auto)</Text>
                 </View>
               </View>
 
@@ -964,6 +966,38 @@ const styles = StyleSheet.create({
   },
   fieldHalf: {
     flex: 1,
+  },
+  coinRewardDisplay: {
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 215, 0, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+  },
+  coinRewardIcon: {
+    fontSize: 18,
+  },
+  coinRewardValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#D4A017',
+  },
+  coinRewardUnit: {
+    fontSize: 13,
+    color: '#D4A017',
+    fontWeight: '500',
+  },
+  coinRewardNote: {
+    fontSize: 11,
+    color: theme.lawFirm.textLight,
+    textAlign: 'center',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   summarySection: {
     backgroundColor: theme.lawFirm.surface,
