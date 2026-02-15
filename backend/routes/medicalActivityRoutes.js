@@ -35,10 +35,10 @@ router.get(
   medicalActivityController.getUserActivityTimeline
 );
 
-// HIPAA compliance reports (admin only)
+// HIPAA compliance reports (requires analytics permission)
 router.get(
   '/hipaa-report',
-  requireAdmin,
+  checkPermission('can_view_analytics'),
   medicalActivityController.getHIPAAComplianceReport
 );
 

@@ -24,6 +24,7 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState('month');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadHIPAAReport();
@@ -32,6 +33,7 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
   const loadHIPAAReport = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       const daysMap = {
         week: 7,
@@ -48,8 +50,9 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
       );
 
       setReport(response.report);
-    } catch (error) {
-      console.error('[HIPAADashboard] Load error:', error);
+    } catch (err) {
+      console.error('[HIPAADashboard] Load error:', err);
+      setError(err.message || 'Failed to load HIPAA compliance report. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,7 +64,7 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
     loadHIPAAReport();
   };
 
-  if (loading || !report) {
+  if (loading) {
     return (
       <View style={styles.container}>
         <LinearGradient
@@ -72,6 +75,37 @@ const MedicalProviderHIPAADashboardScreen = ({ user, onBack }) => {
           style={styles.background}
         />
         <Text style={styles.loadingText}>Generating HIPAA compliance report...</Text>
+      </View>
+    );
+  }
+
+  if (error || !report) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={[
+            medicalProviderTheme.colors.clinicalWhite,
+            medicalProviderTheme.colors.lightGray,
+          ]}
+          style={styles.background}
+        />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 30 }}>
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>⚠️</Text>
+          <Text style={{ fontSize: 18, fontWeight: '600', color: '#333', textAlign: 'center', marginBottom: 12 }}>
+            {error || 'Unable to load HIPAA compliance report'}
+          </Text>
+          <TouchableOpacity
+            onPress={loadHIPAAReport}
+            style={{ backgroundColor: medicalProviderTheme.colors.primary || '#007AFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 8 }}
+          >
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Try Again</Text>
+          </TouchableOpacity>
+          {onBack && (
+            <TouchableOpacity onPress={onBack} style={{ marginTop: 16 }}>
+              <Text style={{ color: medicalProviderTheme.colors.primary || '#007AFF', fontSize: 14 }}>Go Back</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
   }
