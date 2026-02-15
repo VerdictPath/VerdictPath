@@ -369,6 +369,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setTotalMedicalPayments(total);
   };
 
+  const CLIENT_FEE = 200;
   const PROVIDER_FEE = 25;
 
   const getActiveProviderCount = () => {
@@ -377,7 +378,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
 
   const calculatePlatformFee = () => {
     if (disbursementMethod !== 'app_transfer') return 0;
-    return getActiveProviderCount() * PROVIDER_FEE;
+    const providerFees = getActiveProviderCount() * PROVIDER_FEE;
+    return CLIENT_FEE + providerFees;
   };
 
   const getEffectiveClientAmount = () => {
@@ -451,7 +453,10 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       confirmMsg += `Reason: ${withholdReason.trim()}\n`;
     }
     confirmMsg += `Medical Providers: $${totalMedicalPayments.toFixed(2)}\n`;
-    confirmMsg += `Provider Fee (${getActiveProviderCount()} x $${PROVIDER_FEE}): $${calculatePlatformFee().toFixed(2)}\n`;
+    confirmMsg += `Client Disbursement Fee: $${disbursementMethod === 'app_transfer' ? CLIENT_FEE.toFixed(2) : '0.00'}\n`;
+    if (getActiveProviderCount() > 0) {
+      confirmMsg += `Provider Fee (${getActiveProviderCount()} x $${PROVIDER_FEE}): $${(getActiveProviderCount() * PROVIDER_FEE).toFixed(2)}\n`;
+    }
     confirmMsg += `Total to Charge: $${totalAmount.toFixed(2)}\n\n`;
     confirmMsg += `Process this disbursement?`;
 
@@ -862,13 +867,22 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Provider Fee ({getActiveProviderCount()} x ${PROVIDER_FEE}):
-              </Text>
+              <Text style={styles.summaryLabel}>Client Disbursement Fee:</Text>
               <Text style={styles.summaryValue}>
-                ${calculatePlatformFee().toFixed(2)}
+                ${disbursementMethod === 'app_transfer' ? CLIENT_FEE.toFixed(2) : '0.00'}
               </Text>
             </View>
+
+            {getActiveProviderCount() > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Provider Fee ({getActiveProviderCount()} x ${PROVIDER_FEE}):
+                </Text>
+                <Text style={styles.summaryValue}>
+                  ${(getActiveProviderCount() * PROVIDER_FEE).toFixed(2)}
+                </Text>
+              </View>
+            )}
 
             <View style={[styles.summaryRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total to Charge:</Text>

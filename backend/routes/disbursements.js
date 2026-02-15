@@ -10,8 +10,9 @@ const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
 const { sendDisbursementProcessedEmail, sendLienPaymentEmail } = require('../services/emailService');
 
-// Platform fee: $25 per medical provider disbursed via app
-const PLATFORM_FEE_PER_PROVIDER = 25;
+// Fee structure for app_transfer disbursements
+const CLIENT_DISBURSEMENT_FEE = 200; // $200 flat fee for disbursing to client
+const PROVIDER_DISBURSEMENT_FEE = 25; // $25 per medical provider disbursed
 
 /**
  * GET /api/disbursements/history
@@ -246,10 +247,11 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       });
     }
 
-    // Determine if fee applies (only for app_transfer, $25 per medical provider)
+    // Determine if fee applies (only for app_transfer)
     const feeExempt = disbursementMethod !== 'app_transfer';
     const providerCount = medicalPayments ? medicalPayments.filter(p => parseFloat(p.amount) > 0).length : 0;
-    const platformFee = feeExempt ? 0 : (providerCount * PLATFORM_FEE_PER_PROVIDER);
+    const providerFees = providerCount * PROVIDER_DISBURSEMENT_FEE;
+    const platformFee = feeExempt ? 0 : (CLIENT_DISBURSEMENT_FEE + providerFees);
 
     await client.query('BEGIN');
 
@@ -678,7 +680,10 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
     if (feeExempt) {
       response.feeNote = `No platform fee charged for ${disbursementMethod} disbursement method`;
     } else {
-      response.feeNote = `Platform fee of $${platformFee} ($${PLATFORM_FEE_PER_PROVIDER}/provider x ${providerCount} provider${providerCount !== 1 ? 's' : ''}) collected for in-app disbursement`;
+      const feeBreakdown = providerCount > 0 
+        ? `$${CLIENT_DISBURSEMENT_FEE} client disbursement + $${PROVIDER_DISBURSEMENT_FEE} x ${providerCount} provider${providerCount !== 1 ? 's' : ''}`
+        : `$${CLIENT_DISBURSEMENT_FEE} client disbursement`;
+      response.feeNote = `Platform fee of $${platformFee} (${feeBreakdown}) collected for in-app disbursement`;
     }
 
     if (disbursementMethod !== 'app_transfer') {
