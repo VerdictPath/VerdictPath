@@ -202,10 +202,16 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setWithholdReason('');
     setAutoFilledClient(false);
     setAutoFilledProviders(false);
-    
-    loadClientSettlements(client.id);
-    const providers = await loadClientMedicalProviders(client.id);
-    
+    setShowDisbursementModal(true);
+
+    const [providers, settlementsResponse] = await Promise.all([
+      loadClientMedicalProviders(client.id),
+      apiRequest(`${API_ENDPOINTS.SETTLEMENTS.LIST}?clientId=${client.id}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      }).catch(err => { console.error('Error loading settlements:', err); return { settlements: [] }; })
+    ]);
+
     const initialPayments = providers.map(provider => ({
       providerId: provider.id,
       providerName: provider.providerName,
@@ -213,9 +219,63 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       email: provider.email,
       isManual: provider.isManual || false
     }));
-    
-    setMedicalProviderPayments(initialPayments);
-    setShowDisbursementModal(true);
+
+    const settlements = settlementsResponse.settlements || [];
+    setClientSettlements(settlements);
+
+    if (settlements.length === 1) {
+      try {
+        setLoadingSettlementDetail(true);
+        setSelectedSettlement(settlements[0]);
+        const detail = await apiRequest(API_ENDPOINTS.SETTLEMENTS.GET(settlements[0].id), {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+
+        const s = detail.settlement;
+        const liens = detail.liens || [];
+        setSettlementLiens(liens);
+
+        const netToClient = s.grossSettlementAmount - s.attorneyFees - s.attorneyCosts - s.totalMedicalLiens;
+        if (netToClient > 0) {
+          setDisbursementAmount(netToClient.toFixed(2));
+          setAutoFilledClient(true);
+        }
+
+        if (liens.length > 0) {
+          const updatedPayments = [...initialPayments];
+          liens.forEach(lien => {
+            const paymentAmount = lien.finalPaymentAmount || lien.negotiatedAmount || lien.lienAmount;
+            if (paymentAmount > 0) {
+              let idx = -1;
+              if (lien.medicalProviderId) {
+                idx = updatedPayments.findIndex(p => p.providerId === lien.medicalProviderId);
+              } else if (lien.providerName) {
+                idx = updatedPayments.findIndex(p => p.providerId === `manual_${lien.providerName}`);
+              }
+              if (idx !== -1) {
+                const existing = parseCurrency(updatedPayments[idx].amount);
+                const newAmount = existing + paymentAmount;
+                updatedPayments[idx].amount = newAmount.toFixed(2);
+              }
+            }
+          });
+          const totalMed = updatedPayments.reduce((sum, p) => sum + parseCurrency(p.amount), 0);
+          setMedicalProviderPayments(updatedPayments);
+          setTotalMedicalPayments(totalMed);
+          if (totalMed > 0) setAutoFilledProviders(true);
+        } else {
+          setMedicalProviderPayments(initialPayments);
+        }
+      } catch (error) {
+        console.error('Error loading settlement details:', error);
+        setMedicalProviderPayments(initialPayments);
+      } finally {
+        setLoadingSettlementDetail(false);
+      }
+    } else {
+      setMedicalProviderPayments(initialPayments);
+    }
   };
 
   const handleSelectSettlement = async (settlement) => {
