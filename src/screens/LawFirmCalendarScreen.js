@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
- TextInput, Modal, Platform, FlatList
+ TextInput, Modal, Platform, FlatList, useWindowDimensions
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import alert from '../utils/alert';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
@@ -85,6 +86,41 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     deadline: '#f39c12',
     reminder: '#1abc9c'
   };
+
+  const EVENT_TYPES_ER = [
+    { value: 'deposition', label: 'Deposition', icon: '📝' },
+    { value: 'mediation', label: 'Mediation', icon: '🤝' },
+    { value: 'consultation', label: 'Consultation', icon: '💬' },
+    { value: 'court_date', label: 'Court Date', icon: '⚖️' },
+  ];
+  const DURATION_OPTIONS_ER = [
+    { value: '30', label: '30 min' },
+    { value: '60', label: '1 hour' },
+    { value: '90', label: '1.5 hours' },
+    { value: '120', label: '2 hours' },
+    { value: '180', label: '3 hours' },
+  ];
+  const LOCATION_OPTIONS_ER = [
+    { value: 'Virtual', label: 'Virtual', icon: '💻' },
+    { value: 'Office', label: 'Office', icon: '🏢' },
+    { value: 'Courthouse', label: 'Courthouse', icon: '🏛️' },
+  ];
+  const generateTimeSlotsER = () => {
+    const slots = [];
+    for (let h = 7; h <= 20; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const hour12 = h % 12 || 12;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const label = `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+        slots.push({ hours: h, minutes: m, label });
+      }
+    }
+    return slots;
+  };
+  const TIME_SLOTS_ER = generateTimeSlotsER();
+
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktopER = windowWidth >= 1024;
   
   const [newAvailability, setNewAvailability] = useState({
     dayOfWeek: 1,
@@ -123,20 +159,32 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   const [conflictEvents, setConflictEvents] = useState([]);
   const [pendingEventAction, setPendingEventAction] = useState(null);
 
-  const [newAvailabilityRequest, setNewAvailabilityRequest] = useState({
-    clientId: '',
-    title: '',
-    description: '',
-    appointmentType: 'consultation',
-    priority: 'normal',
-    minDurationMinutes: 30,
-    option1Date: '',
-    option1Time: '09:00',
-    option2Date: '',
-    option2Time: '10:00',
-    option3Date: '',
-    option3Time: '11:00'
-  });
+  const getDefaultDateTimeER = (daysFromNow, hour) => {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    date.setHours(hour, 0, 0, 0);
+    return date;
+  };
+
+  const [selectedClientER, setSelectedClientER] = useState(null);
+  const [eventTypeER, setEventTypeER] = useState('deposition');
+  const [titleER, setTitleER] = useState('Deposition');
+  const [descriptionER, setDescriptionER] = useState('');
+  const [locationER, setLocationER] = useState('Office');
+  const [durationMinutesER, setDurationMinutesER] = useState('60');
+  const [notesER, setNotesER] = useState('');
+  const [clientSearchQueryER, setClientSearchQueryER] = useState('');
+  const [showClientDropdownER, setShowClientDropdownER] = useState(false);
+  const [showTimeDropdownER, setShowTimeDropdownER] = useState({ visible: false, index: -1 });
+  const [showLocationDropdownER, setShowLocationDropdownER] = useState(false);
+  const [dateTimeOptionsER, setDateTimeOptionsER] = useState([
+    { date: getDefaultDateTimeER(7, 10), startTime: getDefaultDateTimeER(7, 10) },
+    { date: getDefaultDateTimeER(8, 14), startTime: getDefaultDateTimeER(8, 14) },
+    { date: getDefaultDateTimeER(9, 10), startTime: getDefaultDateTimeER(9, 10) },
+    { date: getDefaultDateTimeER(10, 14), startTime: getDefaultDateTimeER(10, 14) }
+  ]);
+  const [showDatePickerER, setShowDatePickerER] = useState({ visible: false, index: -1, type: 'date' });
+  const [submittingER, setSubmittingER] = useState(false);
   
   const TIME_SLOTS = [
     { label: '8:00 AM', value: '08:00' },
@@ -737,97 +785,182 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
     }
   };
 
-  const handleSendAvailabilityRequest = async () => {
-    
-    if (!newAvailabilityRequest.clientId) {
-      showAlert('Error', 'Please select a client');
+  const formatDateER = (date) => {
+    if (!date) return '';
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+  };
+
+  const formatTimeER = (date) => {
+    if (!date) return '';
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const hour12 = h % 12 || 12;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
+  const getTimeLabelER = (date) => {
+    if (!date) return 'Select time';
+    const h = date.getHours();
+    const m = date.getMinutes();
+    const hour12 = h % 12 || 12;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+
+  const handleEventTypeChangeER = (value) => {
+    setEventTypeER(value);
+    const eventTypeObj = EVENT_TYPES_ER.find(t => t.value === value);
+    if (eventTypeObj) {
+      setTitleER(eventTypeObj.label);
+    }
+  };
+
+  const handleTimeSlotSelectER = (index, slot) => {
+    const newOptions = [...dateTimeOptionsER];
+    newOptions[index].startTime = new Date(
+      newOptions[index].date.getFullYear(),
+      newOptions[index].date.getMonth(),
+      newOptions[index].date.getDate(),
+      slot.hours, slot.minutes
+    );
+    setDateTimeOptionsER(newOptions);
+    setShowTimeDropdownER({ visible: false, index: -1 });
+  };
+
+  const handleDateTimeChangeER = (event, selectedValue, index, type) => {
+    if (event.type === 'dismissed') {
+      setShowDatePickerER({ visible: false, index: -1, type: 'date' });
       return;
     }
-    if (!newAvailabilityRequest.title) {
-      showAlert('Error', 'Please enter a title');
-      return;
-    }
-    
-    const { option1Date, option1Time, option2Date, option2Time, option3Date, option3Time } = newAvailabilityRequest;
-    
-    if (!option1Date || !option2Date || !option3Date) {
-      showAlert('Error', 'Please select all 3 dates');
-      return;
-    }
-    
-    const options = [
-      { date: option1Date, time: option1Time, label: 'Option 1' },
-      { date: option2Date, time: option2Time, label: 'Option 2' },
-      { date: option3Date, time: option3Time, label: 'Option 3' }
-    ];
-    
-    
-    for (const opt of options) {
-      const isISO = /^\d{4}-\d{2}-\d{2}$/.test(opt.date);
-      const isUSA = validateDateFormat(opt.date);
-      if (!isISO && !isUSA) {
-        showAlert('Error', `${opt.label}: Please select a valid date`);
-        return;
-      }
-    }
-    
-    const durationMinutes = newAvailabilityRequest.minDurationMinutes || 60;
-    
-    const proposedDates = options.map(option => {
-      const isoDate = parseUSADate(option.date);
-      const startTimeStr = `${isoDate}T${option.time}:00`;
-      const startDate = new Date(startTimeStr);
-      const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-      return {
-        startTime: startDate.toISOString(),
-        endTime: endDate.toISOString()
-      };
-    });
-    
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/event-requests`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${user.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            clientId: newAvailabilityRequest.clientId,
-            eventType: newAvailabilityRequest.appointmentType || 'consultation',
-            title: newAvailabilityRequest.title,
-            description: newAvailabilityRequest.description,
-            durationMinutes: durationMinutes,
-            proposedDates: proposedDates
-          })
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        showAlert('Success', 'Availability request with 3 options sent to client!');
-        setShowAvailabilityRequestModal(false);
-        setNewAvailabilityRequest({
-          clientId: '',
-          title: '',
-          description: '',
-          appointmentType: 'consultation',
-          priority: 'normal',
-          minDurationMinutes: 30,
-          option1Date: '',
-          option1Time: '09:00',
-          option2Date: '',
-          option2Time: '10:00',
-          option3Date: '',
-          option3Time: '11:00'
-        });
+    if (selectedValue) {
+      const newOptions = [...dateTimeOptionsER];
+      if (type === 'date') {
+        newOptions[index].date = selectedValue;
+        newOptions[index].startTime = new Date(
+          selectedValue.getFullYear(),
+          selectedValue.getMonth(),
+          selectedValue.getDate(),
+          newOptions[index].startTime.getHours(),
+          newOptions[index].startTime.getMinutes()
+        );
       } else {
-        const data = await response.json();
-        showAlert('Error', data.error || 'Failed to send request');
+        newOptions[index].startTime = new Date(
+          newOptions[index].date.getFullYear(),
+          newOptions[index].date.getMonth(),
+          newOptions[index].date.getDate(),
+          selectedValue.getHours(),
+          selectedValue.getMinutes()
+        );
+      }
+      setDateTimeOptionsER(newOptions);
+    }
+    if (Platform.OS !== 'ios') {
+      setShowDatePickerER({ visible: false, index: -1, type: 'date' });
+    }
+  };
+
+  const resetFormER = () => {
+    setSelectedClientER(null);
+    setEventTypeER('deposition');
+    setTitleER('Deposition');
+    setDescriptionER('');
+    setLocationER('Office');
+    setDurationMinutesER('60');
+    setNotesER('');
+    setClientSearchQueryER('');
+    setShowClientDropdownER(false);
+    setShowTimeDropdownER({ visible: false, index: -1 });
+    setShowLocationDropdownER(false);
+    setDateTimeOptionsER([
+      { date: getDefaultDateTimeER(7, 10), startTime: getDefaultDateTimeER(7, 10) },
+      { date: getDefaultDateTimeER(8, 14), startTime: getDefaultDateTimeER(8, 14) },
+      { date: getDefaultDateTimeER(9, 10), startTime: getDefaultDateTimeER(9, 10) },
+      { date: getDefaultDateTimeER(10, 14), startTime: getDefaultDateTimeER(10, 14) }
+    ]);
+    setShowDatePickerER({ visible: false, index: -1, type: 'date' });
+  };
+
+  const getClientFirstNameER = (client) => client?.first_name || client?.firstName || '';
+  const getClientLastNameER = (client) => client?.last_name || client?.lastName || '';
+  const getClientFullNameER = (client) => `${getClientFirstNameER(client)} ${getClientLastNameER(client)}`.trim();
+  const getClientInitialsER = (client) => {
+    const first = getClientFirstNameER(client);
+    const last = getClientLastNameER(client);
+    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+  };
+
+  const filteredClientsER = useMemo(() => {
+    if (!clientSearchQueryER.trim()) return sortedClients;
+    const search = clientSearchQueryER.toLowerCase().trim();
+    return sortedClients.filter((client) => {
+      const fullName = getClientFullNameER(client).toLowerCase();
+      return fullName.includes(search) || (client.email || '').toLowerCase().includes(search);
+    });
+  }, [clientSearchQueryER, sortedClients]);
+
+  const handleCreateRequestER = async () => {
+    if (!selectedClientER) {
+      showAlert('Missing Information', 'Please select a client');
+      return;
+    }
+    if (!titleER.trim()) {
+      showAlert('Missing Information', 'Please enter an event title');
+      return;
+    }
+
+    const validOptions = dateTimeOptionsER.filter(opt => opt.date && opt.startTime);
+    if (validOptions.length !== 4) {
+      showAlert('Missing Information', 'Please provide all 4 date/time options for the client to choose from');
+      return;
+    }
+
+    setSubmittingER(true);
+    try {
+      const duration = parseInt(durationMinutesER) || 60;
+      const proposedDates = dateTimeOptionsER.map(opt => {
+        const startTime = new Date(opt.date);
+        startTime.setHours(opt.startTime.getHours(), opt.startTime.getMinutes(), 0, 0);
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + duration);
+        return {
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString()
+        };
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/event-requests`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          clientId: selectedClientER.id,
+          eventType: eventTypeER,
+          title: titleER,
+          description: descriptionER,
+          location: locationER,
+          durationMinutes: duration,
+          notes: notesER,
+          proposedDates
+        })
+      });
+
+      if (response.ok) {
+        showAlert('Request Sent', 'Event request has been sent to the client with 4 date options to choose from.');
+        setShowAvailabilityRequestModal(false);
+        resetFormER();
+        loadCalendarData();
+      } else {
+        const error = await response.json();
+        showAlert('Error', error.error || 'Failed to create event request');
       }
     } catch (error) {
-      console.error('[AvailabilityRequest] Exception:', error);
-      showAlert('Error', 'Failed to send request: ' + error.message);
+      console.error('[CreateRequestER] Exception:', error);
+      showAlert('Error', 'Failed to create event request');
+    } finally {
+      setSubmittingER(false);
     }
   };
 
@@ -1546,183 +1679,370 @@ const LawFirmCalendarScreen = ({ user, onNavigate, onBack }) => {
   );
 
   const renderAvailabilityRequestModal = () => (
-    <Modal visible={showAvailabilityRequestModal} animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Request Client Availability</Text>
-            <TouchableOpacity onPress={() => setShowAvailabilityRequestModal(false)}>
-              <Text style={styles.modalCloseIcon}>✕</Text>
+    <Modal
+      visible={showAvailabilityRequestModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => { setShowAvailabilityRequestModal(false); resetFormER(); }}
+    >
+      <View style={styles.erModalOverlay}>
+        <View style={[styles.erModalContent, isDesktopER && styles.erModalContentDesktop]}>
+          <View style={styles.erModalHeader}>
+            <Text style={styles.erModalTitle}>New Event Request</Text>
+            <TouchableOpacity onPress={() => { setShowAvailabilityRequestModal(false); resetFormER(); }} style={styles.erModalCloseBtn}>
+              <Text style={styles.erModalCloseBtnText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <Text style={styles.modalLabel}>Select Client</Text>
-            <View style={styles.compactClientSelector}>
-              {newAvailabilityRequest.clientId ? (
-                <View style={styles.selectedClientTag}>
-                  <Text style={styles.selectedClientTagText} numberOfLines={1}>
-                    {getSelectedClientName(newAvailabilityRequest.clientId)}
-                  </Text>
-                  <TouchableOpacity 
-                    onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, clientId: null })}
-                    style={styles.removeClientTagButton}
-                  >
-                    <Text style={styles.removeClientTagIcon}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity 
-                  style={styles.compactDropdownButton}
-                  onPress={() => setShowClientDropdownAvailability(!showClientDropdownAvailability)}
-                >
-                  <Text style={styles.compactDropdownPlaceholder}>Select a client...</Text>
-                  <Text style={styles.compactDropdownArrow}>{showClientDropdownAvailability ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-              )}
-              {showClientDropdownAvailability && (
-                <View style={styles.compactDropdownMenu}>
-                  <View style={styles.compactSearchRow}>
-                    <Text style={styles.compactSearchIcon}>🔍</Text>
+          <ScrollView
+            style={styles.erFormScroll}
+            contentContainerStyle={styles.erFormScrollContent}
+            nestedScrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.erFormSection}>
+              <Text style={styles.erFormSectionTitle}>Client</Text>
+              <TouchableOpacity
+                style={styles.erClientSelector}
+                onPress={() => setShowClientDropdownER(!showClientDropdownER)}
+              >
+                {selectedClientER ? (
+                  <View style={styles.erSelectedClientDisplay}>
+                    <View style={styles.erClientAvatar}>
+                      <Text style={styles.erClientAvatarText}>
+                        {getClientInitialsER(selectedClientER)}
+                      </Text>
+                    </View>
+                    <View style={styles.erSelectedClientInfo}>
+                      <Text style={styles.erSelectedClientName}>
+                        {getClientFullNameER(selectedClientER) || selectedClientER.email}
+                      </Text>
+                      {selectedClientER.email && (
+                        <Text style={styles.erSelectedClientEmail}>{selectedClientER.email}</Text>
+                      )}
+                    </View>
+                    <TouchableOpacity
+                      onPress={(e) => {
+                        e.stopPropagation && e.stopPropagation();
+                        setSelectedClientER(null);
+                        setClientSearchQueryER('');
+                      }}
+                      style={styles.erClearClientBtn}
+                    >
+                      <Text style={styles.erClearClientBtnText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.erClientSelectorPlaceholder}>
+                    <Text style={styles.erClientSelectorPlaceholderIcon}>👤</Text>
+                    <Text style={styles.erClientSelectorPlaceholderText}>Select a client...</Text>
+                    <Text style={styles.erDropdownArrow}>{showClientDropdownER ? '▲' : '▼'}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {showClientDropdownER && (
+                <View style={styles.erClientDropdown}>
+                  <View style={styles.erDropdownSearchRow}>
                     <TextInput
-                      style={styles.compactSearchInput}
-                      value={clientSearch}
-                      onChangeText={setClientSearch}
-                      placeholder="Search clients..."
-                      placeholderTextColor="#999"
+                      style={styles.erDropdownSearchInput}
+                      value={clientSearchQueryER}
+                      onChangeText={setClientSearchQueryER}
+                      placeholder="Search by name..."
+                      placeholderTextColor="#666"
+                      autoFocus={true}
                     />
-                    {clientSearch.length > 0 && (
-                      <TouchableOpacity onPress={() => setClientSearch('')}>
-                        <Text style={styles.compactClearIcon}>✕</Text>
+                    {clientSearchQueryER.length > 0 && (
+                      <TouchableOpacity onPress={() => setClientSearchQueryER('')} style={styles.erDropdownClearBtn}>
+                        <Text style={styles.erDropdownClearBtnText}>✕</Text>
                       </TouchableOpacity>
                     )}
                   </View>
-                  <FlatList
-                    data={filteredClients}
-                    keyExtractor={(item) => item.id.toString()}
-                    style={styles.compactClientList}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.compactClientItem}
-                        onPress={() => {
-                          setNewAvailabilityRequest({ ...newAvailabilityRequest, clientId: item.id });
-                          setShowClientDropdownAvailability(false);
-                          setClientSearch('');
-                        }}
-                      >
-                        <Text style={styles.compactClientItemText}>
-                          {getClientDisplayName(item)}
-                        </Text>
-                      </TouchableOpacity>
+                  <ScrollView style={styles.erDropdownList} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                    {filteredClientsER.length === 0 ? (
+                      <View style={styles.erDropdownEmpty}>
+                        <Text style={styles.erDropdownEmptyText}>No clients found</Text>
+                      </View>
+                    ) : (
+                      filteredClientsER.map(client => (
+                        <TouchableOpacity
+                          key={client.id}
+                          style={[styles.erDropdownItem, selectedClientER?.id === client.id && styles.erDropdownItemSelected]}
+                          onPress={() => {
+                            setSelectedClientER(client);
+                            setShowClientDropdownER(false);
+                            setClientSearchQueryER('');
+                          }}
+                        >
+                          <View style={[styles.erDropdownAvatar, selectedClientER?.id === client.id && styles.erDropdownAvatarSelected]}>
+                            <Text style={[styles.erDropdownAvatarText, selectedClientER?.id === client.id && styles.erDropdownAvatarTextSelected]}>
+                              {getClientInitialsER(client)}
+                            </Text>
+                          </View>
+                          <View style={styles.erDropdownItemInfo}>
+                            <Text style={[styles.erDropdownItemName, selectedClientER?.id === client.id && styles.erDropdownItemNameSelected]}>
+                              {getClientFullNameER(client) || client.email}
+                            </Text>
+                            {client.email && (
+                              <Text style={styles.erDropdownItemEmail}>{client.email}</Text>
+                            )}
+                          </View>
+                          {selectedClientER?.id === client.id && (
+                            <Text style={styles.erDropdownCheckmark}>✓</Text>
+                          )}
+                        </TouchableOpacity>
+                      ))
                     )}
-                    ListEmptyComponent={
-                      <Text style={styles.compactNoClientsText}>No clients found</Text>
-                    }
-                  />
+                  </ScrollView>
                 </View>
               )}
             </View>
 
-            <Text style={styles.modalLabel}>Title</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={newAvailabilityRequest.title}
-              onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, title: text })}
-              placeholder="e.g., Schedule Case Review"
-              placeholderTextColor="#999"
-            />
+            <View style={styles.erFormSection}>
+              <Text style={styles.erFormSectionTitle}>Event Type</Text>
+              <View style={styles.erEventTypeGrid}>
+                {EVENT_TYPES_ER.map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[styles.erEventTypeCard, eventTypeER === type.value && styles.erEventTypeCardSelected]}
+                    onPress={() => handleEventTypeChangeER(type.value)}
+                  >
+                    <Text style={styles.erEventTypeIcon}>{type.icon}</Text>
+                    <Text style={[styles.erEventTypeLabel, eventTypeER === type.value && styles.erEventTypeLabelSelected]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-            <Text style={styles.modalLabel}>Description</Text>
-            <TextInput
-              style={[styles.modalInput, styles.modalTextArea]}
-              value={newAvailabilityRequest.description}
-              onChangeText={(text) => setNewAvailabilityRequest({ ...newAvailabilityRequest, description: text })}
-              placeholder="Details about the meeting..."
-              placeholderTextColor="#999"
-              multiline
-              numberOfLines={3}
-            />
+            <View style={styles.erFormSection}>
+              <Text style={styles.erFormSectionTitle}>Event Details</Text>
 
-            <Text style={styles.modalLabel}>Duration (minutes)</Text>
-            <View style={styles.durationSelector}>
-              {[30, 60, 90, 120].map((duration) => (
-                <TouchableOpacity
-                  key={duration}
-                  style={[styles.priorityOption, newAvailabilityRequest.minDurationMinutes === duration && styles.priorityOptionActive]}
-                  onPress={() => setNewAvailabilityRequest({ ...newAvailabilityRequest, minDurationMinutes: duration })}
-                >
-                  <Text style={[styles.priorityOptionText, newAvailabilityRequest.minDurationMinutes === duration && styles.priorityOptionTextActive]}>
-                    {duration}
-                  </Text>
-                </TouchableOpacity>
+              <Text style={styles.erFieldLabel}>Title *</Text>
+              <TextInput
+                style={styles.erInput}
+                value={titleER}
+                onChangeText={setTitleER}
+                placeholder="e.g., Medical Deposition - Dr. Smith"
+                placeholderTextColor="#666"
+              />
+
+              <Text style={styles.erFieldLabel}>Description</Text>
+              <TextInput
+                style={[styles.erInput, styles.erTextArea]}
+                value={descriptionER}
+                onChangeText={setDescriptionER}
+                placeholder="Additional details about the event..."
+                placeholderTextColor="#666"
+                multiline
+                numberOfLines={3}
+              />
+
+              <View style={isDesktopER ? styles.erTwoColRow : null}>
+                <View style={isDesktopER ? styles.erHalfCol : null}>
+                  <Text style={styles.erFieldLabel}>Location</Text>
+                  <View style={{ position: 'relative', zIndex: showLocationDropdownER ? 100 : 1 }}>
+                    <TouchableOpacity
+                      style={styles.erLocationSelector}
+                      onPress={() => setShowLocationDropdownER(!showLocationDropdownER)}
+                    >
+                      <Text style={styles.erLocationSelectorIcon}>
+                        {LOCATION_OPTIONS_ER.find(l => l.value === locationER)?.icon || '📍'}
+                      </Text>
+                      <Text style={[styles.erLocationSelectorText, !locationER && { color: '#666' }]}>
+                        {locationER || 'Select location'}
+                      </Text>
+                      <Text style={styles.erDropdownArrowSmall}>{showLocationDropdownER ? '▲' : '▼'}</Text>
+                    </TouchableOpacity>
+                    {showLocationDropdownER && (
+                      <View style={styles.erLocationDropdown}>
+                        {LOCATION_OPTIONS_ER.map(opt => (
+                          <TouchableOpacity
+                            key={opt.value}
+                            style={[styles.erLocationDropdownItem, locationER === opt.value && styles.erLocationDropdownItemSelected]}
+                            onPress={() => { setLocationER(opt.value); setShowLocationDropdownER(false); }}
+                          >
+                            <Text style={styles.erLocationDropdownIcon}>{opt.icon}</Text>
+                            <Text style={[styles.erLocationDropdownText, locationER === opt.value && styles.erLocationDropdownTextSelected]}>
+                              {opt.label}
+                            </Text>
+                            {locationER === opt.value && <Text style={styles.erLocationDropdownCheck}>✓</Text>}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <View style={isDesktopER ? styles.erHalfCol : null}>
+                  <Text style={styles.erFieldLabel}>Duration</Text>
+                  <View style={styles.erDurationRow}>
+                    {DURATION_OPTIONS_ER.map(opt => (
+                      <TouchableOpacity
+                        key={opt.value}
+                        style={[styles.erDurationChip, durationMinutesER === opt.value && styles.erDurationChipSelected]}
+                        onPress={() => setDurationMinutesER(opt.value)}
+                      >
+                        <Text style={[styles.erDurationChipText, durationMinutesER === opt.value && styles.erDurationChipTextSelected]}>
+                          {opt.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <Text style={styles.erFieldLabel}>Internal Notes</Text>
+              <TextInput
+                style={[styles.erInput, styles.erTextArea]}
+                value={notesER}
+                onChangeText={setNotesER}
+                placeholder="Notes visible only to your firm..."
+                placeholderTextColor="#666"
+                multiline
+                numberOfLines={2}
+              />
+            </View>
+
+            <View style={styles.erFormSection}>
+              <Text style={styles.erFormSectionTitle}>Proposed Date & Time Options</Text>
+              <Text style={styles.erFormSectionSubtext}>
+                Provide 4 options for the client to choose from
+              </Text>
+
+              {dateTimeOptionsER.map((option, index) => (
+                <View key={index} style={styles.erDateOptionCard}>
+                  <View style={styles.erDateOptionHeaderRow}>
+                    <View style={styles.erDateOptionBadge}>
+                      <Text style={styles.erDateOptionBadgeText}>Option {index + 1}</Text>
+                    </View>
+                    <Text style={styles.erDateOptionPreview}>
+                      {formatDateER(option.date)} at {getTimeLabelER(option.startTime)}
+                    </Text>
+                  </View>
+                  <View style={styles.erDateTimeFieldsRow}>
+                    <View style={styles.erDateFieldWrapper}>
+                      <Text style={styles.erDateTimeFieldLabel}>Date</Text>
+                      {Platform.OS === 'web' ? (
+                        <View style={styles.erDateInputWrapper}>
+                          <Text style={styles.erDateInputIcon}>📅</Text>
+                          <input
+                            type="date"
+                            value={option.date ? `${option.date.getFullYear()}-${String(option.date.getMonth() + 1).padStart(2, '0')}-${String(option.date.getDate()).padStart(2, '0')}` : ''}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const parts = e.target.value.split('-');
+                                const newDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]),
+                                  option.startTime.getHours(), option.startTime.getMinutes());
+                                const newOptions = [...dateTimeOptionsER];
+                                newOptions[index].date = newDate;
+                                newOptions[index].startTime = newDate;
+                                setDateTimeOptionsER(newOptions);
+                              }
+                            }}
+                            min={new Date().toISOString().split('T')[0]}
+                            style={{
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              color: '#C0C0C0',
+                              fontSize: 14,
+                              fontWeight: '600',
+                              fontFamily: 'inherit',
+                              padding: 0,
+                              flex: 1,
+                              cursor: 'pointer',
+                              outline: 'none',
+                            }}
+                          />
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.erDateInputWrapper}
+                          onPress={() => setShowDatePickerER({ visible: true, index, type: 'date' })}
+                        >
+                          <Text style={styles.erDateInputIcon}>📅</Text>
+                          <Text style={styles.erDateInputValue}>{formatDateER(option.date)}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <View style={styles.erTimeFieldWrapper}>
+                      <Text style={styles.erDateTimeFieldLabel}>Time</Text>
+                      <View style={{ position: 'relative', zIndex: showTimeDropdownER.visible && showTimeDropdownER.index === index ? 200 : 1 }}>
+                        <TouchableOpacity
+                          style={styles.erTimeSelector}
+                          onPress={() => setShowTimeDropdownER(prev =>
+                            prev.visible && prev.index === index
+                              ? { visible: false, index: -1 }
+                              : { visible: true, index }
+                          )}
+                        >
+                          <Text style={styles.erTimeSelectorIcon}>🕐</Text>
+                          <Text style={styles.erTimeSelectorText}>{getTimeLabelER(option.startTime)}</Text>
+                          <Text style={styles.erDropdownArrowSmall}>{showTimeDropdownER.visible && showTimeDropdownER.index === index ? '▲' : '▼'}</Text>
+                        </TouchableOpacity>
+                        {showTimeDropdownER.visible && showTimeDropdownER.index === index && (
+                          <View style={styles.erTimeDropdown}>
+                            <ScrollView style={styles.erTimeDropdownScroll} nestedScrollEnabled={true}>
+                              {TIME_SLOTS_ER.map((slot, si) => {
+                                const isActive = option.startTime &&
+                                  option.startTime.getHours() === slot.hours &&
+                                  option.startTime.getMinutes() === slot.minutes;
+                                return (
+                                  <TouchableOpacity
+                                    key={si}
+                                    style={[styles.erTimeDropdownItem, isActive && styles.erTimeDropdownItemActive]}
+                                    onPress={() => handleTimeSlotSelectER(index, slot)}
+                                  >
+                                    <Text style={[styles.erTimeDropdownText, isActive && styles.erTimeDropdownTextActive]}>
+                                      {slot.label}
+                                    </Text>
+                                  </TouchableOpacity>
+                                );
+                              })}
+                            </ScrollView>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </View>
               ))}
+
+              {Platform.OS !== 'web' && showDatePickerER.visible && (
+                <DateTimePicker
+                  value={showDatePickerER.type === 'date'
+                    ? dateTimeOptionsER[showDatePickerER.index].date
+                    : dateTimeOptionsER[showDatePickerER.index].startTime}
+                  mode={showDatePickerER.type}
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, selectedValue) =>
+                    handleDateTimeChangeER(event, selectedValue, showDatePickerER.index, showDatePickerER.type)
+                  }
+                  minimumDate={new Date()}
+                />
+              )}
             </View>
-
-            <Text style={styles.optionsSectionTitle}>Provide 3 Date/Time Options</Text>
-            <Text style={styles.optionsSectionSubtitle}>Your client will select one of these options</Text>
-
-            <View style={styles.optionBox}>
-              <Text style={styles.optionLabel}>Option 1</Text>
-              <View style={styles.dateTimeRow}>
-                <DatePickerInput
-                  value={newAvailabilityRequest.option1Date}
-                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Date: date })}
-                  placeholder="Select date"
-                  minDate={moment().format('YYYY-MM-DD')}
-                  style={styles.dateTimeHalf}
-                />
-                <TimePickerInput
-                  value={newAvailabilityRequest.option1Time}
-                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option1Time: time })}
-                  placeholder="Select time"
-                  style={styles.dateTimeHalf}
-                />
-              </View>
-            </View>
-
-            <View style={styles.optionBox}>
-              <Text style={styles.optionLabel}>Option 2</Text>
-              <View style={styles.dateTimeRow}>
-                <DatePickerInput
-                  value={newAvailabilityRequest.option2Date}
-                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Date: date })}
-                  placeholder="Select date"
-                  minDate={moment().format('YYYY-MM-DD')}
-                  style={styles.dateTimeHalf}
-                />
-                <TimePickerInput
-                  value={newAvailabilityRequest.option2Time}
-                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option2Time: time })}
-                  placeholder="Select time"
-                  style={styles.dateTimeHalf}
-                />
-              </View>
-            </View>
-
-            <View style={styles.optionBox}>
-              <Text style={styles.optionLabel}>Option 3</Text>
-              <View style={styles.dateTimeRow}>
-                <DatePickerInput
-                  value={newAvailabilityRequest.option3Date}
-                  onChange={(date) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Date: date })}
-                  placeholder="Select date"
-                  minDate={moment().format('YYYY-MM-DD')}
-                  style={styles.dateTimeHalf}
-                />
-                <TimePickerInput
-                  value={newAvailabilityRequest.option3Time}
-                  onChange={(time) => setNewAvailabilityRequest({ ...newAvailabilityRequest, option3Time: time })}
-                  placeholder="Select time"
-                  style={styles.dateTimeHalf}
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleSendAvailabilityRequest}>
-              <Text style={styles.saveIcon}>📨</Text>
-              <Text style={styles.saveButtonText}>Send Request</Text>
-            </TouchableOpacity>
           </ScrollView>
+
+          <View style={styles.erModalFooter}>
+            <TouchableOpacity
+              style={styles.erCancelBtn}
+              onPress={() => { setShowAvailabilityRequestModal(false); resetFormER(); }}
+            >
+              <Text style={styles.erCancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.erSubmitBtn, submittingER && styles.erSubmitBtnDisabled]}
+              onPress={handleCreateRequestER}
+              disabled={submittingER}
+            >
+              {submittingER ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.erSubmitBtnText}>Send Request</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -3673,7 +3993,563 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 15,
     fontWeight: '700'
-  }
+  },
+  erModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  erModalContent: {
+    backgroundColor: '#0F2640',
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 560,
+    maxHeight: '92%',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+  },
+  erModalContentDesktop: {
+    maxWidth: 680,
+  },
+  erModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(192, 192, 192, 0.2)',
+    backgroundColor: '#152d4a',
+  },
+  erModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#C0C0C0',
+    flex: 1,
+  },
+  erModalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  erModalCloseBtnText: {
+    fontSize: 16,
+    color: '#C0C0C0',
+    fontWeight: '600',
+  },
+  erModalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(192, 192, 192, 0.2)',
+    backgroundColor: '#152d4a',
+  },
+  erFormScroll: {
+    flex: 1,
+  },
+  erFormScrollContent: {
+    padding: 24,
+  },
+  erFormSection: {
+    marginBottom: 24,
+  },
+  erFormSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#C0C0C0',
+    marginBottom: 12,
+  },
+  erFormSectionSubtext: {
+    fontSize: 13,
+    color: '#999',
+    marginTop: -8,
+    marginBottom: 14,
+  },
+  erFieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C0C0C0',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  erInput: {
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    color: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 12,
+  },
+  erTextArea: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  erTwoColRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  erHalfCol: {
+    flex: 1,
+  },
+  erClientSelector: {
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+  },
+  erSelectedClientDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 12,
+  },
+  erClientAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1a5490',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  erClientAvatarText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  erSelectedClientInfo: {
+    flex: 1,
+  },
+  erSelectedClientName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  erSelectedClientEmail: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  erClearClientBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  erClearClientBtnText: {
+    fontSize: 13,
+    color: '#C0C0C0',
+    fontWeight: '600',
+  },
+  erClientSelectorPlaceholder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 10,
+  },
+  erClientSelectorPlaceholderIcon: {
+    fontSize: 18,
+  },
+  erClientSelectorPlaceholderText: {
+    flex: 1,
+    fontSize: 15,
+    color: '#999',
+  },
+  erDropdownArrow: {
+    fontSize: 12,
+    color: '#999',
+  },
+  erClientDropdown: {
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    borderRadius: 10,
+    marginTop: 8,
+    backgroundColor: '#152d4a',
+    overflow: 'hidden',
+    maxHeight: 260,
+  },
+  erDropdownSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(192, 192, 192, 0.2)',
+    paddingHorizontal: 12,
+  },
+  erDropdownSearchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#fff',
+  },
+  erDropdownClearBtn: {
+    padding: 6,
+  },
+  erDropdownClearBtnText: {
+    color: '#999',
+    fontWeight: '600',
+  },
+  erDropdownList: {
+    maxHeight: 200,
+  },
+  erDropdownEmpty: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  erDropdownEmptyText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  erDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  erDropdownItemSelected: {
+    backgroundColor: 'rgba(26, 84, 144, 0.4)',
+  },
+  erDropdownAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  erDropdownAvatarSelected: {
+    backgroundColor: '#1a5490',
+  },
+  erDropdownAvatarText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#999',
+  },
+  erDropdownAvatarTextSelected: {
+    color: '#fff',
+  },
+  erDropdownItemInfo: {
+    flex: 1,
+  },
+  erDropdownItemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  erDropdownItemNameSelected: {
+    color: '#C0C0C0',
+  },
+  erDropdownItemEmail: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 1,
+  },
+  erDropdownCheckmark: {
+    fontSize: 16,
+    color: '#C0C0C0',
+    fontWeight: '700',
+  },
+  erEventTypeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  erEventTypeCard: {
+    flex: 1,
+    minWidth: 100,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(192, 192, 192, 0.2)',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  erEventTypeCardSelected: {
+    borderColor: '#C0C0C0',
+    backgroundColor: 'rgba(26, 84, 144, 0.4)',
+  },
+  erEventTypeIcon: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+  erEventTypeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#999',
+    textAlign: 'center',
+  },
+  erEventTypeLabelSelected: {
+    color: '#C0C0C0',
+    fontWeight: '700',
+  },
+  erLocationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+  },
+  erLocationSelectorIcon: {
+    fontSize: 18,
+  },
+  erLocationSelectorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#C0C0C0',
+  },
+  erDropdownArrowSmall: {
+    fontSize: 10,
+    color: '#999',
+  },
+  erLocationDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#152d4a',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    marginTop: 4,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    zIndex: 200,
+    overflow: 'hidden',
+  },
+  erLocationDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  erLocationDropdownItemSelected: {
+    backgroundColor: 'rgba(26, 84, 144, 0.4)',
+  },
+  erLocationDropdownIcon: {
+    fontSize: 18,
+  },
+  erLocationDropdownText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  erLocationDropdownTextSelected: {
+    fontWeight: '700',
+    color: '#C0C0C0',
+  },
+  erLocationDropdownCheck: {
+    fontSize: 14,
+    color: '#C0C0C0',
+    fontWeight: '700',
+  },
+  erDurationRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  erDurationChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  erDurationChipSelected: {
+    backgroundColor: '#1a5490',
+    borderColor: '#C0C0C0',
+  },
+  erDurationChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#999',
+  },
+  erDurationChipTextSelected: {
+    color: '#fff',
+  },
+  erDateOptionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.2)',
+  },
+  erDateOptionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  erDateOptionBadge: {
+    backgroundColor: '#1a5490',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  erDateOptionBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  erDateOptionPreview: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '500',
+  },
+  erDateTimeFieldsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  erDateFieldWrapper: {
+    flex: 1,
+  },
+  erTimeFieldWrapper: {
+    flex: 1,
+  },
+  erDateTimeFieldLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  erDateInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+  },
+  erDateInputIcon: {
+    fontSize: 16,
+  },
+  erDateInputValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#C0C0C0',
+  },
+  erTimeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+  },
+  erTimeSelectorIcon: {
+    fontSize: 16,
+  },
+  erTimeSelectorText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#C0C0C0',
+  },
+  erTimeDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#152d4a',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+    marginTop: 4,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    zIndex: 300,
+  },
+  erTimeDropdownScroll: {
+    maxHeight: 200,
+  },
+  erTimeDropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  erTimeDropdownItemActive: {
+    backgroundColor: 'rgba(26, 84, 144, 0.5)',
+  },
+  erTimeDropdownText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  erTimeDropdownTextActive: {
+    fontWeight: '700',
+    color: '#C0C0C0',
+  },
+  erCancelBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 192, 192, 0.3)',
+  },
+  erCancelBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#C0C0C0',
+  },
+  erSubmitBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    backgroundColor: '#1a5490',
+    minWidth: 140,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#C0C0C0',
+  },
+  erSubmitBtnDisabled: {
+    opacity: 0.6,
+  },
+  erSubmitBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
 });
 
 export default LawFirmCalendarScreen;
