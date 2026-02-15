@@ -210,7 +210,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       providerId: provider.id,
       providerName: provider.providerName,
       amount: '',
-      email: provider.email
+      email: provider.email,
+      isManual: provider.isManual || false
     }));
     
     setMedicalProviderPayments(initialPayments);
@@ -247,8 +248,13 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         let totalMed = 0;
         liens.forEach(lien => {
           const paymentAmount = lien.finalPaymentAmount || lien.negotiatedAmount || lien.lienAmount;
-          if (paymentAmount > 0 && lien.medicalProviderId) {
-            const idx = updatedPayments.findIndex(p => p.providerId === lien.medicalProviderId);
+          if (paymentAmount > 0) {
+            let idx = -1;
+            if (lien.medicalProviderId) {
+              idx = updatedPayments.findIndex(p => p.providerId === lien.medicalProviderId);
+            } else if (lien.providerName) {
+              idx = updatedPayments.findIndex(p => p.providerId === `manual_${lien.providerName}`);
+            }
             if (idx !== -1) {
               const existing = parseCurrency(updatedPayments[idx].amount);
               const newAmount = existing + paymentAmount;
@@ -719,14 +725,21 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             
             {medicalProviderPayments.length === 0 ? (
               <Text style={styles.noProvidersText}>
-                No medical providers connected to this client
+                No medical providers found for this client. Select a settlement to load providers from liens.
               </Text>
             ) : (
               medicalProviderPayments.map((payment, index) => (
                 <View key={index} style={styles.providerPaymentRow}>
                   <View style={styles.providerInfo}>
-                    <Text style={styles.providerName}>{payment.providerName}</Text>
-                    <Text style={styles.providerEmail}>{payment.email}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.providerName}>{payment.providerName}</Text>
+                      {payment.isManual && (
+                        <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: '#92400E' }}>Manual</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.providerEmail}>{payment.email || 'No email'}</Text>
                   </View>
                   <TextInput
                     style={styles.providerAmountInput}

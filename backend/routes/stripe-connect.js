@@ -8,8 +8,13 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 const { authenticateToken } = require('../middleware/auth');
 const db = require('../config/db');
 
-// Warn if Stripe is not configured
-if (!stripe) {
+if (stripe) {
+  const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
+  console.log(`[Stripe Connect] Stripe ${isTestMode ? '🧪 TEST MODE' : '🔴 LIVE MODE'}`);
+  if (!isTestMode) {
+    console.warn('⚠️  WARNING: Stripe Connect is running in LIVE MODE!');
+  }
+} else {
   console.warn('⚠️  STRIPE_SECRET_KEY not found - Stripe Connect routes will be disabled');
 }
 

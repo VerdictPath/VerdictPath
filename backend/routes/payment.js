@@ -19,7 +19,11 @@ const router = express.Router();
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  console.log('✅ Stripe configured successfully');
+  const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
+  console.log(`✅ Stripe configured successfully - ${isTestMode ? '🧪 TEST MODE' : '🔴 LIVE MODE'}`);
+  if (!isTestMode) {
+    console.warn('⚠️  WARNING: Stripe is running in LIVE MODE - real charges will be made!');
+  }
 } else {
   console.warn('⚠️  STRIPE_SECRET_KEY not found - payment routes will be disabled');
 }

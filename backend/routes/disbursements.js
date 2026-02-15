@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+if (stripe) {
+  const isTestMode = process.env.STRIPE_SECRET_KEY.startsWith('sk_test_');
+  console.log(`[Disbursements] Stripe ${isTestMode ? '🧪 TEST MODE' : '🔴 LIVE MODE'}`);
+}
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
 const { sendDisbursementProcessedEmail, sendLienPaymentEmail } = require('../services/emailService');
@@ -85,26 +89,78 @@ router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawF
       return res.status(403).json({ error: 'Access denied to this client' });
     }
 
-    // Get medical providers connected to this client
-    const result = await db.query(`
+    // Get medical providers from two sources:
+    // 1. Connected providers (medical_provider_patients)
+    // 2. Providers from settlement liens (including manual entries)
+    const connectedResult = await db.query(`
       SELECT DISTINCT
         mp.id,
         mp.provider_name as "providerName",
         mp.email,
-        mp.stripe_account_id
+        mp.stripe_account_id,
+        'connected' as source
       FROM medical_providers mp
       JOIN medical_provider_patients mpp ON mp.id = mpp.medical_provider_id
       WHERE mpp.patient_id = $1
-      ORDER BY mp.provider_name
     `, [clientId]);
 
-    res.json({
-      providers: result.rows.map(row => ({
+    // Get providers from settlement liens (connected + manual)
+    const lienResult = await db.query(`
+      SELECT DISTINCT
+        ml.medical_provider_id,
+        COALESCE(mp.provider_name, ml.manual_provider_name) as "providerName",
+        COALESCE(mp.email, ml.manual_provider_email) as email,
+        mp.stripe_account_id,
+        ml.manual_provider_name,
+        ml.manual_provider_email,
+        ml.manual_provider_phone
+      FROM medical_liens ml
+      JOIN settlements s ON ml.settlement_id = s.id
+      LEFT JOIN medical_providers mp ON ml.medical_provider_id = mp.id
+      WHERE s.client_id = $1 AND s.law_firm_id = $2
+    `, [clientId, lawFirmId]);
+
+    // Merge: use connected providers as base, add any from liens not already present
+    const providerMap = new Map();
+    
+    for (const row of connectedResult.rows) {
+      providerMap.set(row.id, {
         id: row.id,
         providerName: row.providerName,
         email: row.email,
-        hasStripeAccount: !!row.stripe_account_id
-      }))
+        hasStripeAccount: !!row.stripe_account_id,
+        isManual: false
+      });
+    }
+
+    for (const row of lienResult.rows) {
+      if (row.medical_provider_id && !providerMap.has(row.medical_provider_id)) {
+        providerMap.set(row.medical_provider_id, {
+          id: row.medical_provider_id,
+          providerName: row.providerName,
+          email: row.email,
+          hasStripeAccount: !!row.stripe_account_id,
+          isManual: false
+        });
+      } else if (!row.medical_provider_id && row.manual_provider_name) {
+        const manualKey = `manual_${row.manual_provider_name}`;
+        if (!providerMap.has(manualKey)) {
+          providerMap.set(manualKey, {
+            id: manualKey,
+            providerName: row.providerName,
+            email: row.email || '',
+            hasStripeAccount: false,
+            isManual: true,
+            manualProviderPhone: row.manual_provider_phone
+          });
+        }
+      }
+    }
+
+    res.json({
+      providers: Array.from(providerMap.values()).sort((a, b) => 
+        (a.providerName || '').localeCompare(b.providerName || '')
+      )
     });
   } catch (error) {
     console.error('Error fetching client providers:', error);
