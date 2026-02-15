@@ -75,6 +75,8 @@ router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawF
     const { clientId } = req.query;
     const lawFirmId = req.user.id;
 
+    console.log('[client-providers] Request for clientId:', clientId, 'lawFirmId:', lawFirmId);
+
     if (!clientId) {
       return res.status(400).json({ error: 'Client ID is required' });
     }
@@ -157,11 +159,12 @@ router.get('/client-providers', authenticateToken, isLawFirm, requirePremiumLawF
       }
     }
 
-    res.json({
-      providers: Array.from(providerMap.values()).sort((a, b) => 
-        (a.providerName || '').localeCompare(b.providerName || '')
-      )
-    });
+    const providers = Array.from(providerMap.values()).sort((a, b) => 
+      (a.providerName || '').localeCompare(b.providerName || '')
+    );
+    console.log('[client-providers] Found', connectedResult.rows.length, 'connected,', lienResult.rows.length, 'from liens, total merged:', providers.length);
+    console.log('[client-providers] Providers:', JSON.stringify(providers));
+    res.json({ providers });
   } catch (error) {
     console.error('Error fetching client providers:', error);
     res.status(500).json({ error: 'Failed to fetch medical providers' });
