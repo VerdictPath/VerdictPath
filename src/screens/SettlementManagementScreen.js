@@ -649,7 +649,10 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const loadDisclaimer = async () => {
     try {
       setDisclaimerLoading(true);
-      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.DISCLAIMER);
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.DISCLAIMER, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
       setDisclaimerText(response.disclaimer || '');
     } catch (error) {
       console.error('Error loading disclaimer:', error);
@@ -663,6 +666,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       setDisclaimerLoading(true);
       await apiRequest(API_ENDPOINTS.SETTLEMENTS.DISCLAIMER, {
         method: 'PUT',
+        headers: { 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ disclaimer: disclaimerText }),
       });
       alert('Success', 'Disclaimer saved successfully. It will appear on all future settlement statements.');
@@ -723,9 +727,12 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         {view === 'detail' ? 'Settlement Statement' : 'Settlements'}
       </Text>
       {view === 'list' && (
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity style={[styles.createButton, { backgroundColor: '#92400e' }]} onPress={openDisclaimerModal}>
-            <Text style={styles.createButtonText}>Disclaimer</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity
+            style={{ padding: 8, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.15)' }}
+            onPress={openDisclaimerModal}
+          >
+            <Text style={{ fontSize: 18 }}>📋</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.createButton} onPress={handleOpenCreateModal}>
             <Text style={styles.createButtonText}>+ New</Text>
