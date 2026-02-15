@@ -1733,6 +1733,7 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
         <IndividualDisbursementsScreen 
           user={user}
           onBack={() => setCurrentScreen('dashboard')}
+          onNavigate={(screen) => setCurrentScreen(screen)}
         />
       )}
 

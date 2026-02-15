@@ -13,9 +13,10 @@ import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
-const IndividualDisbursementsScreen = ({ user, onBack }) => {
+const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
   const [disbursements, setDisbursements] = useState([]);
   const [bankInfo, setBankInfo] = useState(null);
+  const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showBankModal, setShowBankModal] = useState(false);
@@ -35,9 +36,23 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadDisbursements(), loadBankInfo()]);
+      await Promise.all([loadDisbursements(), loadBankInfo(), loadStripeStatus()]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStripeStatus = async () => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.ACCOUNT_STATUS, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      setStripeAccountStatus(response);
+    } catch (error) {
+      console.error('Error loading Stripe account status:', error);
     }
   };
 
@@ -140,6 +155,81 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
         <Text style={[styles.statusText, { color: statusStyle.text }]}>
           {statusStyle.label}
         </Text>
+      </View>
+    );
+  };
+
+  const renderStripeConnectSection = () => {
+    const hasAccount = stripeAccountStatus?.hasAccount;
+    const isComplete = stripeAccountStatus?.onboardingComplete;
+
+    if (hasAccount && isComplete) {
+      return (
+        <View style={styles.section}>
+          <View style={[styles.stripeStatusBanner, styles.stripeStatusReady]}>
+            <Text style={styles.stripeStatusIcon}>✓</Text>
+            <View style={styles.stripeStatusContent}>
+              <Text style={styles.stripeStatusTitle}>Payout Account Active</Text>
+              <Text style={styles.stripeStatusText}>
+                Your Stripe account is set up and ready to receive electronic disbursements.
+              </Text>
+            </View>
+          </View>
+          {onNavigate && (
+            <TouchableOpacity
+              style={styles.stripeManageButton}
+              onPress={() => onNavigate('individual-payment-setup')}
+            >
+              <Text style={styles.stripeManageButtonText}>Manage Payout Account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+
+    if (hasAccount && !isComplete) {
+      return (
+        <View style={styles.section}>
+          <View style={[styles.stripeStatusBanner, styles.stripeStatusPending]}>
+            <Text style={styles.stripeStatusIcon}>⚠️</Text>
+            <View style={styles.stripeStatusContent}>
+              <Text style={styles.stripeStatusTitle}>Setup Incomplete</Text>
+              <Text style={styles.stripeStatusText}>
+                Your payout account setup is not finished. Complete it to receive electronic disbursements from your law firm.
+              </Text>
+            </View>
+          </View>
+          {onNavigate && (
+            <TouchableOpacity
+              style={styles.stripeSetupButton}
+              onPress={() => onNavigate('individual-payment-setup')}
+            >
+              <Text style={styles.stripeSetupButtonText}>Complete Payout Setup</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.section}>
+        <View style={[styles.stripeStatusBanner, styles.stripeStatusSetup]}>
+          <Text style={styles.stripeStatusIcon}>💰</Text>
+          <View style={styles.stripeStatusContent}>
+            <Text style={styles.stripeStatusTitle}>Set Up Electronic Payouts</Text>
+            <Text style={styles.stripeStatusText}>
+              Connect your bank account through Stripe to receive settlement disbursements electronically. This is the fastest and most secure way to get paid.
+            </Text>
+          </View>
+        </View>
+        {onNavigate && (
+          <TouchableOpacity
+            style={styles.stripeSetupButton}
+            onPress={() => onNavigate('individual-payment-setup')}
+          >
+            <Text style={styles.stripeSetupButtonText}>Set Up Payout Account</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -432,6 +522,7 @@ const IndividualDisbursementsScreen = ({ user, onBack }) => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {renderStripeConnectSection()}
         {renderBankInfoSection()}
         {renderDisbursementsSection()}
       </ScrollView>
@@ -838,6 +929,70 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  stripeStatusBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  stripeStatusReady: {
+    backgroundColor: 'rgba(40, 167, 69, 0.15)',
+    borderColor: 'rgba(40, 167, 69, 0.4)',
+  },
+  stripeStatusPending: {
+    backgroundColor: 'rgba(255, 193, 7, 0.15)',
+    borderColor: 'rgba(255, 193, 7, 0.4)',
+  },
+  stripeStatusSetup: {
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+  },
+  stripeStatusIcon: {
+    fontSize: 24,
+    marginRight: 12,
+    marginTop: 2,
+  },
+  stripeStatusContent: {
+    flex: 1,
+  },
+  stripeStatusTitle: {
+    color: '#D4AF37',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  stripeStatusText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  stripeSetupButton: {
+    backgroundColor: '#D4AF37',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  stripeSetupButtonText: {
+    color: '#1a1a2e',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  stripeManageButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(40, 167, 69, 0.5)',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  stripeManageButtonText: {
+    color: '#28a745',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
