@@ -1657,13 +1657,13 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             onChangeText={v => setIOLTAForm(prev => ({ ...prev, ioltaReferenceNumber: v }))}
           />
 
-          <Text style={styles.inputLabel}>Deposit Date</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#9CA3AF"
+          <DatePickerInput
+            label="Deposit Date"
             value={ioltaForm.ioltaDepositDate}
-            onChangeText={v => setIOLTAForm(prev => ({ ...prev, ioltaDepositDate: v }))}
+            onChange={v => setIOLTAForm(prev => ({ ...prev, ioltaDepositDate: v }))}
+            placeholder="Select deposit date"
+            variant="light"
+            accentColor="#7C3AED"
           />
 
           <Text style={styles.inputLabel}>Notes</Text>
