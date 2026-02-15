@@ -9,12 +9,13 @@ import {
  Platform,
  ActivityIndicator,
  Modal,
- TextInput
+ TextInput,
+ useWindowDimensions
 } from 'react-native';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 
 const getThemeForUserType = (isMedicalProvider) => {
   if (isMedicalProvider) {
@@ -44,6 +45,7 @@ const getThemeForUserType = (isMedicalProvider) => {
 };
 
 const NotificationSettingsScreen = ({ user, onBack }) => {
+  const { width } = useWindowDimensions();
   const isMedicalProvider = user?.userType === 'medical_provider' || user?.type === 'medicalprovider';
   const themeColors = useMemo(() => getThemeForUserType(isMedicalProvider), [isMedicalProvider]);
   const styles = useMemo(() => createStyles(themeColors), [themeColors]);
@@ -51,6 +53,15 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   const [saving, setSaving] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(null);
   const [timeInput, setTimeInput] = useState('');
+  const [activeSection, setActiveSection] = useState('contact');
+  const [contactInfo, setContactInfo] = useState({
+    firstName: '', lastName: '', email: '', phone: '', phone2: '',
+    street: '', city: '', state: '', zipCode: '',
+    emergencyContactName: '', emergencyContactPhone: '', emergencyContactEmail: ''
+  });
+  const [contactLoading, setContactLoading] = useState(true);
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactEditing, setContactEditing] = useState(false);
   const [preferences, setPreferences] = useState({
     pushNotificationsEnabled: true,
     emailNotificationsEnabled: true,
@@ -79,7 +90,58 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
   useEffect(() => {
     fetchPreferences();
     fetchEmailCCPreferences();
+    fetchContactInfo();
   }, []);
+
+  const fetchContactInfo = async () => {
+    try {
+      setContactLoading(true);
+      const response = await fetch(API_ENDPOINTS.AUTH.CONTACT_INFO, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setContactInfo(data.contactInfo);
+      }
+    } catch (error) {
+      console.error('Error fetching contact info:', error);
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  const saveContactInfo = async () => {
+    try {
+      setContactSaving(true);
+      const response = await fetch(API_ENDPOINTS.AUTH.CONTACT_INFO, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contactInfo)
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        alert('Success', 'Your contact information has been saved.');
+        setContactEditing(false);
+      } else {
+        alert('Error', data.error || 'Failed to save contact information.');
+      }
+    } catch (error) {
+      console.error('Error saving contact info:', error);
+      alert('Error', 'Failed to save contact information.');
+    } finally {
+      setContactSaving(false);
+    }
+  };
+
+  const updateContactField = (field, value) => {
+    setContactInfo(prev => ({ ...prev, [field]: value }));
+  };
 
   const fetchEmailCCPreferences = async () => {
     try {
@@ -297,16 +359,125 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
     );
   }
 
+  const renderContactField = (label, field, options = {}) => {
+    const { keyboardType, placeholder, editable = true } = options;
+    return (
+      <View style={styles.contactFieldContainer}>
+        <Text style={styles.contactFieldLabel}>{label}</Text>
+        {contactEditing && editable ? (
+          <TextInput
+            style={styles.contactInput}
+            value={contactInfo[field] || ''}
+            onChangeText={(val) => updateContactField(field, val)}
+            placeholder={placeholder || label}
+            placeholderTextColor="#999"
+            keyboardType={keyboardType || 'default'}
+            autoCapitalize={keyboardType === 'email-address' ? 'none' : 'words'}
+          />
+        ) : (
+          <Text style={styles.contactFieldValue}>
+            {contactInfo[field] || '—'}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  const renderContactSection = () => {
+    if (contactLoading) {
+      return (
+        <View style={styles.contactLoadingContainer}>
+          <ActivityIndicator size="large" color={themeColors.primary} />
+          <Text style={styles.loadingText}>Loading contact info...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.section}>
+          <View style={styles.contactSectionHeader}>
+            <Text style={styles.sectionTitle}>👤 Personal Information</Text>
+            {!contactEditing ? (
+              <TouchableOpacity style={styles.editButton} onPress={() => setContactEditing(true)}>
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.editActions}>
+                <TouchableOpacity style={styles.cancelEditButton} onPress={() => { setContactEditing(false); fetchContactInfo(); }}>
+                  <Text style={styles.cancelEditButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.saveButton} onPress={saveContactInfo} disabled={contactSaving}>
+                  {contactSaving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.contactRow}>
+            {renderContactField('First Name', 'firstName')}
+            {renderContactField('Last Name', 'lastName')}
+          </View>
+          {renderContactField('Email', 'email', { keyboardType: 'email-address', editable: false })}
+          <View style={styles.contactRow}>
+            {renderContactField('Phone Number', 'phone', { keyboardType: 'phone-pad' })}
+            {renderContactField('Phone Number 2', 'phone2', { keyboardType: 'phone-pad' })}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>📍 Address</Text>
+          {renderContactField('Street Address', 'street')}
+          <View style={styles.contactRow}>
+            {renderContactField('City', 'city')}
+            {renderContactField('State', 'state')}
+          </View>
+          {renderContactField('Zip Code', 'zipCode', { keyboardType: 'numeric' })}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🚨 Emergency Contact</Text>
+          {renderContactField('Contact Name', 'emergencyContactName')}
+          {renderContactField('Contact Phone', 'emergencyContactPhone', { keyboardType: 'phone-pad' })}
+          {renderContactField('Contact Email', 'emergencyContactEmail', { keyboardType: 'email-address' })}
+        </View>
+      </>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notification Settings</Text>
+        <Text style={styles.headerTitle}>Profile & Settings</Text>
+      </View>
+
+      <View style={styles.tabBar}>
+        <TouchableOpacity 
+          style={[styles.tab, activeSection === 'contact' && styles.tabActive]}
+          onPress={() => setActiveSection('contact')}
+        >
+          <Text style={[styles.tabText, activeSection === 'contact' && styles.tabTextActive]}>Contact Info</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeSection === 'notifications' && styles.tabActive]}
+          onPress={() => setActiveSection('notifications')}
+        >
+          <Text style={[styles.tabText, activeSection === 'notifications' && styles.tabTextActive]}>Notifications</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        {activeSection === 'contact' && renderContactSection()}
+
+        {activeSection === 'notifications' && (
+        <>
         {/* Global Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔔 Global Settings</Text>
@@ -616,6 +787,8 @@ const NotificationSettingsScreen = ({ user, onBack }) => {
             🏴‍☠️ Ahoy! These settings help you control when and how you receive notifications on your journey to justice.
           </Text>
         </View>
+        </>
+        )}
       </ScrollView>
 
       {saving && (
@@ -741,6 +914,117 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text,
     marginBottom: 15
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.primary,
+  },
+  contactLoadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  contactSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  editButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  editButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cancelEditButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelEditButtonText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  saveButton: {
+    backgroundColor: '#27ae60',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  contactFieldContainer: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  contactFieldLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  contactFieldValue: {
+    fontSize: 16,
+    color: colors.text,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  contactInput: {
+    fontSize: 16,
+    color: colors.text,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   settingRow: {
     flexDirection: 'row',

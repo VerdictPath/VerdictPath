@@ -1663,3 +1663,114 @@ exports.refreshToken = async (req, res) => {
     res.status(500).json({ message: 'Failed to refresh token' });
   }
 };
+
+exports.getContactInfo = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await db.query(
+      `SELECT first_name, last_name, email, first_name_encrypted, last_name_encrypted,
+              phone_encrypted, phone2_encrypted, street_encrypted, city_encrypted, 
+              state_encrypted, zip_code_encrypted,
+              emergency_contact_name_encrypted, emergency_contact_phone_encrypted, 
+              emergency_contact_email_encrypted
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = result.rows[0];
+
+    const decrypt = (val) => {
+      if (!val) return '';
+      try { return encryption.decrypt(val); } catch { return ''; }
+    };
+
+    const fullName = `${decrypt(user.first_name_encrypted) || user.first_name || ''} ${decrypt(user.last_name_encrypted) || user.last_name || ''}`.trim();
+
+    res.json({
+      success: true,
+      contactInfo: {
+        fullName,
+        firstName: decrypt(user.first_name_encrypted) || user.first_name || '',
+        lastName: decrypt(user.last_name_encrypted) || user.last_name || '',
+        email: user.email || '',
+        phone: decrypt(user.phone_encrypted),
+        phone2: decrypt(user.phone2_encrypted),
+        street: decrypt(user.street_encrypted),
+        city: decrypt(user.city_encrypted),
+        state: decrypt(user.state_encrypted),
+        zipCode: decrypt(user.zip_code_encrypted),
+        emergencyContactName: decrypt(user.emergency_contact_name_encrypted),
+        emergencyContactPhone: decrypt(user.emergency_contact_phone_encrypted),
+        emergencyContactEmail: decrypt(user.emergency_contact_email_encrypted),
+      }
+    });
+  } catch (error) {
+    console.error('[Get Contact Info] Error:', error.message);
+    res.status(500).json({ error: 'Failed to fetch contact information' });
+  }
+};
+
+exports.updateContactInfo = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { firstName, lastName, phone, phone2, street, city, state, zipCode,
+            emergencyContactName, emergencyContactPhone, emergencyContactEmail } = req.body;
+
+    const encryptVal = (val) => {
+      if (!val || !val.trim()) return null;
+      return encryption.encrypt(val.trim());
+    };
+
+    await db.query(
+      `UPDATE users SET
+        first_name = $1,
+        last_name = $2,
+        first_name_encrypted = $3,
+        last_name_encrypted = $4,
+        phone_encrypted = $5,
+        phone2_encrypted = $6,
+        street_encrypted = $7,
+        city_encrypted = $8,
+        state_encrypted = $9,
+        zip_code_encrypted = $10,
+        emergency_contact_name_encrypted = $11,
+        emergency_contact_phone_encrypted = $12,
+        emergency_contact_email_encrypted = $13
+      WHERE id = $14`,
+      [
+        (firstName || '').trim(),
+        (lastName || '').trim(),
+        encryptVal(firstName),
+        encryptVal(lastName),
+        encryptVal(phone),
+        encryptVal(phone2),
+        encryptVal(street),
+        encryptVal(city),
+        encryptVal(state),
+        encryptVal(zipCode),
+        encryptVal(emergencyContactName),
+        encryptVal(emergencyContactPhone),
+        encryptVal(emergencyContactEmail),
+        userId
+      ]
+    );
+
+    await auditLogger.log({
+      userId,
+      action: 'UPDATE_CONTACT_INFO',
+      resourceType: 'user',
+      resourceId: userId,
+      ipAddress: req.ip,
+      details: { fieldsUpdated: Object.keys(req.body).filter(k => req.body[k] !== undefined) }
+    });
+
+    res.json({ success: true, message: 'Contact information updated successfully' });
+  } catch (error) {
+    console.error('[Update Contact Info] Error:', error.message);
+    res.status(500).json({ error: 'Failed to update contact information' });
+  }
+};

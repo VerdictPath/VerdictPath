@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,
     LOGOUT: `${API_BASE_URL}/api/auth/logout`,
     REFRESH_TOKEN: `${API_BASE_URL}/api/auth/refresh-token`,
+    CONTACT_INFO: `${API_BASE_URL}/api/auth/contact-info`,
   },
 
   // Coins & Gamification

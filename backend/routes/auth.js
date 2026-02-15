@@ -35,4 +35,8 @@ router.get('/verify-reset-token', authController.verifyResetToken);
 // Token refresh - issue new token using valid existing token
 router.post('/refresh-token', authenticateToken, authController.refreshToken);
 
+// Contact information endpoints
+router.get('/contact-info', authenticateToken, authController.getContactInfo);
+router.put('/contact-info', authenticateToken, authController.updateContactInfo);
+
 module.exports = router;
