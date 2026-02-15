@@ -537,7 +537,6 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">$${formatC(orig)}</td>
             <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:bold;">$${formatC(lien)}</td>
             <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;text-align:right;color:#16a34a;">${savings > 0 ? '$' + formatC(savings) : '-'}</td>
-            <td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${(l.status || '').toUpperCase()}</td>
           </tr>`;
         }).join('');
       }
@@ -607,7 +606,6 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                 <th style="text-align:right;">Original Bill</th>
                 <th style="text-align:right;">Negotiated Amount</th>
                 <th style="text-align:right;">Savings</th>
-                <th style="text-align:center;">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -617,7 +615,6 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                 <td style="padding:10px 8px;border-top:2px solid #d1d5db;text-align:right;">$${formatC(totalOriginal)}</td>
                 <td style="padding:10px 8px;border-top:2px solid #d1d5db;text-align:right;">$${formatC(totalLien)}</td>
                 <td style="padding:10px 8px;border-top:2px solid #d1d5db;text-align:right;color:#16a34a;">${totalSavings > 0 ? '$' + formatC(totalSavings) : '-'}</td>
-                <td style="padding:10px 8px;border-top:2px solid #d1d5db;"></td>
               </tr>
             </tbody>
           </table>
@@ -1142,15 +1139,6 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                       <View key={lien.id} style={styles.lienItem}>
                         <View style={styles.lienHeader}>
                           <Text style={styles.lienProvider}>{lien.providerName}</Text>
-                          <View style={[styles.statusBadge, {
-                            backgroundColor: lien.status === 'paid' ? '#D1FAE5' : '#F3F4F6'
-                          }]}>
-                            <Text style={[styles.statusBadgeText, {
-                              color: lien.status === 'paid' ? '#059669' : '#6B7280'
-                            }]}>
-                              {(lien.status || '').toUpperCase()}
-                            </Text>
-                          </View>
                         </View>
                         <View style={styles.lienDetails}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>

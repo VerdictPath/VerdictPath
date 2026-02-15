@@ -1438,9 +1438,6 @@ async function sendSettlementStatementEmail(toEmail, recipientName, statementDat
         <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(orig)}</td>
         <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;">$${formatCurrency(lien)}</td>
         <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #16a34a;">${savings > 0 ? '$' + formatCurrency(savings) : '-'}</td>
-        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">
-          <span style="background: ${l.status === 'paid' ? '#d1fae5' : '#f3f4f6'}; color: ${l.status === 'paid' ? '#059669' : '#6b7280'}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${(l.status || 'pending').toUpperCase()}</span>
-        </td>
       </tr>`;
     }).join('');
 
@@ -1454,7 +1451,6 @@ async function sendSettlementStatementEmail(toEmail, recipientName, statementDat
             <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Original Bill</th>
             <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Negotiated Amount</th>
             <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Savings</th>
-            <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #d1d5db; font-size: 13px;">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -1464,7 +1460,6 @@ async function sendSettlementStatementEmail(toEmail, recipientName, statementDat
             <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right;">$${formatCurrency(totalOriginal)}</td>
             <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right;">$${formatCurrency(totalLien)}</td>
             <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right; color: #16a34a;">${totalSavings > 0 ? '$' + formatCurrency(totalSavings) : '-'}</td>
-            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db;"></td>
           </tr>
         </tbody>
       </table>
