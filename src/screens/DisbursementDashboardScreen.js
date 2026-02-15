@@ -571,9 +571,11 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
           'Settlement disbursements require a Premium plan. Please upgrade your subscription to access this feature.'
         );
       } else {
+        const detail = responseData?.details || responseData?.hint || '';
+        const errorMsg = error.message || 'Failed to process disbursement. Please try again.';
         alert(
           'Disbursement Error',
-          error.message || 'Failed to process disbursement. Please try again.'
+          detail ? `${errorMsg}\n\n${detail}` : errorMsg
         );
       }
     } finally {
