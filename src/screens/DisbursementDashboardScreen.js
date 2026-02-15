@@ -59,6 +59,13 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [loadingSettlements, setLoadingSettlements] = useState(false);
   const [disbursementMethod, setDisbursementMethod] = useState('app_transfer');
+  const [settlementLiens, setSettlementLiens] = useState([]);
+  const [loadingSettlementDetail, setLoadingSettlementDetail] = useState(false);
+  const [withholdFunds, setWithholdFunds] = useState(false);
+  const [withholdAmount, setWithholdAmount] = useState('');
+  const [withholdReason, setWithholdReason] = useState('');
+  const [autoFilledClient, setAutoFilledClient] = useState(false);
+  const [autoFilledProviders, setAutoFilledProviders] = useState(false);
 
   useEffect(() => {
     loadSubscription();
@@ -178,7 +185,6 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const handleSelectClient = async (client) => {
-    // Check premium access before allowing disbursement creation
     if (!checkPremiumAccess()) {
       return;
     }
@@ -189,9 +195,14 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setTotalMedicalPayments(0);
     setSelectedSettlement(null);
     setClientSettlements([]);
+    setSettlementLiens([]);
     setDisbursementMethod('app_transfer');
+    setWithholdFunds(false);
+    setWithholdAmount('');
+    setWithholdReason('');
+    setAutoFilledClient(false);
+    setAutoFilledProviders(false);
     
-    // Load settlements and medical providers in parallel
     loadClientSettlements(client.id);
     const providers = await loadClientMedicalProviders(client.id);
     
@@ -206,6 +217,57 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setShowDisbursementModal(true);
   };
 
+  const handleSelectSettlement = async (settlement) => {
+    setSelectedSettlement(settlement);
+    setLoadingSettlementDetail(true);
+    setAutoFilledClient(false);
+    setAutoFilledProviders(false);
+    setWithholdFunds(false);
+    setWithholdAmount('');
+    setWithholdReason('');
+
+    try {
+      const detail = await apiRequest(API_ENDPOINTS.SETTLEMENTS.GET(settlement.id), {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+
+      const s = detail.settlement;
+      const liens = detail.liens || [];
+      setSettlementLiens(liens);
+
+      const netToClient = s.grossSettlementAmount - s.attorneyFees - s.attorneyCosts - s.totalMedicalLiens;
+      if (netToClient > 0) {
+        setDisbursementAmount(netToClient.toFixed(2));
+        setAutoFilledClient(true);
+      }
+
+      if (liens.length > 0) {
+        const updatedPayments = [...medicalProviderPayments];
+        let totalMed = 0;
+        liens.forEach(lien => {
+          const paymentAmount = lien.finalPaymentAmount || lien.negotiatedAmount || lien.lienAmount;
+          if (paymentAmount > 0 && lien.medicalProviderId) {
+            const idx = updatedPayments.findIndex(p => p.providerId === lien.medicalProviderId);
+            if (idx !== -1) {
+              const existing = parseCurrency(updatedPayments[idx].amount);
+              const newAmount = existing + paymentAmount;
+              updatedPayments[idx].amount = newAmount.toFixed(2);
+            }
+          }
+        });
+        totalMed = updatedPayments.reduce((sum, p) => sum + parseCurrency(p.amount), 0);
+        setMedicalProviderPayments(updatedPayments);
+        setTotalMedicalPayments(totalMed);
+        if (totalMed > 0) setAutoFilledProviders(true);
+      }
+    } catch (error) {
+      console.error('Error loading settlement details:', error);
+    } finally {
+      setLoadingSettlementDetail(false);
+    }
+  };
+
   const loadClientSettlements = async (clientId) => {
     setLoadingSettlements(true);
     try {
@@ -218,7 +280,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       const settlements = response.settlements || [];
       setClientSettlements(settlements);
       if (settlements.length === 1) {
-        setSelectedSettlement(settlements[0]);
+        handleSelectSettlement(settlements[0]);
       }
     } catch (error) {
       console.error('Error loading settlements:', error);
@@ -245,8 +307,14 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     return disbursementMethod === 'app_transfer' ? 200 : 0;
   };
 
+  const getEffectiveClientAmount = () => {
+    const base = parseCurrency(disbursementAmount);
+    const held = withholdFunds ? parseCurrency(withholdAmount) : 0;
+    return Math.max(0, base - held);
+  };
+
   const calculateTotalDisbursement = () => {
-    const clientAmount = parseCurrency(disbursementAmount);
+    const clientAmount = getEffectiveClientAmount();
     const medicalTotal = totalMedicalPayments;
     const platformFee = calculatePlatformFee();
     
@@ -264,6 +332,22 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     if (!clientAmount || clientAmount <= 0) {
       alert('Error', 'Please enter a valid client disbursement amount');
       return false;
+    }
+
+    if (withholdFunds) {
+      const held = parseCurrency(withholdAmount);
+      if (!held || held <= 0) {
+        alert('Error', 'Please enter a valid amount to withhold');
+        return false;
+      }
+      if (held >= clientAmount) {
+        alert('Error', 'Withheld amount cannot equal or exceed the client payment amount');
+        return false;
+      }
+      if (!withholdReason.trim()) {
+        alert('Reason Required', 'Please provide a reason for withholding funds from the client');
+        return false;
+      }
     }
 
     for (let payment of medicalProviderPayments) {
@@ -284,16 +368,23 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       return;
     }
 
-    const clientAmount = parseCurrency(disbursementAmount);
+    const effectiveClient = getEffectiveClientAmount();
     const totalAmount = calculateTotalDisbursement();
+    const held = withholdFunds ? parseCurrency(withholdAmount) : 0;
+
+    let confirmMsg = `Client Payment: $${effectiveClient.toFixed(2)}\n`;
+    if (held > 0) {
+      confirmMsg += `Withheld from Client: $${held.toFixed(2)}\n`;
+      confirmMsg += `Reason: ${withholdReason.trim()}\n`;
+    }
+    confirmMsg += `Medical Providers: $${totalMedicalPayments.toFixed(2)}\n`;
+    confirmMsg += `Platform Fee: $${calculatePlatformFee().toFixed(2)}\n`;
+    confirmMsg += `Total to Charge: $${totalAmount.toFixed(2)}\n\n`;
+    confirmMsg += `Process this disbursement?`;
 
     alert(
       'Confirm Disbursement',
-      `Client Payment: $${clientAmount.toFixed(2)}\n` +
-      `Medical Providers: $${totalMedicalPayments.toFixed(2)}\n` +
-      `Platform Fee: $${calculatePlatformFee().toFixed(2)}\n` +
-      `Total to Charge: $${totalAmount.toFixed(2)}\n\n` +
-      `Process this disbursement?`,
+      confirmMsg,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -318,19 +409,29 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
           email: p.email
         }));
 
+      const held = withholdFunds ? parseCurrency(withholdAmount) : 0;
+      const effectiveClientAmount = getEffectiveClientAmount();
+
+      const body = {
+        clientId: selectedClient.id,
+        clientAmount: effectiveClientAmount,
+        medicalPayments: validMedicalPayments,
+        platformFee: calculatePlatformFee(),
+        settlementId: selectedSettlement.id,
+        disbursementMethod: disbursementMethod
+      };
+
+      if (held > 0) {
+        body.withholdAmount = held;
+        body.withholdReason = withholdReason.trim();
+      }
+
       const response = await apiRequest(API_ENDPOINTS.DISBURSEMENTS.PROCESS, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`
         },
-        body: JSON.stringify({
-          clientId: selectedClient.id,
-          clientAmount: parseCurrency(disbursementAmount),
-          medicalPayments: validMedicalPayments,
-          platformFee: calculatePlatformFee(),
-          settlementId: selectedSettlement.id,
-          disbursementMethod: disbursementMethod
-        })
+        body: JSON.stringify(body)
       });
 
       if (response.success) {
@@ -434,7 +535,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                       padding: 14,
                       marginBottom: 8
                     }}
-                    onPress={() => setSelectedSettlement(settlement)}
+                    onPress={() => handleSelectSettlement(settlement)}
                   >
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={{ fontSize: 15, fontWeight: '600', color: '#1E3A5F', flex: 1 }}>
@@ -511,19 +612,107 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
           {/* Client Payment Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Client Payment</Text>
+            {autoFilledClient && (
+              <View style={{ backgroundColor: '#DBEAFE', padding: 10, borderRadius: 8, marginBottom: 10 }}>
+                <Text style={{ color: '#1E40AF', fontSize: 12, fontWeight: '600' }}>
+                  Auto-filled from settlement statement (Net to Client). You can adjust if needed.
+                </Text>
+              </View>
+            )}
+            {loadingSettlementDetail && (
+              <ActivityIndicator size="small" color="#1E3A5F" style={{ marginBottom: 8 }} />
+            )}
             <Text style={styles.inputLabel}>Amount to Client *</Text>
             <TextInput
               style={styles.amountInput}
               placeholder="0.00"
               keyboardType="decimal-pad"
               value={disbursementAmount}
-              onChangeText={(text) => setDisbursementAmount(sanitizeCurrencyInput(text))}
+              onChangeText={(text) => {
+                setDisbursementAmount(sanitizeCurrencyInput(text));
+                setAutoFilledClient(false);
+              }}
             />
+
+            {/* Withhold Funds Toggle */}
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginTop: 14,
+                paddingVertical: 10,
+                paddingHorizontal: 12,
+                backgroundColor: withholdFunds ? '#FEF2F2' : '#F9FAFB',
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: withholdFunds ? '#FECACA' : '#E5E7EB'
+              }}
+              onPress={() => {
+                setWithholdFunds(!withholdFunds);
+                if (withholdFunds) {
+                  setWithholdAmount('');
+                  setWithholdReason('');
+                }
+              }}
+            >
+              <View style={{
+                width: 22, height: 22, borderRadius: 4,
+                borderWidth: 2, borderColor: withholdFunds ? '#DC2626' : '#9CA3AF',
+                backgroundColor: withholdFunds ? '#DC2626' : 'transparent',
+                marginRight: 10, justifyContent: 'center', alignItems: 'center'
+              }}>
+                {withholdFunds && (
+                  <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '700' }}>✓</Text>
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: withholdFunds ? '#DC2626' : '#374151' }}>
+                  Withhold Funds from Client
+                </Text>
+                <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+                  Hold back a portion of client proceeds
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {withholdFunds && (
+              <View style={{ marginTop: 12, backgroundColor: '#FEF2F2', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#FECACA' }}>
+                <Text style={[styles.inputLabel, { color: '#991B1B' }]}>Withhold Amount *</Text>
+                <TextInput
+                  style={[styles.amountInput, { borderColor: '#FECACA' }]}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  value={withholdAmount}
+                  onChangeText={(text) => setWithholdAmount(sanitizeCurrencyInput(text))}
+                />
+                {parseCurrency(withholdAmount) > 0 && parseCurrency(disbursementAmount) > 0 && (
+                  <Text style={{ fontSize: 12, color: '#1E3A5F', marginTop: 4, fontWeight: '500' }}>
+                    Client will receive: ${getEffectiveClientAmount().toFixed(2)} (${parseCurrency(disbursementAmount).toFixed(2)} - ${parseCurrency(withholdAmount).toFixed(2)})
+                  </Text>
+                )}
+                <Text style={[styles.inputLabel, { color: '#991B1B', marginTop: 12 }]}>Reason for Withholding *</Text>
+                <TextInput
+                  style={[styles.amountInput, { borderColor: '#FECACA', height: 80, textAlignVertical: 'top' }]}
+                  placeholder="Enter reason for withholding funds..."
+                  multiline
+                  numberOfLines={3}
+                  value={withholdReason}
+                  onChangeText={setWithholdReason}
+                />
+              </View>
+            )}
           </View>
 
           {/* Medical Provider Payments Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Medical Provider Payments</Text>
+            {autoFilledProviders && (
+              <View style={{ backgroundColor: '#DBEAFE', padding: 10, borderRadius: 8, marginBottom: 8 }}>
+                <Text style={{ color: '#1E40AF', fontSize: 12, fontWeight: '600' }}>
+                  Auto-filled from settlement liens. You can adjust amounts if needed.
+                </Text>
+              </View>
+            )}
             <Text style={styles.helperText}>
               Enter amounts to pay to medical providers (optional)
             </Text>
@@ -555,12 +744,35 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
           <View style={styles.summarySection}>
             <Text style={styles.summaryTitle}>Payment Summary</Text>
             
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Client Payment:</Text>
-              <Text style={styles.summaryValue}>
-                ${parseCurrency(disbursementAmount).toFixed(2)}
-              </Text>
-            </View>
+            {withholdFunds && parseCurrency(withholdAmount) > 0 ? (
+              <>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Original Client Amount:</Text>
+                  <Text style={styles.summaryValue}>
+                    ${parseCurrency(disbursementAmount).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: '#DC2626' }]}>Withheld:</Text>
+                  <Text style={[styles.summaryValue, { color: '#DC2626' }]}>
+                    -${parseCurrency(withholdAmount).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { fontWeight: '600' }]}>Client Receives:</Text>
+                  <Text style={[styles.summaryValue, { fontWeight: '600' }]}>
+                    ${getEffectiveClientAmount().toFixed(2)}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Client Payment:</Text>
+                <Text style={styles.summaryValue}>
+                  ${parseCurrency(disbursementAmount).toFixed(2)}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Medical Providers:</Text>
@@ -582,6 +794,13 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                 ${calculateTotalDisbursement().toFixed(2)}
               </Text>
             </View>
+
+            {withholdFunds && withholdReason.trim() && (
+              <View style={{ marginTop: 10, backgroundColor: '#FEF2F2', padding: 10, borderRadius: 8 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#991B1B' }}>Withhold Reason:</Text>
+                <Text style={{ fontSize: 12, color: '#7F1D1D', marginTop: 2 }}>{withholdReason.trim()}</Text>
+              </View>
+            )}
           </View>
 
           {/* Action Buttons */}
@@ -807,6 +1026,15 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                     ${disbursement.clientAmount.toFixed(2)}
                   </Text>
                 </View>
+
+                {disbursement.withholdAmount > 0 && (
+                  <View style={styles.historyRow}>
+                    <Text style={[styles.historyLabel, { color: '#DC2626' }]}>Withheld:</Text>
+                    <Text style={[styles.historyAmount, { color: '#DC2626' }]}>
+                      ${disbursement.withholdAmount.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
 
                 {disbursement.medicalTotal > 0 && (
                   <View style={styles.historyRow}>

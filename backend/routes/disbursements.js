@@ -28,6 +28,9 @@ router.get('/history', authenticateToken, isLawFirm, requirePremiumLawFirm, asyn
         d.stripe_transfer_id,
         d.status,
         d.created_at,
+        d.withhold_amount,
+        d.withhold_reason,
+        d.disbursement_method,
         u.first_name || ' ' || u.last_name as client_name,
         u.email as client_email
       FROM disbursements d
@@ -47,7 +50,10 @@ router.get('/history', authenticateToken, isLawFirm, requirePremiumLawFirm, asyn
         totalAmount: parseFloat(row.total_amount),
         stripeTransferId: row.stripe_transfer_id,
         status: row.status,
-        createdAt: row.created_at
+        createdAt: row.created_at,
+        withholdAmount: parseFloat(row.withhold_amount || 0),
+        withholdReason: row.withhold_reason,
+        disbursementMethod: row.disbursement_method
       }))
     });
   } catch (error) {
@@ -144,7 +150,9 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       disbursementMethod = 'app_transfer',
       checkNumber,
       wireReference,
-      notes
+      notes,
+      withholdAmount = 0,
+      withholdReason
     } = req.body;
     const lawFirmId = req.user.id;
 
@@ -158,6 +166,17 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
 
     if (!clientId || !clientAmount || clientAmount <= 0) {
       return res.status(400).json({ error: 'Invalid disbursement data. Client ID and valid amount required.' });
+    }
+
+    // Validate withhold fields
+    const parsedWithholdValidation = parseFloat(withholdAmount) || 0;
+    if (parsedWithholdValidation > 0) {
+      if (parsedWithholdValidation >= parseFloat(clientAmount)) {
+        return res.status(400).json({ error: 'Withheld amount cannot equal or exceed the client payment amount' });
+      }
+      if (!withholdReason || !withholdReason.trim()) {
+        return res.status(400).json({ error: 'A reason is required when withholding funds from the client' });
+      }
     }
 
     // Validate disbursement method
@@ -477,6 +496,7 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
 
     // Record disbursement in database with all new fields
     const createdBy = req.user.lawFirmUserId || null;
+    const parsedWithhold = parseFloat(withholdAmount) || 0;
     
     const disbursementResult = await client.query(`
       INSERT INTO disbursements (
@@ -497,8 +517,10 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
         notes,
         status,
         created_by,
+        withhold_amount,
+        withhold_reason,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
       RETURNING id
     `, [
       lawFirmId,
@@ -517,7 +539,9 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       wireReference || null,
       notes || null,
       disbursementStatus,
-      createdBy
+      createdBy,
+      parsedWithhold,
+      withholdReason || null
     ]);
 
     const disbursementId = disbursementResult.rows[0].id;
@@ -586,7 +610,9 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       stripePaymentIntentId: paymentIntentId,
       clientTransferId,
       medicalPaymentResults: medicalTransferResults,
-      allTransfersSuccessful
+      allTransfersSuccessful,
+      withholdAmount: parsedWithhold,
+      withholdReason: withholdReason || null
     };
 
     if (feeExempt) {
