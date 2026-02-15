@@ -932,6 +932,28 @@ const RoadmapScreen = ({
                             </View>
                           )}
                         </View>
+                      ) : subStage.linkToMedicalHub && subStage.acceptedFormats ? (
+                        <View style={styles.uploadSection}>
+                          {readOnly ? (
+                            <View style={styles.readOnlyUploadBanner}>
+                              <Text style={styles.readOnlyUploadText}>📁 {subStage.name} (view only)</Text>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.medicalHubButton}
+                              onPress={() => onNavigate('medical')}
+                            >
+                              <Text style={styles.medicalHubIcon}>{subStage.id === 'pre-8' ? '💵' : '📋'}</Text>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.medicalHubText}>Go to Medical Hub</Text>
+                                <Text style={{ fontSize: 12, color: '#8B6914', marginTop: 2 }}>
+                                  Upload and manage your {subStage.id === 'pre-8' ? 'medical bills' : 'medical records'} in one place
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 18, color: '#8B6914' }}>›</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       ) : subStage.acceptedFormats ? (
                         <View style={styles.uploadSection}>
                           {readOnly ? (
