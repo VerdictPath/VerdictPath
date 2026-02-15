@@ -13,6 +13,7 @@ import {
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
+import DatePickerInput from '../components/DatePickerInput';
 
 const sanitizeCurrency = (value) => {
   if (!value) return '';
@@ -998,13 +999,14 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                   <Text style={styles.netToClientValue}>${formatCurrency(getEditNetToClient())}</Text>
                 </View>
 
-                <Text style={styles.inputLabel}>Settlement Date</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="MM/DD/YYYY (optional)"
-                  placeholderTextColor="#9CA3AF"
+                <DatePickerInput
+                  label="Settlement Date"
                   value={editForm.settlementDate}
-                  onChangeText={v => setEditForm(prev => ({ ...prev, settlementDate: v }))}
+                  onChange={v => setEditForm(prev => ({ ...prev, settlementDate: v }))}
+                  placeholder="Select date (optional)"
+                  variant="light"
+                  accentColor="#1E3A5F"
+                  style={{ marginBottom: 12 }}
                 />
 
                 <Text style={styles.inputLabel}>Notes</Text>
@@ -1479,13 +1481,14 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             <Text style={styles.netToClientValue}>${formatCurrency(getNetToClient())}</Text>
           </View>
 
-          <Text style={styles.inputLabel}>Settlement Date</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="MM/DD/YYYY (optional)"
-            placeholderTextColor="#9CA3AF"
+          <DatePickerInput
+            label="Settlement Date"
             value={createForm.settlementDate}
-            onChangeText={v => setCreateForm(prev => ({ ...prev, settlementDate: v }))}
+            onChange={v => setCreateForm(prev => ({ ...prev, settlementDate: v }))}
+            placeholder="Select date (optional)"
+            variant="light"
+            accentColor="#1E3A5F"
+            style={{ marginBottom: 12 }}
           />
 
           <Text style={styles.inputLabel}>Notes</Text>
@@ -1528,13 +1531,14 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         <View style={styles.modalCard}>
           <Text style={styles.modalCardTitle}>Mark as Settled</Text>
 
-          <Text style={styles.inputLabel}>Settlement Date</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="MM/DD/YYYY"
-            placeholderTextColor="#9CA3AF"
+          <DatePickerInput
+            label="Settlement Date"
             value={markSettledForm.settlementDate}
-            onChangeText={v => setMarkSettledForm(prev => ({ ...prev, settlementDate: v }))}
+            onChange={v => setMarkSettledForm(prev => ({ ...prev, settlementDate: v }))}
+            placeholder="Select date"
+            variant="light"
+            accentColor="#1E3A5F"
+            style={{ marginBottom: 12 }}
           />
 
           <Text style={styles.inputLabel}>Notes</Text>
