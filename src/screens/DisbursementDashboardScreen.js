@@ -544,7 +544,13 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       console.error('Disbursement error:', error);
       const responseData = error.response || {};
       
-      if (responseData.requiresStripeSetup) {
+      if (responseData.requiresStripeSetup && responseData.clientId) {
+        alert(
+          'Client Payment Setup Required',
+          'This client has not set up their bank account to receive payments yet. They need to complete Stripe Connect onboarding in their app before you can disburse funds via in-app transfer.\n\nAlternatively, you can change the disbursement method to check, wire transfer, or client pickup.',
+          [{ text: 'OK' }]
+        );
+      } else if (responseData.requiresStripeSetup) {
         alert(
           'Payment Setup Required',
           'Your firm has not set up banking or payment information yet. Please complete your payment setup in Stripe Connect before processing disbursements.',
