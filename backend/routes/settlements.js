@@ -81,8 +81,56 @@ router.get('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req,
 });
 
 /**
+ * GET /api/settlements/client/:clientId/available-negotiations
+ * Get accepted negotiations for a client that can be auto-imported as liens
+ */
+router.get('/client/:clientId/available-negotiations', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { clientId } = req.params;
+
+    const clientCheck = await db.query(
+      'SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+      [lawFirmId, clientId]
+    );
+    if (clientCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this client' });
+    }
+
+    const negotiations = await db.query(`
+      SELECT n.id, n.bill_description, n.bill_amount, n.current_offer,
+             n.accepted_at, n.status,
+             mp.id as medical_provider_id, mp.provider_name
+      FROM negotiations n
+      JOIN medical_providers mp ON n.medical_provider_id = mp.id
+      WHERE n.law_firm_id = $1 
+        AND n.client_id = $2 
+        AND n.status = 'accepted'
+      ORDER BY n.accepted_at DESC
+    `, [lawFirmId, clientId]);
+
+    res.json({
+      success: true,
+      negotiations: negotiations.rows.map(n => ({
+        id: n.id,
+        billDescription: n.bill_description,
+        billAmount: parseFloat(n.bill_amount),
+        negotiatedAmount: parseFloat(n.current_offer),
+        acceptedAt: n.accepted_at,
+        medicalProviderId: n.medical_provider_id,
+        providerName: n.provider_name
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching available negotiations:', error);
+    res.status(500).json({ error: 'Failed to fetch available negotiations' });
+  }
+});
+
+/**
  * POST /api/settlements
  * Create a new settlement record
+ * Auto-imports accepted negotiations from connected medical providers as liens
  */
 router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
   try {
@@ -100,7 +148,8 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
       attorneyFees,
       attorneyCosts,
       settlementDate,
-      notes
+      notes,
+      skipAutoImport
     } = req.body;
 
     if (!clientId || !insuranceCompanyName || !grossSettlementAmount) {
@@ -138,8 +187,65 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
     ]);
 
     const settlement = result.rows[0];
+    let autoImportedCount = 0;
 
-    // Send email notification to client (non-blocking)
+    if (!skipAutoImport) {
+      try {
+        const acceptedNegotiations = await db.query(`
+          SELECT n.id, n.bill_description, n.bill_amount, n.current_offer,
+                 n.medical_provider_id
+          FROM negotiations n
+          WHERE n.law_firm_id = $1 
+            AND n.client_id = $2 
+            AND n.status = 'accepted'
+        `, [lawFirmId, clientId]);
+
+        for (const neg of acceptedNegotiations.rows) {
+          const alreadyExists = await db.query(`
+            SELECT 1 FROM medical_liens 
+            WHERE settlement_id = $1 
+              AND medical_provider_id = $2 
+              AND original_bill_amount = $3
+              AND lien_amount = $4
+          `, [settlement.id, neg.medical_provider_id, neg.bill_amount, neg.current_offer]);
+
+          if (alreadyExists.rows.length === 0) {
+            await db.query(`
+              INSERT INTO medical_liens (
+                settlement_id, law_firm_id, client_id, medical_provider_id,
+                original_bill_amount, lien_amount,
+                notes, status, created_by
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
+            `, [
+              settlement.id, lawFirmId, clientId, neg.medical_provider_id,
+              neg.bill_amount, neg.current_offer,
+              `Auto-imported from negotiation: ${neg.bill_description || 'N/A'}`,
+              createdBy
+            ]);
+            autoImportedCount++;
+          }
+        }
+
+        if (autoImportedCount > 0) {
+          await db.query(`
+            UPDATE settlements 
+            SET total_medical_liens = (
+              SELECT COALESCE(SUM(lien_amount), 0) 
+              FROM medical_liens WHERE settlement_id = $1
+            ),
+            net_to_client = gross_settlement_amount - attorney_fees - attorney_costs - (
+              SELECT COALESCE(SUM(COALESCE(negotiated_amount, lien_amount)), 0) 
+              FROM medical_liens WHERE settlement_id = $1
+            ),
+            updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+          `, [settlement.id]);
+        }
+      } catch (importError) {
+        console.error('Error auto-importing negotiations as liens:', importError);
+      }
+    }
+
     try {
       const clientResult = await db.query(
         'SELECT first_name, last_name, email FROM users WHERE id = $1',
@@ -164,7 +270,10 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
 
     res.status(201).json({
       success: true,
-      message: 'Settlement created successfully',
+      message: autoImportedCount > 0 
+        ? `Settlement created with ${autoImportedCount} medical lien${autoImportedCount > 1 ? 's' : ''} auto-imported from negotiations`
+        : 'Settlement created successfully',
+      autoImportedLiens: autoImportedCount,
       settlement: {
         id: settlement.id,
         clientId: settlement.client_id,

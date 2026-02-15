@@ -71,6 +71,8 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const [disclaimerLoading, setDisclaimerLoading] = useState(false);
   const [disclaimerError, setDisclaimerError] = useState('');
   const [disclaimerSaved, setDisclaimerSaved] = useState(false);
+  const [availableNegotiations, setAvailableNegotiations] = useState([]);
+  const [loadingNegotiations, setLoadingNegotiations] = useState(false);
 
   const [createForm, setCreateForm] = useState({
     clientId: '',
@@ -203,6 +205,31 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     loadSettlements();
   };
 
+  const loadAvailableNegotiations = async (clientId) => {
+    if (!clientId) {
+      setAvailableNegotiations([]);
+      return;
+    }
+    try {
+      setLoadingNegotiations(true);
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.AVAILABLE_NEGOTIATIONS(clientId), {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      setAvailableNegotiations(response.negotiations || []);
+    } catch (error) {
+      console.error('Error loading available negotiations:', error);
+      setAvailableNegotiations([]);
+    } finally {
+      setLoadingNegotiations(false);
+    }
+  };
+
+  const handleClientChange = (clientId) => {
+    setCreateForm(prev => ({ ...prev, clientId }));
+    loadAvailableNegotiations(clientId);
+  };
+
   const handleOpenCreateModal = () => {
     setCreateForm({
       clientId: '',
@@ -219,6 +246,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       settlementDate: '',
       notes: '',
     });
+    setAvailableNegotiations([]);
     loadClients();
     setShowCreateModal(true);
   };
@@ -329,7 +357,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         notes: createForm.notes.trim() || undefined,
       };
 
-      await apiRequest(API_ENDPOINTS.SETTLEMENTS.CREATE, {
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.CREATE, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`
@@ -337,7 +365,11 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         body: JSON.stringify(body)
       });
 
-      alert('Success', 'Settlement created successfully');
+      const importedCount = response.autoImportedLiens || 0;
+      const successMsg = importedCount > 0
+        ? `Settlement created successfully! ${importedCount} medical lien${importedCount > 1 ? 's' : ''} auto-imported from completed negotiations.`
+        : 'Settlement created successfully';
+      alert('Success', successMsg);
       setShowCreateModal(false);
       loadSettlements();
     } catch (error) {
@@ -1291,7 +1323,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                     styles.clientOption,
                     createForm.clientId === String(client.id) && styles.clientOptionSelected
                   ]}
-                  onPress={() => setCreateForm(prev => ({ ...prev, clientId: String(client.id) }))}
+                  onPress={() => handleClientChange(String(client.id))}
                 >
                   <Text style={[
                     styles.clientOptionText,
@@ -1306,6 +1338,37 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
               ))}
               {clients.length === 0 && (
                 <Text style={styles.noClientsText}>No clients available</Text>
+              )}
+            </View>
+          )}
+
+          {createForm.clientId && (
+            <View style={{ backgroundColor: '#F0F9FF', padding: 12, borderRadius: 8, marginBottom: 16, borderWidth: 1, borderColor: '#BAE6FD' }}>
+              {loadingNegotiations ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#0284C7" />
+                  <Text style={{ color: '#0369A1', fontSize: 13, marginLeft: 8 }}>Checking for negotiated medical bills...</Text>
+                </View>
+              ) : availableNegotiations.length > 0 ? (
+                <View>
+                  <Text style={{ color: '#0369A1', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+                    {availableNegotiations.length} negotiated medical bill{availableNegotiations.length > 1 ? 's' : ''} will be auto-imported:
+                  </Text>
+                  {availableNegotiations.map((neg, idx) => (
+                    <View key={neg.id || idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderTopWidth: idx > 0 ? 1 : 0, borderTopColor: '#BAE6FD' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: '#1E3A5F', fontSize: 12, fontWeight: '500' }}>{neg.providerName}</Text>
+                        <Text style={{ color: '#6B7280', fontSize: 11 }}>{neg.billDescription || 'Medical services'}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: '#6B7280', fontSize: 11, textDecorationLine: 'line-through' }}>${neg.billAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                        <Text style={{ color: '#059669', fontSize: 12, fontWeight: '600' }}>${neg.negotiatedAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={{ color: '#6B7280', fontSize: 12 }}>No negotiated medical bills found for this client. You can add liens manually after creating the settlement.</Text>
               )}
             </View>
           )}
