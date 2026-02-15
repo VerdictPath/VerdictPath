@@ -377,22 +377,25 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
   };
 
   const handleInitiateNegotiation = async () => {
-    if (!selectedClientId || !billDescription || !billAmount || !initialOffer) {
-      showAlert('Error', 'Please fill in all required fields');
+    const missingFields = [];
+    if (!selectedClientId) missingFields.push(isLawFirm ? 'Client' : 'Patient');
+    if (!billDescription || !billDescription.trim()) missingFields.push('Bill Description');
+    if (!billAmount || !billAmount.trim()) missingFields.push('Bill Amount');
+    if (!initialOffer || !initialOffer.trim()) missingFields.push('Offer Amount');
+    if (isLawFirm && !selectedMedicalProviderId) missingFields.push('Medical Provider');
+
+    if (missingFields.length > 0) {
+      showAlert('Missing Fields', `Please fill in the following: ${missingFields.join(', ')}`);
       return;
     }
 
-    // Law firms must select a medical provider
-    if (isLawFirm && !selectedMedicalProviderId) {
-      showAlert('Error', 'Please select a medical provider');
-      return;
-    }
+    const sanitizedBillAmount = billAmount.replace(/[$,\s]/g, '');
+    const sanitizedOffer = initialOffer.replace(/[$,\s]/g, '');
+    const billAmountNum = parseFloat(sanitizedBillAmount);
+    const initialOfferNum = parseFloat(sanitizedOffer);
 
-    const billAmountNum = parseFloat(billAmount);
-    const initialOfferNum = parseFloat(initialOffer);
-
-    if (isNaN(billAmountNum) || isNaN(initialOfferNum)) {
-      showAlert('Error', 'Please enter valid amounts');
+    if (isNaN(billAmountNum) || billAmountNum <= 0 || isNaN(initialOfferNum) || initialOfferNum <= 0) {
+      showAlert('Error', 'Please enter valid dollar amounts (numbers only, no special characters)');
       return;
     }
 
@@ -405,14 +408,13 @@ const NegotiationsScreen = ({ user, userType, onBack, hideHeader = false, bottom
       setLoading(true);
       const requestBody = {
         clientId: selectedClientId,
-        billDescription,
+        billDescription: billDescription.trim(),
         billAmount: billAmountNum,
         initialOffer: initialOfferNum,
-        notes,
+        notes: notes ? notes.trim() : '',
         initiatedBy: isLawFirm ? 'law_firm' : 'medical_provider'
       };
 
-      // Add medical provider ID if initiated by law firm
       if (isLawFirm) {
         requestBody.medicalProviderId = selectedMedicalProviderId;
       }
