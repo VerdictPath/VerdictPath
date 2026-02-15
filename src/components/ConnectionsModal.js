@@ -4,7 +4,7 @@ import { theme } from '../styles/theme';
 import { API_BASE_URL } from '../config/api';
 import alert from '../utils/alert';
 
-const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userType = 'individual' }) => {
+const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userType = 'individual', onUpgradeSubscription }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lawFirmCode, setLawFirmCode] = useState('');
@@ -181,6 +181,37 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         fetchConnectionRequests();
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
+      } else if (data.errorCode === 'CLIENT_LIMIT_REACHED') {
+        if (Platform.OS === 'web') {
+          const shouldUpgrade = confirm(
+            `You've reached your free trial limit of ${data.limit} clients.\n\n` +
+            `Current clients: ${data.currentCount}/${data.limit}\n\n` +
+            `Upgrade your subscription to add more clients.\n\n` +
+            `Launch Special: All plans just $40/month!\n\n` +
+            `Would you like to view subscription plans?`
+          );
+          if (shouldUpgrade && onUpgradeSubscription) {
+            onClose();
+            onUpgradeSubscription();
+          }
+        } else {
+          alert(
+            'Client Limit Reached',
+            `You've reached your free trial limit of ${data.limit} clients.\n\nCurrent clients: ${data.currentCount}/${data.limit}\n\nUpgrade your subscription to add more clients.\n\nLaunch Special: All plans just $40/month!`,
+            [
+              { text: 'Later', style: 'cancel' },
+              { 
+                text: 'View Plans', 
+                onPress: () => {
+                  if (onUpgradeSubscription) {
+                    onClose();
+                    onUpgradeSubscription();
+                  }
+                }
+              }
+            ]
+          );
+        }
       } else {
         alert('Error', data.error || 'Failed to accept request');
       }

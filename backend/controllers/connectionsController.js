@@ -901,7 +901,14 @@ const acceptConnectionRequest = async (req, res) => {
       const limitCheck = checkLawFirmLimit(clientCount, lawFirm.subscription_tier, lawFirm.firm_size);
 
       if (!limitCheck.withinLimit) {
-        return res.status(403).json({ error: 'Client limit reached. Cannot accept this connection request.' });
+        return res.status(403).json({ 
+          error: 'Client limit reached. Please upgrade your subscription to add more clients.',
+          errorCode: 'CLIENT_LIMIT_REACHED',
+          currentCount: limitCheck.currentCount,
+          limit: limitCheck.limit,
+          subscriptionTier: lawFirm.subscription_tier,
+          firmSize: lawFirm.firm_size
+        });
       }
 
       const userResult = await db.query(

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Platform, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Platform, TextInput, Linking } from 'react-native';
 import alert from '../utils/alert';
-import { API_ENDPOINTS, apiRequest } from '../config/api';
+import { API_ENDPOINTS, apiRequest, API_BASE_URL } from '../config/api';
 import { theme } from '../styles/theme';
 import FeatureComparisonMatrix from '../components/FeatureComparisonMatrix';
 
@@ -398,15 +398,76 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
     }
   };
 
+  const TIER_NAME_TO_FIRM_SIZE = {
+    'Solo/Shingle': 'shingle',
+    'Boutique': 'boutique',
+    'Small Firm': 'small',
+    'Medium-Small': 'medium',
+    'Medium-Large': 'medium',
+    'Large': 'large',
+    'Regional': 'large',
+    'Enterprise': 'enterprise'
+  };
+
+  const handleStripeCheckout = async (selectedTier) => {
+    try {
+      setUpdating(true);
+      const effectivePlanType = IS_LAUNCH_PROMO ? 'premium' : planType;
+      const firmSizeKey = TIER_NAME_TO_FIRM_SIZE[selectedTier.name] || selectedTier.name.toLowerCase().replace(/[^a-z]/g, '');
+
+      const response = await apiRequest(API_ENDPOINTS.PAYMENT.LAWFIRM_CHECKOUT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firmSize: firmSizeKey,
+          planType: effectivePlanType,
+          billingPeriod: billingPeriod
+        })
+      });
+
+      if (response.url) {
+        if (Platform.OS === 'web') {
+          window.open(response.url, '_blank');
+        } else {
+          await Linking.openURL(response.url);
+        }
+        
+        if (Platform.OS === 'web') {
+          alert('A new tab has been opened for payment. After completing payment, your subscription will be activated automatically. Refresh this page to see your updated plan.');
+        } else {
+          alert('Payment', 'You will be redirected to complete payment. After completing payment, your subscription will be activated automatically.');
+        }
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      if (Platform.OS === 'web') {
+        alert(error.message || 'Failed to start payment process');
+      } else {
+        alert('Error', error.message || 'Failed to start payment process');
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleUpdateSubscription = async (selectedTier) => {
+    const isCurrentlyFree = !currentSubscription || currentSubscription.tier === 'free';
+    const isSelectingPaid = !selectedTier.isFree;
+
+    if (isCurrentlyFree && isSelectingPaid) {
+      handleStripeCheckout(selectedTier);
+      return;
+    }
+
     const performUpdate = async () => {
       try {
         setUpdating(true);
         
-        // During launch promo, force premium
         const effectivePlanType = IS_LAUNCH_PROMO ? 'premium' : planType;
         
-        // DEBUG: Log what we're about to send
         const requestBody = {
           subscriptionTier: selectedTier.name.toLowerCase().replace(/[^a-z]/g, ''),
           planType: effectivePlanType,
@@ -427,13 +488,10 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
           body: JSON.stringify(requestBody)
         });
 
-        // Try to refresh subscription details, but don't show error if it fails
-        // since the update itself was successful
         try {
           await fetchSubscriptionDetails();
         } catch (fetchError) {
           console.error('Error refreshing subscription details:', fetchError);
-          // Silently fail - update was successful, just couldn't refresh
         }
 
         if (Platform.OS === 'web') {
@@ -453,7 +511,6 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
       }
     };
 
-    // Check for downgrade and confirm before proceeding
     confirmDowngrade(selectedTier, performUpdate);
   };
 
@@ -533,10 +590,31 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
 
     const planTypeDisplay = currentSubscription.planType === 'premium' ? 'Premium' : 'Standard';
     const isPremium = currentSubscription.planType === 'premium';
+    const isFree = currentSubscription.tier === 'free';
+    const isAtLimit = currentSubscription.currentClientCount >= currentSubscription.clientLimit;
+    const isNearLimit = currentSubscription.currentClientCount >= (currentSubscription.clientLimit - 1);
 
     return (
       <View style={styles.currentPlanCard}>
         <Text style={styles.currentPlanTitle}>Current Subscription</Text>
+        
+        {isFree && isAtLimit && (
+          <View style={[styles.limitBanner, styles.limitBannerCritical]}>
+            <Text style={styles.limitBannerText}>
+              You've reached your free trial limit of {currentSubscription.clientLimit} clients. Subscribe to a paid plan below to add more clients!
+            </Text>
+            <Text style={styles.limitBannerPromo}>Launch Special: All plans just $40/month!</Text>
+          </View>
+        )}
+        
+        {isFree && isNearLimit && !isAtLimit && (
+          <View style={[styles.limitBanner, styles.limitBannerWarning]}>
+            <Text style={styles.limitBannerText}>
+              You're almost at your free trial limit ({currentSubscription.currentClientCount}/{currentSubscription.clientLimit} clients). Consider upgrading to continue growing.
+            </Text>
+          </View>
+        )}
+
         <View style={styles.currentPlanDetails}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Plan Type:</Text>
@@ -550,13 +628,13 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                 styles.detailValue,
                 isPremium && styles.premiumPlanText
               ]}>
-                {planTypeDisplay}
+                {isFree ? 'Free Trial' : planTypeDisplay}
               </Text>
             </View>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Current Clients:</Text>
-            <Text style={[styles.detailValue, styles.currentCount]}>
+            <Text style={[styles.detailValue, styles.currentCount, isAtLimit && { color: '#d32f2f' }]}>
               {currentSubscription.currentClientCount}
             </Text>
           </View>
@@ -819,7 +897,11 @@ const LawFirmSubscriptionScreen = ({ token, onBack, isNewRegistration, registrat
                   <Text style={styles.selectButtonText}>
                     {currentTier.isFree 
                       ? 'Start Free Trial' 
-                      : `${isNewRegistration ? 'Select' : 'Update to'} ${currentTier.name} ${planType === 'premium' ? 'Premium' : 'Standard'}`
+                      : isNewRegistration 
+                        ? `Select ${currentTier.name} ${planType === 'premium' ? 'Premium' : 'Standard'}`
+                        : (!currentSubscription || currentSubscription.tier === 'free')
+                          ? `Subscribe to ${currentTier.name} - $${IS_LAUNCH_PROMO ? LAUNCH_PROMO_PRICE : getPrice(currentTier)}/mo`
+                          : `Update to ${currentTier.name} ${planType === 'premium' ? 'Premium' : 'Standard'}`
                     }
                   </Text>
                 )}
@@ -1011,6 +1093,33 @@ const styles = StyleSheet.create({
   premiumPlanText: {
     color: theme.colors.mahogany,
     fontWeight: 'bold'
+  },
+  limitBanner: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15
+  },
+  limitBannerCritical: {
+    backgroundColor: '#ffebee',
+    borderWidth: 1,
+    borderColor: '#ef5350'
+  },
+  limitBannerWarning: {
+    backgroundColor: '#fff8e1',
+    borderWidth: 1,
+    borderColor: '#ffa726'
+  },
+  limitBannerText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    lineHeight: 20
+  },
+  limitBannerPromo: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginTop: 8
   },
   calculatorContainer: {
     padding: 20

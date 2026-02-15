@@ -129,6 +129,12 @@ export const API_ENDPOINTS = {
     MEDICALPROVIDER_UPDATE: `${API_BASE_URL}/api/subscription/medicalprovider/update`,
   },
 
+  PAYMENT: {
+    LAWFIRM_CHECKOUT: `${API_BASE_URL}/api/payment/lawfirm/create-checkout-session`,
+    LAWFIRM_PAYMENT_INTENT: `${API_BASE_URL}/api/payment/lawfirm/create-payment-intent`,
+    LAWFIRM_CONFIRM: `${API_BASE_URL}/api/payment/lawfirm/confirm-subscription`,
+  },
+
   // Notifications
   NOTIFICATIONS: {
     LIST: `${API_BASE_URL}/api/notifications`,

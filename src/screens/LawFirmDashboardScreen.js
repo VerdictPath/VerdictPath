@@ -587,6 +587,10 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
         user={user}
         userType="lawfirm"
         onConnectionsUpdated={fetchDashboardData}
+        onUpgradeSubscription={() => {
+          setConnectionsModalVisible(false);
+          setActiveTab('subscription');
+        }}
       />
 
       <InviteModal
