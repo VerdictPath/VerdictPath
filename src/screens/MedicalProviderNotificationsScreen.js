@@ -80,21 +80,37 @@ const MedicalProviderNotificationsScreen = ({ user, onBack }) => {
             + Compose
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'archived' && styles.activeTab]}
+          onPress={() => setActiveTab('archived')}
+        >
+          <Text style={[styles.tabText, activeTab === 'archived' && styles.activeTabText]}>
+            Archived
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
         {activeTab === 'inbox' && (
           <NotificationInboxScreen
             user={user}
-            onViewNotification={(id) => handleViewNotification(id, false)}
+            onNotificationPress={(id) => handleViewNotification(id, false)}
             embedded={true}
           />
         )}
         {activeTab === 'outbox' && (
           <NotificationOutboxScreen
             user={user}
-            onViewNotification={(id) => handleViewNotification(id, true)}
+            onNotificationPress={(id) => handleViewNotification(id, true)}
             embedded={true}
+          />
+        )}
+        {activeTab === 'archived' && (
+          <NotificationInboxScreen
+            user={user}
+            onNotificationPress={(id) => handleViewNotification(id, false)}
+            embedded={true}
+            showArchivedMode={true}
           />
         )}
       </View>

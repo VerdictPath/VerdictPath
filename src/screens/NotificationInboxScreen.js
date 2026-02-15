@@ -870,7 +870,7 @@ const getNotificationTypeIcon = (type) => {
   }
 };
 
-const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedded = false }) => {
+const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedded = false, showArchivedMode = false }) => {
   const { notifications, isLoading, refreshNotifications, markAllAsRead, unreadCount } = useNotifications();
   const userType = (user?.userType || user?.type || '').toLowerCase().replace(/[_\s-]/g, '');
   const isMedicalProvider = userType === 'medicalprovider' || userType === 'medical_provider';
@@ -892,10 +892,16 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   const autoRefreshInterval = useRef(null);
 
   useEffect(() => {
-    refreshNotifications();
+    if (showArchivedMode) {
+      fetchArchivedNotifications();
+    } else {
+      refreshNotifications();
+    }
     
     autoRefreshInterval.current = setInterval(() => {
-      refreshNotifications();
+      if (!showArchivedMode) {
+        refreshNotifications();
+      }
     }, 30000);
 
     return () => {
@@ -903,7 +909,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
         clearInterval(autoRefreshInterval.current);
       }
     };
-  }, []);
+  }, [showArchivedMode]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -1123,7 +1129,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
         </>
       )}
 
-      {activeTab === 'archived' ? (
+      {(activeTab === 'archived' || showArchivedMode) ? (
         <>
           {archivedLoading ? (
             <View style={currentStyles.loadingContainer}>

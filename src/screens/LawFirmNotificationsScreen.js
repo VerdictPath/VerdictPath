@@ -116,6 +116,16 @@ const LawFirmNotificationsScreen = ({ user, onBack }) => {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.tab, activeTab === 'archived' && styles.activeTab]}
+          onPress={() => setActiveTab('archived')}
+        >
+          <Text style={styles.tabIcon}>📁</Text>
+          <Text style={[styles.tabText, activeTab === 'archived' && styles.activeTabText]}>
+            Archived
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'analytics' && styles.activeTab]}
           onPress={() => setActiveTab('analytics')}
         >
@@ -139,6 +149,14 @@ const LawFirmNotificationsScreen = ({ user, onBack }) => {
             user={user}
             onNotificationPress={(id) => handleViewNotification(id, true)}
             embedded={true}
+          />
+        )}
+        {activeTab === 'archived' && (
+          <NotificationInboxScreen
+            user={user}
+            onNotificationPress={(id) => handleViewNotification(id, false)}
+            embedded={true}
+            showArchivedMode={true}
           />
         )}
       </View>
