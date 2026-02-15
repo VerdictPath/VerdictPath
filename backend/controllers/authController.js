@@ -14,6 +14,16 @@ const { sendWelcomeEmail, sendPasswordChangedEmail, sendSecurityAlertEmail, send
 const crypto = require('crypto');
 const { sendErrorResponse, sendSuccessResponse, handleDatabaseError, errorCodes } = require('../utils/errorResponse');
 
+const checkEmailExists = async (email) => {
+  const normalizedEmail = email.toLowerCase().trim();
+  const [users, lawFirms, medicalProviders] = await Promise.all([
+    db.query('SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1', [normalizedEmail]),
+    db.query('SELECT id FROM law_firms WHERE LOWER(email) = $1 LIMIT 1', [normalizedEmail]),
+    db.query('SELECT id FROM medical_providers WHERE LOWER(email) = $1 LIMIT 1', [normalizedEmail]),
+  ]);
+  return users.rows.length > 0 || lawFirms.rows.length > 0 || medicalProviders.rows.length > 0;
+};
+
 // Helper function to set httpOnly authentication cookie
 const TOKEN_EXPIRY = '7d';
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
@@ -32,10 +42,14 @@ exports.registerClient = async (req, res) => {
   try {
     const { firstName, lastName, phoneNumber, email, password, lawFirmCode, avatarType, subscriptionTier, subscriptionPrice, privacyAccepted } = req.body;
     
-    // Privacy policy acceptance check temporarily disabled
-    // if (!privacyAccepted) {
-    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    // }
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ message: 'First name, last name, email, and password are required' });
+    }
+
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      return res.status(409).json({ message: 'An account with this email address already exists. Please use a different email or sign in to your existing account.' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -179,10 +193,14 @@ exports.registerLawFirm = async (req, res) => {
   try {
     const { firmName, email, password, barNumber, phoneNumber, address, subscriptionTier, firmSize, privacyAccepted } = req.body;
     
-    // Privacy policy acceptance check temporarily disabled
-    // if (!privacyAccepted) {
-    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    // }
+    if (!firmName || !email || !password) {
+      return res.status(400).json({ message: 'Firm name, email, and password are required' });
+    }
+
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      return res.status(409).json({ message: 'An account with this email address already exists. Please use a different email or sign in to your existing account.' });
+    }
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -385,11 +403,11 @@ exports.registerMedicalProvider = async (req, res) => {
         message: 'Provider name, email, and password are required' 
       });
     }
-    
-    // Privacy policy acceptance check temporarily disabled
-    // if (!privacyAccepted) {
-    //   return res.status(400).json({ message: 'You must accept the Privacy Policy to create an account' });
-    // }
+
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      return res.status(409).json({ message: 'An account with this email address already exists. Please use a different email or sign in to your existing account.' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
