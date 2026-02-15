@@ -421,8 +421,20 @@ router.post('/create-account', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating Stripe Connect account:', error);
-    res.status(500).json({ error: 'Failed to create payment account' });
+    console.error('Error creating Stripe Connect account:', error.message || error);
+    if (error.type === 'StripeInvalidRequestError') {
+      if (error.message && error.message.includes('signed up for Connect')) {
+        return res.status(400).json({ 
+          error: 'Payment disbursement service is being configured. This feature will be available soon. Please contact your administrator.',
+          setupRequired: true
+        });
+      }
+      return res.status(400).json({ error: error.message || 'Invalid request to payment provider' });
+    }
+    if (error.type === 'StripeAuthenticationError') {
+      return res.status(500).json({ error: 'Payment service configuration error. Please contact support.' });
+    }
+    res.status(500).json({ error: error.message || 'Failed to create payment account' });
   }
 });
 
