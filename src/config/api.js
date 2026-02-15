@@ -280,6 +280,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_STATUS: `${API_BASE_URL}/api/stripe-connect/customer-status`,
     CREATE_SETUP_INTENT: `${API_BASE_URL}/api/stripe-connect/create-setup-intent`,
     BILLING_PORTAL: `${API_BASE_URL}/api/stripe-connect/create-billing-portal`,
+    CHECKOUT_SETUP: `${API_BASE_URL}/api/stripe-connect/create-checkout-setup`,
     SET_DEFAULT_PAYMENT: `${API_BASE_URL}/api/stripe-connect/set-default-payment-method`,
     
     // Recipient endpoints (Stripe Connect - they receive)

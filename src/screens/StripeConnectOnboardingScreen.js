@@ -49,16 +49,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
     try {
       setSettingUpAccount(true);
 
-      // First create customer if needed
-      await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.CREATE_CUSTOMER, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-
-      // Then open billing portal to add payment method
-      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.BILLING_PORTAL, {
+      const response = await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.CHECKOUT_SETUP, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`
@@ -95,6 +86,8 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
             ]
           );
         }
+      } else {
+        alert('Error', 'Could not generate payment setup link. Please try again.');
       }
     } catch (error) {
       console.error('Error setting up payment:', error);

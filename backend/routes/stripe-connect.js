@@ -243,12 +243,19 @@ router.post('/create-billing-portal', authenticateToken, async (req, res) => {
         url: session.url
       });
     } catch (stripeErr) {
-      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
-        console.log(`Stale Stripe customer ID ${customerId} for law firm ${lawFirmId} — clearing for billing portal`);
-        await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+      console.log(`[billing-portal] Stripe error: code=${stripeErr.code}, type=${stripeErr.type}, message=${stripeErr.message}`);
+      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404 ||
+          stripeErr.type === 'StripeInvalidRequestError') {
+        if (stripeErr.message && stripeErr.message.includes('No such customer')) {
+          await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+          return res.status(400).json({ 
+            error: 'Your previous payment setup was invalid and has been cleared. Please set up your payment account again.',
+            cleared: true
+          });
+        }
         return res.status(400).json({ 
-          error: 'Your previous payment setup was invalid and has been cleared. Please set up your payment account again.',
-          cleared: true
+          error: 'Billing portal is not available. Please use the Checkout setup instead.',
+          useFallback: true
         });
       }
       throw stripeErr;
@@ -257,6 +264,91 @@ router.post('/create-billing-portal', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error creating billing portal:', error);
     res.status(500).json({ error: 'Failed to access billing portal' });
+  }
+});
+
+/**
+ * POST /api/stripe-connect/create-checkout-setup
+ * Create a Stripe Checkout Session in setup mode to add a payment method
+ */
+router.post('/create-checkout-setup', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (!isLawFirmRole(userType)) {
+      return res.status(403).json({ error: 'Only law firms can set up payment methods' });
+    }
+
+    const lawFirmId = await getLawFirmId(userId, userType);
+    if (!lawFirmId) {
+      return res.status(404).json({ error: 'Law firm not found' });
+    }
+
+    const lawFirmResult = await db.query(
+      'SELECT stripe_customer_id, firm_name, email FROM law_firms WHERE id = $1',
+      [lawFirmId]
+    );
+
+    if (lawFirmResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Law firm not found' });
+    }
+
+    let customerId = lawFirmResult.rows[0]?.stripe_customer_id;
+
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if (existing.deleted) {
+          customerId = null;
+        }
+      } catch (err) {
+        console.log(`[checkout-setup] Stale customer ${customerId}, creating new one`);
+        customerId = null;
+        await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+      }
+    }
+
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: lawFirmResult.rows[0].email,
+        name: lawFirmResult.rows[0].firm_name,
+        metadata: {
+          law_firm_id: lawFirmId,
+          type: 'law_firm'
+        }
+      });
+      customerId = customer.id;
+      await db.query(
+        'UPDATE law_firms SET stripe_customer_id = $1 WHERE id = $2',
+        [customerId, lawFirmId]
+      );
+    }
+
+    const baseUrl = getBaseUrl();
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'setup',
+      customer: customerId,
+      payment_method_types: ['card'],
+      success_url: `${baseUrl}/stripe/complete?type=setup&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/stripe/complete?type=cancelled`,
+      metadata: {
+        law_firm_id: String(lawFirmId)
+      }
+    });
+
+    console.log(`[checkout-setup] Created checkout session ${session.id} for law firm ${lawFirmId}, url: ${session.url}`);
+
+    res.json({
+      success: true,
+      url: session.url,
+      sessionId: session.id
+    });
+
+  } catch (error) {
+    console.error('[checkout-setup] Error:', error.message || error);
+    res.status(500).json({ error: 'Failed to create payment setup session' });
   }
 });
 
