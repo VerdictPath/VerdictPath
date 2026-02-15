@@ -433,6 +433,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     }
 
     for (let payment of medicalProviderPayments) {
+      const isWaived = payment.lienId && waivedLienIds.includes(payment.lienId);
+      if (isWaived) continue;
       if (payment.amount && payment.amount.trim() !== '') {
         const amt = parseCurrency(payment.amount);
         if (amt <= 0) {
