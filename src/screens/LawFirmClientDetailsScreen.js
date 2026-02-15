@@ -28,6 +28,8 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
   const [showBillModal, setShowBillModal] = useState(false);
   const [billFormData, setBillFormData] = useState({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
   const [pendingBillFile, setPendingBillFile] = useState(null);
+  const [clientTasks, setClientTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   const EVIDENCE_TYPE_OPTIONS = [
     { label: 'Document', value: 'Document' },
@@ -70,6 +72,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     fetchClientRecords();
     fetchClientBills();
     fetchClientEvidence();
+    fetchClientTasks();
   }, [clientId]);
 
   const fetchClientDetails = async () => {
@@ -172,6 +175,23 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
       console.error('Error fetching client evidence:', error);
     } finally {
       setLoadingEvidence(false);
+    }
+  };
+
+  const fetchClientTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.TASKS.GET_CLIENT_TASKS(clientId), {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setClientTasks(data.tasks || []);
+      }
+    } catch (error) {
+      console.error('Error fetching client tasks:', error);
+    } finally {
+      setLoadingTasks(false);
     }
   };
 
@@ -1103,6 +1123,121 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
     );
   }
 
+  const renderTasksTab = () => {
+    const priorityColors = { urgent: '#DC2626', high: '#EA580C', medium: '#CA8A04', low: '#16A34A' };
+    const statusLabels = { pending: 'Pending', in_progress: 'In Progress', completed: 'Completed', overdue: 'Overdue' };
+    const statusColors = { pending: '#6B7280', in_progress: '#2563EB', completed: '#16A34A', overdue: '#DC2626' };
+
+    if (loadingTasks) {
+      return (
+        <View style={styles.tabContent}>
+          <ActivityIndicator size="large" color="#1E3A5F" />
+          <Text style={{ textAlign: 'center', marginTop: 10, color: '#666' }}>Loading tasks...</Text>
+        </View>
+      );
+    }
+
+    if (clientTasks.length === 0) {
+      return (
+        <View style={styles.tabContent}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 Assigned Tasks</Text>
+            <Text style={{ textAlign: 'center', color: '#888', marginTop: 20, fontSize: 15 }}>
+              No tasks assigned to this client yet.
+            </Text>
+            <TouchableOpacity
+              style={{ backgroundColor: '#1E3A5F', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 }}
+              onPress={() => onNavigate('lawfirm-assign-task', { preSelectedClientId: clientId })}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 15 }}>+ Assign New Task</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    const pendingTasks = clientTasks.filter(t => t.status === 'pending' || t.status === 'in_progress' || t.status === 'overdue');
+    const completedTasks = clientTasks.filter(t => t.status === 'completed');
+
+    return (
+      <View style={styles.tabContent}>
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={styles.sectionTitle}>📋 Assigned Tasks ({clientTasks.length})</Text>
+            <TouchableOpacity
+              style={{ backgroundColor: '#1E3A5F', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
+              onPress={() => onNavigate('lawfirm-assign-task', { preSelectedClientId: clientId })}
+            >
+              <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>+ New Task</Text>
+            </TouchableOpacity>
+          </View>
+
+          {pendingTasks.length > 0 && (
+            <View style={{ marginBottom: 15 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F', marginBottom: 8 }}>
+                Active ({pendingTasks.length})
+              </Text>
+              {pendingTasks.map(task => (
+                <View key={task.id} style={{ backgroundColor: '#FFF', borderRadius: 10, padding: 14, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: priorityColors[task.priority] || '#6B7280', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#1E3A5F', flex: 1 }}>{task.title}</Text>
+                    <View style={{ backgroundColor: (statusColors[task.status] || '#6B7280') + '20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: statusColors[task.status] || '#6B7280' }}>
+                        {statusLabels[task.status] || task.status}
+                      </Text>
+                    </View>
+                  </View>
+                  {task.description ? (
+                    <Text style={{ fontSize: 13, color: '#666', marginTop: 5 }} numberOfLines={2}>{task.description}</Text>
+                  ) : null}
+                  <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap', gap: 8 }}>
+                    <Text style={{ fontSize: 12, color: priorityColors[task.priority] || '#6B7280', fontWeight: '600' }}>
+                      {(task.priority || 'medium').charAt(0).toUpperCase() + (task.priority || 'medium').slice(1)} Priority
+                    </Text>
+                    {task.dueDate && (
+                      <Text style={{ fontSize: 12, color: '#666' }}>
+                        Due: {new Date(task.dueDate).toLocaleDateString()}
+                      </Text>
+                    )}
+                    {task.coinsReward > 0 && (
+                      <Text style={{ fontSize: 12, color: '#CA8A04' }}>🪙 {task.coinsReward} coins</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {completedTasks.length > 0 && (
+            <View>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#16A34A', marginBottom: 8 }}>
+                Completed ({completedTasks.length})
+              </Text>
+              {completedTasks.map(task => (
+                <View key={task.id} style={{ backgroundColor: '#F0FDF4', borderRadius: 10, padding: 14, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#16A34A' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#666', flex: 1, textDecorationLine: 'line-through' }}>{task.title}</Text>
+                    <View style={{ backgroundColor: '#16A34A20', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '600', color: '#16A34A' }}>Completed</Text>
+                    </View>
+                  </View>
+                  {task.completedAt && (
+                    <Text style={{ fontSize: 12, color: '#16A34A', marginTop: 5 }}>
+                      Completed: {new Date(task.completedAt).toLocaleDateString()}
+                    </Text>
+                  )}
+                  {task.completionNotes ? (
+                    <Text style={{ fontSize: 12, color: '#888', marginTop: 3 }}>Notes: {task.completionNotes}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   const { client } = clientData;
 
   return (
@@ -1163,6 +1298,15 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
             Evidence Locker
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'tasks' && styles.activeTab]}
+          onPress={() => setActiveTab('tasks')}
+        >
+          <Text style={styles.tabIcon}>📋</Text>
+          <Text style={[styles.tabText, activeTab === 'tasks' && styles.activeTabText]}>
+            Tasks
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -1170,6 +1314,7 @@ const LawFirmClientDetailsScreen = ({ user, clientId, onBack, onNavigate }) => {
         {activeTab === 'roadmap' && renderRoadmapTab()}
         {activeTab === 'medicalHub' && renderMedicalHubTab()}
         {activeTab === 'evidence' && renderEvidenceTab()}
+        {activeTab === 'tasks' && renderTasksTab()}
 
         <TouchableOpacity style={styles.backButtonBottom} onPress={onBack}>
           <Text style={styles.backButtonBottomText}>← Back to Dashboard</Text>
