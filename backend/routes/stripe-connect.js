@@ -835,4 +835,55 @@ router.post('/create-onboarding-link', authenticateToken, async (req, res) => {
   }
 });
 
+router.post('/reset-account', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userType = req.user.userType;
+
+    if (isLawFirmRole(userType)) {
+      return res.status(400).json({ error: 'Law firms cannot reset Connect accounts' });
+    }
+
+    let query;
+    if (userType === 'individual' || userType === 'client') {
+      query = 'SELECT stripe_account_id FROM users WHERE id = $1';
+    } else if (userType === 'medical_provider') {
+      query = 'SELECT stripe_account_id FROM medical_providers WHERE id = $1';
+    } else {
+      return res.status(400).json({ error: `Unsupported account type: ${userType}` });
+    }
+
+    const result = await db.query(query, [userId]);
+    const stripeAccountId = result.rows[0]?.stripe_account_id;
+
+    if (stripeAccountId) {
+      try {
+        const account = await stripe.accounts.retrieve(stripeAccountId);
+        if (!account.details_submitted) {
+          await stripe.accounts.del(stripeAccountId);
+          console.log(`[reset-account] Deleted incomplete Stripe account ${stripeAccountId} for user ${userId}`);
+        } else {
+          return res.status(400).json({ error: 'Cannot reset a completed account. Contact support.' });
+        }
+      } catch (stripeErr) {
+        if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
+          console.log(`[reset-account] Stripe account ${stripeAccountId} already gone for user ${userId}`);
+        } else {
+          console.log(`[reset-account] Stripe error: ${stripeErr.message}, clearing anyway`);
+        }
+      }
+    }
+
+    const clearQuery = userType === 'medical_provider'
+      ? 'UPDATE medical_providers SET stripe_account_id = NULL WHERE id = $1'
+      : 'UPDATE users SET stripe_account_id = NULL WHERE id = $1';
+    await db.query(clearQuery, [userId]);
+
+    res.json({ success: true, message: 'Account reset. You can set up a new one.' });
+  } catch (error) {
+    console.error('[reset-account] Error:', error.message || error);
+    res.status(500).json({ error: 'Failed to reset account' });
+  }
+});
+
 module.exports = router;

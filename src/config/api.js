@@ -289,6 +289,7 @@ export const API_ENDPOINTS = {
     CREATE_ACCOUNT: `${API_BASE_URL}/api/stripe-connect/create-account`,
     ONBOARDING_LINK: `${API_BASE_URL}/api/stripe-connect/create-onboarding-link`,
     DASHBOARD_LINK: `${API_BASE_URL}/api/stripe-connect/create-dashboard-link`,
+    RESET_ACCOUNT: `${API_BASE_URL}/api/stripe-connect/reset-account`,
   },
 };
 

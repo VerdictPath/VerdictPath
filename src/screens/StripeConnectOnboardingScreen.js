@@ -166,7 +166,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           window.open(response.onboardingUrl, '_blank');
           alert(
             'Complete Setup',
-            'Please finish your account setup in the new window.',
+            'Please finish your account setup in the new window. If the page gets stuck, come back and tap "Start Fresh" to try again.',
             [
               {
                 text: 'I Completed Setup',
@@ -178,7 +178,7 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
           await Linking.openURL(response.onboardingUrl);
           alert(
             'Complete Setup',
-            'Please finish your account setup and return to the app.',
+            'Please finish your account setup and return to the app. If the page gets stuck, come back and tap "Start Fresh" to try again.',
             [
               {
                 text: 'I Completed Setup',
@@ -190,10 +190,41 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
       }
     } catch (error) {
       console.error('Error resuming onboarding:', error);
-      alert('Error', error.message || 'Failed to resume setup');
+      alert('Setup Issue', 'Could not generate a new setup link. Try tapping "Start Fresh" to reset and try again.');
     } finally {
       setSettingUpAccount(false);
     }
+  };
+
+  const handleResetAccount = async () => {
+    alert(
+      'Start Fresh?',
+      'This will clear your incomplete payout setup so you can start over. No data will be lost.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes, Start Fresh',
+          onPress: async () => {
+            try {
+              setSettingUpAccount(true);
+              await apiRequest(API_ENDPOINTS.STRIPE_CONNECT.RESET_ACCOUNT, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                }
+              });
+              alert('Success', 'Your payout setup has been cleared. You can now set up a new account.');
+              await checkAccountStatus();
+            } catch (error) {
+              console.error('Error resetting account:', error);
+              alert('Error', error.message || 'Failed to reset account');
+            } finally {
+              setSettingUpAccount(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleAccessDashboard = async () => {
@@ -429,6 +460,19 @@ const StripeConnectOnboardingScreen = ({ user, onBack }) => {
               Payouts: {accountStatus.payoutsEnabled ? '✓ Enabled' : '✗ Not Enabled'}
             </Text>
           </View>
+
+          <View style={styles.resetSection}>
+            <Text style={styles.resetNote}>
+              If the setup page keeps getting stuck or won't load, you can clear this attempt and start over.
+            </Text>
+            <TouchableOpacity
+              style={[styles.resetButton, settingUpAccount && styles.disabledButton]}
+              onPress={handleResetAccount}
+              disabled={settingUpAccount}
+            >
+              <Text style={styles.resetButtonText}>Start Fresh</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
@@ -660,6 +704,31 @@ const styles = StyleSheet.create({
   },
   refreshButtonText: {
     color: theme.colors.primary,
+    fontSize: 16,
+    fontWeight: '600'
+  },
+  resetSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0'
+  },
+  resetNote: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12
+  },
+  resetButton: {
+    backgroundColor: '#fff',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CC0000'
+  },
+  resetButtonText: {
+    color: '#CC0000',
     fontSize: 16,
     fontWeight: '600'
   }
