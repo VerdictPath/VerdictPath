@@ -2412,7 +2412,7 @@ exports.getNotificationAnalytics = async (req, res) => {
     }
 
     const whereClause = conditions.join(' AND ');
-    const notifOnlyWhereClause = [...conditions, `type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder')`].join(' AND ');
+    const notifOnlyWhereClause = [...conditions, `type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder', 'task_completed', 'task_started', 'task_reverted', 'task_status_update')`].join(' AND ');
 
     // Get analytics data with average times (exclude task-related notification types)
     const analyticsQuery = `
@@ -2452,7 +2452,7 @@ exports.getNotificationAnalytics = async (req, res) => {
         COUNT(read_at) as total_read,
         COUNT(clicked_at) as total_clicked
       FROM notifications
-      WHERE sender_type = $1 AND sender_id = $2 AND type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder')
+      WHERE sender_type = $1 AND sender_id = $2 AND type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder', 'task_completed', 'task_started', 'task_reverted', 'task_status_update')
     `;
     const allTimeResult = await pool.query(allTimeQuery, [senderType, entityId]);
     const stats = analyticsResult.rows[0];
