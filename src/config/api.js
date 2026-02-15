@@ -121,6 +121,8 @@ export const API_ENDPOINTS = {
     MY_NOTIFICATIONS: `${API_BASE_URL}/api/notifications/my-notifications`,
     UNREAD_COUNT: `${API_BASE_URL}/api/notifications/unread-count`,
     DETAIL: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}`,
+    THREAD: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/thread`,
+    REPLY: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/reply`,
     MARK_READ: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/read`,
     MARK_CLICKED: (notificationId) => `${API_BASE_URL}/api/notifications/${notificationId}/clicked`,
     MARK_ALL_READ: `${API_BASE_URL}/api/notifications/mark-all-read`,

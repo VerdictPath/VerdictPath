@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, ImageBackground, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -13,24 +13,24 @@ const getNotificationTypeInfo = (type) => {
     case 'new_information':
     case 'status_update_request':
     case 'deadline_reminder':
-      return { icon: '📋', label: 'Case Update', color: '#3b82f6' };
+      return { icon: '\u{1F4CB}', label: 'Case Update', color: '#3b82f6' };
     case 'appointment_request':
     case 'appointment_reminder':
-      return { icon: '📅', label: 'Appointment', color: '#8b5cf6' };
+      return { icon: '\u{1F4C5}', label: 'Appointment', color: '#8b5cf6' };
     case 'payment_notification':
     case 'disbursement_complete':
-      return { icon: '💰', label: 'Payment', color: '#10b981' };
+      return { icon: '\u{1F4B0}', label: 'Payment', color: '#10b981' };
     case 'document_request':
-      return { icon: '📄', label: 'Document Request', color: '#f59e0b' };
+      return { icon: '\u{1F4C4}', label: 'Document Request', color: '#f59e0b' };
     case 'system_alert':
-      return { icon: '⚙️', label: 'System Alert', color: '#6b7280' };
+      return { icon: '\u2699\uFE0F', label: 'System Alert', color: '#6b7280' };
     case 'task_assigned':
     case 'task_reminder':
-      return { icon: '✅', label: 'Task', color: '#ec4899' };
+      return { icon: '\u2705', label: 'Task', color: '#ec4899' };
     case 'message':
-      return { icon: '💬', label: 'Message', color: '#06b6d4' };
+      return { icon: '\u{1F4AC}', label: 'Message', color: '#06b6d4' };
     default:
-      return { icon: '🔔', label: 'Notification', color: '#FFD700' };
+      return { icon: '\u{1F514}', label: 'Notification', color: '#FFD700' };
   }
 };
 
@@ -48,6 +48,13 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [thread, setThread] = useState([]);
+  const [showThread, setShowThread] = useState(false);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [showReplyBox, setShowReplyBox] = useState(false);
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     loadNotificationDetail();
@@ -71,12 +78,73 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
         if (!isOutbox && !response.notification.is_clicked) {
           await markAsClicked(notificationId);
         }
+        if (response.notification.thread_count > 1) {
+          loadThread();
+        }
       }
     } catch (error) {
       console.error('Error loading notification detail:', error);
       alert('Error', 'Failed to load notification details');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadThread = async () => {
+    try {
+      setThreadLoading(true);
+      const response = await apiRequest(API_ENDPOINTS.NOTIFICATIONS.THREAD(notificationId), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+        },
+      });
+
+      if (response.success) {
+        setThread(response.thread || []);
+        if (response.thread && response.thread.length > 1) {
+          setShowThread(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading thread:', error);
+    } finally {
+      setThreadLoading(false);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!replyText.trim()) return;
+
+    try {
+      setIsSendingReply(true);
+      const response = await apiRequest(API_ENDPOINTS.NOTIFICATIONS.REPLY(notificationId), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ body: replyText.trim() }),
+      });
+
+      if (response.success) {
+        setReplyText('');
+        setShowReplyBox(false);
+        await loadThread();
+        setShowThread(true);
+        if (notification) {
+          setNotification(prev => ({ ...prev, thread_count: (prev?.thread_count || 1) + 1 }));
+        }
+        await refreshNotifications();
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 300);
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      alert('Error', 'Failed to send reply. Please try again.');
+    } finally {
+      setIsSendingReply(false);
     }
   };
 
@@ -188,6 +256,28 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
     });
   };
 
+  const formatThreadTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const handleActionButton = () => {
     if (notification?.action_data?.screen) {
       onNavigate && onNavigate(notification.action_data.screen);
@@ -199,14 +289,43 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backButtonText}>{'\u2190'} Back</Text>
       </TouchableOpacity>
       <Text style={styles.headerTitle}>
-        {isOutbox ? '📤 Sent' : '📥 Notification'}
+        {isOutbox ? '\u{1F4E4} Sent' : '\u{1F4E5} Message'}
       </Text>
       <View style={styles.placeholder} />
     </View>
   );
+
+  const renderThreadMessage = (msg, index) => {
+    const isSender = msg.is_sender;
+    const initials = getSenderInitials(msg.sender_name);
+    
+    return (
+      <View key={msg.id} style={[styles.threadMessageContainer, isSender ? styles.threadMessageSent : styles.threadMessageReceived]}>
+        {!isSender && (
+          <View style={styles.threadAvatar}>
+            <Text style={styles.threadAvatarText}>{initials}</Text>
+          </View>
+        )}
+        <View style={[styles.threadBubble, isSender ? styles.threadBubbleSent : styles.threadBubbleReceived]}>
+          <Text style={[styles.threadSenderName, isSender && styles.threadSenderNameSent]}>
+            {isSender ? 'You' : msg.sender_name}
+          </Text>
+          <Text style={[styles.threadBody, isSender && styles.threadBodySent]}>{msg.body}</Text>
+          <Text style={[styles.threadTime, isSender && styles.threadTimeSent]}>
+            {formatThreadTimestamp(msg.created_at)}
+          </Text>
+        </View>
+        {isSender && (
+          <View style={[styles.threadAvatar, styles.threadAvatarSent]}>
+            <Text style={styles.threadAvatarText}>{getSenderInitials(user?.firstName ? `${user.firstName} ${user.lastName || ''}` : user?.email || 'You')}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -219,7 +338,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
           {renderHeader()}
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFD700" />
-            <Text style={styles.loadingText}>Loading notification...</Text>
+            <Text style={styles.loadingText}>Loading message...</Text>
           </View>
         </View>
       </ImageBackground>
@@ -236,8 +355,8 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
         <View style={styles.overlay}>
           {renderHeader()}
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>🏴‍☠️</Text>
-            <Text style={styles.emptyText}>Notification not found</Text>
+            <Text style={styles.emptyIcon}>{'\u{1F3F4}\u200D\u2620\uFE0F'}</Text>
+            <Text style={styles.emptyText}>Message not found</Text>
           </View>
         </View>
       </ImageBackground>
@@ -248,6 +367,7 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
   const typeInfo = getNotificationTypeInfo(notification.notification_type || notification.type);
   const senderName = notification.sender_name || 'Your Legal Team';
   const senderInitials = getSenderInitials(senderName);
+  const hasThread = thread.length > 1;
 
   return (
     <ImageBackground
@@ -255,16 +375,25 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      <View style={styles.overlay}>
+      <KeyboardAvoidingView 
+        style={styles.overlay} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
         {renderHeader()}
 
         {isUrgent && (
           <View style={styles.urgentBanner}>
-            <Text style={styles.urgentBannerText}>⚠️ URGENT NOTIFICATION</Text>
+            <Text style={styles.urgentBannerText}>{'\u26A0\uFE0F'} URGENT</Text>
           </View>
         )}
 
-        <ScrollView style={styles.scrollContent} contentContainerStyle={styles.contentContainer}>
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollContent} 
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={[styles.typeBadge, { backgroundColor: typeInfo.color + '30', borderColor: typeInfo.color }]}>
             <Text style={[styles.typeBadgeText, { color: typeInfo.color }]}>
               {typeInfo.icon} {typeInfo.label}
@@ -279,6 +408,11 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
               <Text style={styles.senderLabel}>From</Text>
               <Text style={styles.senderName}>{senderName}</Text>
             </View>
+            {hasThread && (
+              <View style={styles.threadBadge}>
+                <Text style={styles.threadBadgeText}>{thread.length} messages</Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.timestamp}>
@@ -292,10 +426,38 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
             </Text>
           </View>
 
-          <View style={styles.messageCard}>
-            <Text style={styles.messageLabel}>Message</Text>
-            <Text style={styles.messageText}>{notification.body}</Text>
-          </View>
+          {!showThread ? (
+            <>
+              <View style={styles.messageCard}>
+                <Text style={styles.messageLabel}>Message</Text>
+                <Text style={styles.messageText}>{notification.body}</Text>
+              </View>
+
+              {hasThread && (
+                <TouchableOpacity style={styles.viewThreadButton} onPress={() => setShowThread(true)}>
+                  <Text style={styles.viewThreadIcon}>{'\u{1F4AC}'}</Text>
+                  <Text style={styles.viewThreadText}>View Conversation ({thread.length} messages)</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <>
+              <View style={styles.threadHeader}>
+                <Text style={styles.threadHeaderText}>{'\u{1F4AC}'} Conversation</Text>
+                <TouchableOpacity onPress={() => setShowThread(false)}>
+                  <Text style={styles.threadCollapseText}>Collapse</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.threadContainer}>
+                {threadLoading ? (
+                  <ActivityIndicator size="small" color="#FFD700" style={{ padding: 20 }} />
+                ) : (
+                  thread.map((msg, index) => renderThreadMessage(msg, index))
+                )}
+              </View>
+            </>
+          )}
 
           {notification.action_data?.buttonText && (
             <TouchableOpacity
@@ -310,11 +472,11 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
 
           {isOutbox && (
             <View style={styles.analyticsCard}>
-              <Text style={styles.analyticsTitle}>📊 Delivery Analytics</Text>
+              <Text style={styles.analyticsTitle}>{'\u{1F4CA}'} Delivery Analytics</Text>
               
               <View style={styles.analyticsRow}>
                 <View style={[styles.analyticsIcon, { backgroundColor: 'rgba(156, 163, 175, 0.2)' }]}>
-                  <Text>↑</Text>
+                  <Text>{'\u2191'}</Text>
                 </View>
                 <View style={styles.analyticsInfo}>
                   <Text style={styles.analyticsLabel}>Sent</Text>
@@ -322,12 +484,12 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                     {formatShortTimestamp(notification.sent_at || notification.created_at)}
                   </Text>
                 </View>
-                <Text style={styles.analyticsCheck}>✓</Text>
+                <Text style={styles.analyticsCheck}>{'\u2713'}</Text>
               </View>
               
               <View style={styles.analyticsRow}>
                 <View style={[styles.analyticsIcon, { backgroundColor: notification.clicked_at ? 'rgba(251, 191, 36, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
-                  <Text>👆</Text>
+                  <Text>{'\u{1F446}'}</Text>
                 </View>
                 <View style={styles.analyticsInfo}>
                   <Text style={styles.analyticsLabel}>Clicked</Text>
@@ -335,12 +497,12 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                     {notification.clicked_at ? formatShortTimestamp(notification.clicked_at) : 'Not clicked'}
                   </Text>
                 </View>
-                {notification.clicked_at && <Text style={[styles.analyticsCheck, { color: '#fbbf24' }]}>✓</Text>}
+                {notification.clicked_at && <Text style={[styles.analyticsCheck, { color: '#fbbf24' }]}>{'\u2713'}</Text>}
               </View>
               
               <View style={[styles.analyticsRow, { borderBottomWidth: 0 }]}>
                 <View style={[styles.analyticsIcon, { backgroundColor: notification.read_at ? 'rgba(74, 222, 128, 0.2)' : 'rgba(100, 100, 100, 0.2)' }]}>
-                  <Text>👁️</Text>
+                  <Text>{'\u{1F441}\uFE0F'}</Text>
                 </View>
                 <View style={styles.analyticsInfo}>
                   <Text style={styles.analyticsLabel}>Read</Text>
@@ -348,17 +510,17 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                     {notification.read_at ? formatShortTimestamp(notification.read_at) : 'Not read'}
                   </Text>
                 </View>
-                {notification.read_at && <Text style={[styles.analyticsCheck, { color: '#4ade80' }]}>✓✓</Text>}
+                {notification.read_at && <Text style={[styles.analyticsCheck, { color: '#4ade80' }]}>{'\u2713\u2713'}</Text>}
               </View>
             </View>
           )}
 
-          {!isOutbox && (
+          {!isOutbox && !showReplyBox && (
             <View style={styles.statusCard}>
               <View style={styles.statusRow}>
                 <Text style={styles.statusLabel}>Status:</Text>
                 <Text style={[styles.statusValue, notification.is_read && styles.readStatus]}>
-                  {notification.is_read ? '✓ Read' : 'Unread'}
+                  {notification.is_read ? '\u2713 Read' : 'Unread'}
                 </Text>
               </View>
               {notification.is_clicked && (
@@ -371,10 +533,61 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
               )}
             </View>
           )}
+
+          {showReplyBox && (
+            <View style={styles.replyComposer}>
+              <Text style={styles.replyComposerLabel}>{'\u2709\uFE0F'} Reply</Text>
+              <TextInput
+                style={styles.replyInput}
+                placeholder="Type your reply..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={replyText}
+                onChangeText={setReplyText}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                autoFocus
+              />
+              <View style={styles.replyActions}>
+                <TouchableOpacity 
+                  style={styles.replyCancelButton} 
+                  onPress={() => { setShowReplyBox(false); setReplyText(''); }}
+                >
+                  <Text style={styles.replyCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.replySendButton, !replyText.trim() && styles.replySendButtonDisabled]}
+                  onPress={handleSendReply}
+                  disabled={!replyText.trim() || isSendingReply}
+                >
+                  {isSendingReply ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.replySendText}>{'\u{1F4E8}'} Send Reply</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </ScrollView>
 
-        {!isOutbox && (
-          <View style={styles.bottomActions}>
+        <View style={styles.bottomActions}>
+          <TouchableOpacity
+            style={styles.replyButton}
+            onPress={() => {
+              setShowReplyBox(!showReplyBox);
+              if (!showReplyBox) {
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 200);
+              }
+            }}
+          >
+            <Text style={styles.replyButtonIcon}>{'\u21A9\uFE0F'}</Text>
+            <Text style={styles.replyButtonText}>Reply</Text>
+          </TouchableOpacity>
+
+          {!isOutbox && (
             <TouchableOpacity
               style={styles.archiveButton}
               onPress={handleArchive}
@@ -384,23 +597,25 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                 <ActivityIndicator size="small" color="#FFD700" />
               ) : (
                 <>
-                  <Text style={styles.archiveButtonIcon}>📁</Text>
+                  <Text style={styles.archiveButtonIcon}>{'\u{1F4C1}'}</Text>
                   <Text style={styles.archiveButtonText}>Archive</Text>
                 </>
               )}
             </TouchableOpacity>
-            
+          )}
+          
+          {!isOutbox && (
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={handleDelete}
               disabled={isArchiving}
             >
-              <Text style={styles.deleteButtonIcon}>🗑️</Text>
+              <Text style={styles.deleteButtonIcon}>{'\u{1F5D1}\uFE0F'}</Text>
               <Text style={styles.deleteButtonText}>Delete</Text>
             </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      </KeyboardAvoidingView>
     </ImageBackground>
   );
 };
@@ -488,7 +703,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 30,
   },
   typeBadge: {
     alignSelf: 'flex-start',
@@ -545,6 +760,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  threadBadge: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+  },
+  threadBadgeText: {
+    fontSize: 12,
+    color: '#06b6d4',
+    fontWeight: '600',
+  },
   timestamp: {
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.6)',
@@ -590,6 +818,175 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 26,
+  },
+  viewThreadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
+  },
+  viewThreadIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  viewThreadText: {
+    color: '#06b6d4',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  threadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  threadHeaderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  threadCollapseText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  threadContainer: {
+    marginBottom: 16,
+  },
+  threadMessageContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    alignItems: 'flex-end',
+  },
+  threadMessageSent: {
+    justifyContent: 'flex-end',
+  },
+  threadMessageReceived: {
+    justifyContent: 'flex-start',
+  },
+  threadAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(30, 58, 95, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  threadAvatarSent: {
+    backgroundColor: 'rgba(6, 182, 212, 0.3)',
+    borderColor: 'rgba(6, 182, 212, 0.5)',
+  },
+  threadAvatarText: {
+    fontSize: 11,
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  threadBubble: {
+    maxWidth: '75%',
+    borderRadius: 16,
+    padding: 12,
+    marginHorizontal: 8,
+  },
+  threadBubbleReceived: {
+    backgroundColor: 'rgba(26, 26, 26, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    borderBottomLeftRadius: 4,
+  },
+  threadBubbleSent: {
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+    borderBottomRightRadius: 4,
+  },
+  threadSenderName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFD700',
+    marginBottom: 4,
+  },
+  threadSenderNameSent: {
+    color: '#06b6d4',
+  },
+  threadBody: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: 20,
+  },
+  threadBodySent: {
+    color: 'rgba(255, 255, 255, 0.95)',
+  },
+  threadTime: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.4)',
+    marginTop: 6,
+  },
+  threadTimeSent: {
+    textAlign: 'right',
+  },
+  replyComposer: {
+    backgroundColor: 'rgba(26, 26, 26, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+  },
+  replyComposerLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFD700',
+    marginBottom: 10,
+  },
+  replyInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 10,
+    padding: 14,
+    color: '#fff',
+    fontSize: 15,
+    lineHeight: 22,
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.2)',
+    marginBottom: 12,
+  },
+  replyActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  replyCancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  replyCancelText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  replySendButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: '#1e3a5f',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+  replySendButtonDisabled: {
+    opacity: 0.5,
+  },
+  replySendText: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '700',
   },
   actionButton: {
     backgroundColor: '#1e3a5f',
@@ -680,11 +1077,32 @@ const styles = StyleSheet.create({
   },
   bottomActions: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: 'rgba(26, 26, 26, 0.95)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  replyButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.5)',
+  },
+  replyButtonIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  replyButtonText: {
+    color: '#06b6d4',
+    fontSize: 15,
+    fontWeight: '700',
   },
   archiveButton: {
     flex: 1,
@@ -694,17 +1112,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 215, 0, 0.15)',
     borderRadius: 12,
     paddingVertical: 14,
-    marginRight: 10,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 215, 0, 0.5)',
   },
   archiveButtonIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    fontSize: 16,
+    marginRight: 6,
   },
   archiveButtonText: {
     color: '#FFD700',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   deleteButton: {
@@ -719,12 +1137,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(220, 38, 38, 0.5)',
   },
   deleteButtonIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    fontSize: 16,
+    marginRight: 6,
   },
   deleteButtonText: {
     color: '#ff6b6b',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

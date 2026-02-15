@@ -760,16 +760,20 @@ exports.getNotificationById = async (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
   
-  const { recipientType, entityId } = entityInfo;
+  const { recipientType, entityId, deviceType } = entityInfo;
+  const senderType = deviceType === 'law_firm' ? 'law_firm' : deviceType === 'medical_provider' ? 'medical_provider' : 'user';
 
   try {
     const query = `
       SELECT * FROM notifications 
       WHERE id = $1 
-      AND recipient_type = $2 AND recipient_id = $3
+      AND (
+        (recipient_type = $2 AND recipient_id = $3)
+        OR (sender_type = $4 AND sender_id = $3)
+      )
     `;
     
-    const result = await pool.query(query, [notificationId, recipientType, entityId]);
+    const result = await pool.query(query, [notificationId, recipientType, entityId, senderType]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Notification not found' });
@@ -781,6 +785,12 @@ exports.getNotificationById = async (req, res) => {
       is_clicked: result.rows[0].clicked
     };
 
+    const threadCount = await pool.query(
+      'SELECT COUNT(*) as count FROM notifications WHERE thread_id = $1',
+      [notification.thread_id || notification.id]
+    );
+    notification.thread_count = parseInt(threadCount.rows[0].count) || 1;
+
     res.status(200).json({
       success: true,
       notification
@@ -788,6 +798,194 @@ exports.getNotificationById = async (req, res) => {
   } catch (error) {
     console.error('Get notification error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch notification' });
+  }
+};
+
+exports.getNotificationThread = async (req, res) => {
+  const { notificationId } = req.params;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { recipientType, entityId, deviceType } = entityInfo;
+  const senderType = deviceType === 'law_firm' ? 'law_firm' : deviceType === 'medical_provider' ? 'medical_provider' : 'user';
+
+  try {
+    const accessCheck = await pool.query(
+      `SELECT thread_id FROM notifications WHERE id = $1 
+       AND ((recipient_type = $2 AND recipient_id = $3) OR (sender_type = $4 AND sender_id = $3))`,
+      [notificationId, recipientType, entityId, senderType]
+    );
+    if (accessCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    
+    const threadId = accessCheck.rows[0].thread_id || parseInt(notificationId);
+
+    const threadQuery = `
+      SELECT * FROM notifications 
+      WHERE thread_id = $1
+      ORDER BY created_at ASC
+    `;
+    
+    const result = await pool.query(threadQuery, [threadId]);
+
+    const messages = result.rows.map(n => ({
+      id: n.id,
+      sender_type: n.sender_type,
+      sender_id: n.sender_id,
+      sender_name: n.sender_name,
+      recipient_type: n.recipient_type,
+      recipient_id: n.recipient_id,
+      subject: n.subject || n.title,
+      body: n.body,
+      title: n.title,
+      type: n.type,
+      priority: n.priority,
+      created_at: n.created_at,
+      read_at: n.read_at,
+      is_read: n.status === 'read',
+      is_sender: n.sender_type === senderType && n.sender_id === entityId,
+      parent_id: n.parent_id,
+      thread_id: n.thread_id,
+    }));
+
+    res.status(200).json({
+      success: true,
+      thread: messages,
+      threadId
+    });
+  } catch (error) {
+    console.error('Get thread error:', error);
+    res.status(500).json({ error: 'Failed to fetch thread' });
+  }
+};
+
+exports.replyToNotification = async (req, res) => {
+  const { notificationId } = req.params;
+  const { body, subject, priority } = req.body;
+  
+  const entityInfo = getEntityInfo(req);
+  if (!entityInfo) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  const { recipientType, entityId, deviceType } = entityInfo;
+  const senderType = deviceType === 'law_firm' ? 'law_firm' : deviceType === 'medical_provider' ? 'medical_provider' : 'user';
+
+  if (!body || !body.trim()) {
+    return res.status(400).json({ error: 'Reply body is required' });
+  }
+
+  try {
+    const originalQuery = `
+      SELECT * FROM notifications 
+      WHERE id = $1 
+      AND (
+        (recipient_type = $2 AND recipient_id = $3)
+        OR (sender_type = $4 AND sender_id = $3)
+      )
+    `;
+    const originalResult = await pool.query(originalQuery, [notificationId, recipientType, entityId, senderType]);
+
+    if (originalResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Original notification not found' });
+    }
+
+    const original = originalResult.rows[0];
+    const threadId = original.thread_id || original.id;
+
+    let replyRecipientType, replyRecipientId;
+    if (original.sender_type === senderType && original.sender_id === entityId) {
+      replyRecipientType = original.recipient_type;
+      replyRecipientId = original.recipient_id;
+    } else {
+      replyRecipientType = original.sender_type;
+      replyRecipientId = original.sender_id;
+    }
+
+    let senderName = req.user?.email || 'User';
+    if (senderType === 'law_firm') {
+      try {
+        const firmResult = await pool.query('SELECT firm_name FROM law_firms WHERE id = $1', [entityId]);
+        if (firmResult.rows.length > 0) senderName = firmResult.rows[0].firm_name;
+      } catch (e) {}
+    } else if (senderType === 'medical_provider') {
+      try {
+        const provResult = await pool.query('SELECT practice_name FROM medical_providers WHERE id = $1', [entityId]);
+        if (provResult.rows.length > 0) senderName = provResult.rows[0].practice_name;
+      } catch (e) {}
+    } else {
+      try {
+        const userResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [entityId]);
+        if (userResult.rows.length > 0) senderName = `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`;
+      } catch (e) {}
+    }
+
+    const replySubject = subject || (original.subject ? (original.subject.startsWith('Re: ') ? original.subject : `Re: ${original.subject}`) : (original.title ? `Re: ${original.title}` : 'Re: Notification'));
+
+    const insertQuery = `
+      INSERT INTO notifications (
+        sender_type, sender_id, sender_name, recipient_type, recipient_id,
+        type, priority, title, body, subject, status, parent_id, thread_id,
+        notification_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11, $12, 'reply')
+      RETURNING *
+    `;
+    
+    const replyResult = await pool.query(insertQuery, [
+      senderType, entityId, senderName, replyRecipientType, replyRecipientId,
+      'message', priority || original.priority || 'medium', replySubject, body.trim(), replySubject,
+      original.id, threadId
+    ]);
+
+    const replyNotification = replyResult.rows[0];
+
+    const deviceQuery = `
+      SELECT expo_push_token FROM user_devices 
+      WHERE ${replyRecipientType}_id = $1 AND is_active = true
+    `;
+    const deviceResult = await pool.query(deviceQuery, [replyRecipientId]);
+
+    if (deviceResult.rows.length > 0) {
+      const currentUnreadCount = await getUnreadCountForUser(replyRecipientType, replyRecipientId);
+      const badgeCount = currentUnreadCount + 1;
+      
+      for (const device of deviceResult.rows) {
+        try {
+          await pushNotificationService.sendPushNotification({
+            expoPushToken: device.expo_push_token,
+            title: replySubject,
+            body: body.trim().substring(0, 200),
+            data: {
+              notification_id: replyNotification.id.toString(),
+              notificationId: replyNotification.id,
+              type: 'message',
+              thread_id: threadId,
+            },
+            badge: badgeCount,
+          });
+        } catch (pushErr) {
+          console.error('Push notification error (non-fatal):', pushErr.message);
+        }
+      }
+    }
+
+    syncNotificationToFirebase(replyNotification)
+      .catch(err => console.error('Firebase sync error (non-fatal):', err));
+    syncUnreadCountToFirebase(replyRecipientType, replyRecipientId, await getUnreadCountForUser(replyRecipientType, replyRecipientId))
+      .catch(err => console.error('Firebase unread count sync error (non-fatal):', err));
+
+    res.status(201).json({
+      success: true,
+      message: 'Reply sent successfully',
+      notification: replyNotification
+    });
+  } catch (error) {
+    console.error('Reply to notification error:', error);
+    res.status(500).json({ error: 'Failed to send reply' });
   }
 };
 

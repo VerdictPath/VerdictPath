@@ -31,6 +31,8 @@ router.get('/settings', authenticateToken, notificationsController.getEmailCCPre
 router.get('/email-preferences', authenticateToken, notificationsController.getEmailCCPreferences);
 router.get('/analytics', authenticateToken, notificationsController.getNotificationAnalytics);
 router.get('/:notificationId', authenticateToken, notificationsController.getNotificationById);
+router.get('/:notificationId/thread', authenticateToken, notificationsController.getNotificationThread);
+router.post('/:notificationId/reply', authenticateToken, notificationsController.replyToNotification);
 
 router.put('/mark-all-read', authenticateToken, notificationsController.markAllAsRead);
 router.put('/preferences', authenticateToken, notificationsController.updatePreferences);
