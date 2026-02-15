@@ -1421,29 +1421,52 @@ async function sendSettlementStatementEmail(toEmail, recipientName, statementDat
 
   let liensHtml = '';
   if (statementData.liens && statementData.liens.length > 0) {
-    const lienRows = statementData.liens.map(l => `
+    let totalOriginal = 0;
+    let totalLien = 0;
+    let totalSavings = 0;
+
+    const lienRows = statementData.liens.map(l => {
+      const orig = parseFloat(l.originalBillAmount) || 0;
+      const lien = parseFloat(l.lienAmount) || 0;
+      const savings = orig - lien;
+      totalOriginal += orig;
+      totalLien += lien;
+      totalSavings += savings;
+      return `
       <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${l.providerName || 'Unknown Provider'}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(l.originalBillAmount)}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(l.lienAmount)}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${l.negotiatedAmount ? formatCurrency(l.negotiatedAmount) : '-'}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${(l.status || 'pending').toUpperCase()}</td>
-      </tr>
-    `).join('');
-    
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-weight: 500;">${l.providerName || 'Unknown Provider'}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(orig)}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;">$${formatCurrency(lien)}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #16a34a;">${savings > 0 ? '$' + formatCurrency(savings) : '-'}</td>
+        <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">
+          <span style="background: ${l.status === 'paid' ? '#d1fae5' : '#f3f4f6'}; color: ${l.status === 'paid' ? '#059669' : '#6b7280'}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${(l.status || 'pending').toUpperCase()}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
     liensHtml = `
-      <h3 style="color: #1e3a5f; margin-top: 25px;">Medical Liens</h3>
+      <h3 style="color: #1e3a5f; margin-top: 25px;">Medical Provider Liens</h3>
+      <p style="color: #6b7280; font-size: 13px; margin-top: 4px;">The following medical providers have liens on this settlement. The "Negotiated Amount" reflects the reduced amount owed after lien negotiation.</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
         <thead>
           <tr style="background: #f3f4f6;">
-            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #d1d5db;">Provider</th>
-            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Original Bill</th>
-            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Lien Amount</th>
-            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Negotiated</th>
-            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #d1d5db;">Status</th>
+            <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #d1d5db; font-size: 13px;">Medical Provider</th>
+            <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Original Bill</th>
+            <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Negotiated Amount</th>
+            <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #d1d5db; font-size: 13px;">Savings</th>
+            <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #d1d5db; font-size: 13px;">Status</th>
           </tr>
         </thead>
-        <tbody>${lienRows}</tbody>
+        <tbody>
+          ${lienRows}
+          <tr style="background: #f9fafb; font-weight: bold;">
+            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db;">Totals</td>
+            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right;">$${formatCurrency(totalOriginal)}</td>
+            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right;">$${formatCurrency(totalLien)}</td>
+            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db; text-align: right; color: #16a34a;">${totalSavings > 0 ? '$' + formatCurrency(totalSavings) : '-'}</td>
+            <td style="padding: 10px 8px; border-top: 2px solid #d1d5db;"></td>
+          </tr>
+        </tbody>
       </table>
     `;
   }
