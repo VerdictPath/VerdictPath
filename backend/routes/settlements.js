@@ -293,6 +293,109 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
 });
 
 /**
+ * PUT /api/settlements/:id
+ * Update settlement fields (only allowed when status is 'pending' or 'settled')
+ */
+router.put('/:id', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lawFirmId = req.user.id;
+
+    const existing = await db.query(
+      'SELECT * FROM settlements WHERE id = $1 AND law_firm_id = $2',
+      [id, lawFirmId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Settlement not found' });
+    }
+
+    const settlement = existing.rows[0];
+    if (!['pending', 'settled'].includes(settlement.status)) {
+      return res.status(400).json({ error: 'Settlement can only be edited when in pending or settled status' });
+    }
+
+    const {
+      caseName,
+      caseNumber,
+      insuranceCompanyName,
+      insuranceClaimNumber,
+      insuranceAdjusterName,
+      insuranceAdjusterEmail,
+      insuranceAdjusterPhone,
+      grossSettlementAmount,
+      attorneyFees,
+      attorneyCosts,
+      settlementDate,
+      notes
+    } = req.body;
+
+    if (!insuranceCompanyName || !grossSettlementAmount) {
+      return res.status(400).json({
+        error: 'Insurance company name and gross settlement amount are required'
+      });
+    }
+
+    const gross = parseFloat(grossSettlementAmount);
+    const fees = parseFloat(attorneyFees || 0);
+    const costs = parseFloat(attorneyCosts || 0);
+    const liensResult = await db.query(
+      'SELECT COALESCE(SUM(COALESCE(negotiated_amount, lien_amount)), 0) as total FROM medical_liens WHERE settlement_id = $1',
+      [id]
+    );
+    const totalLiens = parseFloat(liensResult.rows[0].total);
+    const netToClient = gross - fees - costs - totalLiens;
+
+    const result = await db.query(`
+      UPDATE settlements SET
+        case_name = $1,
+        case_number = $2,
+        insurance_company_name = $3,
+        insurance_claim_number = $4,
+        insurance_adjuster_name = $5,
+        insurance_adjuster_email = $6,
+        insurance_adjuster_phone = $7,
+        gross_settlement_amount = $8,
+        attorney_fees = $9,
+        attorney_costs = $10,
+        total_medical_liens = $11,
+        net_to_client = $12,
+        settlement_date = $13,
+        notes = $14,
+        updated_at = NOW()
+      WHERE id = $15 AND law_firm_id = $16
+      RETURNING *
+    `, [
+      caseName || null,
+      caseNumber || null,
+      insuranceCompanyName,
+      insuranceClaimNumber || null,
+      insuranceAdjusterName || null,
+      insuranceAdjusterEmail || null,
+      insuranceAdjusterPhone || null,
+      gross,
+      fees,
+      costs,
+      totalLiens,
+      netToClient,
+      settlementDate || null,
+      notes || null,
+      id,
+      lawFirmId
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Settlement updated successfully',
+      settlement: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating settlement:', error);
+    res.status(500).json({ error: 'Failed to update settlement' });
+  }
+});
+
+/**
  * PUT /api/settlements/:id/mark-settled
  * Mark a case as settled (before IOLTA deposit)
  */

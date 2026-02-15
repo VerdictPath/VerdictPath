@@ -102,6 +102,22 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const [sendingStatement, setSendingStatement] = useState(false);
   const [lienProviderType, setLienProviderType] = useState('connected');
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    caseName: '',
+    caseNumber: '',
+    insuranceCompanyName: '',
+    insuranceClaimNumber: '',
+    insuranceAdjusterName: '',
+    insuranceAdjusterEmail: '',
+    insuranceAdjusterPhone: '',
+    grossSettlementAmount: '',
+    attorneyFees: '',
+    attorneyCosts: '',
+    settlementDate: '',
+    notes: '',
+  });
+
   const [lienForm, setLienForm] = useState({
     medicalProviderId: '',
     manualProviderName: '',
@@ -178,6 +194,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     setView('list');
     setSelectedSettlement(null);
     setDetailData(null);
+    setIsEditing(false);
     loadSettlements();
   };
 
@@ -199,6 +216,80 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     });
     loadClients();
     setShowCreateModal(true);
+  };
+
+  const startEditing = () => {
+    const settlement = detailData?.settlement;
+    if (!settlement) return;
+    setEditForm({
+      caseName: settlement.caseName || '',
+      caseNumber: settlement.caseNumber || '',
+      insuranceCompanyName: settlement.insuranceCompanyName || '',
+      insuranceClaimNumber: settlement.insuranceClaimNumber || '',
+      insuranceAdjusterName: settlement.insuranceAdjusterName || '',
+      insuranceAdjusterEmail: settlement.insuranceAdjusterEmail || '',
+      insuranceAdjusterPhone: settlement.insuranceAdjusterPhone || '',
+      grossSettlementAmount: settlement.grossSettlementAmount ? String(settlement.grossSettlementAmount) : '',
+      attorneyFees: settlement.attorneyFees ? String(settlement.attorneyFees) : '',
+      attorneyCosts: settlement.attorneyCosts ? String(settlement.attorneyCosts) : '',
+      settlementDate: settlement.settlementDate ? new Date(settlement.settlementDate).toLocaleDateString('en-US') : '',
+      notes: settlement.notes || '',
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedSettlement) return;
+    if (!editForm.insuranceCompanyName.trim()) {
+      alert('Required Field', 'Please enter the insurance company name');
+      return;
+    }
+    if (!editForm.grossSettlementAmount || parseCurrency(editForm.grossSettlementAmount) <= 0) {
+      alert('Required Field', 'Please enter a valid gross settlement amount');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const body = {
+        caseName: editForm.caseName.trim() || undefined,
+        caseNumber: editForm.caseNumber.trim() || undefined,
+        insuranceCompanyName: editForm.insuranceCompanyName.trim(),
+        insuranceClaimNumber: editForm.insuranceClaimNumber.trim() || undefined,
+        insuranceAdjusterName: editForm.insuranceAdjusterName.trim() || undefined,
+        insuranceAdjusterEmail: editForm.insuranceAdjusterEmail.trim() || undefined,
+        insuranceAdjusterPhone: editForm.insuranceAdjusterPhone.trim() || undefined,
+        grossSettlementAmount: parseCurrency(editForm.grossSettlementAmount),
+        attorneyFees: parseCurrency(editForm.attorneyFees) || 0,
+        attorneyCosts: parseCurrency(editForm.attorneyCosts) || 0,
+        settlementDate: editForm.settlementDate.trim() || undefined,
+        notes: editForm.notes.trim() || undefined,
+      };
+
+      await apiRequest(API_ENDPOINTS.SETTLEMENTS.UPDATE(selectedSettlement.id), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      alert('Success', 'Settlement updated successfully');
+      setIsEditing(false);
+      loadSettlementDetail(selectedSettlement.id);
+    } catch (error) {
+      alert('Error', error.message || 'Failed to update settlement');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getEditNetToClient = () => {
+    const gross = parseCurrency(editForm.grossSettlementAmount);
+    const fees = parseCurrency(editForm.attorneyFees);
+    const costs = parseCurrency(editForm.attorneyCosts);
+    const totalLiens = detailData?.settlement?.totalMedicalLiens || 0;
+    return gross - fees - costs - totalLiens;
   };
 
   const handleCreateSettlement = async () => {
@@ -578,7 +669,18 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
           <Text style={styles.createButtonText}>+ New</Text>
         </TouchableOpacity>
       )}
-      {view === 'detail' && <View style={{ width: 70 }} />}
+      {view === 'detail' && detailData?.settlement && ['pending', 'settled'].includes(detailData.settlement.status) && !isEditing && (
+        <TouchableOpacity style={styles.createButton} onPress={startEditing}>
+          <Text style={styles.createButtonText}>Edit</Text>
+        </TouchableOpacity>
+      )}
+      {view === 'detail' && (isEditing ? (
+        <TouchableOpacity style={[styles.createButton, { backgroundColor: '#6B7280' }]} onPress={() => setIsEditing(false)}>
+          <Text style={styles.createButtonText}>Cancel</Text>
+        </TouchableOpacity>
+      ) : (!detailData?.settlement || !['pending', 'settled'].includes(detailData.settlement.status)) ? (
+        <View style={{ width: 70 }} />
+      ) : null)}
     </View>
   );
 
@@ -667,146 +769,286 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
           </View>
         ) : settlement ? (
           <ScrollView style={styles.listScroll} contentContainerStyle={styles.listContent}>
-            <View style={styles.detailCard}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Case Name</Text>
-                <Text style={styles.detailValue}>{settlement.caseName || 'N/A'}</Text>
-              </View>
-              {settlement.caseNumber && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Case Number</Text>
-                  <Text style={styles.detailValue}>{settlement.caseNumber}</Text>
-                </View>
-              )}
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Client</Text>
-                <Text style={styles.detailValue}>{settlement.clientName}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Insurance Company</Text>
-                <Text style={styles.detailValue}>{settlement.insuranceCompanyName}</Text>
-              </View>
-              {settlement.insuranceClaimNumber && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Claim Number</Text>
-                  <Text style={styles.detailValue}>{settlement.insuranceClaimNumber}</Text>
-                </View>
-              )}
-              {settlement.insuranceAdjusterName && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Adjuster</Text>
-                  <Text style={styles.detailValue}>{settlement.insuranceAdjusterName}</Text>
-                </View>
-              )}
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Status</Text>
-                {getStatusBadge(settlement.status)}
-              </View>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Settlement Date</Text>
-                <Text style={styles.detailValue}>{formatDate(settlement.settlementDate)}</Text>
-              </View>
-              {settlement.notes && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Notes</Text>
-                  <Text style={styles.detailValue}>{settlement.notes}</Text>
-                </View>
-              )}
-            </View>
+            {isEditing ? (
+              <View style={styles.detailCard}>
+                <Text style={styles.sectionTitle}>Edit Settlement</Text>
 
-            <View style={styles.financialCard}>
-              <Text style={styles.sectionTitle}>Financial Breakdown</Text>
-              <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Gross Settlement</Text>
-                <Text style={styles.financialValue}>${formatCurrency(settlement.grossSettlementAmount)}</Text>
+                <Text style={styles.inputLabel}>Case Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Case name"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.caseName}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, caseName: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Case Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Optional"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.caseNumber}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, caseNumber: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Insurance Company Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter insurance company"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.insuranceCompanyName}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, insuranceCompanyName: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Claim Number</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Optional"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.insuranceClaimNumber}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, insuranceClaimNumber: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Adjuster Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Optional"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.insuranceAdjusterName}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, insuranceAdjusterName: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Adjuster Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Optional"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  value={editForm.insuranceAdjusterEmail}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, insuranceAdjusterEmail: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Adjuster Phone</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Optional"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  value={editForm.insuranceAdjusterPhone}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, insuranceAdjusterPhone: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Gross Settlement Amount *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.00"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="decimal-pad"
+                  value={editForm.grossSettlementAmount}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, grossSettlementAmount: sanitizeCurrency(v) }))}
+                />
+
+                <Text style={styles.inputLabel}>Attorney Fees</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.00"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="decimal-pad"
+                  value={editForm.attorneyFees}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, attorneyFees: sanitizeCurrency(v) }))}
+                />
+
+                <Text style={styles.inputLabel}>Attorney Costs</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0.00"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="decimal-pad"
+                  value={editForm.attorneyCosts}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, attorneyCosts: sanitizeCurrency(v) }))}
+                />
+
+                <View style={styles.netToClientBox}>
+                  <Text style={styles.netToClientLabel}>Estimated Net to Client</Text>
+                  <Text style={styles.netToClientValue}>${formatCurrency(getEditNetToClient())}</Text>
+                </View>
+
+                <Text style={styles.inputLabel}>Settlement Date</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="MM/DD/YYYY (optional)"
+                  placeholderTextColor="#9CA3AF"
+                  value={editForm.settlementDate}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, settlementDate: v }))}
+                />
+
+                <Text style={styles.inputLabel}>Notes</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Optional notes"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  value={editForm.notes}
+                  onChangeText={v => setEditForm(prev => ({ ...prev, notes: v }))}
+                />
+
+                <TouchableOpacity
+                  style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+                  onPress={handleSaveEdit}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+
+                <View style={{ height: 20 }} />
               </View>
-              <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Attorney Fees</Text>
-                <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.attorneyFees)}</Text>
-              </View>
-              <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Attorney Costs</Text>
-                <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.attorneyCosts)}</Text>
-              </View>
-              <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Medical Liens</Text>
-                <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.totalMedicalLiens)}</Text>
-              </View>
-              <View style={styles.financialDivider} />
-              <View style={styles.financialRow}>
-                <Text style={styles.financialTotalLabel}>Net to Client</Text>
-                <Text style={styles.financialTotalValue}>${formatCurrency(settlement.netToClient)}</Text>
-              </View>
-              {settlement.ioltaDepositAmount && (
-                <>
-                  <View style={styles.financialDivider} />
-                  <View style={styles.financialRow}>
-                    <Text style={styles.financialLabel}>IOLTA Deposit</Text>
-                    <Text style={styles.financialValue}>${formatCurrency(settlement.ioltaDepositAmount)}</Text>
+            ) : (
+              <>
+                <View style={styles.detailCard}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Case Name</Text>
+                    <Text style={styles.detailValue}>{settlement.caseName || 'N/A'}</Text>
                   </View>
-                  {settlement.ioltaReferenceNumber && (
-                    <View style={styles.financialRow}>
-                      <Text style={styles.financialLabel}>Reference #</Text>
-                      <Text style={styles.financialValue}>{settlement.ioltaReferenceNumber}</Text>
+                  {settlement.caseNumber && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Case Number</Text>
+                      <Text style={styles.detailValue}>{settlement.caseNumber}</Text>
                     </View>
                   )}
-                  <View style={styles.financialRow}>
-                    <Text style={styles.financialLabel}>Deposit Date</Text>
-                    <Text style={styles.financialValue}>{formatDate(settlement.ioltaDepositDate)}</Text>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Client</Text>
+                    <Text style={styles.detailValue}>{settlement.clientName}</Text>
                   </View>
-                </>
-              )}
-            </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Insurance Company</Text>
+                    <Text style={styles.detailValue}>{settlement.insuranceCompanyName}</Text>
+                  </View>
+                  {settlement.insuranceClaimNumber && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Claim Number</Text>
+                      <Text style={styles.detailValue}>{settlement.insuranceClaimNumber}</Text>
+                    </View>
+                  )}
+                  {settlement.insuranceAdjusterName && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Adjuster</Text>
+                      <Text style={styles.detailValue}>{settlement.insuranceAdjusterName}</Text>
+                    </View>
+                  )}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Status</Text>
+                    {getStatusBadge(settlement.status)}
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Settlement Date</Text>
+                    <Text style={styles.detailValue}>{formatDate(settlement.settlementDate)}</Text>
+                  </View>
+                  {settlement.notes && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Notes</Text>
+                      <Text style={styles.detailValue}>{settlement.notes}</Text>
+                    </View>
+                  )}
+                </View>
 
-            {settlement.status === 'pending' && (
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => {
-                  setMarkSettledForm({ settlementDate: '', notes: '' });
-                  setShowMarkSettledModal(true);
-                }}
-              >
-                <Text style={styles.actionButtonText}>Mark as Settled</Text>
-              </TouchableOpacity>
-            )}
+                <View style={styles.financialCard}>
+                  <Text style={styles.sectionTitle}>Financial Breakdown</Text>
+                  <View style={styles.financialRow}>
+                    <Text style={styles.financialLabel}>Gross Settlement</Text>
+                    <Text style={styles.financialValue}>${formatCurrency(settlement.grossSettlementAmount)}</Text>
+                  </View>
+                  <View style={styles.financialRow}>
+                    <Text style={styles.financialLabel}>Attorney Fees</Text>
+                    <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.attorneyFees)}</Text>
+                  </View>
+                  <View style={styles.financialRow}>
+                    <Text style={styles.financialLabel}>Attorney Costs</Text>
+                    <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.attorneyCosts)}</Text>
+                  </View>
+                  <View style={styles.financialRow}>
+                    <Text style={styles.financialLabel}>Medical Liens</Text>
+                    <Text style={styles.financialDeduction}>- ${formatCurrency(settlement.totalMedicalLiens)}</Text>
+                  </View>
+                  <View style={styles.financialDivider} />
+                  <View style={styles.financialRow}>
+                    <Text style={styles.financialTotalLabel}>Net to Client</Text>
+                    <Text style={styles.financialTotalValue}>${formatCurrency(settlement.netToClient)}</Text>
+                  </View>
+                  {settlement.ioltaDepositAmount && (
+                    <>
+                      <View style={styles.financialDivider} />
+                      <View style={styles.financialRow}>
+                        <Text style={styles.financialLabel}>IOLTA Deposit</Text>
+                        <Text style={styles.financialValue}>${formatCurrency(settlement.ioltaDepositAmount)}</Text>
+                      </View>
+                      {settlement.ioltaReferenceNumber && (
+                        <View style={styles.financialRow}>
+                          <Text style={styles.financialLabel}>Reference #</Text>
+                          <Text style={styles.financialValue}>{settlement.ioltaReferenceNumber}</Text>
+                        </View>
+                      )}
+                      <View style={styles.financialRow}>
+                        <Text style={styles.financialLabel}>Deposit Date</Text>
+                        <Text style={styles.financialValue}>{formatDate(settlement.ioltaDepositDate)}</Text>
+                      </View>
+                    </>
+                  )}
+                </View>
 
-            {settlement.status === 'settled' && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#7C3AED' }]}
-                onPress={() => {
-                  setIOLTAForm({ ioltaDepositAmount: '', ioltaReferenceNumber: '', ioltaDepositDate: '', notes: '' });
-                  setShowIOLTAModal(true);
-                }}
-              >
-                <Text style={styles.actionButtonText}>Record IOLTA Deposit</Text>
-              </TouchableOpacity>
-            )}
+                {settlement.status === 'pending' && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setMarkSettledForm({ settlementDate: '', notes: '' });
+                      setShowMarkSettledModal(true);
+                    }}
+                  >
+                    <Text style={styles.actionButtonText}>Mark as Settled</Text>
+                  </TouchableOpacity>
+                )}
 
-            {settlement.status === 'iolta_deposited' && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#16A34A' }]}
-                onPress={() => onNavigate && onNavigate('lawfirm-disbursements')}
-              >
-                <Text style={styles.actionButtonText}>Process Disbursement</Text>
-              </TouchableOpacity>
-            )}
+                {settlement.status === 'settled' && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#7C3AED' }]}
+                    onPress={() => {
+                      setIOLTAForm({ ioltaDepositAmount: '', ioltaReferenceNumber: '', ioltaDepositDate: '', notes: '' });
+                      setShowIOLTAModal(true);
+                    }}
+                  >
+                    <Text style={styles.actionButtonText}>Record IOLTA Deposit</Text>
+                  </TouchableOpacity>
+                )}
 
-            <View style={styles.statementActionsRow}>
-              <TouchableOpacity
-                style={styles.statementActionButton}
-                onPress={() => setShowSendStatementModal(true)}
-              >
-                <Text style={styles.statementActionIcon}>📧</Text>
-                <Text style={styles.statementActionText}>Send Statement</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.statementActionButton}
-                onPress={handlePrintStatement}
-              >
-                <Text style={styles.statementActionIcon}>🖨️</Text>
-                <Text style={styles.statementActionText}>{Platform.OS === 'web' ? 'Print / Save' : 'Save / Share'}</Text>
-              </TouchableOpacity>
-            </View>
+                {settlement.status === 'iolta_deposited' && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#16A34A' }]}
+                    onPress={() => onNavigate && onNavigate('lawfirm-disbursements')}
+                  >
+                    <Text style={styles.actionButtonText}>Process Disbursement</Text>
+                  </TouchableOpacity>
+                )}
+
+                <View style={styles.statementActionsRow}>
+                  <TouchableOpacity
+                    style={styles.statementActionButton}
+                    onPress={() => setShowSendStatementModal(true)}
+                  >
+                    <Text style={styles.statementActionIcon}>📧</Text>
+                    <Text style={styles.statementActionText}>Send Statement</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.statementActionButton}
+                    onPress={handlePrintStatement}
+                  >
+                    <Text style={styles.statementActionIcon}>🖨️</Text>
+                    <Text style={styles.statementActionText}>{Platform.OS === 'web' ? 'Print / Save' : 'Save / Share'}</Text>
+                  </TouchableOpacity>
+                </View>
 
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeaderRow}>
@@ -882,6 +1124,8 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                 <Text style={styles.sectionTitle}>Disbursement History</Text>
                 <Text style={styles.emptyText}>No disbursements processed yet</Text>
               </View>
+            )}
+              </>
             )}
 
             <View style={{ height: 40 }} />
