@@ -11,7 +11,7 @@ const TASK_TYPES = [
     icon: '🚔',
     description: 'Request client to upload their police report',
     defaultDescription: 'Please upload a copy of your police report related to your case. This is an important document for building your case.',
-    actionScreen: 'medical',
+    actionScreen: 'roadmap',
   },
   {
     id: 'upload_insurance_info',
@@ -27,7 +27,7 @@ const TASK_TYPES = [
     icon: '📸',
     description: 'Request client to upload relevant photos',
     defaultDescription: 'Please upload any relevant pictures related to your case, such as photos of injuries, property damage, or the scene.',
-    actionScreen: 'medical',
+    actionScreen: 'roadmap',
   },
   {
     id: 'upload_videos',
@@ -35,7 +35,7 @@ const TASK_TYPES = [
     icon: '🎥',
     description: 'Request client to upload relevant videos',
     defaultDescription: 'Please upload any relevant video footage related to your case, such as dashcam footage, surveillance video, or other recordings.',
-    actionScreen: 'medical',
+    actionScreen: 'roadmap',
   },
   {
     id: 'upload_witness_info',
@@ -43,7 +43,7 @@ const TASK_TYPES = [
     icon: '👥',
     description: 'Request client to provide witness details',
     defaultDescription: 'Please provide information about any witnesses to the incident, including their names, contact numbers, and a brief description of what they observed.',
-    actionScreen: 'medical',
+    actionScreen: 'roadmap',
   },
   {
     id: 'update_contact_info',
@@ -59,7 +59,7 @@ const TASK_TYPES = [
     icon: '📝',
     description: 'Request client to answer discovery questions',
     defaultDescription: 'You have discovery questions that require your response. Please review and answer all questions thoroughly and accurately.',
-    actionScreen: 'dashboard',
+    actionScreen: 'roadmap',
   },
   {
     id: 'provide_availability',

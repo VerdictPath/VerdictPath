@@ -13,6 +13,39 @@ import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 import { alert } from '../utils/alert';
 
+const TASK_NAV_MAP = {
+  upload_police_report: { screen: 'roadmap', label: 'Go to Roadmap', icon: '🗺️', description: 'Upload your police report in the Roadmap' },
+  upload_insurance_info: { screen: 'medical', label: 'Go to Medical Hub', icon: '🏥', description: 'Upload insurance info in the Medical Hub' },
+  upload_pictures: { screen: 'roadmap', label: 'Go to Roadmap', icon: '🗺️', description: 'Upload pictures in the Roadmap' },
+  upload_videos: { screen: 'roadmap', label: 'Go to Roadmap', icon: '🗺️', description: 'Upload videos in the Roadmap' },
+  upload_witness_info: { screen: 'roadmap', label: 'Go to Roadmap', icon: '🗺️', description: 'Upload witness info in the Roadmap' },
+  update_contact_info: { screen: 'dashboard', label: 'Go to Dashboard', icon: '🏠', description: 'Update your contact information' },
+  answer_discovery: { screen: 'roadmap', label: 'Go to Roadmap', icon: '🗺️', description: 'Answer discovery questions in the Roadmap' },
+  provide_availability: { screen: 'calendar', label: 'Go to Calendar', icon: '📅', description: 'Set your availability in the Calendar' },
+  sign_documents: { screen: 'medical', label: 'Go to Medical Hub', icon: '🏥', description: 'Sign documents in the Medical Hub' },
+};
+
+const SCREEN_NAV_INFO = {
+  medical: { label: 'Go to Medical Hub', icon: '🏥', description: 'Complete this task in the Medical Hub' },
+  roadmap: { label: 'Go to Roadmap', icon: '🗺️', description: 'Complete this task in the Roadmap' },
+  calendar: { label: 'Go to Calendar', icon: '📅', description: 'Complete this task in the Calendar' },
+  dashboard: { label: 'Go to Dashboard', icon: '🏠', description: 'Complete this task from your Dashboard' },
+  tasks: { label: 'Go to Tasks', icon: '📋', description: 'View your tasks' },
+};
+
+const getTaskNavigation = (task) => {
+  if (task.type && TASK_NAV_MAP[task.type]) {
+    return TASK_NAV_MAP[task.type];
+  }
+  if (task.actionUrl) {
+    const screen = task.actionUrl.replace('verdictpath://', '');
+    if (SCREEN_NAV_INFO[screen]) {
+      return { screen, ...SCREEN_NAV_INFO[screen] };
+    }
+  }
+  return null;
+};
+
 const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
   const { width, height } = useWindowDimensions();
   const [loading, setLoading] = useState(false);
@@ -22,6 +55,8 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
   const isPhone = width < 768;
   const isTablet = width >= 768 && width < 1024;
   const isDesktop = width >= 1024;
+
+  const taskNav = getTaskNavigation(task);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -308,6 +343,26 @@ const TaskDetailScreen = ({ user, task, onNavigate, onTaskUpdated }) => {
                   </View>
                 )}
               </View>
+
+              {taskNav && task.status !== 'completed' && (
+                <TouchableOpacity
+                  style={styles.navButton}
+                  onPress={() => onNavigate(taskNav.screen)}
+                >
+                  <View style={styles.navButtonInner}>
+                    <Text style={styles.navButtonIcon}>{taskNav.icon}</Text>
+                    <View style={styles.navButtonContent}>
+                      <Text style={[styles.navButtonLabel, { fontSize: isDesktop ? 20 : 17 }]}>
+                        {taskNav.label}
+                      </Text>
+                      <Text style={[styles.navButtonDesc, { fontSize: isDesktop ? 14 : 12 }]}>
+                        {taskNav.description}
+                      </Text>
+                    </View>
+                    <Text style={styles.navButtonArrow}>→</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
 
               {loading ? (
                 <View style={styles.loadingContainer}>
@@ -610,6 +665,39 @@ const styles = StyleSheet.create({
     color: '#999999',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  navButton: {
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  navButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16,
+  },
+  navButtonIcon: {
+    fontSize: 36,
+  },
+  navButtonContent: {
+    flex: 1,
+  },
+  navButtonLabel: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  navButtonDesc: {
+    color: '#CCCCCC',
+  },
+  navButtonArrow: {
+    color: '#FFD700',
+    fontSize: 28,
+    fontWeight: 'bold',
   },
   celebrationContainer: {
     flex: 1,
