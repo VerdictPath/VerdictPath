@@ -19,19 +19,17 @@ router.post(
 
 router.get(
   '/',
-  checkPermission('can_manage_users'),
   medicalProviderUserController.getAllUsers
 );
 
 router.get(
   '/:userId',
-  checkPermission('can_manage_users'),
   medicalProviderUserController.getUserById
 );
 
 router.put(
   '/:userId',
-  checkPermission('can_manage_users'),
+  requireAdmin,
   logMedicalActivity('user_updated'),
   medicalProviderUserController.updateUser
 );

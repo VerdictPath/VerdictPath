@@ -135,6 +135,7 @@ const verifyMedicalProviderUser = async (req, res, next) => {
 };
 
 // Middleware to check if user has specific permission
+// All authenticated medical provider users have full access to all features
 const checkPermission = (permission) => {
   return async (req, res, next) => {
     try {
@@ -142,19 +143,6 @@ const checkPermission = (permission) => {
         return res.status(401).json({
           success: false,
           message: 'Medical provider user authentication required'
-        });
-      }
-
-      // Admin role has all permissions
-      if (req.medicalProviderUser.role === 'admin') {
-        return next();
-      }
-
-      // Check specific permission
-      if (!req.medicalProviderUser[permission]) {
-        return res.status(403).json({
-          success: false,
-          message: `You do not have permission: ${permission}`
         });
       }
 

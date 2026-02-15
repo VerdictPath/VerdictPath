@@ -11,15 +11,15 @@ router.post('/',
   lawfirmUserController.createLawFirmUser
 );
 
-// Get all law firm users (requires canManageUsers permission)
+// Get all law firm users (all authenticated users)
 router.get('/',
   ...verifyAndRequirePermission('canManageUsers'),
   lawfirmUserController.getLawFirmUsers
 );
 
-// Update law firm user (requires canManageUsers permission)
+// Update law firm user (admin only)
 router.put('/:userId',
-  ...verifyAndRequirePermission('canManageUsers'),
+  ...verifyAndRequireAdmin,
   logActivity('user_updated', 'user'),
   lawfirmUserController.updateLawFirmUser
 );

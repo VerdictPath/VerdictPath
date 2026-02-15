@@ -137,45 +137,13 @@ exports.verifyLawFirmUser = async (req, res, next) => {
  * 
  * @param {string} permissionKey - Permission to check (e.g., 'canManageUsers')
  */
+// All authenticated law firm users have full access to all features
 exports.requirePermission = (permissionKey) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required',
-      });
-    }
-
-    // Admins have all permissions
-    if (req.user.lawFirmUserRole === 'admin') {
-      return next();
-    }
-
-    // Check specific permission
-    if (!req.user.permissions || !req.user.permissions[permissionKey]) {
-      // Log failed permission check as activity
-      if (req.user.enableActivityTracking) {
-        activityLogger.log({
-          lawFirmId: req.user.id,
-          userId: req.user.lawFirmUserId,
-          userEmail: req.user.email,
-          userName: `${req.user.firstName} ${req.user.lastName}`,
-          action: 'permission_denied',
-          actionCategory: 'security',
-          metadata: { 
-            requiredPermission: permissionKey,
-            route: req.path 
-          },
-          ipAddress: req.ip || req.connection.remoteAddress,
-          userAgent: req.get('user-agent'),
-          status: 'failed'
-        }).catch(err => console.error('Activity log error:', err));
-      }
-
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions',
-        requiredPermission: permissionKey,
       });
     }
 
@@ -219,33 +187,13 @@ exports.requireAdmin = (req, res, next) => {
  * 
  * @param {...string} roles - Allowed roles (e.g., 'admin', 'attorney', 'staff')
  */
+// All authenticated law firm users have full access regardless of role
 exports.requireRole = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.lawFirmUserRole)) {
-      // Log failed role check as activity
-      if (req.user && req.user.enableActivityTracking) {
-        activityLogger.log({
-          lawFirmId: req.user.id,
-          userId: req.user.lawFirmUserId,
-          userEmail: req.user.email,
-          userName: `${req.user.firstName} ${req.user.lastName}`,
-          action: 'role_access_denied',
-          actionCategory: 'security',
-          metadata: { 
-            requiredRoles: roles,
-            userRole: req.user.lawFirmUserRole,
-            route: req.path 
-          },
-          ipAddress: req.ip || req.connection.remoteAddress,
-          userAgent: req.get('user-agent'),
-          status: 'failed'
-        }).catch(err => console.error('Activity log error:', err));
-      }
-
-      return res.status(403).json({
+    if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: 'Insufficient role privileges',
-        requiredRoles: roles,
+        message: 'Authentication required',
       });
     }
     next();

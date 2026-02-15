@@ -57,7 +57,7 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
     } catch (error) {
       console.error('[UserManagement] Load error:', error);
       if (error.status === 403) {
-        setPermissionError('You do not have permission to manage users. Only administrators can access this feature.');
+        setPermissionError('Unable to load users. Please try again or contact support.');
       } else {
         showAlert('Error', 'Failed to load users');
       }
@@ -179,9 +179,9 @@ const MedicalProviderUserManagementScreen = ({ user, onBack }) => {
         {permissionError ? (
           <View style={styles.permissionErrorCard}>
             <Text style={styles.permissionErrorIcon}>🔒</Text>
-            <Text style={styles.permissionErrorTitle}>Access Restricted</Text>
+            <Text style={styles.permissionErrorTitle}>Something Went Wrong</Text>
             <Text style={styles.permissionErrorText}>{permissionError}</Text>
-            <Text style={styles.permissionErrorHint}>Contact your administrator to request access.</Text>
+            <Text style={styles.permissionErrorHint}>Please try again or contact support if the issue persists.</Text>
           </View>
         ) : (
           <>
