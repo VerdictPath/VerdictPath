@@ -369,8 +369,15 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setTotalMedicalPayments(total);
   };
 
+  const PROVIDER_FEE = 25;
+
+  const getActiveProviderCount = () => {
+    return medicalProviderPayments.filter(p => parseCurrency(p.amount) > 0).length;
+  };
+
   const calculatePlatformFee = () => {
-    return disbursementMethod === 'app_transfer' ? 200 : 0;
+    if (disbursementMethod !== 'app_transfer') return 0;
+    return getActiveProviderCount() * PROVIDER_FEE;
   };
 
   const getEffectiveClientAmount = () => {
@@ -444,7 +451,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       confirmMsg += `Reason: ${withholdReason.trim()}\n`;
     }
     confirmMsg += `Medical Providers: $${totalMedicalPayments.toFixed(2)}\n`;
-    confirmMsg += `Platform Fee: $${calculatePlatformFee().toFixed(2)}\n`;
+    confirmMsg += `Provider Fee (${getActiveProviderCount()} x $${PROVIDER_FEE}): $${calculatePlatformFee().toFixed(2)}\n`;
     confirmMsg += `Total to Charge: $${totalAmount.toFixed(2)}\n\n`;
     confirmMsg += `Process this disbursement?`;
 
@@ -855,7 +862,9 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Platform Fee:</Text>
+              <Text style={styles.summaryLabel}>
+                Provider Fee ({getActiveProviderCount()} x ${PROVIDER_FEE}):
+              </Text>
               <Text style={styles.summaryValue}>
                 ${calculatePlatformFee().toFixed(2)}
               </Text>
@@ -1119,7 +1128,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                 )}
 
                 <View style={styles.historyRow}>
-                  <Text style={styles.historyLabel}>Platform Fee:</Text>
+                  <Text style={styles.historyLabel}>Provider Fee:</Text>
                   <Text style={styles.historyAmount}>
                     ${disbursement.platformFee.toFixed(2)}
                   </Text>

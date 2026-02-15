@@ -10,8 +10,8 @@ const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
 const { sendDisbursementProcessedEmail, sendLienPaymentEmail } = require('../services/emailService');
 
-// Platform fee per disbursement transaction
-const PLATFORM_FEE = 200; // $200
+// Platform fee: $25 per medical provider disbursed via app
+const PLATFORM_FEE_PER_PROVIDER = 25;
 
 /**
  * GET /api/disbursements/history
@@ -246,9 +246,10 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       });
     }
 
-    // Determine if fee applies (only for app_transfer)
+    // Determine if fee applies (only for app_transfer, $25 per medical provider)
     const feeExempt = disbursementMethod !== 'app_transfer';
-    const platformFee = feeExempt ? 0 : PLATFORM_FEE;
+    const providerCount = medicalPayments ? medicalPayments.filter(p => parseFloat(p.amount) > 0).length : 0;
+    const platformFee = feeExempt ? 0 : (providerCount * PLATFORM_FEE_PER_PROVIDER);
 
     await client.query('BEGIN');
 
@@ -677,7 +678,7 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
     if (feeExempt) {
       response.feeNote = `No platform fee charged for ${disbursementMethod} disbursement method`;
     } else {
-      response.feeNote = `Platform fee of $${platformFee} collected for in-app disbursement`;
+      response.feeNote = `Platform fee of $${platformFee} ($${PLATFORM_FEE_PER_PROVIDER}/provider x ${providerCount} provider${providerCount !== 1 ? 's' : ''}) collected for in-app disbursement`;
     }
 
     if (disbursementMethod !== 'app_transfer') {
