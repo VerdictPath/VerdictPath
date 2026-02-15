@@ -317,13 +317,83 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
       });
     }
 
-    // Check for unpaid liens
-    if (parseInt(settlement.unpaid_liens) > 0) {
+    // Get all liens for this settlement
+    const liensResult = await client.query(
+      `SELECT id, medical_provider_id, manual_provider_name, lien_amount, negotiated_amount, final_payment_amount, status
+       FROM medical_liens WHERE settlement_id = $1`,
+      [settlementId]
+    );
+    const allLiens = liensResult.rows;
+
+    // Check that every unpaid lien is covered by a medical payment or marked as waived
+    const unpaidLiens = allLiens.filter(l => l.status !== 'paid' && l.status !== 'waived');
+    const waivedLienIds = (req.body.waivedLienIds || []).map(id => parseInt(id));
+
+    for (const lien of unpaidLiens) {
+      const isBeingWaived = waivedLienIds.includes(lien.id);
+      const isBeingPaid = medicalPayments.some(p => {
+        if (lien.medical_provider_id) {
+          return p.providerId === lien.medical_provider_id || String(p.providerId) === String(lien.medical_provider_id);
+        }
+        if (lien.manual_provider_name) {
+          return p.providerId === `manual_${lien.manual_provider_name}`;
+        }
+        return false;
+      });
+
+      if (!isBeingPaid && !isBeingWaived) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          error: `Lien for "${lien.manual_provider_name || 'Provider #' + lien.medical_provider_id}" must be paid or waived before disbursing`,
+          unpaidLiens: unpaidLiens.length,
+          hint: 'Include all providers in medical payments or mark liens as waived'
+        });
+      }
+    }
+
+    // Mark waived liens
+    for (const lienId of waivedLienIds) {
+      await client.query(
+        `UPDATE medical_liens SET status = 'waived', updated_at = NOW() WHERE id = $1 AND settlement_id = $2`,
+        [lienId, settlementId]
+      );
+    }
+
+    // Mark liens as paid for providers included in medical payments
+    for (const payment of medicalPayments) {
+      const payAmount = parseFloat(payment.amount);
+      if (payAmount <= 0) continue;
+
+      let lienMatch;
+      // Prefer matching by explicit lienId if provided from frontend
+      if (payment.lienId) {
+        lienMatch = allLiens.find(l => l.id === parseInt(payment.lienId) && l.status !== 'paid' && l.status !== 'waived');
+      } else if (typeof payment.providerId === 'string' && payment.providerId.startsWith('manual_')) {
+        const manualName = payment.providerId.replace('manual_', '');
+        lienMatch = allLiens.find(l => l.manual_provider_name === manualName && l.status !== 'paid' && l.status !== 'waived');
+      } else {
+        lienMatch = allLiens.find(l => String(l.medical_provider_id) === String(payment.providerId) && l.status !== 'paid' && l.status !== 'waived');
+      }
+
+      if (lienMatch) {
+        await client.query(
+          `UPDATE medical_liens SET status = 'paid', final_payment_amount = $1, payment_date = NOW(), payment_method = $2, updated_at = NOW() WHERE id = $3`,
+          [payAmount, disbursementMethod === 'app_transfer' ? 'stripe' : disbursementMethod, lienMatch.id]
+        );
+      }
+    }
+
+    // Final verification: ensure no liens remain unpaid after processing
+    const remainingUnpaid = await client.query(
+      `SELECT COUNT(*) as count FROM medical_liens WHERE settlement_id = $1 AND status NOT IN ('paid', 'waived')`,
+      [settlementId]
+    );
+    if (parseInt(remainingUnpaid.rows[0].count) > 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ 
-        error: 'All medical liens must be paid or waived before disbursing to client',
-        unpaidLiens: parseInt(settlement.unpaid_liens),
-        hint: 'Pay all liens using /api/settlements/:settlementId/liens/:lienId/pay or waive them'
+      return res.status(400).json({
+        error: 'Some medical liens could not be matched to payments or waivers',
+        remainingUnpaid: parseInt(remainingUnpaid.rows[0].count),
+        hint: 'Ensure all providers with liens are included in medical payments or waived'
       });
     }
 

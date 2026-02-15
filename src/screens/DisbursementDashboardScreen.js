@@ -66,6 +66,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [withholdReason, setWithholdReason] = useState('');
   const [autoFilledClient, setAutoFilledClient] = useState(false);
   const [autoFilledProviders, setAutoFilledProviders] = useState(false);
+  const [waivedLienIds, setWaivedLienIds] = useState([]);
 
   useEffect(() => {
     loadSubscription();
@@ -257,6 +258,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                 const existing = parseCurrency(updatedPayments[idx].amount);
                 const newAmount = existing + paymentAmount;
                 updatedPayments[idx].amount = newAmount.toFixed(2);
+                updatedPayments[idx].lienId = lien.id;
+                updatedPayments[idx].lienStatus = lien.status;
               }
             }
           });
@@ -267,6 +270,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         } else {
           setMedicalProviderPayments(initialPayments);
         }
+        setWaivedLienIds([]);
       } catch (error) {
         console.error('Error loading settlement details:', error);
         setMedicalProviderPayments(initialPayments);
@@ -319,6 +323,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
               const existing = parseCurrency(updatedPayments[idx].amount);
               const newAmount = existing + paymentAmount;
               updatedPayments[idx].amount = newAmount.toFixed(2);
+              updatedPayments[idx].lienId = lien.id;
+              updatedPayments[idx].lienStatus = lien.status;
             }
           }
         });
@@ -327,6 +333,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         setTotalMedicalPayments(totalMed);
         if (totalMed > 0) setAutoFilledProviders(true);
       }
+      setWaivedLienIds([]);
     } catch (error) {
       console.error('Error loading settlement details:', error);
     } finally {
@@ -477,14 +484,14 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setProcessingPayment(true);
 
     try {
-      // Filter out medical payments with no amount
       const validMedicalPayments = medicalProviderPayments
-        .filter(p => p.amount && parseCurrency(p.amount) > 0)
+        .filter(p => p.amount && parseCurrency(p.amount) > 0 && !(p.lienId && waivedLienIds.includes(p.lienId)))
         .map(p => ({
           providerId: p.providerId,
           providerName: p.providerName,
           amount: parseCurrency(p.amount),
-          email: p.email
+          email: p.email,
+          lienId: p.lienId || null
         }));
 
       const held = withholdFunds ? parseCurrency(withholdAmount) : 0;
@@ -496,7 +503,8 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
         medicalPayments: validMedicalPayments,
         platformFee: calculatePlatformFee(),
         settlementId: selectedSettlement.id,
-        disbursementMethod: disbursementMethod
+        disbursementMethod: disbursementMethod,
+        waivedLienIds: waivedLienIds
       };
 
       if (held > 0) {
@@ -800,28 +808,59 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
                 No medical providers found for this client. Select a settlement to load providers from liens.
               </Text>
             ) : (
-              medicalProviderPayments.map((payment, index) => (
-                <View key={index} style={styles.providerPaymentRow}>
-                  <View style={styles.providerInfo}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={styles.providerName}>{payment.providerName}</Text>
-                      {payment.isManual && (
-                        <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: '#92400E' }}>Manual</Text>
-                        </View>
+              medicalProviderPayments.map((payment, index) => {
+                const isWaived = payment.lienId && waivedLienIds.includes(payment.lienId);
+                return (
+                  <View key={index} style={[styles.providerPaymentRow, isWaived && { opacity: 0.5, backgroundColor: '#FEF2F2' }]}>
+                    <View style={styles.providerInfo}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Text style={[styles.providerName, isWaived && { textDecorationLine: 'line-through' }]}>{payment.providerName}</Text>
+                        {payment.isManual && (
+                          <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '600', color: '#92400E' }}>Manual</Text>
+                          </View>
+                        )}
+                        {isWaived && (
+                          <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginLeft: 6 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '600', color: '#991B1B' }}>Waived</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.providerEmail}>{payment.email || 'No email'}</Text>
+                      {payment.lienId && (
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (isWaived) {
+                              setWaivedLienIds(prev => prev.filter(id => id !== payment.lienId));
+                            } else {
+                              setWaivedLienIds(prev => [...prev, payment.lienId]);
+                              const updated = [...medicalProviderPayments];
+                              updated[index].amount = '0.00';
+                              setMedicalProviderPayments(updated);
+                              const totalMed = updated.reduce((sum, p) => sum + parseCurrency(p.amount), 0);
+                              setTotalMedicalPayments(totalMed);
+                            }
+                          }}
+                          style={{ marginTop: 4, paddingVertical: 4, paddingHorizontal: 8, backgroundColor: isWaived ? '#DBEAFE' : '#FEF2F2', borderRadius: 6, alignSelf: 'flex-start' }}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: isWaived ? '#1E40AF' : '#991B1B' }}>
+                            {isWaived ? 'Undo Waive' : 'Waive Lien'}
+                          </Text>
+                        </TouchableOpacity>
                       )}
                     </View>
-                    <Text style={styles.providerEmail}>{payment.email || 'No email'}</Text>
+                    {!isWaived && (
+                      <TextInput
+                        style={styles.providerAmountInput}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        value={payment.amount}
+                        onChangeText={(text) => updateMedicalPayment(index, sanitizeCurrencyInput(text))}
+                      />
+                    )}
                   </View>
-                  <TextInput
-                    style={styles.providerAmountInput}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                    value={payment.amount}
-                    onChangeText={(text) => updateMedicalPayment(index, sanitizeCurrencyInput(text))}
-                  />
-                </View>
-              ))
+                );
+              })
             )}
           </View>
 
