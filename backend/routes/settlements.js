@@ -1191,7 +1191,7 @@ router.post('/:id/disburse-to-client', authenticateToken, isLawFirm, requirePrem
  * Revert settlement to the previous status to correct errors
  */
 router.put('/:id/revert-status', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     const { id } = req.params;
     const lawFirmId = req.user.id;
