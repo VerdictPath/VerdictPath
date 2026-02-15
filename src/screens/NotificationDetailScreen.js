@@ -17,6 +17,14 @@ const getNotificationTypeInfo = (type) => {
     case 'appointment_request':
     case 'appointment_reminder':
       return { icon: '\u{1F4C5}', label: 'Appointment', color: '#8b5cf6' };
+    case 'event_request':
+      return { icon: '\u{1F4C5}', label: 'Event Request', color: '#8b5cf6' };
+    case 'event_response':
+      return { icon: '\u{1F4C5}', label: 'Event Response', color: '#3b82f6' };
+    case 'event_confirmed':
+      return { icon: '\u2705', label: 'Event Confirmed', color: '#10b981' };
+    case 'event_cancelled':
+      return { icon: '\u274C', label: 'Event Cancelled', color: '#ef4444' };
     case 'payment_notification':
     case 'disbursement_complete':
       return { icon: '\u{1F4B0}', label: 'Payment', color: '#10b981' };
@@ -280,7 +288,8 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
 
   const handleActionButton = () => {
     if (notification?.action_data?.screen) {
-      onNavigate && onNavigate(notification.action_data.screen);
+      const { screen, ...navData } = notification.action_data;
+      onNavigate && onNavigate(screen, navData);
     } else {
       onNavigate && onNavigate('dashboard');
     }
@@ -466,6 +475,21 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
             >
               <Text style={styles.actionButtonText}>
                 {notification.action_data.buttonText}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {!notification.action_data?.buttonText && notification.action_data?.screen && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={handleActionButton}
+            >
+              <Text style={styles.actionButtonText}>
+                {notification.type === 'event_request' ? '\u{1F4C5} View & Respond to Request' :
+                 notification.type === 'event_response' ? '\u{1F4C5} Review Client Response' :
+                 notification.type === 'event_confirmed' ? '\u{1F4C5} View Calendar' :
+                 notification.type === 'event_cancelled' ? '\u{1F4CB} View Details' :
+                 '\u{1F449} View Details'}
               </Text>
             </TouchableOpacity>
           )}

@@ -124,23 +124,33 @@ const eventRequestController = {
 
       // Send notification to recipient
       try {
+        let senderName = '';
+        if (userType === 'law_firm') {
+          const firmResult = await pool.query('SELECT firm_name FROM law_firms WHERE id = $1', [providerId]);
+          senderName = firmResult.rows[0]?.firm_name || 'Your Law Firm';
+        } else {
+          const provResult = await pool.query('SELECT provider_name FROM medical_providers WHERE id = $1', [providerId]);
+          senderName = provResult.rows[0]?.provider_name || 'Your Medical Provider';
+        }
+
         const notificationTitle = userType === 'law_firm' 
           ? 'Event Request from Your Law Firm'
           : 'Appointment Request from Your Medical Provider';
         const notificationBody = insertedProposedDates.length > 0
-          ? `Your ${userType === 'law_firm' ? 'law firm' : 'medical provider'} is requesting to schedule a ${finalEventType}. Please select one of the ${insertedProposedDates.length} available time slots.`
-          : `Your ${userType === 'law_firm' ? 'law firm' : 'medical provider'} is requesting to schedule a ${finalEventType}. Please select 3 available dates.`;
+          ? `${senderName} is requesting to schedule a ${finalEventType}. Please select one of the ${insertedProposedDates.length} available time slots.`
+          : `${senderName} is requesting to schedule a ${finalEventType}. Please select 3 available dates.`;
 
         await pool.query(
           `INSERT INTO notifications (
-            recipient_id, recipient_type, sender_id, sender_type, 
-            type, notification_type, title, body, 
+            recipient_id, recipient_type, sender_id, sender_type, sender_name,
+            type, title, body, subject,
             action_type, action_data, status
-          ) VALUES ($1, 'individual', $2, $3, 'event_request', 'event_request', $4, $5, 'navigate', $6, 'pending')`,
+          ) VALUES ($1, 'individual', $2, $3, $4, 'event_request', $5, $6, $5, 'navigate', $7, 'pending')`,
           [
             finalRecipientId,
             providerId,
             userType,
+            senderName,
             notificationTitle,
             notificationBody,
             JSON.stringify({ screen: 'event-requests', requestId: eventRequest.id })
@@ -425,17 +435,22 @@ const eventRequestController = {
         );
 
         // Send notification to law firm
+        const clientResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [userId]);
+        const clientName = clientResult.rows[0] ? `${clientResult.rows[0].first_name} ${clientResult.rows[0].last_name}` : 'Your Client';
+
         await pool.query(
           `INSERT INTO notifications (
-            user_id, sender_id, notification_type, title, body, 
-            action_type, action_data, is_read
-          ) VALUES ($1, $2, 'event_response', $3, $4, 'navigate', $5, false)`,
+            recipient_id, recipient_type, sender_id, sender_type, sender_name,
+            type, title, body, subject,
+            action_type, action_data, status
+          ) VALUES ($1, 'law_firm', $2, 'user', $3, 'event_response', $4, $5, $4, 'navigate', $6, 'pending')`,
           [
             eventRequest.law_firm_id,
             userId,
+            clientName,
             'Client Responded to Event Request',
-            `Your client has submitted 3 available dates for ${eventRequest.title}.`,
-            JSON.stringify({ screen: 'event-request-detail', requestId: requestId })
+            `${clientName} has submitted 3 available dates for ${eventRequest.title}. Please select a final date.`,
+            JSON.stringify({ screen: 'lawfirm-event-requests', requestId: requestId })
           ]
         );
 
@@ -500,13 +515,20 @@ const eventRequestController = {
       await pool.query('BEGIN');
 
       try {
+        // Get law firm name for notifications and calendar
+        const firmResult = await pool.query('SELECT firm_name FROM law_firms WHERE id = $1', [userId]);
+        const firmName = firmResult.rows[0]?.firm_name || 'Your Law Firm';
+
         // Create calendar event for the law firm
+        const clientNameResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [eventRequest.client_id]);
+        const clientName = clientNameResult.rows[0] ? `${clientNameResult.rows[0].first_name} ${clientNameResult.rows[0].last_name}` : 'Client';
+
         const calendarEventResult = await pool.query(
           `INSERT INTO calendar_events (
             law_firm_id, event_type, title, description, location,
             start_time, end_time, all_day, reminder_enabled, 
-            reminder_minutes_before, case_related
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 60, true)
+            reminder_minutes_before, case_related, created_by_type, created_by_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 60, true, 'law_firm', $1)
           RETURNING id`,
           [
             userId,
@@ -524,10 +546,49 @@ const eventRequestController = {
         // Share event with client
         await pool.query(
           `INSERT INTO shared_calendar_events (
-            calendar_event_id, shared_with_user_id, can_edit
-          ) VALUES ($1, $2, false)`,
-          [calendarEventId, eventRequest.client_id]
+            event_id, shared_with_user_id, can_edit, shared_by_type, shared_by_id
+          ) VALUES ($1, $2, false, 'law_firm', $3)
+          ON CONFLICT DO NOTHING`,
+          [calendarEventId, eventRequest.client_id, userId]
         );
+
+        // Create personal calendar event for the individual user
+        await pool.query(
+          `INSERT INTO calendar_events (
+            user_id, event_type, title, description, location,
+            start_time, end_time, all_day, reminder_enabled,
+            created_by_type, created_by_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 'law_firm', $8)`,
+          [
+            eventRequest.client_id,
+            eventRequest.event_type,
+            `${eventRequest.title} - ${firmName}`,
+            eventRequest.description || '',
+            eventRequest.location || '',
+            proposedDate.proposed_start_time,
+            proposedDate.proposed_end_time,
+            userId
+          ]
+        );
+
+        // Share with any connected medical providers who have calendar access
+        try {
+          const connectedProviders = await pool.query(
+            `SELECT medical_provider_id FROM client_medical_providers WHERE client_id = $1`,
+            [eventRequest.client_id]
+          );
+          for (const provider of connectedProviders.rows) {
+            await pool.query(
+              `INSERT INTO shared_calendar_events (
+                event_id, shared_with_medical_provider_id, can_edit, shared_by_type, shared_by_id
+              ) VALUES ($1, $2, false, 'law_firm', $3)
+              ON CONFLICT DO NOTHING`,
+              [calendarEventId, provider.medical_provider_id, userId]
+            );
+          }
+        } catch (shareErr) {
+          console.error('Error sharing with providers:', shareErr);
+        }
 
         // Mark the proposed date as selected
         await pool.query(
@@ -546,14 +607,16 @@ const eventRequestController = {
         // Send notification to client
         await pool.query(
           `INSERT INTO notifications (
-            user_id, sender_id, notification_type, title, body, 
-            action_type, action_data, is_read
-          ) VALUES ($1, $2, 'event_confirmed', $3, $4, 'navigate', $5, false)`,
+            recipient_id, recipient_type, sender_id, sender_type, sender_name,
+            type, title, body, subject,
+            action_type, action_data, status
+          ) VALUES ($1, 'individual', $2, 'law_firm', $3, 'event_confirmed', $4, $5, $4, 'navigate', $6, 'pending')`,
           [
             eventRequest.client_id,
             userId,
-            'Event Confirmed',
-            `Your law firm has confirmed ${eventRequest.title} for ${new Date(proposedDate.proposed_start_time).toLocaleString()}.`,
+            firmName,
+            'Event Confirmed & Added to Calendar',
+            `${firmName} has confirmed ${eventRequest.title} for ${new Date(proposedDate.proposed_start_time).toLocaleString()}. The event has been added to your calendar.`,
             JSON.stringify({ screen: 'calendar' })
           ]
         );
@@ -672,27 +735,75 @@ const eventRequestController = {
         // Share event with the individual user
         await pool.query(
           `INSERT INTO shared_calendar_events (
-            calendar_event_id, shared_with_user_id, can_edit
-          ) VALUES ($1, $2, false)`,
-          [calendarEventId, userId]
+            event_id, shared_with_user_id, can_edit, shared_by_type, shared_by_id
+          ) VALUES ($1, $2, false, $3, $4)
+          ON CONFLICT DO NOTHING`,
+          [calendarEventId, userId, isLawFirm ? 'law_firm' : 'medical_provider', providerId]
         );
+
+        // Get provider name for calendar event title
+        let providerDisplayName = '';
+        if (isLawFirm) {
+          const fResult = await pool.query('SELECT firm_name FROM law_firms WHERE id = $1', [providerId]);
+          providerDisplayName = fResult.rows[0]?.firm_name || 'Law Firm';
+        } else {
+          const pResult = await pool.query('SELECT provider_name FROM medical_providers WHERE id = $1', [providerId]);
+          providerDisplayName = pResult.rows[0]?.provider_name || 'Medical Provider';
+        }
 
         // Also create a personal calendar event for the individual
         await pool.query(
           `INSERT INTO calendar_events (
             user_id, event_type, title, description, location,
             start_time, end_time, all_day, reminder_enabled, created_by_type, created_by_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, 'individual', $1)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, true, $8, $9)`,
           [
             userId,
             eventRequest.event_type,
-            eventRequest.title,
+            `${eventRequest.title} - ${providerDisplayName}`,
             eventRequest.description || '',
             eventRequest.location || '',
             proposedDate.proposed_start_time,
-            proposedDate.proposed_end_time
+            proposedDate.proposed_end_time,
+            isLawFirm ? 'law_firm' : 'medical_provider',
+            providerId
           ]
         );
+
+        // Share with any other connected providers/firms who have calendar access
+        try {
+          if (isLawFirm) {
+            const connectedProviders = await pool.query(
+              `SELECT medical_provider_id FROM client_medical_providers WHERE client_id = $1`,
+              [userId]
+            );
+            for (const provider of connectedProviders.rows) {
+              await pool.query(
+                `INSERT INTO shared_calendar_events (
+                  event_id, shared_with_medical_provider_id, can_edit, shared_by_type, shared_by_id
+                ) VALUES ($1, $2, false, 'law_firm', $3)
+                ON CONFLICT DO NOTHING`,
+                [calendarEventId, provider.medical_provider_id, providerId]
+              );
+            }
+          } else {
+            const connectedFirms = await pool.query(
+              `SELECT law_firm_id FROM law_firm_clients WHERE client_id = $1`,
+              [userId]
+            );
+            for (const firm of connectedFirms.rows) {
+              await pool.query(
+                `INSERT INTO shared_calendar_events (
+                  event_id, shared_with_law_firm_id, can_edit, shared_by_type, shared_by_id
+                ) VALUES ($1, $2, false, 'medical_provider', $3)
+                ON CONFLICT DO NOTHING`,
+                [calendarEventId, firm.law_firm_id, providerId]
+              );
+            }
+          }
+        } catch (shareErr) {
+          console.error('Error sharing with connected providers/firms:', shareErr);
+        }
 
         // Mark the proposed date as selected
         await pool.query(
@@ -709,16 +820,23 @@ const eventRequestController = {
         );
 
         // Send notification to provider
+        const clientNameResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [userId]);
+        const clientFullName = clientNameResult.rows[0] ? `${clientNameResult.rows[0].first_name} ${clientNameResult.rows[0].last_name}` : 'Your Client';
+        const providerRecipientType = isLawFirm ? 'law_firm' : 'medical_provider';
+
         await pool.query(
           `INSERT INTO notifications (
-            user_id, sender_id, notification_type, title, body, 
-            action_type, action_data, is_read
-          ) VALUES ($1, $2, 'event_confirmed', $3, $4, 'navigate', $5, false)`,
+            recipient_id, recipient_type, sender_id, sender_type, sender_name,
+            type, title, body, subject,
+            action_type, action_data, status
+          ) VALUES ($1, $2, $3, 'user', $4, 'event_confirmed', $5, $6, $5, 'navigate', $7, 'pending')`,
           [
             providerId,
+            providerRecipientType,
             userId,
-            'Event Date Selected',
-            `Your client has selected a date for ${eventRequest.title}: ${new Date(proposedDate.proposed_start_time).toLocaleString()}.`,
+            clientFullName,
+            'Event Date Selected & Confirmed',
+            `${clientFullName} has selected a date for ${eventRequest.title}: ${new Date(proposedDate.proposed_start_time).toLocaleString()}. The event has been added to both calendars.`,
             JSON.stringify({ screen: 'calendar' })
           ]
         );
@@ -772,17 +890,32 @@ const eventRequestController = {
       );
 
       // Send notification to the other party
-      const recipientId = userType === 'law_firm' ? eventRequest.client_id : eventRequest.law_firm_id;
+      let recipientId, recipientType, cancellerName;
+      if (userType === 'law_firm') {
+        recipientId = eventRequest.client_id || eventRequest.patient_id;
+        recipientType = 'individual';
+        const firmResult = await pool.query('SELECT firm_name FROM law_firms WHERE id = $1', [userId]);
+        cancellerName = firmResult.rows[0]?.firm_name || 'Your Law Firm';
+      } else {
+        recipientId = eventRequest.law_firm_id || eventRequest.medical_provider_id;
+        recipientType = eventRequest.law_firm_id ? 'law_firm' : 'medical_provider';
+        const userResult = await pool.query('SELECT first_name, last_name FROM users WHERE id = $1', [userId]);
+        cancellerName = userResult.rows[0] ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}` : 'User';
+      }
       
       await pool.query(
         `INSERT INTO notifications (
-          user_id, sender_id, notification_type, title, body, is_read
-        ) VALUES ($1, $2, 'event_cancelled', $3, $4, false)`,
+          recipient_id, recipient_type, sender_id, sender_type, sender_name,
+          type, title, body, subject, status
+        ) VALUES ($1, $2, $3, $4, $5, 'event_cancelled', $6, $7, $6, 'pending')`,
         [
           recipientId,
+          recipientType,
           userId,
+          userType === 'law_firm' ? 'law_firm' : 'user',
+          cancellerName,
           'Event Request Cancelled',
-          `The event request for ${eventRequest.title} has been cancelled.`
+          `${cancellerName} has cancelled the event request for ${eventRequest.title}.`
         ]
       );
 
