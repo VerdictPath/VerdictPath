@@ -509,6 +509,64 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     setShowAddLienModal(true);
   };
 
+  const handleMarkLienPaid = (lien) => {
+    const paymentAmount = lien.finalPaymentAmount || lien.negotiatedAmount || lien.lienAmount;
+    const options = [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Check Mailed', onPress: () => submitLienPayment(lien, 'check_mailed', paymentAmount) },
+      { text: 'Wire Transfer', onPress: () => submitLienPayment(lien, 'wire_transfer', paymentAmount) },
+      { text: 'External Payment', onPress: () => submitLienPayment(lien, 'external_payment', paymentAmount) },
+    ];
+    alert(
+      'Mark Lien as Paid',
+      `How was ${lien.providerName} paid ($${formatCurrency(paymentAmount)})?`,
+      options
+    );
+  };
+
+  const submitLienPayment = async (lien, paymentMethod, amount) => {
+    try {
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.PAY_LIEN(selectedSettlement.id, lien.id), {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        body: JSON.stringify({ paymentMethod, notes: `Marked as paid independently via ${paymentMethod.replace(/_/g, ' ')}` })
+      });
+      if (response.success) {
+        alert('Success', `Lien for ${lien.providerName} marked as paid`);
+        loadSettlementDetail(selectedSettlement.id);
+      }
+    } catch (error) {
+      console.error('Error marking lien as paid:', error);
+      alert('Error', error.response?.error || 'Failed to mark lien as paid');
+    }
+  };
+
+  const handleWaiveLien = (lien) => {
+    alert(
+      'Waive Lien',
+      `Are you sure you want to waive the lien for ${lien.providerName} ($${formatCurrency(parseFloat(lien.lienAmount) || 0)})? This means no payment will be made for this lien.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Waive', style: 'destructive', onPress: async () => {
+          try {
+            const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.WAIVE_LIEN(selectedSettlement.id, lien.id), {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${user.token}` },
+              body: JSON.stringify({ notes: 'Waived by law firm' })
+            });
+            if (response.success) {
+              alert('Success', `Lien for ${lien.providerName} has been waived`);
+              loadSettlementDetail(selectedSettlement.id);
+            }
+          } catch (error) {
+            console.error('Error waiving lien:', error);
+            alert('Error', error.response?.error || 'Failed to waive lien');
+          }
+        }}
+      ]
+    );
+  };
+
   const handleAddLien = async () => {
     if (!selectedSettlement) return;
 
@@ -1249,10 +1307,19 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                     const orig = parseFloat(lien.originalBillAmount) || 0;
                     const lienAmt = parseFloat(lien.lienAmount) || 0;
                     const savings = orig - lienAmt;
+                    const statusColors = {
+                      pending: { bg: '#FEF3C7', text: '#92400E', label: 'Pending' },
+                      paid: { bg: '#D1FAE5', text: '#065F46', label: 'Paid' },
+                      waived: { bg: '#E0E7FF', text: '#3730A3', label: 'Waived' }
+                    };
+                    const statusStyle = statusColors[lien.status] || statusColors.pending;
                     return (
                       <View key={lien.id} style={styles.lienItem}>
                         <View style={styles.lienHeader}>
                           <Text style={styles.lienProvider}>{lien.providerName}</Text>
+                          <View style={{ backgroundColor: statusStyle.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: statusStyle.text }}>{statusStyle.label}</Text>
+                          </View>
                         </View>
                         <View style={styles.lienDetails}>
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -1275,7 +1342,35 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                               <Text style={[styles.lienDetailText, { color: '#7C3AED' }]}>${formatCurrency(lien.finalPaymentAmount)}</Text>
                             </View>
                           )}
+                          {lien.paymentMethod && (
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={[styles.lienDetailText, { color: '#6B7280' }]}>Payment Method:</Text>
+                              <Text style={styles.lienDetailText}>{lien.paymentMethod.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Text>
+                            </View>
+                          )}
+                          {lien.paymentDate && (
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <Text style={[styles.lienDetailText, { color: '#6B7280' }]}>Paid On:</Text>
+                              <Text style={styles.lienDetailText}>{new Date(lien.paymentDate).toLocaleDateString()}</Text>
+                            </View>
+                          )}
                         </View>
+                        {lien.status === 'pending' && (
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                            <TouchableOpacity
+                              onPress={() => handleMarkLienPaid(lien)}
+                              style={{ flex: 1, backgroundColor: '#065F46', paddingVertical: 8, borderRadius: 6, alignItems: 'center' }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Mark as Paid</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              onPress={() => handleWaiveLien(lien)}
+                              style={{ flex: 1, backgroundColor: '#7C3AED', paddingVertical: 8, borderRadius: 6, alignItems: 'center' }}
+                            >
+                              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Waive Lien</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
                     );
                   })}

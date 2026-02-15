@@ -856,7 +856,7 @@ router.post('/:settlementId/liens/:lienId/pay', authenticateToken, isLawFirm, re
       return res.status(400).json({ error: 'Payment method is required' });
     }
 
-    const validMethods = ['app_transfer', 'check_mailed', 'wire_transfer'];
+    const validMethods = ['app_transfer', 'check_mailed', 'wire_transfer', 'external_payment'];
     if (!validMethods.includes(paymentMethod)) {
       return res.status(400).json({ 
         error: `Invalid payment method. Must be one of: ${validMethods.join(', ')}` 
@@ -985,6 +985,86 @@ router.post('/:settlementId/liens/:lienId/pay', authenticateToken, isLawFirm, re
     await client.query('ROLLBACK');
     console.error('Error paying lien:', error);
     res.status(500).json({ error: 'Failed to process lien payment' });
+  } finally {
+    client.release();
+  }
+});
+
+/**
+ * POST /api/settlements/:settlementId/liens/:lienId/waive
+ * Waive a medical lien
+ */
+router.post('/:settlementId/liens/:lienId/waive', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  const client = await db.pool.connect();
+  
+  try {
+    const { settlementId, lienId } = req.params;
+    const lawFirmId = req.user.id;
+    const { notes } = req.body;
+
+    await client.query('BEGIN');
+
+    const lienResult = await client.query(`
+      SELECT ml.*, 
+        COALESCE(mp.provider_name, ml.manual_provider_name) as provider_name
+      FROM medical_liens ml
+      LEFT JOIN medical_providers mp ON ml.medical_provider_id = mp.id
+      WHERE ml.id = $1 AND ml.law_firm_id = $2 AND ml.settlement_id = $3
+    `, [lienId, lawFirmId, settlementId]);
+
+    if (lienResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Lien not found' });
+    }
+
+    const lien = lienResult.rows[0];
+
+    if (lien.status === 'waived') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Lien has already been waived' });
+    }
+
+    if (lien.status === 'paid') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Cannot waive a lien that has already been paid' });
+    }
+
+    await client.query(`
+      UPDATE medical_liens 
+      SET status = 'waived',
+          notes = COALESCE($3, notes),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND law_firm_id = $2
+    `, [lienId, lawFirmId, notes]);
+
+    const unpaidLiens = await client.query(`
+      SELECT COUNT(*) as count 
+      FROM medical_liens 
+      WHERE settlement_id = $1 AND status != 'paid' AND status != 'waived'
+    `, [settlementId]);
+
+    if (parseInt(unpaidLiens.rows[0].count) === 0) {
+      await client.query(`
+        UPDATE settlements 
+        SET status = 'liens_paid',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `, [settlementId]);
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: `Lien for ${lien.provider_name} has been waived`,
+      lienId,
+      providerName: lien.provider_name
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error waiving lien:', error);
+    res.status(500).json({ error: 'Failed to waive lien' });
   } finally {
     client.release();
   }

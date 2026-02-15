@@ -247,6 +247,8 @@ export const API_ENDPOINTS = {
     GET: (id) => `${API_BASE_URL}/api/settlements/${id}`,
     UPDATE: (id) => `${API_BASE_URL}/api/settlements/${id}`,
     ADD_LIEN: (id) => `${API_BASE_URL}/api/settlements/${id}/liens`,
+    PAY_LIEN: (settlementId, lienId) => `${API_BASE_URL}/api/settlements/${settlementId}/liens/${lienId}/pay`,
+    WAIVE_LIEN: (settlementId, lienId) => `${API_BASE_URL}/api/settlements/${settlementId}/liens/${lienId}/waive`,
     SEND_STATEMENT: (id) => `${API_BASE_URL}/api/settlements/${id}/send-statement`,
     CONNECTED_PROVIDERS: `${API_BASE_URL}/api/settlements/connected-providers`,
     DISCLAIMER: `${API_BASE_URL}/api/settlements/disclaimer`,
