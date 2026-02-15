@@ -23,7 +23,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const [showRecordTypeModal, setShowRecordTypeModal] = useState(false);
   const [selectedRecordType, setSelectedRecordType] = useState('Medical Record');
   const [showBillModal, setShowBillModal] = useState(false);
-  const [billFormData, setBillFormData] = useState({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+  const [billFormData, setBillFormData] = useState({ totalAmount: '', facilityName: '', description: '' });
   const [pendingBillFile, setPendingBillFile] = useState(null);
 
   const RECORD_TYPE_OPTIONS = [
@@ -518,7 +518,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     const { webFile, nativeAsset, fileName, mimeType } = pendingBillFile;
     setShowBillModal(false);
     await uploadFileForPatient(webFile || null, fileName, mimeType, 'bills', nativeAsset || null, billFormData);
-    setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' });
+    setBillFormData({ totalAmount: '', facilityName: '', description: '' });
     setPendingBillFile(null);
   };
 
@@ -1132,16 +1132,6 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                 value={billFormData.facilityName}
                 onChangeText={(text) => setBillFormData(prev => ({ ...prev, facilityName: text }))}
               />
-              <DatePickerInput
-                value={billFormData.dateOfService}
-                onChange={(dateStr) => setBillFormData(prev => ({ ...prev, dateOfService: dateStr }))}
-                placeholder="Select date"
-                label="Date of Service"
-                maxDate={new Date().toISOString().split('T')[0]}
-                style={{ marginBottom: 12 }}
-                variant="light"
-                accentColor={theme.colors.primary}
-              />
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6 }}>Description</Text>
               <TextInput
                 style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
@@ -1156,7 +1146,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, gap: 12 }}>
               <TouchableOpacity
                 style={{ padding: 12, borderRadius: 8, backgroundColor: '#e0e0e0', minWidth: 80, alignItems: 'center' }}
-                onPress={() => { setShowBillModal(false); setPendingBillFile(null); setBillFormData({ totalAmount: '', facilityName: '', dateOfService: '', description: '' }); }}
+                onPress={() => { setShowBillModal(false); setPendingBillFile(null); setBillFormData({ totalAmount: '', facilityName: '', description: '' }); }}
               >
                 <Text style={{ color: '#333', fontWeight: '600' }}>Cancel</Text>
               </TouchableOpacity>
