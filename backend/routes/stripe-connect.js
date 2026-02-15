@@ -294,32 +294,57 @@ router.get('/customer-status', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get customer and their payment methods
-    const customer = await stripe.customers.retrieve(customerId);
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: 'card'
-    });
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      
+      if (customer.deleted) {
+        await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+        return res.json({
+          hasCustomer: false,
+          hasPaymentMethod: false,
+          paymentMethods: [],
+          flow: 'customer'
+        });
+      }
 
-    const hasDefaultPayment = customer.invoice_settings?.default_payment_method || 
-                              paymentMethods.data.length > 0;
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card'
+      });
 
-    res.json({
-      hasCustomer: true,
-      hasPaymentMethod: hasDefaultPayment,
-      defaultPaymentMethodId: customer.invoice_settings?.default_payment_method,
-      paymentMethods: paymentMethods.data.map(pm => ({
-        id: pm.id,
-        brand: pm.card.brand,
-        last4: pm.card.last4,
-        expMonth: pm.card.exp_month,
-        expYear: pm.card.exp_year
-      })),
-      flow: 'customer'
-    });
+      const hasDefaultPayment = customer.invoice_settings?.default_payment_method || 
+                                paymentMethods.data.length > 0;
+
+      res.json({
+        hasCustomer: true,
+        hasPaymentMethod: hasDefaultPayment,
+        defaultPaymentMethodId: customer.invoice_settings?.default_payment_method,
+        paymentMethods: paymentMethods.data.map(pm => ({
+          id: pm.id,
+          brand: pm.card.brand,
+          last4: pm.card.last4,
+          expMonth: pm.card.exp_month,
+          expYear: pm.card.exp_year
+        })),
+        flow: 'customer'
+      });
+    } catch (stripeErr) {
+      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404 ||
+          stripeErr.type === 'StripeInvalidRequestError') {
+        console.log(`[customer-status] Clearing stale Stripe customer ${customerId} for law firm ${lawFirmId}`);
+        await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+        return res.json({
+          hasCustomer: false,
+          hasPaymentMethod: false,
+          paymentMethods: [],
+          flow: 'customer'
+        });
+      }
+      throw stripeErr;
+    }
 
   } catch (error) {
-    console.error('Error checking customer status:', error);
+    console.error('[customer-status] Error:', error.message || error);
     res.status(500).json({ error: 'Failed to check payment status' });
   }
 });
@@ -505,11 +530,11 @@ router.get('/account-status', authenticateToken, async (req, res) => {
         });
       }
 
-      // Get customer and payment methods
       try {
         const customer = await stripe.customers.retrieve(customerId);
         
         if (customer.deleted) {
+          console.log(`[account-status] Deleted Stripe customer ${customerId} for law firm ${lawFirmId} — clearing`);
           await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
           return res.json({
             hasAccount: false,
@@ -541,8 +566,10 @@ router.get('/account-status', authenticateToken, async (req, res) => {
           }))
         });
       } catch (stripeErr) {
-        if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
-          console.log(`Stale Stripe customer ID ${customerId} for law firm ${lawFirmId} — clearing`);
+        console.log(`[account-status] Stripe error for customer ${customerId}, law firm ${lawFirmId}: code=${stripeErr.code}, status=${stripeErr.statusCode}, type=${stripeErr.type}, message=${stripeErr.message}`);
+        if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404 || 
+            stripeErr.type === 'StripeInvalidRequestError') {
+          console.log(`[account-status] Clearing stale/invalid Stripe customer ${customerId} for law firm ${lawFirmId}`);
           await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
           return res.json({
             hasAccount: false,
@@ -593,8 +620,10 @@ router.get('/account-status', authenticateToken, async (req, res) => {
         detailsSubmitted: account.details_submitted
       });
     } catch (stripeErr) {
-      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
-        console.log(`Stale Stripe account ID ${stripeAccountId} for user ${userId} — clearing`);
+      console.log(`[account-status] Stripe error for connect account ${stripeAccountId}, user ${userId}: code=${stripeErr.code}, status=${stripeErr.statusCode}, type=${stripeErr.type}, message=${stripeErr.message}`);
+      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404 ||
+          stripeErr.type === 'StripeInvalidRequestError') {
+        console.log(`[account-status] Clearing stale/invalid Stripe account ${stripeAccountId} for user ${userId}`);
         const clearQuery = userType === 'medical_provider'
           ? 'UPDATE medical_providers SET stripe_account_id = NULL WHERE id = $1'
           : 'UPDATE users SET stripe_account_id = NULL WHERE id = $1';
@@ -611,7 +640,7 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error checking account status:', error);
+    console.error('[account-status] Error:', error.message || error);
     res.status(500).json({ error: 'Failed to check account status' });
   }
 });
