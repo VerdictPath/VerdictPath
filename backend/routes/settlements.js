@@ -1187,6 +1187,107 @@ router.post('/:id/disburse-to-client', authenticateToken, isLawFirm, requirePrem
 });
 
 /**
+ * PUT /api/settlements/:id/revert-status
+ * Revert settlement to the previous status to correct errors
+ */
+router.put('/:id/revert-status', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  const client = await db.connect();
+  try {
+    const { id } = req.params;
+    const lawFirmId = req.user.id;
+    const { reason } = req.body;
+
+    const settlementResult = await client.query(
+      'SELECT * FROM settlements WHERE id = $1 AND law_firm_id = $2',
+      [id, lawFirmId]
+    );
+
+    if (settlementResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Settlement not found' });
+    }
+
+    const settlement = settlementResult.rows[0];
+    const currentStatus = settlement.status;
+
+    const revertMap = {
+      'settled': { to: 'pending', clearFields: 'settlement_date = NULL' },
+      'iolta_deposited': { to: 'settled', clearFields: 'iolta_deposit_amount = NULL, iolta_reference_number = NULL, iolta_deposit_date = NULL' },
+      'liens_paid': { to: 'iolta_deposited', clearFields: '' },
+      'disbursed': { to: 'iolta_deposited', clearFields: '' },
+      'closed': { to: 'disbursed', clearFields: '' }
+    };
+
+    const revertConfig = revertMap[currentStatus];
+    if (!revertConfig) {
+      return res.status(400).json({ 
+        error: `Cannot revert from "${currentStatus}" status. Only settled, IOLTA deposited, liens paid, disbursed, and closed settlements can be reverted.`
+      });
+    }
+
+    if (currentStatus === 'disbursed') {
+      const disbCheck = await client.query(
+        `SELECT COUNT(*) as count FROM disbursements WHERE settlement_id = $1 AND status = 'completed'`,
+        [id]
+      );
+      if (parseInt(disbCheck.rows[0].count) > 0) {
+        return res.status(400).json({
+          error: 'Cannot revert: this settlement has completed disbursements. Please contact support for assistance.'
+        });
+      }
+    }
+
+    await client.query('BEGIN');
+
+    const clearClause = revertConfig.clearFields ? `, ${revertConfig.clearFields}` : '';
+    await client.query(`
+      UPDATE settlements 
+      SET status = $3,
+          notes = COALESCE(notes, '') || $4,
+          updated_at = CURRENT_TIMESTAMP
+          ${clearClause}
+      WHERE id = $1 AND law_firm_id = $2
+    `, [id, lawFirmId, revertConfig.to, reason ? `\n[Reverted from ${currentStatus} to ${revertConfig.to}: ${reason}]` : `\n[Reverted from ${currentStatus} to ${revertConfig.to}]`]);
+
+    if (currentStatus === 'disbursed') {
+      await client.query(
+        `DELETE FROM disbursements WHERE settlement_id = $1 AND status = 'pending'`,
+        [id]
+      );
+      await client.query(
+        `UPDATE users SET disbursement_completed = false WHERE id = $1`,
+        [settlement.client_id]
+      );
+    }
+
+    if (currentStatus === 'liens_paid') {
+      await client.query(
+        `UPDATE medical_liens SET status = 'pending' WHERE settlement_id = $1 AND status = 'paid'`,
+        [id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    const updated = await db.query(
+      'SELECT * FROM settlements WHERE id = $1',
+      [id]
+    );
+
+    res.json({
+      success: true,
+      message: `Settlement reverted from "${currentStatus}" to "${revertConfig.to}"`,
+      settlement: updated.rows[0]
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error reverting settlement status:', error);
+    res.status(500).json({ error: 'Failed to revert settlement status' });
+  } finally {
+    client.release();
+  }
+});
+
+/**
  * PUT /api/settlements/:id/close
  * Mark settlement as closed after all disbursements complete
  */

@@ -109,6 +109,9 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [sendingStatement, setSendingStatement] = useState(false);
   const [lienProviderType, setLienProviderType] = useState('connected');
+  const [showRevertModal, setShowRevertModal] = useState(false);
+  const [revertReason, setRevertReason] = useState('');
+  const [reverting, setReverting] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -438,6 +441,41 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       alert('Error', error.message || 'Failed to record IOLTA deposit');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const REVERT_LABELS = {
+    'settled': 'Pending',
+    'iolta_deposited': 'Settled',
+    'liens_paid': 'IOLTA Deposited',
+    'disbursed': 'IOLTA Deposited',
+    'closed': 'Disbursed'
+  };
+
+  const handleRevertStatus = async () => {
+    if (!selectedSettlement) return;
+
+    try {
+      setReverting(true);
+      await apiRequest(API_ENDPOINTS.SETTLEMENTS.REVERT_STATUS(selectedSettlement.id), {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          reason: revertReason.trim() || undefined,
+        })
+      });
+
+      alert('Success', `Settlement reverted to "${REVERT_LABELS[selectedSettlement.status] || 'previous'}" status`);
+      setShowRevertModal(false);
+      setRevertReason('');
+      loadSettlementDetail(selectedSettlement.id);
+      loadSettlements();
+    } catch (error) {
+      alert('Error', error.message || 'Failed to revert settlement status');
+    } finally {
+      setReverting(false);
     }
   };
 
@@ -1166,6 +1204,18 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                   </TouchableOpacity>
                 )}
 
+                {settlement.status !== 'pending' && (
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#F59E0B', marginTop: 8 }]}
+                    onPress={() => {
+                      setRevertReason('');
+                      setShowRevertModal(true);
+                    }}
+                  >
+                    <Text style={styles.actionButtonText}>⬅ Revert to {REVERT_LABELS[settlement.status] || 'Previous Step'}</Text>
+                  </TouchableOpacity>
+                )}
+
                 <View style={styles.statementActionsRow}>
                   <TouchableOpacity
                     style={styles.statementActionButton}
@@ -1652,6 +1702,63 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     </Modal>
   );
 
+  const renderRevertModal = () => (
+    <Modal
+      visible={showRevertModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowRevertModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalCardTitle}>Revert Settlement Status</Text>
+
+          <View style={{ backgroundColor: '#FEF3C7', padding: 12, borderRadius: 8, marginBottom: 16 }}>
+            <Text style={{ color: '#92400E', fontWeight: '600', marginBottom: 4 }}>Are you sure?</Text>
+            <Text style={{ color: '#92400E', fontSize: 13 }}>
+              This will move the settlement back from "{STATUS_LABELS[selectedSettlement?.status] || selectedSettlement?.status}" to "{REVERT_LABELS[selectedSettlement?.status] || 'previous'}" status.
+              {selectedSettlement?.status === 'iolta_deposited' && ' IOLTA deposit information will be cleared.'}
+              {selectedSettlement?.status === 'settled' && ' Settlement date will be cleared.'}
+              {selectedSettlement?.status === 'disbursed' && ' Pending disbursement records will be removed.'}
+            </Text>
+          </View>
+
+          <Text style={styles.inputLabel}>Reason for reverting (optional)</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="e.g., Entered wrong deposit amount"
+            placeholderTextColor="#9CA3AF"
+            multiline
+            numberOfLines={3}
+            value={revertReason}
+            onChangeText={setRevertReason}
+          />
+
+          <View style={styles.modalCardActions}>
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setShowRevertModal(false)}
+              disabled={reverting}
+            >
+              <Text style={styles.modalCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSubmitButton, { backgroundColor: '#F59E0B' }, reverting && styles.submitButtonDisabled]}
+              onPress={handleRevertStatus}
+              disabled={reverting}
+            >
+              {reverting ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <Text style={styles.modalSubmitButtonText}>Revert Status</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderAddLienModal = () => (
     <Modal
       visible={showAddLienModal}
@@ -1883,6 +1990,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       {renderCreateModal()}
       {renderMarkSettledModal()}
       {renderIOLTAModal()}
+      {renderRevertModal()}
       {renderAddLienModal()}
       {renderSendStatementModal()}
 

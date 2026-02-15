@@ -251,6 +251,7 @@ export const API_ENDPOINTS = {
     CONNECTED_PROVIDERS: `${API_BASE_URL}/api/settlements/connected-providers`,
     DISCLAIMER: `${API_BASE_URL}/api/settlements/disclaimer`,
     AVAILABLE_NEGOTIATIONS: (clientId) => `${API_BASE_URL}/api/settlements/client/${clientId}/available-negotiations`,
+    REVERT_STATUS: (id) => `${API_BASE_URL}/api/settlements/${id}/revert-status`,
   },
 
   // Disbursements (Settlement Disbursements)
