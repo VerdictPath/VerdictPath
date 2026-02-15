@@ -240,6 +240,13 @@ export const API_ENDPOINTS = {
     PATIENT_AUDIT: (patientId) => `${API_BASE_URL}/api/medicalprovider/activity/patient/${patientId}/audit`,
   },
 
+  // Settlements
+  SETTLEMENTS: {
+    LIST: `${API_BASE_URL}/api/settlements`,
+    CREATE: `${API_BASE_URL}/api/settlements`,
+    GET: (id) => `${API_BASE_URL}/api/settlements/${id}`,
+  },
+
   // Disbursements (Settlement Disbursements)
   DISBURSEMENTS: {
     PROCESS: `${API_BASE_URL}/api/disbursements/process`,

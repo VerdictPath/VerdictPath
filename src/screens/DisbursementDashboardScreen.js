@@ -55,6 +55,10 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   const [subscription, setSubscription] = useState(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [clientSettlements, setClientSettlements] = useState([]);
+  const [selectedSettlement, setSelectedSettlement] = useState(null);
+  const [loadingSettlements, setLoadingSettlements] = useState(false);
+  const [disbursementMethod, setDisbursementMethod] = useState('app_transfer');
 
   useEffect(() => {
     loadSubscription();
@@ -183,11 +187,14 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     setDisbursementAmount('');
     setMedicalProviderPayments([]);
     setTotalMedicalPayments(0);
+    setSelectedSettlement(null);
+    setClientSettlements([]);
+    setDisbursementMethod('app_transfer');
     
-    // Load medical providers associated with this client
+    // Load settlements and medical providers in parallel
+    loadClientSettlements(client.id);
     const providers = await loadClientMedicalProviders(client.id);
     
-    // Initialize payment amounts (law firm can edit these)
     const initialPayments = providers.map(provider => ({
       providerId: provider.id,
       providerName: provider.providerName,
@@ -197,6 +204,28 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
     
     setMedicalProviderPayments(initialPayments);
     setShowDisbursementModal(true);
+  };
+
+  const loadClientSettlements = async (clientId) => {
+    setLoadingSettlements(true);
+    try {
+      const response = await apiRequest(`${API_ENDPOINTS.SETTLEMENTS.LIST}?clientId=${clientId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+      const settlements = response.settlements || [];
+      setClientSettlements(settlements);
+      if (settlements.length === 1) {
+        setSelectedSettlement(settlements[0]);
+      }
+    } catch (error) {
+      console.error('Error loading settlements:', error);
+      setClientSettlements([]);
+    } finally {
+      setLoadingSettlements(false);
+    }
   };
 
   const updateMedicalPayment = (index, amount) => {
@@ -213,8 +242,7 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const calculatePlatformFee = () => {
-    // $200 per disbursement transaction
-    return 200;
+    return disbursementMethod === 'app_transfer' ? 200 : 0;
   };
 
   const calculateTotalDisbursement = () => {
@@ -226,6 +254,11 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
   };
 
   const validateDisbursement = () => {
+    if (!selectedSettlement) {
+      alert('Settlement Required', 'Please select a settlement to link this disbursement to. If no settlements exist, create one first.');
+      return false;
+    }
+
     const clientAmount = parseCurrency(disbursementAmount);
     
     if (!clientAmount || clientAmount <= 0) {
@@ -233,7 +266,6 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
       return false;
     }
 
-    // Validate medical provider payments
     for (let payment of medicalProviderPayments) {
       if (payment.amount && payment.amount.trim() !== '') {
         const amt = parseCurrency(payment.amount);
@@ -295,7 +327,9 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
           clientId: selectedClient.id,
           clientAmount: parseCurrency(disbursementAmount),
           medicalPayments: validMedicalPayments,
-          platformFee: calculatePlatformFee()
+          platformFee: calculatePlatformFee(),
+          settlementId: selectedSettlement.id,
+          disbursementMethod: disbursementMethod
         })
       });
 
@@ -368,6 +402,110 @@ const DisbursementDashboardScreen = ({ user, onBack, onNavigate }) => {
             <Text style={styles.modalSubtitle}>
               {selectedClient?.firstName} {selectedClient?.lastName}
             </Text>
+          </View>
+
+          {/* Settlement Selection Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Select Settlement *</Text>
+            <Text style={styles.helperText}>
+              A disbursement must be linked to an existing settlement
+            </Text>
+            {loadingSettlements ? (
+              <ActivityIndicator size="small" color="#1E3A5F" style={{ marginTop: 10 }} />
+            ) : clientSettlements.length === 0 ? (
+              <View style={{ backgroundColor: '#FEF3C7', padding: 14, borderRadius: 8, marginTop: 10 }}>
+                <Text style={{ color: '#92400E', fontWeight: '600', fontSize: 14, marginBottom: 6 }}>
+                  No Settlements Found
+                </Text>
+                <Text style={{ color: '#92400E', fontSize: 13 }}>
+                  You need to create a settlement for this client before processing a disbursement. Go to the Settlements section to create one.
+                </Text>
+              </View>
+            ) : (
+              <View style={{ marginTop: 8 }}>
+                {clientSettlements.map(settlement => (
+                  <TouchableOpacity
+                    key={settlement.id}
+                    style={{
+                      backgroundColor: selectedSettlement?.id === settlement.id ? '#EFF6FF' : '#FFF',
+                      borderWidth: 2,
+                      borderColor: selectedSettlement?.id === settlement.id ? '#2563EB' : '#E5E7EB',
+                      borderRadius: 10,
+                      padding: 14,
+                      marginBottom: 8
+                    }}
+                    onPress={() => setSelectedSettlement(settlement)}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 15, fontWeight: '600', color: '#1E3A5F', flex: 1 }}>
+                        {settlement.caseName || 'Untitled Settlement'}
+                      </Text>
+                      <View style={{
+                        backgroundColor: settlement.status === 'settled' ? '#DCFCE7' : settlement.status === 'iolta_received' ? '#DBEAFE' : '#F3F4F6',
+                        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12
+                      }}>
+                        <Text style={{
+                          fontSize: 11, fontWeight: '600',
+                          color: settlement.status === 'settled' ? '#16A34A' : settlement.status === 'iolta_received' ? '#2563EB' : '#6B7280'
+                        }}>
+                          {(settlement.status || '').replace(/_/g, ' ').toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                    {settlement.caseNumber && (
+                      <Text style={{ fontSize: 13, color: '#666', marginTop: 4 }}>Case #: {settlement.caseNumber}</Text>
+                    )}
+                    <Text style={{ fontSize: 13, color: '#1E3A5F', marginTop: 4, fontWeight: '500' }}>
+                      Gross Amount: ${(settlement.grossSettlementAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </Text>
+                    {selectedSettlement?.id === settlement.id && (
+                      <Text style={{ fontSize: 12, color: '#2563EB', marginTop: 4, fontWeight: '600' }}>✓ Selected</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Disbursement Method */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Disbursement Method</Text>
+            {[
+              { key: 'app_transfer', label: 'App Transfer (Stripe)', desc: 'Electronic transfer via Stripe Connect — $200 platform fee' },
+              { key: 'check_mailed', label: 'Check Mailed', desc: 'Mail a check to client — no platform fee' },
+              { key: 'wire_transfer', label: 'Wire Transfer', desc: 'Wire funds directly — no platform fee' },
+              { key: 'client_pickup', label: 'Client Pickup', desc: 'Client picks up check in person — no platform fee' }
+            ].map(method => (
+              <TouchableOpacity
+                key={method.key}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: disbursementMethod === method.key ? '#EFF6FF' : '#FFF',
+                  borderWidth: 1,
+                  borderColor: disbursementMethod === method.key ? '#2563EB' : '#E5E7EB',
+                  borderRadius: 8,
+                  padding: 12,
+                  marginBottom: 6
+                }}
+                onPress={() => setDisbursementMethod(method.key)}
+              >
+                <View style={{
+                  width: 20, height: 20, borderRadius: 10,
+                  borderWidth: 2, borderColor: disbursementMethod === method.key ? '#2563EB' : '#9CA3AF',
+                  backgroundColor: disbursementMethod === method.key ? '#2563EB' : 'transparent',
+                  marginRight: 10, justifyContent: 'center', alignItems: 'center'
+                }}>
+                  {disbursementMethod === method.key && (
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFF' }} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#1E3A5F' }}>{method.label}</Text>
+                  <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{method.desc}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Client Payment Section */}
