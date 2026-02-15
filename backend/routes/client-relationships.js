@@ -133,15 +133,12 @@ router.get('/clients/:clientId/medical-providers', authenticateToken, async (req
         mp.id,
         mp.email,
         mp.provider_name as name,
-        cmp.relationship_type,
-        cmp.first_visit_date,
-        cmp.last_visit_date,
-        cmp.is_active,
+        mpp.registered_date,
         (mp.id = u.primary_medical_provider_id) as is_primary
-       FROM client_medical_providers cmp
-       JOIN medical_providers mp ON cmp.medical_provider_id = mp.id
-       JOIN users u ON cmp.client_id = u.id
-       WHERE cmp.client_id = $1 AND cmp.is_active = true
+       FROM medical_provider_patients mpp
+       JOIN medical_providers mp ON mpp.medical_provider_id = mp.id
+       JOIN users u ON mpp.patient_id = u.id
+       WHERE mpp.patient_id = $1
        ORDER BY is_primary DESC NULLS LAST, mp.provider_name`,
       [clientId]
     );
