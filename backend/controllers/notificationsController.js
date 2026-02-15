@@ -168,6 +168,7 @@ async function getUnreadCountForUser(recipientType, recipientId) {
       FROM notifications
       WHERE recipient_type = $1 AND recipient_id = $2 
         AND status != 'read'
+        AND (archived = false OR archived IS NULL)
     `;
     const result = await pool.query(query, [recipientType, recipientId]);
     return parseInt(result.rows[0].count) || 0;
@@ -613,12 +614,29 @@ exports.getMyNotifications = async (req, res) => {
   const { recipientType, entityId: recipientId } = entityInfo;
 
   try {
-    let query = `
-      SELECT * FROM notifications 
-      WHERE recipient_type = $1 AND recipient_id = $2
-    `;
-    const params = [recipientType, recipientId];
-    let paramIndex = 3;
+    const showArchived = req.query.archived === 'true';
+    
+    let query;
+    let params;
+    let paramIndex;
+    
+    if (showArchived) {
+      query = `
+        SELECT * FROM notifications 
+        WHERE recipient_type = $1 AND recipient_id = $2
+          AND archived = true
+      `;
+      params = [recipientType, recipientId];
+      paramIndex = 3;
+    } else {
+      query = `
+        SELECT * FROM notifications 
+        WHERE recipient_type = $1 AND recipient_id = $2
+          AND (archived = false OR archived IS NULL)
+      `;
+      params = [recipientType, recipientId];
+      paramIndex = 3;
+    }
 
     if (status) {
       query += ` AND status = $${paramIndex}`;
@@ -637,10 +655,18 @@ exports.getMyNotifications = async (req, res) => {
 
     const result = await pool.query(query, params);
 
-    const countQuery = `
-      SELECT COUNT(*) as total FROM notifications 
-      WHERE recipient_type = $1 AND recipient_id = $2
-    `;
+    let countQuery;
+    if (showArchived) {
+      countQuery = `
+        SELECT COUNT(*) as total FROM notifications 
+        WHERE recipient_type = $1 AND recipient_id = $2 AND archived = true
+      `;
+    } else {
+      countQuery = `
+        SELECT COUNT(*) as total FROM notifications 
+        WHERE recipient_type = $1 AND recipient_id = $2 AND (archived = false OR archived IS NULL)
+      `;
+    }
     const countResult = await pool.query(countQuery, [recipientType, recipientId]);
 
     const senderIds = {
@@ -907,6 +933,7 @@ exports.getUnreadCount = async (req, res) => {
       SELECT COUNT(*) as unread_count 
       FROM notifications 
       WHERE recipient_type = $1 AND recipient_id = $2 AND status != 'read'
+        AND (archived = false OR archived IS NULL)
     `;
     
     const result = await pool.query(query, [recipientType, recipientId]);
@@ -2934,6 +2961,87 @@ exports.updateEmailCCPreferences = async (req, res) => {
   } catch (error) {
     console.error('Error updating email CC preferences:', error);
     res.status(500).json({ error: 'Failed to update email CC preferences' });
+  }
+};
+
+exports.unarchiveNotification = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { notificationId } = req.params;
+
+    let recipientType;
+    if (deviceType === 'law_firm') {
+      recipientType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      recipientType = 'medical_provider';
+    } else {
+      recipientType = 'user';
+    }
+
+    const result = await pool.query(
+      `UPDATE notifications 
+       SET archived = false, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND recipient_type = $2 AND recipient_id = $3
+       RETURNING id`,
+      [notificationId, recipientType, entityId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification unarchived successfully'
+    });
+  } catch (error) {
+    console.error('Error unarchiving notification:', error);
+    res.status(500).json({ error: 'Failed to unarchive notification' });
+  }
+};
+
+exports.deleteNotification = async (req, res) => {
+  try {
+    const entityInfo = getEntityInfo(req);
+    if (!entityInfo) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const { deviceType, entityId } = entityInfo;
+    const { notificationId } = req.params;
+
+    let recipientType;
+    if (deviceType === 'law_firm') {
+      recipientType = 'law_firm';
+    } else if (deviceType === 'medical_provider') {
+      recipientType = 'medical_provider';
+    } else {
+      recipientType = 'user';
+    }
+
+    const result = await pool.query(
+      `DELETE FROM notifications 
+       WHERE id = $1 AND recipient_type = $2 AND recipient_id = $3
+       RETURNING id`,
+      [notificationId, recipientType, entityId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification deleted permanently'
+    });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ error: 'Failed to delete notification' });
   }
 };
 

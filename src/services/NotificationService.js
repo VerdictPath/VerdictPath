@@ -351,7 +351,7 @@ class NotificationService {
 
   async fetchNotifications(authToken, options = {}) {
     try {
-      const { limit = 50, offset = 0, status, type } = options;
+      const { limit = 50, offset = 0, status, type, archived } = options;
       
       const queryParams = new URLSearchParams({
         limit: limit.toString(),
@@ -360,6 +360,7 @@ class NotificationService {
 
       if (status) queryParams.append('status', status);
       if (type) queryParams.append('type', type);
+      if (archived) queryParams.append('archived', 'true');
 
       const response = await fetch(
         `${API_BASE_URL}/api/notifications/my-notifications?${queryParams.toString()}`,

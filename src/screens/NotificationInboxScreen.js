@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Act
 import { theme } from '../styles/theme';
 import { medicalProviderTheme } from '../styles/medicalProviderTheme';
 import { useNotifications } from '../contexts/NotificationContext';
+import { API_BASE_URL } from '../config/api';
+import NotificationService from '../services/NotificationService';
 
 const pirateShipBackground = require('../../assets/images/pirate-notification-ship.png');
 
@@ -885,6 +887,8 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [archivedNotifications, setArchivedNotifications] = useState([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
   const autoRefreshInterval = useRef(null);
 
   useEffect(() => {
@@ -919,6 +923,41 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
 
     if (result.success) {
       await refreshNotifications();
+    }
+  };
+
+  const fetchArchivedNotifications = async () => {
+    try {
+      setArchivedLoading(true);
+      const token = user?.token;
+      if (!token) return;
+      const archived = await NotificationService.fetchNotifications(token, { archived: true });
+      setArchivedNotifications(archived || []);
+    } catch (error) {
+      console.error('Error fetching archived notifications:', error);
+    } finally {
+      setArchivedLoading(false);
+    }
+  };
+
+  const handleUnarchive = async (notificationId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/notifications/${notificationId}/unarchive`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        setArchivedNotifications(prev => prev.filter(n => n.id !== notificationId));
+        refreshNotifications();
+      }
+    } catch (error) {
+      console.error('Error unarchiving notification:', error);
     }
   };
 
@@ -1069,137 +1108,223 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
                 📤 Sent
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[currentStyles.tab, activeTab === 'archived' && currentStyles.activeTab]}
+              onPress={() => {
+                setActiveTab('archived');
+                fetchArchivedNotifications();
+              }}
+            >
+              <Text style={[currentStyles.tabText, activeTab === 'archived' && currentStyles.activeTabText]}>
+                📁 Archived
+              </Text>
+            </TouchableOpacity>
           </View>
         </>
       )}
 
-      <View style={currentStyles.searchContainer}>
-        <TextInput
-          style={currentStyles.searchInput}
-          placeholder="Search notifications..."
-          placeholderTextColor={isLawFirm ? theme.lawFirm.textLight : (isMedicalProvider ? medicalProviderTheme.colors.textMuted : "rgba(255, 255, 255, 0.5)")}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={currentStyles.clearSearchButton}
-            onPress={() => setSearchQuery('')}
-          >
-            <Text style={currentStyles.clearSearchText}>✕</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={currentStyles.filterRow}>
-        <TouchableOpacity
-          style={currentStyles.typeDropdownButton}
-          onPress={() => setShowTypeDropdown(!showTypeDropdown)}
-        >
-          <Text style={currentStyles.typeDropdownText}>
-            {selectedType?.icon} {selectedType?.label}
-          </Text>
-          <Text style={currentStyles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
-
-        <View style={currentStyles.readFilterContainer}>
-          {['all', 'unread', 'read'].map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[currentStyles.readFilterButton, readFilter === filter && currentStyles.activeReadFilter]}
-              onPress={() => setReadFilter(filter)}
-            >
-              <Text style={[currentStyles.readFilterText, readFilter === filter && currentStyles.activeReadFilterText]}>
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+      {activeTab === 'archived' ? (
+        <>
+          {archivedLoading ? (
+            <View style={currentStyles.loadingContainer}>
+              <ActivityIndicator size="large" color={isLawFirm ? theme.lawFirm.primary : "#FFD700"} />
+              <Text style={currentStyles.loadingText}>Loading archived notifications...</Text>
+            </View>
+          ) : archivedNotifications.length === 0 ? (
+            <View style={currentStyles.emptyContainer}>
+              <Text style={currentStyles.emptyIcon}>📁</Text>
+              <Text style={currentStyles.emptyTitle}>No Archived Notifications</Text>
+              <Text style={currentStyles.emptyText}>
+                When you archive notifications, they'll appear here.
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {showTypeDropdown && (
-        <View style={currentStyles.typeDropdownMenu}>
-          {NOTIFICATION_TYPES.map((type) => (
-            <TouchableOpacity
-              key={type.key}
-              style={[currentStyles.typeDropdownItem, typeFilter === type.key && currentStyles.activeTypeDropdownItem]}
-              onPress={() => {
-                setTypeFilter(type.key);
-                setShowTypeDropdown(false);
+            </View>
+          ) : (
+            <FlatList
+              data={archivedNotifications}
+              renderItem={({ item }) => {
+                const notificationType = item.type || item.notification_type;
+                const typeIcon = getNotificationTypeIcon(notificationType);
+                return (
+                  <View style={[currentStyles.notificationCard, { opacity: 0.85 }]}>
+                    <View style={currentStyles.notificationRow}>
+                      <View style={currentStyles.typeIconContainer}>
+                        <Text style={currentStyles.typeIcon}>{typeIcon}</Text>
+                      </View>
+                      <View style={currentStyles.notificationContent}>
+                        <Text style={currentStyles.notificationTitle} numberOfLines={1}>
+                          {item.subject || item.title}
+                        </Text>
+                        {item.sender_name && (
+                          <Text style={currentStyles.senderName}>From: {item.sender_name}</Text>
+                        )}
+                        <Text style={currentStyles.notificationBody} numberOfLines={2}>
+                          {item.body}
+                        </Text>
+                        <View style={currentStyles.notificationFooter}>
+                          <Text style={currentStyles.notificationTime}>
+                            {formatTimestamp(item.created_at)}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => handleUnarchive(item.id)}
+                            style={{
+                              backgroundColor: isLawFirm ? theme.lawFirm.primary : '#c8a951',
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                              borderRadius: 6,
+                            }}
+                          >
+                            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>Unarchive</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                );
               }}
-            >
-              <Text style={currentStyles.typeDropdownItemText}>
-                {type.icon} {type.label}
-              </Text>
-              {typeFilter === type.key && <Text style={currentStyles.checkmark}>✓</Text>}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      <View style={currentStyles.actionButtonContainer}>
-        {user?.userType === 'individual' && (
-          <TouchableOpacity
-            style={currentStyles.sendNotificationButton}
-            onPress={() => onNavigate && onNavigate('individual-send-notification')}
-          >
-            <Text style={currentStyles.sendNotificationText}>📨 Compose</Text>
-          </TouchableOpacity>
-        )}
-        {notifications.filter(n => !n.is_read).length > 0 && (
-          <TouchableOpacity
-            style={currentStyles.markAllReadButton}
-            onPress={handleMarkAllAsRead}
-            disabled={markingAllRead}
-          >
-            <Text style={currentStyles.markAllReadText}>
-              {markingAllRead ? '✓ Marking...' : '✓ Mark All Read'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {isLoading && notifications.length === 0 ? (
-        <View style={currentStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={isLawFirm ? theme.lawFirm.primary : "#FFD700"} />
-          <Text style={currentStyles.loadingText}>Loading notifications...</Text>
-        </View>
-      ) : filteredNotifications.length === 0 ? (
-        <View style={currentStyles.emptyContainer}>
-          <Text style={currentStyles.emptyIcon}>{isLawFirm ? '📭' : '🏴‍☠️'}</Text>
-          <Text style={currentStyles.emptyTitle}>No Notifications</Text>
-          <Text style={currentStyles.emptyText}>
-            {searchQuery 
-              ? `No notifications matching "${searchQuery}"`
-              : readFilter === 'unread' 
-                ? "You're all caught up! No unread notifications."
-                : readFilter === 'read'
-                ? "No read notifications yet."
-                : typeFilter !== 'all'
-                ? `No ${selectedType?.label.toLowerCase()} found.`
-                : "When you receive notifications, they'll appear here."}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredNotifications}
-          renderItem={renderNotificationItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={currentStyles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[isLawFirm ? theme.lawFirm.primary : '#FFD700']}
-              tintColor={isLawFirm ? theme.lawFirm.primary : '#FFD700'}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={currentStyles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={fetchArchivedNotifications}
+                  colors={[isLawFirm ? theme.lawFirm.primary : '#FFD700']}
+                  tintColor={isLawFirm ? theme.lawFirm.primary : '#FFD700'}
+                />
+              }
             />
-          }
-        />
-      )}
+          )}
+        </>
+      ) : (
+        <>
+          <View style={currentStyles.searchContainer}>
+            <TextInput
+              style={currentStyles.searchInput}
+              placeholder="Search notifications..."
+              placeholderTextColor={isLawFirm ? theme.lawFirm.textLight : (isMedicalProvider ? medicalProviderTheme.colors.textMuted : "rgba(255, 255, 255, 0.5)")}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={currentStyles.clearSearchButton}
+                onPress={() => setSearchQuery('')}
+              >
+                <Text style={currentStyles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-      <View style={currentStyles.autoRefreshIndicator}>
-        <Text style={currentStyles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
-      </View>
+          <View style={currentStyles.filterRow}>
+            <TouchableOpacity
+              style={currentStyles.typeDropdownButton}
+              onPress={() => setShowTypeDropdown(!showTypeDropdown)}
+            >
+              <Text style={currentStyles.typeDropdownText}>
+                {selectedType?.icon} {selectedType?.label}
+              </Text>
+              <Text style={currentStyles.dropdownArrow}>{showTypeDropdown ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+
+            <View style={currentStyles.readFilterContainer}>
+              {['all', 'unread', 'read'].map((filter) => (
+                <TouchableOpacity
+                  key={filter}
+                  style={[currentStyles.readFilterButton, readFilter === filter && currentStyles.activeReadFilter]}
+                  onPress={() => setReadFilter(filter)}
+                >
+                  <Text style={[currentStyles.readFilterText, readFilter === filter && currentStyles.activeReadFilterText]}>
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {showTypeDropdown && (
+            <View style={currentStyles.typeDropdownMenu}>
+              {NOTIFICATION_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.key}
+                  style={[currentStyles.typeDropdownItem, typeFilter === type.key && currentStyles.activeTypeDropdownItem]}
+                  onPress={() => {
+                    setTypeFilter(type.key);
+                    setShowTypeDropdown(false);
+                  }}
+                >
+                  <Text style={currentStyles.typeDropdownItemText}>
+                    {type.icon} {type.label}
+                  </Text>
+                  {typeFilter === type.key && <Text style={currentStyles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          <View style={currentStyles.actionButtonContainer}>
+            {user?.userType === 'individual' && (
+              <TouchableOpacity
+                style={currentStyles.sendNotificationButton}
+                onPress={() => onNavigate && onNavigate('individual-send-notification')}
+              >
+                <Text style={currentStyles.sendNotificationText}>📨 Compose</Text>
+              </TouchableOpacity>
+            )}
+            {notifications.filter(n => !n.is_read).length > 0 && (
+              <TouchableOpacity
+                style={currentStyles.markAllReadButton}
+                onPress={handleMarkAllAsRead}
+                disabled={markingAllRead}
+              >
+                <Text style={currentStyles.markAllReadText}>
+                  {markingAllRead ? '✓ Marking...' : '✓ Mark All Read'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {isLoading && notifications.length === 0 ? (
+            <View style={currentStyles.loadingContainer}>
+              <ActivityIndicator size="large" color={isLawFirm ? theme.lawFirm.primary : "#FFD700"} />
+              <Text style={currentStyles.loadingText}>Loading notifications...</Text>
+            </View>
+          ) : filteredNotifications.length === 0 ? (
+            <View style={currentStyles.emptyContainer}>
+              <Text style={currentStyles.emptyIcon}>{isLawFirm ? '📭' : '🏴‍☠️'}</Text>
+              <Text style={currentStyles.emptyTitle}>No Notifications</Text>
+              <Text style={currentStyles.emptyText}>
+                {searchQuery 
+                  ? `No notifications matching "${searchQuery}"`
+                  : readFilter === 'unread' 
+                    ? "You're all caught up! No unread notifications."
+                    : readFilter === 'read'
+                    ? "No read notifications yet."
+                    : typeFilter !== 'all'
+                    ? `No ${selectedType?.label.toLowerCase()} found.`
+                    : "When you receive notifications, they'll appear here."}
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredNotifications}
+              renderItem={renderNotificationItem}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={currentStyles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={[isLawFirm ? theme.lawFirm.primary : '#FFD700']}
+                  tintColor={isLawFirm ? theme.lawFirm.primary : '#FFD700'}
+                />
+              }
+            />
+          )}
+
+          <View style={currentStyles.autoRefreshIndicator}>
+            <Text style={currentStyles.autoRefreshText}>Auto-refreshes every 30 seconds</Text>
+          </View>
+        </>
+      )}
     </View>
   );
 

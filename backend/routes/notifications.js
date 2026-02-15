@@ -39,10 +39,11 @@ router.put('/email-preferences', authenticateToken, notificationsController.upda
 router.put('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.put('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
 router.put('/:notificationId/archive', authenticateToken, notificationsController.archiveNotification);
+router.put('/:notificationId/unarchive', authenticateToken, notificationsController.unarchiveNotification);
 
 router.patch('/:notificationId/read', authenticateToken, notificationsController.markAsRead);
 router.patch('/:notificationId/clicked', authenticateToken, notificationsController.markAsClicked);
 
-router.delete('/:notificationId', authenticateToken, notificationsController.archiveNotification);
+router.delete('/:notificationId', authenticateToken, notificationsController.deleteNotification);
 
 module.exports = router;
