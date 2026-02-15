@@ -4,6 +4,7 @@ import { Video, ResizeMode } from '../utils/safeAVImport';
 import { commonStyles } from '../styles/commonStyles';
 import { theme } from '../styles/theme';
 import WebVideoBackground from '../components/WebVideoBackground';
+import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const LawFirmRegistrationScreen = ({ 
   email,
@@ -20,6 +21,7 @@ const LawFirmRegistrationScreen = ({
   setLastName,
   onSelectSubscription,
   onNavigate,
+  onRegistrationComplete,
   privacyAccepted,
   setPrivacyAccepted
 }) => {
@@ -94,7 +96,50 @@ const LawFirmRegistrationScreen = ({
       return;
     }
 
-    alert('Join Existing Firm feature is coming soon! For now, please contact your firm administrator to add you as a staff member after you create your own account.');
+    setLoading(true);
+    try {
+      const response = await apiRequest(API_ENDPOINTS.AUTH.JOIN_LAWFIRM, {
+        method: 'POST',
+        body: JSON.stringify({
+          firmCode: joinFirmCode,
+          firstName: joinFirstName,
+          lastName: joinLastName,
+          email: email,
+          password: password,
+          requestedRole: requestedRole
+        })
+      });
+
+      const userData = {
+        id: response.lawFirm.id,
+        lawFirmUserId: response.lawFirm.lawFirmUserId,
+        email: response.lawFirm.email,
+        type: 'lawfirm',
+        firmName: response.lawFirm.firmName,
+        firmCode: response.lawFirm.firmCode,
+        token: response.token,
+        subscription: 'free',
+        coins: 0,
+        streak: 0,
+        role: response.lawFirm.role,
+        userCode: response.lawFirm.userCode,
+        isLawFirmUser: true
+      };
+
+      if (onRegistrationComplete) {
+        onRegistrationComplete(userData);
+      }
+    } catch (error) {
+      console.error('Error joining law firm:', error);
+      const errorMsg = error.message || 'Failed to join firm. Please check the firm code and try again.';
+      if (Platform.OS === 'web') {
+        alert('Join Error: ' + errorMsg);
+      } else {
+        alert('Join Error', errorMsg);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderPricingCard = () => (

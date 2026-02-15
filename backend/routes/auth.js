@@ -11,6 +11,7 @@ router.post('/register/client', authLimiter, authController.registerClient);
 router.post('/register/lawfirm', authLimiter, authController.registerLawFirm);
 router.post('/register/medicalprovider', authLimiter, authController.registerMedicalProvider);
 router.post('/join/medicalprovider', authLimiter, authController.joinMedicalProvider);
+router.post('/join/lawfirm', authLimiter, authController.joinLawFirm);
 
 // SECURITY: Rate limiting + account lockout on login endpoints (prevent brute force)
 router.post('/login', authLimiter, checkAccountLockout, authController.login);

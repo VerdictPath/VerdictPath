@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
     REGISTER_LAWFIRM: `${API_BASE_URL}/api/auth/register/lawfirm`,
     REGISTER_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/register/medicalprovider`,
     JOIN_MEDICALPROVIDER: `${API_BASE_URL}/api/auth/join/medicalprovider`,
+    JOIN_LAWFIRM: `${API_BASE_URL}/api/auth/join/lawfirm`,
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     LOGIN_LAWFIRM_USER: `${API_BASE_URL}/api/auth/login/lawfirm-user`,
     LOGIN_MEDICALPROVIDER_USER: `${API_BASE_URL}/api/auth/login/medicalprovider-user`,

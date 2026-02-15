@@ -1467,6 +1467,15 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
           setLastName={setLastName}
           onSelectSubscription={handleSelectSubscription}
           onNavigate={handleNavigateInternal}
+          onRegistrationComplete={(userData) => {
+            setUser(userData);
+            setCoins(0);
+            setLoginStreak(0);
+            setIsLoggedIn(true);
+            setPrivacyAccepted(false);
+            setCurrentScreen('lawfirm-dashboard');
+            alert('Welcome to Verdict Path!\n\nYou have successfully joined ' + userData.firmName + ' as a ' + userData.role + '.\n\nYour user code: ' + userData.userCode);
+          }}
           privacyAccepted={privacyAccepted}
           setPrivacyAccepted={setPrivacyAccepted}
         />

@@ -692,6 +692,171 @@ exports.joinMedicalProvider = async (req, res) => {
   }
 };
 
+exports.joinLawFirm = async (req, res) => {
+  try {
+    const {
+      firmCode,
+      firstName,
+      lastName,
+      email,
+      password,
+      requestedRole
+    } = req.body;
+
+    if (!firmCode || !firstName || !lastName || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Firm code, first name, last name, email, and password are required' 
+      });
+    }
+
+    const firmResult = await db.query(
+      `SELECT id, firm_name, firm_code, subscription_tier FROM law_firms WHERE firm_code = $1`,
+      [firmCode.toUpperCase()]
+    );
+
+    if (firmResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Firm code not found. Please check the code and try again.' });
+    }
+
+    const lawFirm = firmResult.rows[0];
+
+    const existingUser = await db.query(
+      `SELECT id FROM law_firm_users WHERE email = $1`,
+      [email.toLowerCase()]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'An account with this email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userCountResult = await db.query(
+      `SELECT COUNT(*) as count FROM law_firm_users WHERE law_firm_id = $1`,
+      [lawFirm.id]
+    );
+    const userCount = parseInt(userCountResult.rows[0].count, 10);
+    const userNumber = String(userCount + 1).padStart(4, '0');
+    const userCode = `${lawFirm.firm_code}-USER-${userNumber}`;
+
+    const role = requestedRole || 'paralegal';
+    const validRoles = ['attorney', 'paralegal', 'secretary', 'billing'];
+    const finalRole = validRoles.includes(role) ? role : 'paralegal';
+
+    const rolePermissions = {
+      attorney: {
+        canManageUsers: false,
+        canManageClients: true,
+        canViewAllClients: true,
+        canSendNotifications: true,
+        canManageDisbursements: true,
+        canViewAnalytics: true,
+        canManageSettings: false
+      },
+      paralegal: {
+        canManageUsers: false,
+        canManageClients: true,
+        canViewAllClients: true,
+        canSendNotifications: true,
+        canManageDisbursements: false,
+        canViewAnalytics: false,
+        canManageSettings: false
+      },
+      secretary: {
+        canManageUsers: false,
+        canManageClients: false,
+        canViewAllClients: true,
+        canSendNotifications: true,
+        canManageDisbursements: false,
+        canViewAnalytics: false,
+        canManageSettings: false
+      },
+      billing: {
+        canManageUsers: false,
+        canManageClients: false,
+        canViewAllClients: true,
+        canSendNotifications: false,
+        canManageDisbursements: true,
+        canViewAnalytics: true,
+        canManageSettings: false
+      }
+    };
+
+    const perms = rolePermissions[finalRole];
+
+    const newUserResult = await db.query(
+      `INSERT INTO law_firm_users (
+        law_firm_id, first_name, last_name, email, password, user_code, role,
+        can_manage_users, can_manage_clients, can_view_all_clients,
+        can_send_notifications, can_manage_disbursements, can_view_analytics,
+        can_manage_settings, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING id, first_name, last_name, email, user_code, role, status`,
+      [
+        lawFirm.id,
+        firstName,
+        lastName,
+        email.toLowerCase(),
+        hashedPassword,
+        userCode,
+        finalRole,
+        perms.canManageUsers,
+        perms.canManageClients,
+        perms.canViewAllClients,
+        perms.canSendNotifications,
+        perms.canManageDisbursements,
+        perms.canViewAnalytics,
+        perms.canManageSettings,
+        'active'
+      ]
+    );
+
+    const newUser = newUserResult.rows[0];
+
+    const token = jwt.sign(
+      { 
+        id: lawFirm.id,
+        lawFirmUserId: newUser.id,
+        email: newUser.email, 
+        userType: 'lawfirm',
+        firmCode: lawFirm.firm_code,
+        lawFirmUserRole: finalRole,
+        isLawFirmUser: true
+      },
+      JWT_SECRET,
+      { expiresIn: TOKEN_EXPIRY }
+    );
+
+    setAuthCookie(res, token);
+
+    sendWelcomeEmail(newUser.email, `${firstName} ${lastName}`, 'lawfirm')
+      .catch(err => console.error('Error sending welcome email:', err));
+
+    res.status(201).json({
+      message: 'Successfully joined law firm',
+      token,
+      lawFirm: {
+        id: lawFirm.id,
+        lawFirmUserId: newUser.id,
+        firmName: lawFirm.firm_name,
+        firmCode: lawFirm.firm_code,
+        email: newUser.email,
+        userCode: newUser.user_code,
+        role: newUser.role,
+        isLawFirmUser: true
+      }
+    });
+  } catch (error) {
+    console.error('[Join Law Firm] Error:', error.message);
+    if (error.code?.startsWith('23')) {
+      return handleDatabaseError(error, res);
+    }
+    return sendErrorResponse(res, 500, 'Error joining law firm', {
+      code: errorCodes.INTERNAL_ERROR
+    });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
