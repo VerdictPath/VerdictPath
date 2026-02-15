@@ -31,7 +31,7 @@ Key features include:
 - **User Management**: Supports Individual, Law Firm, and Medical Provider users with multi-user accounts, role-based permissions, and tiered access.
 - **Interactive Litigation Roadmap**: A 9-stage journey with 60 substages, progress tracking, modal descriptions, interactive audio, and integrated file uploads.
 - **Avatar Video System**: For individual users, featuring legal-themed characters and background loops.
-- **Connection System**: Manages bidirectional connections between law firms, medical providers, and individual users.
+- **Connection System**: Request/approval-based connections between law firms, medical providers, and individual users. Users enter a connection code to send a request; the recipient must accept before the connection is established. Uses `connection_requests` table with pending/accepted/declined/cancelled states. Notifications sent on request creation, acceptance, and decline with deep-linking.
 - **Bill Negotiations Portal**: Facilitates negotiations for law firms and medical providers.
 - **Real-time Notification System**: Firebase-based system with 22 templates, deep linking, real-time badge counts, and analytics, using Firebase as a sync layer and PostgreSQL as the source of truth.
 - **Attorney-Assigned Task System**: Allows law firms to create tasks for clients with priorities, due dates, and coin rewards.

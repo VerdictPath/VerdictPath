@@ -1290,6 +1290,17 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       setCurrentScreen('lawfirm-dashboard');
       return;
     }
+    if (screen === 'connection-requests') {
+      if (user?.userType === 'lawfirm') {
+        setCurrentScreen('lawfirm-dashboard');
+      } else if (user?.userType === 'medical_provider') {
+        setMedicalProviderReturnTab('connections');
+        setCurrentScreen('medicalprovider-dashboard');
+      } else {
+        setCurrentScreen('dashboard');
+      }
+      return;
+    }
     if (screen === 'client-roadmap' && data) {
       setSelectedClientId(data.clientId);
       setClientRoadmapData(data.clientData);

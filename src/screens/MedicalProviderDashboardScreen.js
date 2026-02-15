@@ -27,6 +27,8 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
   const [firmCode, setFirmCode] = useState('');
   const [addingFirm, setAddingFirm] = useState(false);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [connectionRequests, setConnectionRequests] = useState({ inbound: [], outbound: [] });
+  const [processingRequest, setProcessingRequest] = useState(null);
   
   // Get unread count from NotificationContext (Firebase real-time)
   const { unreadCount: unreadNotificationCount } = useNotifications();
@@ -44,6 +46,7 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     checkStripeAccountStatus();
     if (activeTab === 'connections') {
       fetchLawFirms();
+      fetchConnectionRequests();
     }
   }, [activeTab]);
 
@@ -117,6 +120,81 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
     }
   };
 
+  const fetchConnectionRequests = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/connections/requests?type=all`, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setConnectionRequests({
+          inbound: data.inbound || [],
+          outbound: data.outbound || []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching connection requests:', error);
+    }
+  };
+
+  const handleAcceptConnectionRequest = async (requestId) => {
+    try {
+      setProcessingRequest(requestId);
+      const response = await apiRequest(`${API_BASE_URL}/api/connections/requests/${requestId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.success) {
+        alert('Accepted', response.message || 'Connection request accepted!');
+        fetchConnectionRequests();
+        fetchLawFirms();
+      }
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      alert('Error', error.response?.error || 'Failed to accept request');
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
+
+  const handleDeclineConnectionRequest = async (requestId, requesterName) => {
+    alert(
+      'Decline Request',
+      `Are you sure you want to decline the connection request from ${requesterName || 'this user'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Decline',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setProcessingRequest(requestId);
+              const response = await apiRequest(`${API_BASE_URL}/api/connections/requests/${requestId}/decline`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              if (response.success) {
+                alert('Declined', response.message || 'Connection request declined.');
+                fetchConnectionRequests();
+              }
+            } catch (error) {
+              console.error('Error declining request:', error);
+              alert('Error', error.response?.error || 'Failed to decline request');
+            } finally {
+              setProcessingRequest(null);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleAddLawFirm = async () => {
     if (!firmCode.trim()) {
       alert('Missing Information', 'Please enter a law firm code');
@@ -135,13 +213,14 @@ const MedicalProviderDashboardScreen = ({ user, initialTab, onNavigateToPatient,
       });
 
       if (response.success) {
-        alert('Success', response.message || 'Law firm connection added successfully!');
+        alert('Request Sent', response.message || 'Connection request sent! Awaiting approval from the law firm.');
         setFirmCode('');
         fetchLawFirms();
+        fetchConnectionRequests();
       }
     } catch (error) {
       console.error('Error adding law firm:', error);
-      alert('Error', error.response?.error || 'Failed to add law firm connection');
+      alert('Error', error.response?.error || 'Failed to send connection request');
     } finally {
       setAddingFirm(false);
     }
@@ -756,16 +835,90 @@ const renderAnalyticsTab = () => {
   };
 
   const renderConnectionsTab = () => {
+    const pendingInbound = connectionRequests.inbound.filter(r => r.status === 'pending');
+    const pendingOutbound = connectionRequests.outbound.filter(r => r.status === 'pending');
+
     return (
       <View style={styles.tabContent}>
+        {pendingInbound.length > 0 && (
+          <View style={[styles.section, { borderLeftWidth: 4, borderLeftColor: '#f39c12' }]}>
+            <Text style={styles.sectionTitle}>📥 Pending Connection Requests ({pendingInbound.length})</Text>
+            <Text style={styles.sectionDescription}>
+              These users or organizations want to connect with you. Accept or decline each request.
+            </Text>
+            {pendingInbound.map((request) => (
+              <View key={request.id} style={[styles.firmCard, { borderLeftWidth: 4, borderLeftColor: '#f39c12' }]}>
+                <View style={styles.firmCardHeader}>
+                  <View style={styles.firmCardIcon}>
+                    <Text style={styles.firmCardIconText}>
+                      {request.connection_type === 'lawfirm_medical_provider' ? '⚖️' : 
+                       request.connection_type === 'individual_medical_provider' ? '👤' : '🔗'}
+                    </Text>
+                  </View>
+                  <View style={styles.firmCardInfo}>
+                    <Text style={styles.firmCardName}>{request.requester_name || 'Unknown'}</Text>
+                    <Text style={styles.firmCardCode}>
+                      {request.connection_type === 'lawfirm_medical_provider' ? 'Law Firm Connection Request' :
+                       request.connection_type === 'individual_medical_provider' ? 'Patient Connection Request' : 'Connection Request'}
+                    </Text>
+                    <Text style={styles.firmCardMeta}>
+                      Received {new Date(request.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', marginTop: 10, gap: 8 }}>
+                  <TouchableOpacity 
+                    style={[styles.addFirmButton, { flex: 1, backgroundColor: '#27ae60' }]}
+                    onPress={() => handleAcceptConnectionRequest(request.id)}
+                    disabled={processingRequest === request.id}
+                  >
+                    <Text style={styles.addFirmButtonText}>
+                      {processingRequest === request.id ? 'Processing...' : 'Accept'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.removeFirmButton, { flex: 1, alignItems: 'center', justifyContent: 'center' }]}
+                    onPress={() => handleDeclineConnectionRequest(request.id, request.requester_name)}
+                    disabled={processingRequest === request.id}
+                  >
+                    <Text style={styles.removeFirmButtonText}>Decline</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {pendingOutbound.length > 0 && (
+          <View style={[styles.section, { borderLeftWidth: 4, borderLeftColor: '#3498db' }]}>
+            <Text style={styles.sectionTitle}>📤 Sent Requests ({pendingOutbound.length})</Text>
+            {pendingOutbound.map((request) => (
+              <View key={request.id} style={[styles.firmCard, { opacity: 0.8 }]}>
+                <View style={styles.firmCardHeader}>
+                  <View style={styles.firmCardIcon}>
+                    <Text style={styles.firmCardIconText}>⏳</Text>
+                  </View>
+                  <View style={styles.firmCardInfo}>
+                    <Text style={styles.firmCardName}>{request.recipient_name || 'Unknown'}</Text>
+                    <Text style={styles.firmCardCode}>Awaiting Approval</Text>
+                    <Text style={styles.firmCardMeta}>
+                      Sent {new Date(request.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔗 Law Firm Connections</Text>
           <Text style={styles.sectionDescription}>
-            Connect with law firms to collaborate on patient cases, share medical information securely, and negotiate medical bills.
+            Send a connection request to a law firm to collaborate on patient cases. The law firm must approve the request.
           </Text>
 
           <View style={styles.addFirmContainer}>
-            <Text style={styles.addFirmLabel}>Add Law Firm by Code:</Text>
+            <Text style={styles.addFirmLabel}>Send Request by Law Firm Code:</Text>
             <View style={styles.addFirmInputRow}>
               <TextInput
                 style={styles.firmCodeInput}
@@ -781,7 +934,7 @@ const renderAnalyticsTab = () => {
                 disabled={addingFirm}
               >
                 <Text style={styles.addFirmButtonText}>
-                  {addingFirm ? 'Adding...' : '+ Add'}
+                  {addingFirm ? 'Sending...' : 'Send Request'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -818,7 +971,7 @@ const renderAnalyticsTab = () => {
               <Text style={styles.emptyStateIcon}>🔗</Text>
               <Text style={styles.emptyStateTitle}>No Law Firm Connections</Text>
               <Text style={styles.emptyStateText}>
-                Enter a law firm code above to connect with a law firm. Once connected, you'll be able to collaborate on patient cases and negotiate medical bills.
+                Enter a law firm code above to send a connection request. Once the law firm approves, you'll be able to collaborate on patient cases and negotiate medical bills.
               </Text>
             </View>
           )}

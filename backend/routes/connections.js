@@ -19,4 +19,10 @@ router.get('/medical-providers', authenticateToken, connectionsController.getLaw
 router.post('/add-medical-provider-lawfirm', authenticateToken, connectionsController.addMedicalProviderConnection);
 router.post('/remove-medical-provider-lawfirm', authenticateToken, connectionsController.removeMedicalProviderConnection);
 
+// Connection Requests
+router.get('/requests', authenticateToken, connectionsController.getConnectionRequests);
+router.post('/requests/:requestId/accept', authenticateToken, connectionsController.acceptConnectionRequest);
+router.post('/requests/:requestId/decline', authenticateToken, connectionsController.declineConnectionRequest);
+router.post('/requests/:requestId/cancel', authenticateToken, connectionsController.cancelConnectionRequest);
+
 module.exports = router;

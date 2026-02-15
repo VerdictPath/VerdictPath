@@ -37,6 +37,12 @@ const getNotificationTypeInfo = (type) => {
       return { icon: '\u2705', label: 'Task', color: '#ec4899' };
     case 'message':
       return { icon: '\u{1F4AC}', label: 'Message', color: '#06b6d4' };
+    case 'connection_request':
+      return { icon: '🔗', label: 'Connection Request', color: '#f39c12' };
+    case 'connection_accepted':
+      return { icon: '✅', label: 'Connection Accepted', color: '#27ae60' };
+    case 'connection_declined':
+      return { icon: '❌', label: 'Connection Declined', color: '#e74c3c' };
     default:
       return { icon: '\u{1F514}', label: 'Notification', color: '#FFD700' };
   }
@@ -489,6 +495,9 @@ const NotificationDetailScreen = ({ user, notificationId, onBack, onNavigate, is
                  notification.type === 'event_response' ? '\u{1F4C5} Review Client Response' :
                  notification.type === 'event_confirmed' ? '\u{1F4C5} View Calendar' :
                  notification.type === 'event_cancelled' ? '\u{1F4CB} View Details' :
+                 notification.type === 'connection_request' ? '🔗 View & Respond to Request' :
+                 notification.type === 'connection_accepted' ? '🔗 View Connection' :
+                 notification.type === 'connection_declined' ? '🔗 View Details' :
                  '\u{1F449} View Details'}
               </Text>
             </TouchableOpacity>

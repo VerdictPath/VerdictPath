@@ -11,6 +11,8 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
   const [medicalProviderCode, setMedicalProviderCode] = useState('');
   const [currentConnections, setCurrentConnections] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [connectionRequests, setConnectionRequests] = useState({ inbound: [], outbound: [] });
+  const [activeSection, setActiveSection] = useState('connections');
   
   const isLawFirm = userType === 'lawfirm';
 
@@ -18,9 +20,13 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     !currentConnections.lawFirm && 
     (!currentConnections.medicalProviders || currentConnections.medicalProviders.length === 0);
 
+  const pendingInbound = connectionRequests.inbound.filter(r => r.status === 'pending');
+  const pendingOutbound = connectionRequests.outbound.filter(r => r.status === 'pending');
+
   useEffect(() => {
     if (visible && user?.token) {
       fetchCurrentConnections();
+      fetchConnectionRequests();
       setShowAddForm(false);
     }
   }, [visible, user]);
@@ -62,6 +68,26 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     }
   };
 
+  const fetchConnectionRequests = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/connections/requests?type=all`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setConnectionRequests({
+          inbound: data.inbound || [],
+          outbound: data.outbound || []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching connection requests:', error);
+    }
+  };
+
   const handleUpdateLawFirm = async () => {
     if (!lawFirmCode.trim()) {
       alert('Error', 'Please enter a law firm code');
@@ -82,16 +108,16 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       const data = await response.json();
 
       if (response.ok) {
-        alert('Success', data.message || 'Law firm connection updated successfully');
+        alert('Request Sent', data.message || 'Connection request sent! Awaiting approval.');
         setShowAddForm(false);
-        fetchCurrentConnections();
-        if (onConnectionsUpdated) onConnectionsUpdated();
+        setLawFirmCode('');
+        fetchConnectionRequests();
       } else {
-        alert('Error', data.error || 'Failed to update law firm connection');
+        alert('Error', data.error || 'Failed to send connection request');
       }
     } catch (error) {
-      console.error('Error updating law firm:', error);
-      alert('Error', 'Failed to update law firm connection');
+      console.error('Error sending law firm request:', error);
+      alert('Error', 'Failed to send connection request');
     } finally {
       setSaving(false);
     }
@@ -122,17 +148,99 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
       const data = await response.json();
 
       if (response.ok) {
-        alert('Success', data.message || 'Medical provider added successfully');
+        alert('Request Sent', data.message || 'Connection request sent! Awaiting approval.');
         setMedicalProviderCode('');
         setShowAddForm(false);
+        fetchConnectionRequests();
+      } else {
+        alert('Error', data.error || 'Failed to send connection request');
+      }
+    } catch (error) {
+      console.error('Error sending medical provider request:', error);
+      alert('Error', 'Failed to send connection request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/requests/${requestId}/accept`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Accepted', data.message || 'Connection request accepted!');
+        fetchConnectionRequests();
         fetchCurrentConnections();
         if (onConnectionsUpdated) onConnectionsUpdated();
       } else {
-        alert('Error', data.error || 'Failed to add medical provider');
+        alert('Error', data.error || 'Failed to accept request');
       }
     } catch (error) {
-      console.error('Error adding medical provider:', error);
-      alert('Error', 'Failed to add medical provider');
+      console.error('Error accepting request:', error);
+      alert('Error', 'Failed to accept request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeclineRequest = async (requestId) => {
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/requests/${requestId}/decline`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Declined', data.message || 'Connection request declined.');
+        fetchConnectionRequests();
+      } else {
+        alert('Error', data.error || 'Failed to decline request');
+      }
+    } catch (error) {
+      console.error('Error declining request:', error);
+      alert('Error', 'Failed to decline request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    try {
+      setSaving(true);
+      const response = await fetch(`${API_BASE_URL}/api/connections/requests/${requestId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Cancelled', data.message || 'Connection request cancelled.');
+        fetchConnectionRequests();
+      } else {
+        alert('Error', data.error || 'Failed to cancel request');
+      }
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      alert('Error', 'Failed to cancel request');
     } finally {
       setSaving(false);
     }
@@ -201,6 +309,188 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     }
   };
 
+  const getRequestTypeLabel = (request) => {
+    if (request.connection_type === 'individual_lawfirm') return 'Law Firm Connection';
+    if (request.connection_type === 'individual_medical_provider') return 'Medical Provider Connection';
+    if (request.connection_type === 'lawfirm_medical_provider') return 'Law Firm - Provider Connection';
+    return 'Connection';
+  };
+
+  const getRequestIcon = (request) => {
+    if (request.connection_type === 'individual_lawfirm') return '⚖️';
+    if (request.connection_type === 'individual_medical_provider') return '🏥';
+    if (request.connection_type === 'lawfirm_medical_provider') return '🤝';
+    return '🔗';
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'pending': return { text: 'Pending', color: '#f39c12', bg: '#fff8e1' };
+      case 'accepted': return { text: 'Accepted', color: '#27ae60', bg: '#e8f5e9' };
+      case 'declined': return { text: 'Declined', color: '#e74c3c', bg: '#fce4ec' };
+      case 'cancelled': return { text: 'Cancelled', color: '#95a5a6', bg: '#f5f5f5' };
+      default: return { text: status, color: '#666', bg: '#f5f5f5' };
+    }
+  };
+
+  const renderSectionTabs = () => (
+    <View style={styles.sectionTabs}>
+      <TouchableOpacity
+        style={[styles.sectionTab, activeSection === 'connections' && styles.sectionTabActive]}
+        onPress={() => setActiveSection('connections')}
+      >
+        <Text style={[styles.sectionTabText, activeSection === 'connections' && styles.sectionTabTextActive]}>
+          Connections
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.sectionTab, activeSection === 'requests' && styles.sectionTabActive]}
+        onPress={() => setActiveSection('requests')}
+      >
+        <Text style={[styles.sectionTabText, activeSection === 'requests' && styles.sectionTabTextActive]}>
+          Requests {pendingInbound.length > 0 ? `(${pendingInbound.length})` : ''}
+        </Text>
+        {pendingInbound.length > 0 && (
+          <View style={styles.requestBadge}>
+            <Text style={styles.requestBadgeText}>{pendingInbound.length}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderInboundRequests = () => {
+    if (pendingInbound.length === 0) {
+      return (
+        <View style={styles.emptyRequestsCard}>
+          <Text style={styles.emptyRequestsIcon}>📭</Text>
+          <Text style={styles.emptyRequestsText}>No pending requests</Text>
+          <Text style={styles.emptyRequestsHint}>When someone sends you a connection request, it will appear here</Text>
+        </View>
+      );
+    }
+
+    return pendingInbound.map((request) => {
+      const badge = getStatusBadge(request.status);
+      return (
+        <View key={request.id} style={styles.requestCard}>
+          <View style={styles.requestCardHeader}>
+            <Text style={styles.requestIcon}>{getRequestIcon(request)}</Text>
+            <View style={styles.requestInfo}>
+              <Text style={styles.requestName}>{request.requester_name || 'Unknown'}</Text>
+              <Text style={styles.requestType}>{getRequestTypeLabel(request)}</Text>
+              <Text style={styles.requestDate}>
+                {new Date(request.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: badge.color }]}>{badge.text}</Text>
+            </View>
+          </View>
+          {request.status === 'pending' && (
+            <View style={styles.requestActions}>
+              <TouchableOpacity
+                style={styles.acceptButton}
+                onPress={() => handleAcceptRequest(request.id)}
+                disabled={saving}
+              >
+                <Text style={styles.acceptButtonText}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.declineButton}
+                onPress={() => {
+                  alert(
+                    'Decline Request',
+                    `Are you sure you want to decline the connection request from ${request.requester_name || 'this user'}?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Decline', style: 'destructive', onPress: () => handleDeclineRequest(request.id) }
+                    ]
+                  );
+                }}
+                disabled={saving}
+              >
+                <Text style={styles.declineButtonText}>Decline</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      );
+    });
+  };
+
+  const renderOutboundRequests = () => {
+    if (pendingOutbound.length === 0) {
+      return (
+        <View style={styles.emptyRequestsCard}>
+          <Text style={styles.emptyRequestsIcon}>📤</Text>
+          <Text style={styles.emptyRequestsText}>No pending sent requests</Text>
+          <Text style={styles.emptyRequestsHint}>Requests you've sent that are awaiting approval will appear here</Text>
+        </View>
+      );
+    }
+
+    return pendingOutbound.map((request) => {
+      const badge = getStatusBadge(request.status);
+      return (
+        <View key={request.id} style={styles.requestCard}>
+          <View style={styles.requestCardHeader}>
+            <Text style={styles.requestIcon}>{getRequestIcon(request)}</Text>
+            <View style={styles.requestInfo}>
+              <Text style={styles.requestName}>{request.recipient_name || 'Unknown'}</Text>
+              <Text style={styles.requestType}>{getRequestTypeLabel(request)}</Text>
+              <Text style={styles.requestDate}>
+                Sent {new Date(request.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+              <Text style={[styles.statusBadgeText, { color: badge.color }]}>{badge.text}</Text>
+            </View>
+          </View>
+          {request.status === 'pending' && (
+            <View style={styles.requestActions}>
+              <TouchableOpacity
+                style={styles.cancelRequestButton}
+                onPress={() => {
+                  alert(
+                    'Cancel Request',
+                    `Are you sure you want to cancel your connection request to ${request.recipient_name || 'this entity'}?`,
+                    [
+                      { text: 'Keep', style: 'cancel' },
+                      { text: 'Cancel Request', style: 'destructive', onPress: () => handleCancelRequest(request.id) }
+                    ]
+                  );
+                }}
+                disabled={saving}
+              >
+                <Text style={styles.cancelRequestButtonText}>Cancel Request</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      );
+    });
+  };
+
+  const renderRequestsSection = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={true}
+      bounces={false}
+    >
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📥 Incoming Requests</Text>
+        {renderInboundRequests()}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>📤 Sent Requests</Text>
+        {renderOutboundRequests()}
+      </View>
+    </ScrollView>
+  );
+
   const renderEmptyState = () => (
     <View style={styles.emptyStateContainer}>
       <Text style={styles.emptyStateIcon}>🔗</Text>
@@ -222,24 +512,33 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         </View>
         <View style={styles.stepItem}>
           <View style={styles.stepNumber}><Text style={styles.stepNumberText}>2</Text></View>
-          <Text style={styles.stepText}>Enter the code below to create a secure connection</Text>
+          <Text style={styles.stepText}>Enter the code below to send a connection request</Text>
         </View>
         <View style={styles.stepItem}>
           <View style={styles.stepNumber}><Text style={styles.stepNumberText}>3</Text></View>
           <Text style={styles.stepText}>
             {isLawFirm
-              ? 'Access shared medical records and billing information'
-              : 'Start sharing documents and tracking your case together'}
+              ? 'Once approved, access shared medical records and billing information'
+              : 'Once approved, start sharing documents and tracking your case together'}
           </Text>
         </View>
       </View>
 
       <TouchableOpacity 
         style={styles.getStartedButton}
-        onPress={() => setShowAddForm(true)}
+        onPress={() => { setShowAddForm(true); setActiveSection('connections'); }}
       >
-        <Text style={styles.getStartedButtonText}>Add a Connection</Text>
+        <Text style={styles.getStartedButtonText}>Send a Connection Request</Text>
       </TouchableOpacity>
+
+      {pendingInbound.length > 0 && (
+        <TouchableOpacity 
+          style={[styles.getStartedButton, { marginTop: 12, backgroundColor: theme.colors.warmGold }]}
+          onPress={() => setActiveSection('requests')}
+        >
+          <Text style={styles.getStartedButtonText}>View Pending Requests ({pendingInbound.length})</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -252,8 +551,8 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
     >
       <Text style={styles.description}>
         {isLawFirm 
-          ? 'Manage your medical provider connections to access client medical records and billing information.'
-          : 'Connect with your law firm and medical provider to share your case information securely.'
+          ? 'Send connection requests to medical providers to collaborate on client cases. They will need to approve the request.'
+          : 'Send connection requests to your law firm and medical providers. They will need to approve the request before the connection is established.'
         }
       </Text>
 
@@ -290,32 +589,34 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           <View style={styles.emptyConnectionCard}>
             <Text style={styles.emptyConnectionIcon}>⚖️</Text>
             <Text style={styles.emptyConnectionText}>No law firm connected</Text>
-            <Text style={styles.emptyConnectionHint}>Enter your law firm's code below to connect</Text>
+            <Text style={styles.emptyConnectionHint}>Enter your law firm's code below to send a connection request</Text>
           </View>
         )}
         
-        <TextInput
-          style={styles.input}
-          placeholder="Enter law firm code"
-          value={lawFirmCode}
-          onChangeText={(text) => setLawFirmCode(text.toUpperCase())}
-          autoCapitalize="characters"
-          maxLength={20}
-        />
-        
-        <TouchableOpacity 
-          style={[styles.updateButton, saving && styles.updateButtonDisabled]}
-          onPress={handleUpdateLawFirm}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.updateButtonText}>
-              {currentConnections?.lawFirm ? 'Change Law Firm' : 'Connect Law Firm'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        {!currentConnections?.lawFirm && (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter law firm code"
+              value={lawFirmCode}
+              onChangeText={(text) => setLawFirmCode(text.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={20}
+            />
+            
+            <TouchableOpacity 
+              style={[styles.updateButton, saving && styles.updateButtonDisabled]}
+              onPress={handleUpdateLawFirm}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.updateButtonText}>Send Connection Request</Text>
+              )}
+            </TouchableOpacity>
+          </>
+        )}
       </View>
       )}
 
@@ -332,7 +633,16 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
                 </View>
                 <TouchableOpacity 
                   style={styles.removeButton}
-                  onPress={() => handleRemoveMedicalProvider(provider.id)}
+                  onPress={() => {
+                    alert(
+                      'Remove Provider',
+                      `Are you sure you want to disconnect from ${provider.provider_name || provider.email}?`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Remove', style: 'destructive', onPress: () => handleRemoveMedicalProvider(provider.id) }
+                      ]
+                    );
+                  }}
                   disabled={saving}
                 >
                   <Text style={styles.removeButtonText}>Remove</Text>
@@ -344,7 +654,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           <View style={styles.emptyConnectionCard}>
             <Text style={styles.emptyConnectionIcon}>🏥</Text>
             <Text style={styles.emptyConnectionText}>No medical providers connected</Text>
-            <Text style={styles.emptyConnectionHint}>Enter a provider's code below to connect</Text>
+            <Text style={styles.emptyConnectionHint}>Enter a provider's code below to send a connection request</Text>
           </View>
         )}
         
@@ -366,7 +676,7 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.addButtonText}>Add Medical Provider</Text>
+            <Text style={styles.addButtonText}>Send Connection Request</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -375,9 +685,8 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
         <Text style={styles.infoIcon}>ℹ️</Text>
         <Text style={styles.infoText}>
           {isLawFirm
-            ? 'Connect with medical providers using their connection codes. This allows you to access client medical records and negotiate bills directly.'
-            : 'You can connect with ONE law firm and MULTIPLE medical providers. Ask them for their connection codes to share medical records and case information securely.'
-          }
+            ? 'Send connection requests to medical providers using their connection codes. They must approve the request before the connection is established.'
+            : 'Send connection requests using connection codes. You can connect with ONE law firm and MULTIPLE medical providers. Each connection must be approved by the recipient.'}
         </Text>
       </View>
     </ScrollView>
@@ -416,11 +725,15 @@ const ConnectionsModal = ({ visible, onClose, user, onConnectionsUpdated, userTy
             </TouchableOpacity>
           </View>
 
+          {renderSectionTabs()}
+
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={theme.colors.mahogany} />
               <Text style={styles.loadingText}>Loading your connections...</Text>
             </View>
+          ) : activeSection === 'requests' ? (
+            renderRequestsSection()
           ) : hasNoConnections && !showAddForm ? (
             renderEmptyState()
           ) : (
@@ -474,6 +787,48 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 24,
     color: '#fff',
+    fontWeight: 'bold',
+  },
+  sectionTabs: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.lightCream,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.secondary,
+  },
+  sectionTab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  sectionTabActive: {
+    borderBottomColor: theme.colors.mahogany,
+    backgroundColor: '#fff',
+  },
+  sectionTabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.textSecondary,
+  },
+  sectionTabTextActive: {
+    color: theme.colors.mahogany,
+  },
+  requestBadge: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 6,
+    paddingHorizontal: 6,
+  },
+  requestBadgeText: {
+    color: '#fff',
+    fontSize: 11,
     fontWeight: 'bold',
   },
   loadingContainer: {
@@ -636,12 +991,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.textSecondary,
   },
-  notConnected: {
-    fontSize: 14,
-    color: theme.colors.warmGray,
-    fontStyle: 'italic',
-    marginBottom: 12,
-  },
   input: {
     backgroundColor: '#fff',
     borderWidth: 2,
@@ -761,6 +1110,125 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: theme.colors.textSecondary,
     lineHeight: 18,
+  },
+  requestCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  requestCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  requestIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.navy,
+    marginBottom: 2,
+  },
+  requestType: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+  },
+  requestDate: {
+    fontSize: 12,
+    color: theme.colors.warmGray || '#999',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  requestActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: '#27ae60',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  acceptButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  declineButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e74c3c',
+  },
+  declineButtonText: {
+    color: '#e74c3c',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cancelRequestButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#95a5a6',
+  },
+  cancelRequestButtonText: {
+    color: '#95a5a6',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  emptyRequestsCard: {
+    backgroundColor: theme.colors.cream,
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.secondary,
+    borderStyle: 'dashed',
+    marginBottom: 10,
+  },
+  emptyRequestsIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+    opacity: 0.5,
+  },
+  emptyRequestsText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.colors.navy,
+    marginBottom: 4,
+  },
+  emptyRequestsHint: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
   },
 });
 

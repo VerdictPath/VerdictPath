@@ -82,6 +82,20 @@ export const API_ENDPOINTS = {
     REMOVE_LAW_FIRM: `${API_BASE_URL}/api/connections/remove-law-firm`,
   },
 
+  CONNECTIONS: {
+    MY_CONNECTIONS: `${API_BASE_URL}/api/connections/my-connections`,
+    UPDATE_LAWFIRM: `${API_BASE_URL}/api/connections/update-lawfirm`,
+    ADD_MEDICAL_PROVIDER: `${API_BASE_URL}/api/connections/add-medical-provider`,
+    DISCONNECT_LAWFIRM: `${API_BASE_URL}/api/connections/disconnect-lawfirm`,
+    REMOVE_MEDICAL_PROVIDER: `${API_BASE_URL}/api/connections/remove-medical-provider`,
+    ADD_LAWFIRM_MEDICAL_PROVIDER: `${API_BASE_URL}/api/connections/add-medical-provider-lawfirm`,
+    REMOVE_LAWFIRM_MEDICAL_PROVIDER: `${API_BASE_URL}/api/connections/remove-medical-provider-lawfirm`,
+    REQUESTS: `${API_BASE_URL}/api/connections/requests`,
+    ACCEPT_REQUEST: (requestId) => `${API_BASE_URL}/api/connections/requests/${requestId}/accept`,
+    DECLINE_REQUEST: (requestId) => `${API_BASE_URL}/api/connections/requests/${requestId}/decline`,
+    CANCEL_REQUEST: (requestId) => `${API_BASE_URL}/api/connections/requests/${requestId}/cancel`,
+  },
+
   // Invites & Referrals
   INVITES: {
     MY_CODE: `${API_BASE_URL}/api/invites/my-code`,

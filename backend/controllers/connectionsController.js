@@ -118,10 +118,13 @@ const updateLawFirm = async (req, res) => {
     const lawFirm = lawFirmResult.rows[0];
 
     const userResult = await db.query(
-      'SELECT law_firm_code FROM users WHERE id = $1',
+      'SELECT law_firm_code, first_name, last_name FROM users WHERE id = $1',
       [userId]
     );
     const currentLawFirmCode = userResult.rows[0]?.law_firm_code;
+    const requesterName = userResult.rows[0] 
+      ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}` 
+      : 'Unknown User';
 
     if (currentLawFirmCode && currentLawFirmCode === trimmedCode) {
       return res.json({
@@ -154,80 +157,58 @@ const updateLawFirm = async (req, res) => {
       return res.status(403).json({ error: errorMessage });
     }
 
-    if (currentLawFirmCode) {
-      const oldLawFirmResult = await db.query(
-        'SELECT id FROM law_firms WHERE firm_code = $1',
-        [currentLawFirmCode]
-      );
-      
-      if (oldLawFirmResult.rows.length > 0) {
-        const oldLawFirmId = oldLawFirmResult.rows[0].id;
-        await db.query(
-          'DELETE FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
-          [oldLawFirmId, userId]
-        );
-        await revokeConsentRecords(userId, 'lawfirm', oldLawFirmId);
-      }
+    const existingPendingRequest = await db.query(
+      `SELECT id FROM connection_requests 
+       WHERE status = 'pending' AND connection_type = 'individual_lawfirm'
+       AND ((requester_id = $1 AND requester_type = 'individual' AND recipient_id = $2 AND recipient_type = 'lawfirm')
+         OR (requester_id = $2 AND requester_type = 'lawfirm' AND recipient_id = $1 AND recipient_type = 'individual'))`,
+      [userId, lawFirm.id]
+    );
+
+    if (existingPendingRequest.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'A pending connection request already exists between you and this law firm.'
+      });
     }
 
+    const requestResult = await db.query(
+      `INSERT INTO connection_requests (requester_id, requester_type, requester_name, recipient_id, recipient_type, recipient_name, connection_type, status, created_at, updated_at)
+       VALUES ($1, 'individual', $2, $3, 'lawfirm', $4, 'individual_lawfirm', 'pending', NOW(), NOW())
+       RETURNING id`,
+      [userId, requesterName, lawFirm.id, lawFirm.firm_name]
+    );
+
     await db.query(
-      `UPDATE users
-      SET law_firm_code = $1
-      WHERE id = $2`,
-      [trimmedCode, userId]
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, 'lawfirm', $2, 'individual', $3, 'connection_request', 'New Connection Request', $4, 'unread', $5)`,
+      [
+        lawFirm.id,
+        userId,
+        requesterName,
+        `${requesterName} is requesting to connect with your law firm.`,
+        JSON.stringify({ screen: 'connection-requests', requestId: requestResult.rows[0].id })
+      ]
     );
 
-    const clientResult = await db.query(
-      `SELECT id FROM law_firm_clients
-      WHERE law_firm_id = $1 AND client_id = $2`,
-      [lawFirm.id, userId]
-    );
-
-    if (clientResult.rows.length === 0) {
-      await db.query(
-        `INSERT INTO law_firm_clients (law_firm_id, client_id, registered_date)
-        VALUES ($1, $2, NOW())`,
-        [lawFirm.id, userId]
-      );
-
-      await createConsentRecords(userId, 'lawfirm', lawFirm.id, req.ip);
-
-      // Send email notification to law firm about new client connection (non-blocking)
-      if (lawFirm.email) {
-        try {
-          const clientResult = await db.query(
-            'SELECT first_name, last_name FROM users WHERE id = $1',
-            [userId]
-          );
-          const clientName = clientResult.rows[0] 
-            ? `${clientResult.rows[0].first_name} ${clientResult.rows[0].last_name}` 
-            : 'New Client';
-          
-          sendConnectionRequestEmail(
-            lawFirm.email,
-            lawFirm.firm_name || 'Law Firm',
-            clientName,
-            'client',
-            'accepted'
-          ).catch(err => console.error('Error sending connection notification email:', err));
-        } catch (emailError) {
-          console.error('Error preparing connection email:', emailError);
-        }
-      }
+    if (lawFirm.email) {
+      sendConnectionRequestEmail(
+        lawFirm.email,
+        lawFirm.firm_name || 'Law Firm',
+        requesterName,
+        'client',
+        'pending'
+      ).catch(err => console.error('Error sending connection request email:', err));
     }
 
     res.json({
       success: true,
-      message: `Ahoy! Successfully charted course with ${lawFirm.firm_name || lawFirm.email}!`,
-      lawFirm: {
-        id: lawFirm.id,
-        email: lawFirm.email,
-        firm_name: lawFirm.firm_name
-      }
+      message: 'Connection request sent! Awaiting approval.',
+      requestId: requestResult.rows[0].id
     });
   } catch (error) {
     console.error('Error updating law firm connection:', error);
-    res.status(500).json({ error: 'Failed to update law firm connection' });
+    res.status(500).json({ error: 'Failed to send connection request' });
   }
 };
 
@@ -295,50 +276,66 @@ const addMedicalProvider = async (req, res) => {
       }
     }
 
-    await db.query(
-      `INSERT INTO medical_provider_patients (medical_provider_id, patient_id, registered_date)
-      VALUES ($1, $2, NOW())`,
-      [provider.id, userId]
+    const existingPendingRequest = await db.query(
+      `SELECT id FROM connection_requests 
+       WHERE status = 'pending' AND connection_type = 'individual_medical_provider'
+       AND ((requester_id = $1 AND requester_type = 'individual' AND recipient_id = $2 AND recipient_type = 'medical_provider')
+         OR (requester_id = $2 AND requester_type = 'medical_provider' AND recipient_id = $1 AND recipient_type = 'individual'))`,
+      [userId, provider.id]
     );
 
-    await createConsentRecords(userId, 'medical_provider', provider.id, req.ip);
+    if (existingPendingRequest.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'A pending connection request already exists between you and this medical provider.'
+      });
+    }
 
-    // Send email notification to medical provider about new patient connection (non-blocking)
+    const userResult = await db.query(
+      'SELECT first_name, last_name FROM users WHERE id = $1',
+      [userId]
+    );
+    const requesterName = userResult.rows[0] 
+      ? `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}` 
+      : 'Unknown User';
+
+    const requestResult = await db.query(
+      `INSERT INTO connection_requests (requester_id, requester_type, requester_name, recipient_id, recipient_type, recipient_name, connection_type, status, created_at, updated_at)
+       VALUES ($1, 'individual', $2, $3, 'medical_provider', $4, 'individual_medical_provider', 'pending', NOW(), NOW())
+       RETURNING id`,
+      [userId, requesterName, provider.id, provider.provider_name]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, 'medical_provider', $2, 'individual', $3, 'connection_request', 'New Connection Request', $4, 'unread', $5)`,
+      [
+        provider.id,
+        userId,
+        requesterName,
+        `${requesterName} is requesting to connect as a patient.`,
+        JSON.stringify({ screen: 'connection-requests', requestId: requestResult.rows[0].id })
+      ]
+    );
+
     if (provider.email) {
-      try {
-        const patientResult = await db.query(
-          'SELECT first_name, last_name FROM users WHERE id = $1',
-          [userId]
-        );
-        const patientName = patientResult.rows[0] 
-          ? `${patientResult.rows[0].first_name} ${patientResult.rows[0].last_name}` 
-          : 'New Patient';
-        
-        sendConnectionRequestEmail(
-          provider.email,
-          provider.provider_name || 'Medical Provider',
-          patientName,
-          'patient',
-          'accepted'
-        ).catch(err => console.error('Error sending provider connection email:', err));
-      } catch (emailError) {
-        console.error('Error preparing provider connection email:', emailError);
-      }
+      sendConnectionRequestEmail(
+        provider.email,
+        provider.provider_name || 'Medical Provider',
+        requesterName,
+        'patient',
+        'pending'
+      ).catch(err => console.error('Error sending provider connection request email:', err));
     }
 
     res.json({
       success: true,
-      message: `Ahoy! Successfully added ${provider.provider_name || provider.email} to your medical team!`,
-      medicalProvider: {
-        id: provider.id,
-        email: provider.email,
-        provider_name: provider.provider_name,
-        provider_code: provider.provider_code
-      }
+      message: 'Connection request sent! Awaiting approval.',
+      requestId: requestResult.rows[0].id
     });
   } catch (error) {
     console.error('Error adding medical provider connection:', error);
-    res.status(500).json({ error: 'Failed to add medical provider connection' });
+    res.status(500).json({ error: 'Failed to send connection request' });
   }
 };
 
@@ -445,7 +442,6 @@ const removeMedicalProvider = async (req, res) => {
   }
 };
 
-// Medical Provider - Get Connected Law Firms
 const getMedicalProviderLawFirms = async (req, res) => {
   try {
     const providerId = req.user.id;
@@ -486,7 +482,6 @@ const getMedicalProviderLawFirms = async (req, res) => {
   }
 };
 
-// Medical Provider - Add Law Firm Connection
 const addLawFirmConnection = async (req, res) => {
   try {
     const providerId = req.user.id;
@@ -518,7 +513,6 @@ const addLawFirmConnection = async (req, res) => {
 
     const lawFirm = lawFirmResult.rows[0];
 
-    // Check if already connected
     const existingConnection = await db.query(
       `SELECT id FROM medical_provider_law_firms
       WHERE medical_provider_id = $1 AND law_firm_id = $2 AND connection_status = 'active'`,
@@ -533,25 +527,57 @@ const addLawFirmConnection = async (req, res) => {
       });
     }
 
-    // Create new connection
-    await db.query(
-      `INSERT INTO medical_provider_law_firms (medical_provider_id, law_firm_id, connection_status, connected_date, created_at, updated_at)
-      VALUES ($1, $2, 'active', NOW(), NOW(), NOW())`,
+    const existingPendingRequest = await db.query(
+      `SELECT id FROM connection_requests 
+       WHERE status = 'pending' AND connection_type = 'lawfirm_medical_provider'
+       AND ((requester_id = $1 AND requester_type = 'medical_provider' AND recipient_id = $2 AND recipient_type = 'lawfirm')
+         OR (requester_id = $2 AND requester_type = 'lawfirm' AND recipient_id = $1 AND recipient_type = 'medical_provider'))`,
       [providerId, lawFirm.id]
+    );
+
+    if (existingPendingRequest.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'A pending connection request already exists between you and this law firm.'
+      });
+    }
+
+    const providerResult = await db.query(
+      'SELECT provider_name FROM medical_providers WHERE id = $1',
+      [providerId]
+    );
+    const requesterName = providerResult.rows[0]?.provider_name || 'Medical Provider';
+
+    const requestResult = await db.query(
+      `INSERT INTO connection_requests (requester_id, requester_type, requester_name, recipient_id, recipient_type, recipient_name, connection_type, status, created_at, updated_at)
+       VALUES ($1, 'medical_provider', $2, $3, 'lawfirm', $4, 'lawfirm_medical_provider', 'pending', NOW(), NOW())
+       RETURNING id`,
+      [providerId, requesterName, lawFirm.id, lawFirm.firm_name]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, 'lawfirm', $2, 'medical_provider', $3, 'connection_request', 'New Connection Request', $4, 'unread', $5)`,
+      [
+        lawFirm.id,
+        providerId,
+        requesterName,
+        `${requesterName} is requesting to connect with your law firm.`,
+        JSON.stringify({ screen: 'connection-requests', requestId: requestResult.rows[0].id })
+      ]
     );
 
     res.json({
       success: true,
-      message: `Successfully connected with ${lawFirm.firm_name || lawFirm.email}!`,
-      lawFirm: lawFirm
+      message: 'Connection request sent! Awaiting approval.',
+      requestId: requestResult.rows[0].id
     });
   } catch (error) {
     console.error('Error adding law firm connection:', error);
-    res.status(500).json({ error: 'Failed to add law firm connection' });
+    res.status(500).json({ error: 'Failed to send connection request' });
   }
 };
 
-// Medical Provider - Remove Law Firm Connection
 const removeLawFirmConnection = async (req, res) => {
   try {
     const providerId = req.user.id;
@@ -582,7 +608,6 @@ const removeLawFirmConnection = async (req, res) => {
       });
     }
 
-    // Mark as disconnected instead of deleting (preserve history)
     await db.query(
       `UPDATE medical_provider_law_firms
       SET connection_status = 'disconnected',
@@ -602,7 +627,6 @@ const removeLawFirmConnection = async (req, res) => {
   }
 };
 
-// Law Firm - Get Connected Medical Providers
 const getLawFirmMedicalProviders = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
@@ -643,7 +667,6 @@ const getLawFirmMedicalProviders = async (req, res) => {
   }
 };
 
-// Law Firm - Add Medical Provider Connection
 const addMedicalProviderConnection = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
@@ -675,7 +698,6 @@ const addMedicalProviderConnection = async (req, res) => {
 
     const provider = providerResult.rows[0];
 
-    // Check if already connected
     const existingConnection = await db.query(
       `SELECT id FROM medical_provider_law_firms
       WHERE law_firm_id = $1 AND medical_provider_id = $2 AND connection_status = 'active'`,
@@ -690,25 +712,57 @@ const addMedicalProviderConnection = async (req, res) => {
       });
     }
 
-    // Create new connection
-    await db.query(
-      `INSERT INTO medical_provider_law_firms (law_firm_id, medical_provider_id, connection_status, connected_date, created_at, updated_at)
-      VALUES ($1, $2, 'active', NOW(), NOW(), NOW())`,
+    const existingPendingRequest = await db.query(
+      `SELECT id FROM connection_requests 
+       WHERE status = 'pending' AND connection_type = 'lawfirm_medical_provider'
+       AND ((requester_id = $1 AND requester_type = 'lawfirm' AND recipient_id = $2 AND recipient_type = 'medical_provider')
+         OR (requester_id = $2 AND requester_type = 'medical_provider' AND recipient_id = $1 AND recipient_type = 'lawfirm'))`,
       [lawFirmId, provider.id]
+    );
+
+    if (existingPendingRequest.rows.length > 0) {
+      return res.json({
+        success: true,
+        message: 'A pending connection request already exists between you and this medical provider.'
+      });
+    }
+
+    const lawFirmResult = await db.query(
+      'SELECT firm_name FROM law_firms WHERE id = $1',
+      [lawFirmId]
+    );
+    const requesterName = lawFirmResult.rows[0]?.firm_name || 'Law Firm';
+
+    const requestResult = await db.query(
+      `INSERT INTO connection_requests (requester_id, requester_type, requester_name, recipient_id, recipient_type, recipient_name, connection_type, status, created_at, updated_at)
+       VALUES ($1, 'lawfirm', $2, $3, 'medical_provider', $4, 'lawfirm_medical_provider', 'pending', NOW(), NOW())
+       RETURNING id`,
+      [lawFirmId, requesterName, provider.id, provider.provider_name]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, 'medical_provider', $2, 'lawfirm', $3, 'connection_request', 'New Connection Request', $4, 'unread', $5)`,
+      [
+        provider.id,
+        lawFirmId,
+        requesterName,
+        `${requesterName} is requesting to connect with your practice.`,
+        JSON.stringify({ screen: 'connection-requests', requestId: requestResult.rows[0].id })
+      ]
     );
 
     res.json({
       success: true,
-      message: `Successfully connected with ${provider.provider_name || provider.email}!`,
-      medicalProvider: provider
+      message: 'Connection request sent! Awaiting approval.',
+      requestId: requestResult.rows[0].id
     });
   } catch (error) {
     console.error('Error adding medical provider connection:', error);
-    res.status(500).json({ error: 'Failed to add medical provider connection' });
+    res.status(500).json({ error: 'Failed to send connection request' });
   }
 };
 
-// Law Firm - Remove Medical Provider Connection
 const removeMedicalProviderConnection = async (req, res) => {
   try {
     const lawFirmId = req.user.id;
@@ -739,7 +793,6 @@ const removeMedicalProviderConnection = async (req, res) => {
       });
     }
 
-    // Mark as disconnected instead of deleting (preserve history)
     await db.query(
       `UPDATE medical_provider_law_firms
       SET connection_status = 'disconnected',
@@ -759,6 +812,312 @@ const removeMedicalProviderConnection = async (req, res) => {
   }
 };
 
+const getConnectionRequests = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let userType = req.user.userType;
+    const type = req.query.type || 'all';
+
+    if (userType === 'client') {
+      userType = 'individual';
+    }
+
+    let query;
+    let params;
+
+    if (type === 'inbound') {
+      query = `SELECT * FROM connection_requests 
+               WHERE recipient_id = $1 AND recipient_type = $2 
+               AND (status = 'pending' OR (status IN ('accepted', 'declined') AND created_at >= NOW() - INTERVAL '30 days'))
+               ORDER BY created_at DESC`;
+      params = [userId, userType];
+    } else if (type === 'outbound') {
+      query = `SELECT * FROM connection_requests 
+               WHERE requester_id = $1 AND requester_type = $2 
+               AND (status = 'pending' OR (status IN ('accepted', 'declined') AND created_at >= NOW() - INTERVAL '30 days'))
+               ORDER BY created_at DESC`;
+      params = [userId, userType];
+    } else {
+      query = `SELECT * FROM connection_requests 
+               WHERE (recipient_id = $1 AND recipient_type = $2) OR (requester_id = $1 AND requester_type = $2)
+               AND (status = 'pending' OR (status IN ('accepted', 'declined') AND created_at >= NOW() - INTERVAL '30 days'))
+               ORDER BY created_at DESC`;
+      params = [userId, userType];
+    }
+
+    const result = await db.query(query, params);
+
+    res.json({
+      success: true,
+      requests: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching connection requests:', error);
+    res.status(500).json({ error: 'Failed to fetch connection requests' });
+  }
+};
+
+const acceptConnectionRequest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let userType = req.user.userType;
+    const { requestId } = req.params;
+
+    if (userType === 'client') {
+      userType = 'individual';
+    }
+
+    const requestResult = await db.query(
+      'SELECT * FROM connection_requests WHERE id = $1',
+      [requestId]
+    );
+
+    if (requestResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Connection request not found' });
+    }
+
+    const request = requestResult.rows[0];
+
+    if (request.recipient_id !== userId || request.recipient_type !== userType) {
+      return res.status(403).json({ error: 'You are not authorized to accept this request' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: `This request has already been ${request.status}` });
+    }
+
+    if (request.connection_type === 'individual_lawfirm') {
+      const lawFirmResult = await db.query(
+        'SELECT id, subscription_tier, firm_size, firm_code, firm_name, email FROM law_firms WHERE id = $1',
+        [request.recipient_id]
+      );
+      const lawFirm = lawFirmResult.rows[0];
+
+      const clientCountResult = await db.query(
+        'SELECT COUNT(*) as count FROM law_firm_clients WHERE law_firm_id = $1',
+        [lawFirm.id]
+      );
+      const clientCount = parseInt(clientCountResult.rows[0].count);
+      const limitCheck = checkLawFirmLimit(clientCount, lawFirm.subscription_tier, lawFirm.firm_size);
+
+      if (!limitCheck.withinLimit) {
+        return res.status(403).json({ error: 'Client limit reached. Cannot accept this connection request.' });
+      }
+
+      const userResult = await db.query(
+        'SELECT law_firm_code FROM users WHERE id = $1',
+        [request.requester_id]
+      );
+      const currentLawFirmCode = userResult.rows[0]?.law_firm_code;
+
+      if (currentLawFirmCode) {
+        const oldLawFirmResult = await db.query(
+          'SELECT id FROM law_firms WHERE firm_code = $1',
+          [currentLawFirmCode]
+        );
+        if (oldLawFirmResult.rows.length > 0) {
+          const oldLawFirmId = oldLawFirmResult.rows[0].id;
+          await db.query(
+            'DELETE FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+            [oldLawFirmId, request.requester_id]
+          );
+          await revokeConsentRecords(request.requester_id, 'lawfirm', oldLawFirmId);
+        }
+      }
+
+      await db.query(
+        'UPDATE users SET law_firm_code = $1 WHERE id = $2',
+        [lawFirm.firm_code, request.requester_id]
+      );
+
+      const existingClient = await db.query(
+        'SELECT id FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
+        [lawFirm.id, request.requester_id]
+      );
+      if (existingClient.rows.length === 0) {
+        await db.query(
+          'INSERT INTO law_firm_clients (law_firm_id, client_id, registered_date) VALUES ($1, $2, NOW())',
+          [lawFirm.id, request.requester_id]
+        );
+      }
+
+      await createConsentRecords(request.requester_id, 'lawfirm', lawFirm.id, req.ip);
+
+    } else if (request.connection_type === 'individual_medical_provider') {
+      const existingPatient = await db.query(
+        'SELECT id FROM medical_provider_patients WHERE medical_provider_id = $1 AND patient_id = $2',
+        [request.recipient_id, request.requester_id]
+      );
+      if (existingPatient.rows.length === 0) {
+        await db.query(
+          'INSERT INTO medical_provider_patients (medical_provider_id, patient_id, registered_date) VALUES ($1, $2, NOW())',
+          [request.recipient_id, request.requester_id]
+        );
+      }
+
+      await createConsentRecords(request.requester_id, 'medical_provider', request.recipient_id, req.ip);
+
+    } else if (request.connection_type === 'lawfirm_medical_provider') {
+      let medProviderId, lawFirmId;
+      if (request.requester_type === 'medical_provider') {
+        medProviderId = request.requester_id;
+        lawFirmId = request.recipient_id;
+      } else {
+        medProviderId = request.recipient_id;
+        lawFirmId = request.requester_id;
+      }
+
+      const existingConn = await db.query(
+        `SELECT id FROM medical_provider_law_firms 
+         WHERE medical_provider_id = $1 AND law_firm_id = $2 AND connection_status = 'active'`,
+        [medProviderId, lawFirmId]
+      );
+      if (existingConn.rows.length === 0) {
+        await db.query(
+          `INSERT INTO medical_provider_law_firms (medical_provider_id, law_firm_id, connection_status, connected_date, created_at, updated_at)
+           VALUES ($1, $2, 'active', NOW(), NOW(), NOW())`,
+          [medProviderId, lawFirmId]
+        );
+      }
+    }
+
+    await db.query(
+      `UPDATE connection_requests SET status = 'accepted', responded_at = NOW(), updated_at = NOW() WHERE id = $1`,
+      [requestId]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, $2, $3, $4, $5, 'connection_request', 'Connection Request Accepted', $6, 'unread', $7)`,
+      [
+        request.requester_id,
+        request.requester_type,
+        userId,
+        userType,
+        request.recipient_name,
+        `Your connection request to ${request.recipient_name} has been accepted!`,
+        JSON.stringify({ screen: 'connection-requests', requestId: parseInt(requestId) })
+      ]
+    );
+
+    sendConnectionAcceptedEmail(
+      request.requester_id,
+      request.requester_type,
+      request.recipient_name
+    ).catch(err => console.error('Error sending connection accepted email:', err));
+
+    res.json({
+      success: true,
+      message: 'Connection request accepted!'
+    });
+  } catch (error) {
+    console.error('Error accepting connection request:', error);
+    res.status(500).json({ error: 'Failed to accept connection request' });
+  }
+};
+
+const declineConnectionRequest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let userType = req.user.userType;
+    const { requestId } = req.params;
+
+    if (userType === 'client') {
+      userType = 'individual';
+    }
+
+    const requestResult = await db.query(
+      'SELECT * FROM connection_requests WHERE id = $1',
+      [requestId]
+    );
+
+    if (requestResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Connection request not found' });
+    }
+
+    const request = requestResult.rows[0];
+
+    if (request.recipient_id !== userId || request.recipient_type !== userType) {
+      return res.status(403).json({ error: 'You are not authorized to decline this request' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: `This request has already been ${request.status}` });
+    }
+
+    await db.query(
+      `UPDATE connection_requests SET status = 'declined', responded_at = NOW(), updated_at = NOW() WHERE id = $1`,
+      [requestId]
+    );
+
+    await db.query(
+      `INSERT INTO notifications (recipient_id, recipient_type, sender_id, sender_type, sender_name, type, title, message, status, action_data)
+       VALUES ($1, $2, $3, $4, $5, 'connection_request', 'Connection Request Declined', $6, 'unread', $7)`,
+      [
+        request.requester_id,
+        request.requester_type,
+        userId,
+        userType,
+        request.recipient_name,
+        `Your connection request to ${request.recipient_name} has been declined.`,
+        JSON.stringify({ screen: 'connection-requests', requestId: parseInt(requestId) })
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: 'Connection request declined.'
+    });
+  } catch (error) {
+    console.error('Error declining connection request:', error);
+    res.status(500).json({ error: 'Failed to decline connection request' });
+  }
+};
+
+const cancelConnectionRequest = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let userType = req.user.userType;
+    const { requestId } = req.params;
+
+    if (userType === 'client') {
+      userType = 'individual';
+    }
+
+    const requestResult = await db.query(
+      'SELECT * FROM connection_requests WHERE id = $1',
+      [requestId]
+    );
+
+    if (requestResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Connection request not found' });
+    }
+
+    const request = requestResult.rows[0];
+
+    if (request.requester_id !== userId || request.requester_type !== userType) {
+      return res.status(403).json({ error: 'You are not authorized to cancel this request' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: 'Only pending requests can be cancelled' });
+    }
+
+    await db.query(
+      `UPDATE connection_requests SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+      [requestId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Connection request cancelled.'
+    });
+  } catch (error) {
+    console.error('Error cancelling connection request:', error);
+    res.status(500).json({ error: 'Failed to cancel connection request' });
+  }
+};
+
 module.exports = {
   getMyConnections,
   updateLawFirm,
@@ -770,5 +1129,9 @@ module.exports = {
   removeLawFirmConnection,
   getLawFirmMedicalProviders,
   addMedicalProviderConnection,
-  removeMedicalProviderConnection
+  removeMedicalProviderConnection,
+  getConnectionRequests,
+  acceptConnectionRequest,
+  declineConnectionRequest,
+  cancelConnectionRequest
 };
