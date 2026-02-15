@@ -717,7 +717,10 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         body: JSON.stringify({ disclaimer: disclaimerText }),
       });
       setDisclaimerSaved(true);
-      setTimeout(() => setDisclaimerSaved(false), 3000);
+      setTimeout(() => {
+        setShowDisclaimerModal(false);
+        setDisclaimerSaved(false);
+      }, 1500);
     } catch (error) {
       console.error('Error saving disclaimer:', error);
       setDisclaimerError(error.status === 401 ? 'Session expired. Please sign out and sign back in.' : 'Failed to save disclaimer. Please try again.');
@@ -778,13 +781,16 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       {view === 'list' && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+            style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
             onPress={openDisclaimerModal}
           >
             <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '500' }}>Disclaimer</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.createButton} onPress={handleOpenCreateModal}>
-            <Text style={styles.createButtonText}>+ New</Text>
+          <TouchableOpacity
+            style={{ paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+            onPress={handleOpenCreateModal}
+          >
+            <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '500' }}>+ New</Text>
           </TouchableOpacity>
         </View>
       )}
