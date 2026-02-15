@@ -69,6 +69,8 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [disclaimerText, setDisclaimerText] = useState('');
   const [disclaimerLoading, setDisclaimerLoading] = useState(false);
+  const [disclaimerError, setDisclaimerError] = useState('');
+  const [disclaimerSaved, setDisclaimerSaved] = useState(false);
 
   const [createForm, setCreateForm] = useState({
     clientId: '',
@@ -649,13 +651,20 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const loadDisclaimer = async () => {
     try {
       setDisclaimerLoading(true);
+      setDisclaimerError('');
+      const token = user?.token;
+      if (!token) {
+        setDisclaimerError('Session expired. Please sign out and sign back in.');
+        return;
+      }
       const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.DISCLAIMER, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${user.token}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
       setDisclaimerText(response.disclaimer || '');
     } catch (error) {
       console.error('Error loading disclaimer:', error);
+      setDisclaimerError(error.status === 401 ? 'Session expired. Please sign out and sign back in.' : 'Failed to load disclaimer. Please try again.');
     } finally {
       setDisclaimerLoading(false);
     }
@@ -664,22 +673,30 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const saveDisclaimer = async () => {
     try {
       setDisclaimerLoading(true);
+      setDisclaimerError('');
+      const token = user?.token;
+      if (!token) {
+        setDisclaimerError('Session expired. Please sign out and sign back in.');
+        return;
+      }
       await apiRequest(API_ENDPOINTS.SETTLEMENTS.DISCLAIMER, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${user.token}` },
+        headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ disclaimer: disclaimerText }),
       });
-      alert('Success', 'Disclaimer saved successfully. It will appear on all future settlement statements.');
-      setShowDisclaimerModal(false);
+      setDisclaimerSaved(true);
+      setTimeout(() => setDisclaimerSaved(false), 3000);
     } catch (error) {
       console.error('Error saving disclaimer:', error);
-      alert('Error', 'Failed to save disclaimer');
+      setDisclaimerError(error.status === 401 ? 'Session expired. Please sign out and sign back in.' : 'Failed to save disclaimer. Please try again.');
     } finally {
       setDisclaimerLoading(false);
     }
   };
 
   const openDisclaimerModal = () => {
+    setDisclaimerError('');
+    setDisclaimerSaved(false);
     loadDisclaimer();
     setShowDisclaimerModal(true);
   };
@@ -729,10 +746,10 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
       {view === 'list' && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity
-            style={{ padding: 8, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.15)' }}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
             onPress={openDisclaimerModal}
           >
-            <Text style={{ fontSize: 18 }}>📋</Text>
+            <Text style={{ color: '#FFF', fontSize: 13, fontWeight: '500' }}>Disclaimer</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.createButton} onPress={handleOpenCreateModal}>
             <Text style={styles.createButtonText}>+ New</Text>
@@ -1803,7 +1820,20 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             <Text style={{ color: '#6B7280', fontSize: 13, marginBottom: 12 }}>
               This disclaimer will appear on all settlement statements (emails, print, and detail views).
             </Text>
-            {disclaimerLoading ? (
+
+            {disclaimerError ? (
+              <View style={{ backgroundColor: '#FEE2E2', padding: 12, borderRadius: 8, marginBottom: 12 }}>
+                <Text style={{ color: '#DC2626', fontSize: 13 }}>{disclaimerError}</Text>
+              </View>
+            ) : null}
+
+            {disclaimerSaved ? (
+              <View style={{ backgroundColor: '#D1FAE5', padding: 12, borderRadius: 8, marginBottom: 12 }}>
+                <Text style={{ color: '#059669', fontSize: 13, fontWeight: '600' }}>Disclaimer saved successfully!</Text>
+              </View>
+            ) : null}
+
+            {disclaimerLoading && !disclaimerText ? (
               <ActivityIndicator size="large" color="#CA8A04" style={{ marginVertical: 20 }} />
             ) : (
               <TextInput
@@ -1820,10 +1850,10 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowDisclaimerModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Close</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+                style={[styles.modalButton, styles.submitButton, disclaimerLoading && { opacity: 0.6 }]}
                 onPress={saveDisclaimer}
                 disabled={disclaimerLoading}
               >
@@ -1835,9 +1865,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             {disclaimerText ? (
               <TouchableOpacity
                 style={{ marginTop: 10, alignSelf: 'center' }}
-                onPress={() => {
-                  setDisclaimerText('');
-                }}
+                onPress={() => setDisclaimerText('')}
               >
                 <Text style={{ color: '#DC2626', fontSize: 13 }}>Clear Disclaimer</Text>
               </TouchableOpacity>
