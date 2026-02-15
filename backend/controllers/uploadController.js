@@ -613,13 +613,22 @@ const uploadEvidence = async (req, res) => {
     const descriptionEncrypted = description ? encryptionService.encrypt(description) : null;
     const locationEncrypted = location ? encryptionService.encrypt(location) : null;
 
+    const AUTO_APPROVED_EVIDENCE_TYPES = ['pre-1', 'pre-2', 'pre-3', 'pre-4', 'pre-5'];
+    const evTypeNormalized = (evidenceType || '').trim();
+    const evidenceTypeLower = evTypeNormalized.toLowerCase();
+    const isAutoApproved = AUTO_APPROVED_EVIDENCE_TYPES.includes(evTypeNormalized) ||
+      evidenceTypeLower.includes('police') || evidenceTypeLower.includes('body cam') ||
+      evidenceTypeLower.includes('dash cam') || evidenceTypeLower.includes('picture') ||
+      evidenceTypeLower.includes('photo') || evidenceTypeLower.includes('health insurance') ||
+      evidenceTypeLower.includes('insurance card');
+
     const result = await pool.query(
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
         document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type,
-        uploaded_by, uploaded_by_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+        uploaded_by, uploaded_by_type, accessible_by_medical_provider) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) 
        RETURNING *`,
       [
         userId,
@@ -641,7 +650,8 @@ const uploadEvidence = async (req, res) => {
         uploadResult.etag,
         uploadResult.storageType,
         userId,
-        'individual'
+        'individual',
+        isAutoApproved
       ]
     );
 
@@ -1279,13 +1289,27 @@ const viewEvidenceDocument = async (req, res) => {
       const providerResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
       if (providerResult.rows.length > 0) {
         const providerId = providerResult.rows[0].id;
-        const docResult = await pool.query('SELECT user_id FROM evidence WHERE id = $1', [id]);
+        const docResult = await pool.query(
+          `SELECT id, file_name, mime_type, s3_key, storage_type, document_url, user_id, evidence_type, accessible_by_medical_provider 
+           FROM evidence WHERE id = $1`,
+          [id]
+        );
         if (docResult.rows.length > 0) {
           const patientId = docResult.rows[0].user_id;
-          const authResult = await documentAccessService.authorizeMedicalProviderDocumentAccess(providerId, patientId, 'evidence', id);
-          if (authResult.authorized) {
-            doc = authResult.document;
-            accessReason = `MEDICAL_PROVIDER_ACCESS_${authResult.consentType}`;
+          const isPatient = await documentAccessService.verifyMedicalProviderPatientRelationship(providerId, patientId);
+          if (isPatient) {
+            const AUTO_APPROVED_EV = ['pre-1', 'pre-2', 'pre-3', 'pre-4', 'pre-5'];
+            const evType = (docResult.rows[0].evidence_type || '').toLowerCase();
+            const isApproved = docResult.rows[0].accessible_by_medical_provider ||
+              AUTO_APPROVED_EV.includes(docResult.rows[0].evidence_type) ||
+              evType.includes('police') || evType.includes('body cam') ||
+              evType.includes('dash cam') || evType.includes('picture') ||
+              evType.includes('photo') || evType.includes('health insurance') ||
+              evType.includes('insurance card');
+            if (isApproved) {
+              doc = docResult.rows[0];
+              accessReason = 'MEDICAL_PROVIDER_APPROVED_EVIDENCE';
+            }
           }
         }
       }
@@ -1749,13 +1773,22 @@ const uploadEvidenceOnBehalf = async (req, res) => {
     const descriptionEncrypted = description ? encryptionService.encrypt(description) : null;
     const locationEncrypted = location ? encryptionService.encrypt(location) : null;
 
+    const AUTO_APPROVED_EVIDENCE_TYPES_OB = ['pre-1', 'pre-2', 'pre-3', 'pre-4', 'pre-5'];
+    const evTypeNormalizedOB = (evidenceType || '').trim();
+    const evTypeLower = evTypeNormalizedOB.toLowerCase();
+    const isAutoApprovedOB = AUTO_APPROVED_EVIDENCE_TYPES_OB.includes(evTypeNormalizedOB) ||
+      evTypeLower.includes('police') || evTypeLower.includes('body cam') ||
+      evTypeLower.includes('dash cam') || evTypeLower.includes('picture') ||
+      evTypeLower.includes('photo') || evTypeLower.includes('health insurance') ||
+      evTypeLower.includes('insurance card');
+
     const result = await pool.query(
       `INSERT INTO evidence 
        (user_id, evidence_type, title, description, date_of_incident, location,
         title_encrypted, description_encrypted, location_encrypted,
         document_url, file_name, file_size, mime_type, s3_bucket, s3_key, s3_region, s3_etag, storage_type,
-        uploaded_by, uploaded_by_type) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+        uploaded_by, uploaded_by_type, accessible_by_medical_provider) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) 
        RETURNING *`,
       [
         clientId,
@@ -1777,7 +1810,8 @@ const uploadEvidenceOnBehalf = async (req, res) => {
         uploadResult.etag,
         uploadResult.storageType,
         uploaderEntityId,
-        uploaderType === 'lawfirm' || uploaderType === 'law_firm' ? 'law_firm' : uploaderType
+        uploaderType === 'lawfirm' || uploaderType === 'law_firm' ? 'law_firm' : uploaderType,
+        isAutoApprovedOB
       ]
     );
 

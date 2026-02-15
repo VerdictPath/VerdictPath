@@ -337,20 +337,37 @@ exports.getPatientDetails = async (req, res) => {
       [patientId]
     );
     
-    // Get evidence documents - exclude law firm uploads entirely
+    const AUTO_APPROVED_EVIDENCE_TYPES = ['pre-1', 'pre-2', 'pre-3', 'pre-4', 'pre-5'];
     const evidenceResult = await db.query(
-      `SELECT id, file_name, mime_type, file_size, uploaded_at, evidence_type,
-              title, title_encrypted, description, description_encrypted, 
-              location, location_encrypted, date_of_incident,
-              uploaded_by, uploaded_by_type
-       FROM evidence
-       WHERE user_id = $1
+      `SELECT e.id, e.file_name, e.mime_type, e.file_size, e.uploaded_at, e.evidence_type,
+              e.title, e.title_encrypted, e.description, e.description_encrypted, 
+              e.location, e.location_encrypted, e.date_of_incident,
+              e.uploaded_by, e.uploaded_by_type, e.accessible_by_medical_provider,
+              CASE 
+                WHEN e.uploaded_by_type = 'law_firm' OR e.uploaded_by_type = 'lawfirm' THEN 
+                  (SELECT lf.firm_name FROM law_firms lf JOIN users u ON u.email = lf.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'medical_provider' THEN 
+                  (SELECT mp.provider_name FROM medical_providers mp JOIN users u ON u.email = mp.email WHERE u.id = e.uploaded_by LIMIT 1)
+                WHEN e.uploaded_by_type = 'individual' THEN 
+                  (SELECT CONCAT(u.first_name, ' ', u.last_name) FROM users u WHERE u.id = e.uploaded_by LIMIT 1)
+                ELSE NULL
+              END as uploaded_by_name
+       FROM evidence e
+       WHERE e.user_id = $1
+         AND (e.uploaded_by_type IS NULL OR e.uploaded_by_type NOT IN ('lawfirm', 'law_firm'))
          AND (
-           uploaded_by_type IS NULL 
-           OR uploaded_by_type NOT IN ('lawfirm', 'law_firm')
+           e.accessible_by_medical_provider = true
+           OR e.evidence_type = ANY($2)
+           OR LOWER(e.evidence_type) LIKE '%police%report%'
+           OR LOWER(e.evidence_type) LIKE '%body%cam%'
+           OR LOWER(e.evidence_type) LIKE '%dash%cam%'
+           OR LOWER(e.evidence_type) LIKE '%picture%'
+           OR LOWER(e.evidence_type) LIKE '%photo%'
+           OR LOWER(e.evidence_type) LIKE '%health%insurance%'
+           OR LOWER(e.evidence_type) LIKE '%insurance%card%'
          )
-       ORDER BY uploaded_at DESC`,
-      [patientId]
+       ORDER BY e.uploaded_at DESC`,
+      [patientId, AUTO_APPROVED_EVIDENCE_TYPES]
     );
     
     // HIPAA: Decrypt evidence PHI fields and sanitize response

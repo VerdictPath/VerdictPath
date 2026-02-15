@@ -879,25 +879,52 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     );
   };
 
+  const EVIDENCE_TYPE_LABELS = {
+    'pre-1': 'Police Report',
+    'pre-2': 'Body Cam Footage',
+    'pre-3': 'Dash Cam Footage',
+    'pre-4': 'Pictures',
+    'pre-5': 'Health Insurance Card',
+    'pre-6': 'Auto Insurance Company',
+    'pre-7': 'Auto Insurance Policy Number',
+    'pre-10': 'Demand Sent',
+    'pre-11': 'Demand Rejected',
+  };
+
+  const getEvidenceLabel = (evidenceType) => {
+    if (EVIDENCE_TYPE_LABELS[evidenceType]) return EVIDENCE_TYPE_LABELS[evidenceType];
+    if (evidenceType && !evidenceType.startsWith('pre-') && !evidenceType.startsWith('cf-') && !evidenceType.startsWith('disc-')) return evidenceType;
+    return evidenceType || 'Evidence';
+  };
+
   const renderEvidenceTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🗃️ Evidence Locker</Text>
+        <Text style={styles.sectionTitle}>🗃️ Approved Evidence</Text>
         
         {evidence.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🗃️</Text>
-            <Text style={styles.emptyText}>No evidence documents uploaded yet</Text>
+            <Text style={styles.emptyText}>No approved evidence available</Text>
             <Text style={styles.emptySubtext}>
-              Evidence documents will appear here when uploaded by the patient or their law firm
+              Auto-approved evidence (Police Reports, Body Cam, Dash Cam, Pictures, Health Insurance) will appear here automatically when uploaded by the patient.
             </Text>
           </View>
         ) : (
           evidence.map((item) => (
-            <View key={item.id} style={styles.documentCard}>
+            <TouchableOpacity
+              key={item.id}
+              style={styles.documentCard}
+              onPress={() => handleViewEvidence(item.id, item.file_name)}
+              disabled={viewingDocId === item.id}
+            >
               <View style={styles.documentHeader}>
-                <Text style={styles.documentTitle}>📎 {item.evidence_type || 'Evidence'}</Text>
-                <Text style={styles.documentBadge}>{item.file_name}</Text>
+                <Text style={styles.documentTitle}>📎 {getEvidenceLabel(item.evidence_type)}</Text>
+                {viewingDocId === item.id ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <Text style={styles.documentBadge}>{item.file_name}</Text>
+                )}
               </View>
               {item.title && (
                 <Text style={styles.documentDetail}>📝 {item.title}</Text>
@@ -917,7 +944,8 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                 Uploaded: {new Date(item.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(item.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                 {item.uploaded_by_name ? ` by ${item.uploaded_by_name}` : ''}
               </Text>
-            </View>
+              <Text style={styles.tapToView}>Tap to view</Text>
+            </TouchableOpacity>
           ))
         )}
       </View>
@@ -925,7 +953,7 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
       <View style={styles.infoSection}>
         <Text style={styles.infoIcon}>ℹ️</Text>
         <Text style={styles.infoText}>
-          Evidence documents are securely shared with proper consent and can be accessed by {patient?.displayName}'s law firm.
+          Only approved evidence types are visible: Police Reports, Body Cam, Dash Cam, Pictures, and Health Insurance. Other evidence requires patient approval.
         </Text>
       </View>
     </View>
