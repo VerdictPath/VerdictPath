@@ -209,15 +209,27 @@ router.post('/create-billing-portal', authenticateToken, async (req, res) => {
 
     const baseUrl = getBaseUrl();
     
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${baseUrl}/stripe/complete?type=billing`
-    });
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${baseUrl}/stripe/complete?type=billing`
+      });
 
-    res.json({
-      success: true,
-      url: session.url
-    });
+      res.json({
+        success: true,
+        url: session.url
+      });
+    } catch (stripeErr) {
+      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
+        console.log(`Stale Stripe customer ID ${customerId} for law firm ${lawFirmId} — clearing for billing portal`);
+        await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+        return res.status(400).json({ 
+          error: 'Your previous payment setup was invalid and has been cleared. Please set up your payment account again.',
+          cleared: true
+        });
+      }
+      throw stripeErr;
+    }
 
   } catch (error) {
     console.error('Error creating billing portal:', error);
@@ -471,28 +483,54 @@ router.get('/account-status', authenticateToken, async (req, res) => {
       }
 
       // Get customer and payment methods
-      const customer = await stripe.customers.retrieve(customerId);
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: 'card'
-      });
+      try {
+        const customer = await stripe.customers.retrieve(customerId);
+        
+        if (customer.deleted) {
+          await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+          return res.json({
+            hasAccount: false,
+            onboardingComplete: false,
+            isCustomer: true,
+            flow: 'customer'
+          });
+        }
 
-      const hasPaymentMethod = customer.invoice_settings?.default_payment_method || 
-                               paymentMethods.data.length > 0;
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: customerId,
+          type: 'card'
+        });
 
-      return res.json({
-        hasAccount: true,
-        onboardingComplete: hasPaymentMethod,
-        isCustomer: true,
-        flow: 'customer',
-        customerId: customerId,
-        hasPaymentMethod: hasPaymentMethod,
-        paymentMethods: paymentMethods.data.map(pm => ({
-          id: pm.id,
-          brand: pm.card.brand,
-          last4: pm.card.last4
-        }))
-      });
+        const hasPaymentMethod = customer.invoice_settings?.default_payment_method || 
+                                 paymentMethods.data.length > 0;
+
+        return res.json({
+          hasAccount: true,
+          onboardingComplete: hasPaymentMethod,
+          isCustomer: true,
+          flow: 'customer',
+          customerId: customerId,
+          hasPaymentMethod: hasPaymentMethod,
+          paymentMethods: paymentMethods.data.map(pm => ({
+            id: pm.id,
+            brand: pm.card.brand,
+            last4: pm.card.last4
+          }))
+        });
+      } catch (stripeErr) {
+        if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
+          console.log(`Stale Stripe customer ID ${customerId} for law firm ${lawFirmId} — clearing`);
+          await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+          return res.json({
+            hasAccount: false,
+            onboardingComplete: false,
+            isCustomer: true,
+            flow: 'customer',
+            note: 'Previous payment setup was invalid and has been cleared. Please set up again.'
+          });
+        }
+        throw stripeErr;
+      }
     }
 
     // For clients and medical providers (Connect accounts)
@@ -518,19 +556,36 @@ router.get('/account-status', authenticateToken, async (req, res) => {
     }
 
     // Check account status with Stripe
-    const account = await stripe.accounts.retrieve(stripeAccountId);
+    try {
+      const account = await stripe.accounts.retrieve(stripeAccountId);
 
-    // For recipients, payouts_enabled is the key indicator
-    res.json({
-      hasAccount: true,
-      onboardingComplete: account.details_submitted && account.payouts_enabled,
-      isCustomer: false,
-      flow: 'connect',
-      accountId: stripeAccountId,
-      chargesEnabled: account.charges_enabled,
-      payoutsEnabled: account.payouts_enabled,
-      detailsSubmitted: account.details_submitted
-    });
+      res.json({
+        hasAccount: true,
+        onboardingComplete: account.details_submitted && account.payouts_enabled,
+        isCustomer: false,
+        flow: 'connect',
+        accountId: stripeAccountId,
+        chargesEnabled: account.charges_enabled,
+        payoutsEnabled: account.payouts_enabled,
+        detailsSubmitted: account.details_submitted
+      });
+    } catch (stripeErr) {
+      if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
+        console.log(`Stale Stripe account ID ${stripeAccountId} for user ${userId} — clearing`);
+        const clearQuery = userType === 'medical_provider'
+          ? 'UPDATE medical_providers SET stripe_account_id = NULL WHERE id = $1'
+          : 'UPDATE users SET stripe_account_id = NULL WHERE id = $1';
+        await db.query(clearQuery, [userId]);
+        return res.json({
+          hasAccount: false,
+          onboardingComplete: false,
+          isCustomer: false,
+          flow: 'connect',
+          note: 'Previous payment setup was invalid and has been cleared. Please set up again.'
+        });
+      }
+      throw stripeErr;
+    }
 
   } catch (error) {
     console.error('Error checking account status:', error);
