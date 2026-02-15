@@ -1406,6 +1406,112 @@ async function sendPasswordResetConfirmationEmail(toEmail, userType) {
   return sendEmail(toEmail, subject, html);
 }
 
+async function sendSettlementStatementEmail(toEmail, recipientName, statementData) {
+  const subject = `Settlement Statement - ${statementData.caseName || 'Case'}`;
+  
+  const formatCurrency = (val) => {
+    const num = parseFloat(val) || 0;
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  let liensHtml = '';
+  if (statementData.liens && statementData.liens.length > 0) {
+    const lienRows = statementData.liens.map(l => `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${l.providerName || 'Unknown Provider'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(l.originalBillAmount)}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${formatCurrency(l.lienAmount)}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${l.negotiatedAmount ? formatCurrency(l.negotiatedAmount) : '-'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${(l.status || 'pending').toUpperCase()}</td>
+      </tr>
+    `).join('');
+    
+    liensHtml = `
+      <h3 style="color: #1e3a5f; margin-top: 25px;">Medical Liens</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #d1d5db;">Provider</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Original Bill</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Lien Amount</th>
+            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #d1d5db;">Negotiated</th>
+            <th style="padding: 8px; text-align: center; border-bottom: 2px solid #d1d5db;">Status</th>
+          </tr>
+        </thead>
+        <tbody>${lienRows}</tbody>
+      </table>
+    `;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><style>${baseStyles}</style></head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Settlement Statement</h1>
+          <p>Verdict Path</p>
+        </div>
+        <div class="content">
+          <p>Dear ${recipientName},</p>
+          <p>Please find the settlement statement details below:</p>
+          
+          <div class="info-box">
+            <h3 style="margin-top: 0; color: #1e3a5f;">Case Information</h3>
+            <table style="width: 100%;">
+              <tr><td style="padding: 4px 0; color: #6b7280; width: 180px;">Case Name:</td><td style="padding: 4px 0; font-weight: bold;">${statementData.caseName || 'N/A'}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Case Number:</td><td style="padding: 4px 0;">${statementData.caseNumber || 'N/A'}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Client:</td><td style="padding: 4px 0;">${statementData.clientName || 'N/A'}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Insurance Company:</td><td style="padding: 4px 0;">${statementData.insuranceCompanyName || 'N/A'}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Claim Number:</td><td style="padding: 4px 0;">${statementData.insuranceClaimNumber || 'N/A'}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Settlement Date:</td><td style="padding: 4px 0;">${formatDate(statementData.settlementDate)}</td></tr>
+              <tr><td style="padding: 4px 0; color: #6b7280;">Status:</td><td style="padding: 4px 0; font-weight: bold;">${(statementData.status || 'pending').replace(/_/g, ' ').toUpperCase()}</td></tr>
+            </table>
+          </div>
+
+          <div class="info-box">
+            <h3 style="margin-top: 0; color: #1e3a5f;">Financial Summary</h3>
+            <table style="width: 100%;">
+              <tr><td style="padding: 6px 0; font-size: 16px;">Gross Settlement Amount:</td><td style="padding: 6px 0; text-align: right; font-size: 16px; font-weight: bold;">$${formatCurrency(statementData.grossSettlementAmount)}</td></tr>
+              <tr style="color: #dc2626;"><td style="padding: 6px 0;">Attorney Fees:</td><td style="padding: 6px 0; text-align: right;">- $${formatCurrency(statementData.attorneyFees)}</td></tr>
+              <tr style="color: #dc2626;"><td style="padding: 6px 0;">Attorney Costs:</td><td style="padding: 6px 0; text-align: right;">- $${formatCurrency(statementData.attorneyCosts)}</td></tr>
+              <tr style="color: #dc2626;"><td style="padding: 6px 0;">Medical Liens:</td><td style="padding: 6px 0; text-align: right;">- $${formatCurrency(statementData.totalMedicalLiens)}</td></tr>
+              <tr style="border-top: 2px solid #1e3a5f;"><td style="padding: 10px 0; font-size: 18px; font-weight: bold; color: #1e3a5f;">Net to Client:</td><td style="padding: 10px 0; text-align: right; font-size: 18px; font-weight: bold; color: #16a34a;">$${formatCurrency(statementData.netToClient)}</td></tr>
+            </table>
+          </div>
+
+          ${statementData.ioltaDepositAmount ? `
+          <div class="success-box">
+            <strong>IOLTA Deposit</strong><br/>
+            Amount: $${formatCurrency(statementData.ioltaDepositAmount)}<br/>
+            Reference: ${statementData.ioltaReferenceNumber || 'N/A'}<br/>
+            Date: ${formatDate(statementData.ioltaDepositDate)}
+          </div>
+          ` : ''}
+
+          ${liensHtml}
+          
+          <p style="margin-top: 25px; color: #6b7280; font-size: 12px;">
+            This settlement statement was generated by Verdict Path on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
+            If you have questions about this statement, please contact your attorney.
+          </p>
+          
+          ${emailFooter}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  return sendEmail(toEmail, subject, html);
+}
+
 module.exports = {
   sendCredentialEmail,
   sendPasswordChangeConfirmation,
@@ -1432,5 +1538,6 @@ module.exports = {
   sendHIPAAAuditAlertEmail,
   sendNotificationCCEmail,
   sendPasswordResetEmail,
-  sendPasswordResetConfirmationEmail
+  sendPasswordResetConfirmationEmail,
+  sendSettlementStatementEmail
 };

@@ -4,7 +4,7 @@ const db = require('../config/db');
 const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const { authenticateToken, isLawFirm } = require('../middleware/auth');
 const { requirePremiumLawFirm } = require('../middleware/premiumAccess');
-const { sendSettlementCreatedEmail, sendLienPaymentEmail, sendIOLTADepositConfirmationEmail } = require('../services/emailService');
+const { sendSettlementCreatedEmail, sendLienPaymentEmail, sendIOLTADepositConfirmationEmail, sendSettlementStatementEmail } = require('../services/emailService');
 
 const PLATFORM_FEE = 200;
 
@@ -211,11 +211,12 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
     const liensResult = await db.query(`
       SELECT 
         ml.*,
-        mp.provider_name,
-        mp.email as provider_email,
+        COALESCE(mp.provider_name, ml.manual_provider_name) as provider_name,
+        COALESCE(mp.email, ml.manual_provider_email) as provider_email,
+        COALESCE(mp.phone_number, ml.manual_provider_phone) as provider_phone,
         mp.stripe_account_id as provider_stripe_account
       FROM medical_liens ml
-      JOIN medical_providers mp ON ml.medical_provider_id = mp.id
+      LEFT JOIN medical_providers mp ON ml.medical_provider_id = mp.id
       WHERE ml.settlement_id = $1
       ORDER BY ml.created_at DESC
     `, [id]);
@@ -388,6 +389,9 @@ router.post('/:id/liens', authenticateToken, isLawFirm, requirePremiumLawFirm, a
     const lawFirmId = req.user.id;
     const {
       medicalProviderId,
+      manualProviderName,
+      manualProviderEmail,
+      manualProviderPhone,
       originalBillAmount,
       lienAmount,
       lienReceivedDate,
@@ -395,9 +399,18 @@ router.post('/:id/liens', authenticateToken, isLawFirm, requirePremiumLawFirm, a
       notes
     } = req.body;
 
-    if (!medicalProviderId || !originalBillAmount || !lienAmount) {
+    const hasConnectedProvider = medicalProviderId && medicalProviderId !== '';
+    const hasManualProvider = manualProviderName && manualProviderName.trim() !== '';
+
+    if (!hasConnectedProvider && !hasManualProvider) {
       return res.status(400).json({ 
-        error: 'Medical provider ID, original bill amount, and lien amount are required' 
+        error: 'Either a connected medical provider or manual provider name is required' 
+      });
+    }
+
+    if (!originalBillAmount || !lienAmount) {
+      return res.status(400).json({ 
+        error: 'Original bill amount and lien amount are required' 
       });
     }
 
@@ -416,12 +429,16 @@ router.post('/:id/liens', authenticateToken, isLawFirm, requirePremiumLawFirm, a
     const result = await db.query(`
       INSERT INTO medical_liens (
         settlement_id, law_firm_id, client_id, medical_provider_id,
+        manual_provider_name, manual_provider_email, manual_provider_phone,
         original_bill_amount, lien_amount, lien_received_date,
         lien_document_url, notes, status, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending', $13)
       RETURNING *
     `, [
-      id, lawFirmId, clientId, medicalProviderId,
+      id, lawFirmId, clientId, hasConnectedProvider ? medicalProviderId : null,
+      hasManualProvider ? manualProviderName.trim() : null,
+      manualProviderEmail ? manualProviderEmail.trim() : null,
+      manualProviderPhone ? manualProviderPhone.trim() : null,
       originalBillAmount, lienAmount, lienReceivedDate,
       lienDocumentUrl, notes, createdBy
     ]);
@@ -567,9 +584,11 @@ router.post('/:settlementId/liens/:lienId/pay', authenticateToken, isLawFirm, re
     await client.query('BEGIN');
 
     const lienResult = await client.query(`
-      SELECT ml.*, mp.stripe_account_id, mp.provider_name, mp.email as provider_email
+      SELECT ml.*, mp.stripe_account_id, 
+        COALESCE(mp.provider_name, ml.manual_provider_name) as provider_name, 
+        COALESCE(mp.email, ml.manual_provider_email) as provider_email
       FROM medical_liens ml
-      JOIN medical_providers mp ON ml.medical_provider_id = mp.id
+      LEFT JOIN medical_providers mp ON ml.medical_provider_id = mp.id
       WHERE ml.id = $1 AND ml.law_firm_id = $2 AND ml.settlement_id = $3
     `, [lienId, lawFirmId, settlementId]);
 
@@ -978,6 +997,104 @@ router.put('/:id/calculate-distribution', authenticateToken, isLawFirm, requireP
   } catch (error) {
     console.error('Error calculating distribution:', error);
     res.status(500).json({ error: 'Failed to calculate distribution' });
+  }
+});
+
+router.post('/:id/send-statement', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const lawFirmId = req.user.id;
+    const { recipients } = req.body;
+
+    const result = await db.query(`
+      SELECT s.*, 
+        u.first_name || ' ' || u.last_name as client_name,
+        u.email as client_email
+      FROM settlements s
+      JOIN users u ON s.client_id = u.id
+      WHERE s.id = $1 AND s.law_firm_id = $2
+    `, [id, lawFirmId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Settlement not found' });
+    }
+
+    const settlement = result.rows[0];
+
+    const liensResult = await db.query(`
+      SELECT 
+        ml.*,
+        COALESCE(mp.provider_name, ml.manual_provider_name) as provider_name,
+        COALESCE(mp.email, ml.manual_provider_email) as provider_email
+      FROM medical_liens ml
+      LEFT JOIN medical_providers mp ON ml.medical_provider_id = mp.id
+      WHERE ml.settlement_id = $1
+      ORDER BY ml.created_at DESC
+    `, [id]);
+
+    const statementData = {
+      caseName: settlement.case_name,
+      caseNumber: settlement.case_number,
+      clientName: settlement.client_name,
+      insuranceCompanyName: settlement.insurance_company_name,
+      insuranceClaimNumber: settlement.insurance_claim_number,
+      settlementDate: settlement.settlement_date,
+      status: settlement.status,
+      grossSettlementAmount: parseFloat(settlement.gross_settlement_amount || 0),
+      attorneyFees: parseFloat(settlement.attorney_fees || 0),
+      attorneyCosts: parseFloat(settlement.attorney_costs || 0),
+      totalMedicalLiens: parseFloat(settlement.total_medical_liens || 0),
+      netToClient: parseFloat(settlement.net_to_client || 0),
+      ioltaDepositAmount: settlement.iolta_deposit_amount ? parseFloat(settlement.iolta_deposit_amount) : null,
+      ioltaReferenceNumber: settlement.iolta_reference_number,
+      ioltaDepositDate: settlement.iolta_deposit_date,
+      liens: liensResult.rows.map(l => ({
+        providerName: l.provider_name,
+        originalBillAmount: parseFloat(l.original_bill_amount),
+        lienAmount: parseFloat(l.lien_amount),
+        negotiatedAmount: l.negotiated_amount ? parseFloat(l.negotiated_amount) : null,
+        status: l.status
+      }))
+    };
+
+    const sentTo = [];
+    const errors = [];
+
+    const recipientList = recipients || ['client'];
+
+    if (recipientList.includes('client') && settlement.client_email) {
+      try {
+        await sendSettlementStatementEmail(settlement.client_email, settlement.client_name, statementData);
+        sentTo.push({ type: 'client', email: settlement.client_email, name: settlement.client_name });
+      } catch (e) {
+        errors.push({ type: 'client', email: settlement.client_email, error: e.message });
+      }
+    }
+
+    if (recipientList.includes('providers')) {
+      for (const lien of liensResult.rows) {
+        const providerEmail = lien.provider_email;
+        const providerName = lien.provider_name;
+        if (providerEmail && !sentTo.find(s => s.email === providerEmail)) {
+          try {
+            await sendSettlementStatementEmail(providerEmail, providerName, statementData);
+            sentTo.push({ type: 'provider', email: providerEmail, name: providerName });
+          } catch (e) {
+            errors.push({ type: 'provider', email: providerEmail, error: e.message });
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Settlement statement sent to ${sentTo.length} recipient(s)`,
+      sentTo,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (error) {
+    console.error('Error sending settlement statement:', error);
+    res.status(500).json({ error: 'Failed to send settlement statement' });
   }
 });
 

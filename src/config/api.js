@@ -245,6 +245,8 @@ export const API_ENDPOINTS = {
     LIST: `${API_BASE_URL}/api/settlements`,
     CREATE: `${API_BASE_URL}/api/settlements`,
     GET: (id) => `${API_BASE_URL}/api/settlements/${id}`,
+    ADD_LIEN: (id) => `${API_BASE_URL}/api/settlements/${id}/liens`,
+    SEND_STATEMENT: (id) => `${API_BASE_URL}/api/settlements/${id}/send-statement`,
   },
 
   // Disbursements (Settlement Disbursements)

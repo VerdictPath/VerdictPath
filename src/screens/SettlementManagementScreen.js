@@ -95,6 +95,24 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     notes: '',
   });
 
+  const [showAddLienModal, setShowAddLienModal] = useState(false);
+  const [showSendStatementModal, setShowSendStatementModal] = useState(false);
+  const [connectedProviders, setConnectedProviders] = useState([]);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+  const [sendingStatement, setSendingStatement] = useState(false);
+  const [lienProviderType, setLienProviderType] = useState('connected');
+
+  const [lienForm, setLienForm] = useState({
+    medicalProviderId: '',
+    manualProviderName: '',
+    manualProviderEmail: '',
+    manualProviderPhone: '',
+    originalBillAmount: '',
+    lienAmount: '',
+    lienReceivedDate: '',
+    notes: '',
+  });
+
   useEffect(() => {
     loadSettlements();
   }, []);
@@ -294,6 +312,225 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     }
   };
 
+  const loadConnectedProviders = async () => {
+    try {
+      setLoadingProviders(true);
+      const response = await apiRequest(API_ENDPOINTS.CONNECTIONS.MY_CONNECTIONS, {
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      });
+      const providers = (response.connections || []).filter(c => 
+        c.type === 'medical_provider' || c.userType === 'medical_provider' || c.userType === 'medicalprovider'
+      );
+      setConnectedProviders(providers);
+    } catch (error) {
+      setConnectedProviders([]);
+    } finally {
+      setLoadingProviders(false);
+    }
+  };
+
+  const handleOpenAddLien = () => {
+    setLienForm({
+      medicalProviderId: '',
+      manualProviderName: '',
+      manualProviderEmail: '',
+      manualProviderPhone: '',
+      originalBillAmount: '',
+      lienAmount: '',
+      lienReceivedDate: '',
+      notes: '',
+    });
+    setLienProviderType('connected');
+    loadConnectedProviders();
+    setShowAddLienModal(true);
+  };
+
+  const handleAddLien = async () => {
+    if (!selectedSettlement) return;
+
+    if (lienProviderType === 'connected' && !lienForm.medicalProviderId) {
+      alert('Required Field', 'Please select a medical provider');
+      return;
+    }
+    if (lienProviderType === 'manual' && !lienForm.manualProviderName.trim()) {
+      alert('Required Field', 'Please enter the provider name');
+      return;
+    }
+    if (!lienForm.originalBillAmount || parseCurrency(lienForm.originalBillAmount) <= 0) {
+      alert('Required Field', 'Please enter a valid original bill amount');
+      return;
+    }
+    if (!lienForm.lienAmount || parseCurrency(lienForm.lienAmount) <= 0) {
+      alert('Required Field', 'Please enter a valid lien amount');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const body = {
+        originalBillAmount: parseCurrency(lienForm.originalBillAmount),
+        lienAmount: parseCurrency(lienForm.lienAmount),
+        lienReceivedDate: lienForm.lienReceivedDate.trim() || undefined,
+        notes: lienForm.notes.trim() || undefined,
+      };
+
+      if (lienProviderType === 'connected') {
+        body.medicalProviderId = parseInt(lienForm.medicalProviderId);
+      } else {
+        body.manualProviderName = lienForm.manualProviderName.trim();
+        body.manualProviderEmail = lienForm.manualProviderEmail.trim() || undefined;
+        body.manualProviderPhone = lienForm.manualProviderPhone.trim() || undefined;
+      }
+
+      await apiRequest(API_ENDPOINTS.SETTLEMENTS.ADD_LIEN(selectedSettlement.id), {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        body: JSON.stringify(body),
+      });
+
+      alert('Success', 'Medical lien added successfully');
+      setShowAddLienModal(false);
+      loadSettlementDetail(selectedSettlement.id);
+    } catch (error) {
+      alert('Error', error.message || 'Failed to add medical lien');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendStatement = async (recipients) => {
+    if (!selectedSettlement) return;
+    
+    try {
+      setSendingStatement(true);
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.SEND_STATEMENT(selectedSettlement.id), {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+        body: JSON.stringify({ recipients }),
+      });
+
+      const count = response.sentTo ? response.sentTo.length : 0;
+      alert('Success', `Settlement statement sent to ${count} recipient(s)`);
+      setShowSendStatementModal(false);
+    } catch (error) {
+      alert('Error', error.message || 'Failed to send settlement statement');
+    } finally {
+      setSendingStatement(false);
+    }
+  };
+
+  const handlePrintStatement = () => {
+    if (Platform.OS === 'web') {
+      const settlement = detailData?.settlement;
+      const liens = detailData?.liens || [];
+      if (!settlement) return;
+
+      const formatC = (val) => (parseFloat(val) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const formatD = (d) => d ? new Date(d).toLocaleDateString('en-US') : 'N/A';
+
+      let liensRows = '';
+      if (liens.length > 0) {
+        liensRows = liens.map(l => `
+          <tr>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">${l.providerName || 'Unknown'}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">$${formatC(l.originalBillAmount)}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">$${formatC(l.lienAmount)}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">${l.negotiatedAmount ? '$' + formatC(l.negotiatedAmount) : '-'}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">${(l.status || '').toUpperCase()}</td>
+          </tr>
+        `).join('');
+      }
+
+      const printHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Settlement Statement - ${settlement.caseName || 'Case'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+            h1 { color: #1e3a5f; border-bottom: 3px solid #ca8a04; padding-bottom: 10px; }
+            h2 { color: #1e3a5f; margin-top: 30px; }
+            .info-table { width: 100%; margin: 15px 0; }
+            .info-table td { padding: 6px 0; }
+            .info-table td:first-child { color: #6b7280; width: 200px; }
+            .financial-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .financial-table td { padding: 8px 0; }
+            .deduction { color: #dc2626; }
+            .total-row { border-top: 2px solid #1e3a5f; font-weight: bold; font-size: 18px; }
+            .total-amount { color: #16a34a; }
+            .liens-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+            .liens-table th { padding: 8px; text-align: left; border-bottom: 2px solid #d1d5db; background: #f3f4f6; }
+            .liens-table td { padding: 8px; }
+            .footer { margin-top: 40px; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 15px; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <h1>Settlement Statement</h1>
+          <h2>Case Information</h2>
+          <table class="info-table">
+            <tr><td>Case Name:</td><td><strong>${settlement.caseName || 'N/A'}</strong></td></tr>
+            <tr><td>Case Number:</td><td>${settlement.caseNumber || 'N/A'}</td></tr>
+            <tr><td>Client:</td><td>${settlement.clientName || 'N/A'}</td></tr>
+            <tr><td>Insurance Company:</td><td>${settlement.insuranceCompanyName || 'N/A'}</td></tr>
+            ${settlement.insuranceClaimNumber ? `<tr><td>Claim Number:</td><td>${settlement.insuranceClaimNumber}</td></tr>` : ''}
+            <tr><td>Settlement Date:</td><td>${formatD(settlement.settlementDate)}</td></tr>
+            <tr><td>Status:</td><td><strong>${(settlement.status || '').replace(/_/g, ' ').toUpperCase()}</strong></td></tr>
+          </table>
+          
+          <h2>Financial Summary</h2>
+          <table class="financial-table">
+            <tr><td>Gross Settlement Amount:</td><td style="text-align:right;font-weight:bold;font-size:16px;">$${formatC(settlement.grossSettlementAmount)}</td></tr>
+            <tr class="deduction"><td>Attorney Fees:</td><td style="text-align:right;">- $${formatC(settlement.attorneyFees)}</td></tr>
+            <tr class="deduction"><td>Attorney Costs:</td><td style="text-align:right;">- $${formatC(settlement.attorneyCosts)}</td></tr>
+            <tr class="deduction"><td>Medical Liens:</td><td style="text-align:right;">- $${formatC(settlement.totalMedicalLiens)}</td></tr>
+            <tr class="total-row"><td>Net to Client:</td><td style="text-align:right;" class="total-amount">$${formatC(settlement.netToClient)}</td></tr>
+          </table>
+          
+          ${settlement.ioltaDepositAmount ? `
+          <h2>IOLTA Deposit</h2>
+          <table class="info-table">
+            <tr><td>Deposit Amount:</td><td><strong>$${formatC(settlement.ioltaDepositAmount)}</strong></td></tr>
+            <tr><td>Reference Number:</td><td>${settlement.ioltaReferenceNumber || 'N/A'}</td></tr>
+            <tr><td>Deposit Date:</td><td>${formatD(settlement.ioltaDepositDate)}</td></tr>
+          </table>
+          ` : ''}
+          
+          ${liens.length > 0 ? `
+          <h2>Medical Liens</h2>
+          <table class="liens-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th style="text-align:right;">Original Bill</th>
+                <th style="text-align:right;">Lien Amount</th>
+                <th style="text-align:right;">Negotiated</th>
+                <th style="text-align:center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>${liensRows}</tbody>
+          </table>
+          ` : ''}
+          
+          <div class="footer">
+            <p>This settlement statement was generated by Verdict Path on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.</p>
+            <p>If you have questions about this statement, please contact your attorney.</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(printHtml);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 500);
+      }
+    } else {
+      alert('Print', 'To print or save the settlement statement, please use the "Send Statement" feature to email it, or access the web version for printing.');
+    }
+  };
+
   const getFilteredSettlements = () => {
     if (filterStatus === 'all') return settlements;
     return settlements.filter(s => s.status === filterStatus);
@@ -334,7 +571,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
         <Text style={styles.backButtonText}>← Back</Text>
       </TouchableOpacity>
       <Text style={styles.headerTitle}>
-        {view === 'detail' ? 'Settlement Details' : 'Settlements'}
+        {view === 'detail' ? 'Settlement Statement' : 'Settlements'}
       </Text>
       {view === 'list' && (
         <TouchableOpacity style={styles.createButton} onPress={handleOpenCreateModal}>
@@ -554,10 +791,35 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
               </TouchableOpacity>
             )}
 
-            {liens.length > 0 && (
-              <View style={styles.sectionCard}>
+            <View style={styles.statementActionsRow}>
+              <TouchableOpacity
+                style={styles.statementActionButton}
+                onPress={() => setShowSendStatementModal(true)}
+              >
+                <Text style={styles.statementActionIcon}>📧</Text>
+                <Text style={styles.statementActionText}>Send Statement</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.statementActionButton}
+                onPress={handlePrintStatement}
+              >
+                <Text style={styles.statementActionIcon}>🖨️</Text>
+                <Text style={styles.statementActionText}>{Platform.OS === 'web' ? 'Print / Save' : 'Save / Share'}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>Medical Liens ({liens.length})</Text>
-                {liens.map(lien => (
+                <TouchableOpacity
+                  style={styles.addLienButton}
+                  onPress={handleOpenAddLien}
+                >
+                  <Text style={styles.addLienButtonText}>+ Add Lien</Text>
+                </TouchableOpacity>
+              </View>
+              {liens.length > 0 ? (
+                liens.map(lien => (
                   <View key={lien.id} style={styles.lienItem}>
                     <View style={styles.lienHeader}>
                       <Text style={styles.lienProvider}>{lien.providerName}</Text>
@@ -582,16 +844,11 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
                       )}
                     </View>
                   </View>
-                ))}
-              </View>
-            )}
-
-            {liens.length === 0 && (
-              <View style={styles.sectionCard}>
-                <Text style={styles.sectionTitle}>Medical Liens</Text>
-                <Text style={styles.emptyText}>No medical liens recorded</Text>
-              </View>
-            )}
+                ))
+              ) : (
+                <Text style={styles.emptyText}>No medical liens recorded. Tap "+ Add Lien" to add one.</Text>
+              )}
+            </View>
 
             {disbursements.length > 0 && (
               <View style={styles.sectionCard}>
@@ -954,12 +1211,239 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
     </Modal>
   );
 
+  const renderAddLienModal = () => (
+    <Modal
+      visible={showAddLienModal}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={() => setShowAddLienModal(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={() => setShowAddLienModal(false)}>
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>Add Medical Lien</Text>
+          <View style={{ width: 60 }} />
+        </View>
+        <ScrollView style={styles.modalScroll} contentContainerStyle={styles.modalContent}>
+          <Text style={styles.inputLabel}>Provider Type</Text>
+          <View style={styles.providerTypeRow}>
+            <TouchableOpacity
+              style={[styles.providerTypeButton, lienProviderType === 'connected' && styles.providerTypeButtonActive]}
+              onPress={() => setLienProviderType('connected')}
+            >
+              <Text style={[styles.providerTypeText, lienProviderType === 'connected' && styles.providerTypeTextActive]}>Connected Provider</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.providerTypeButton, lienProviderType === 'manual' && styles.providerTypeButtonActive]}
+              onPress={() => setLienProviderType('manual')}
+            >
+              <Text style={[styles.providerTypeText, lienProviderType === 'manual' && styles.providerTypeTextActive]}>Manual Entry</Text>
+            </TouchableOpacity>
+          </View>
+
+          {lienProviderType === 'connected' ? (
+            <>
+              <Text style={styles.inputLabel}>Select Provider *</Text>
+              {loadingProviders ? (
+                <ActivityIndicator size="small" color="#1E3A5F" style={{ marginBottom: 16 }} />
+              ) : (
+                <View style={styles.clientSelector}>
+                  {connectedProviders.map(provider => (
+                    <TouchableOpacity
+                      key={provider.id}
+                      style={[
+                        styles.clientOption,
+                        lienForm.medicalProviderId === String(provider.id) && styles.clientOptionSelected
+                      ]}
+                      onPress={() => setLienForm(prev => ({ ...prev, medicalProviderId: String(provider.id) }))}
+                    >
+                      <Text style={[
+                        styles.clientOptionText,
+                        lienForm.medicalProviderId === String(provider.id) && styles.clientOptionTextSelected
+                      ]}>
+                        {provider.providerName || provider.name || provider.email}
+                      </Text>
+                      {lienForm.medicalProviderId === String(provider.id) && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                  {connectedProviders.length === 0 && (
+                    <Text style={styles.noClientsText}>No connected providers. Use "Manual Entry" to add a provider.</Text>
+                  )}
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <Text style={styles.inputLabel}>Provider Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter provider name"
+                placeholderTextColor="#9CA3AF"
+                value={lienForm.manualProviderName}
+                onChangeText={v => setLienForm(prev => ({ ...prev, manualProviderName: v }))}
+              />
+              <Text style={styles.inputLabel}>Provider Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional"
+                placeholderTextColor="#9CA3AF"
+                value={lienForm.manualProviderEmail}
+                onChangeText={v => setLienForm(prev => ({ ...prev, manualProviderEmail: v }))}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <Text style={styles.inputLabel}>Provider Phone</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional"
+                placeholderTextColor="#9CA3AF"
+                value={lienForm.manualProviderPhone}
+                onChangeText={v => setLienForm(prev => ({ ...prev, manualProviderPhone: v }))}
+                keyboardType="phone-pad"
+              />
+            </>
+          )}
+
+          <Text style={styles.inputLabel}>Original Bill Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="$0.00"
+            placeholderTextColor="#9CA3AF"
+            value={lienForm.originalBillAmount}
+            onChangeText={v => setLienForm(prev => ({ ...prev, originalBillAmount: v }))}
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.inputLabel}>Lien Amount *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="$0.00"
+            placeholderTextColor="#9CA3AF"
+            value={lienForm.lienAmount}
+            onChangeText={v => setLienForm(prev => ({ ...prev, lienAmount: v }))}
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={styles.inputLabel}>Lien Received Date</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="MM/DD/YYYY (optional)"
+            placeholderTextColor="#9CA3AF"
+            value={lienForm.lienReceivedDate}
+            onChangeText={v => setLienForm(prev => ({ ...prev, lienReceivedDate: v }))}
+          />
+
+          <Text style={styles.inputLabel}>Notes</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Optional notes"
+            placeholderTextColor="#9CA3AF"
+            value={lienForm.notes}
+            onChangeText={v => setLienForm(prev => ({ ...prev, notes: v }))}
+            multiline
+            numberOfLines={3}
+          />
+
+          <TouchableOpacity
+            style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+            onPress={handleAddLien}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Text style={styles.submitButtonText}>Add Medical Lien</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+
+  const renderSendStatementModal = () => (
+    <Modal
+      visible={showSendStatementModal}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setShowSendStatementModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalCard}>
+          <Text style={styles.modalCardTitle}>Send Settlement Statement</Text>
+          <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>
+            Choose who should receive the settlement statement via email.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.sendOptionButton, sendingStatement && styles.submitButtonDisabled]}
+            onPress={() => handleSendStatement(['client'])}
+            disabled={sendingStatement}
+          >
+            {sendingStatement ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.sendOptionIcon}>👤</Text>
+                <Text style={styles.sendOptionText}>Send to Client Only</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sendOptionButton, { backgroundColor: '#7C3AED' }, sendingStatement && styles.submitButtonDisabled]}
+            onPress={() => handleSendStatement(['providers'])}
+            disabled={sendingStatement}
+          >
+            {sendingStatement ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.sendOptionIcon}>🏥</Text>
+                <Text style={styles.sendOptionText}>Send to Medical Providers Only</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sendOptionButton, { backgroundColor: '#16A34A' }, sendingStatement && styles.submitButtonDisabled]}
+            onPress={() => handleSendStatement(['client', 'providers'])}
+            disabled={sendingStatement}
+          >
+            {sendingStatement ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.sendOptionIcon}>📧</Text>
+                <Text style={styles.sendOptionText}>Send to All (Client + Providers)</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.modalCancelButton}
+            onPress={() => setShowSendStatementModal(false)}
+          >
+            <Text style={[styles.modalCancelButtonText, { textAlign: 'center' }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.screenContainer}>
       {view === 'list' ? renderListView() : renderDetailView()}
       {renderCreateModal()}
       {renderMarkSettledModal()}
       {renderIOLTAModal()}
+      {renderAddLienModal()}
+      {renderSendStatementModal()}
     </View>
   );
 };
@@ -1468,6 +1952,98 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFF',
     fontWeight: '700',
+  },
+  statementActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  statementActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  statementActionIcon: {
+    fontSize: 18,
+  },
+  statementActionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E3A5F',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addLienButton: {
+    backgroundColor: '#CA8A04',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addLienButtonText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  providerTypeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  providerTypeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+  },
+  providerTypeButtonActive: {
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
+  },
+  providerTypeText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  providerTypeTextActive: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  sendOptionButton: {
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  sendOptionIcon: {
+    fontSize: 18,
+  },
+  sendOptionText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
 
