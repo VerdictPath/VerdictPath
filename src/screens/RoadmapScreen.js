@@ -1115,16 +1115,15 @@ const RoadmapScreen = ({
 
   const handleBackPress = () => {
     if (readOnly && user) {
-      // If viewing a client/patient roadmap, go back to client/patient details
-      if (user.userType === 'lawfirm') {
+      const uType = user.userType || user.type || '';
+      if (uType === 'lawfirm') {
         onNavigate('lawfirm-client-details');
-      } else if (user.userType === 'medicalprovider') {
+      } else if (uType === 'medicalprovider' || uType === 'medical_provider') {
         onNavigate('medicalprovider-patient-details');
       } else {
         onNavigate('dashboard');
       }
     } else {
-      // Regular user viewing their own roadmap
       onNavigate('dashboard');
     }
   };
