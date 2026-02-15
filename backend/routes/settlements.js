@@ -133,6 +133,7 @@ router.get('/client/:clientId/available-negotiations', authenticateToken, isLawF
  * Auto-imports accepted negotiations from connected medical providers as liens
  */
 router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req, res) => {
+  const client = await db.getClient();
   try {
     const lawFirmId = req.user.id;
     const {
@@ -158,7 +159,7 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
       });
     }
 
-    const clientCheck = await db.query(
+    const clientCheck = await client.query(
       'SELECT 1 FROM law_firm_clients WHERE law_firm_id = $1 AND client_id = $2',
       [lawFirmId, clientId]
     );
@@ -167,9 +168,11 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
       return res.status(403).json({ error: 'Access denied to this client' });
     }
 
+    await client.query('BEGIN');
+
     const createdBy = req.user.lawFirmUserId || null;
 
-    const result = await db.query(`
+    const result = await client.query(`
       INSERT INTO settlements (
         law_firm_id, client_id, case_name, case_number,
         insurance_company_name, insurance_claim_number,
@@ -190,75 +193,64 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
     let autoImportedCount = 0;
 
     if (!skipAutoImport) {
-      try {
-        const acceptedNegotiations = await db.query(`
-          SELECT n.id, n.bill_description, n.bill_amount, n.current_offer,
-                 n.medical_provider_id
-          FROM negotiations n
-          WHERE n.law_firm_id = $1 
-            AND n.client_id = $2 
-            AND n.status = 'accepted'
-        `, [lawFirmId, clientId]);
+      const acceptedNegotiations = await client.query(`
+        SELECT n.id, n.bill_description, n.bill_amount, n.current_offer,
+               n.medical_provider_id
+        FROM negotiations n
+        WHERE n.law_firm_id = $1 
+          AND n.client_id = $2 
+          AND n.status = 'accepted'
+      `, [lawFirmId, clientId]);
 
-        for (const neg of acceptedNegotiations.rows) {
-          const alreadyExists = await db.query(`
-            SELECT 1 FROM medical_liens 
-            WHERE settlement_id = $1 
-              AND medical_provider_id = $2 
-              AND original_bill_amount = $3
-              AND lien_amount = $4
-          `, [settlement.id, neg.medical_provider_id, neg.bill_amount, neg.current_offer]);
-
-          if (alreadyExists.rows.length === 0) {
-            await db.query(`
-              INSERT INTO medical_liens (
-                settlement_id, law_firm_id, client_id, medical_provider_id,
-                original_bill_amount, lien_amount,
-                notes, status, created_by
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8)
-            `, [
-              settlement.id, lawFirmId, clientId, neg.medical_provider_id,
-              neg.bill_amount, neg.current_offer,
-              `Auto-imported from negotiation: ${neg.bill_description || 'N/A'}`,
-              createdBy
-            ]);
-            autoImportedCount++;
-          }
+      for (const neg of acceptedNegotiations.rows) {
+        const insertResult = await client.query(`
+          INSERT INTO medical_liens (
+            settlement_id, law_firm_id, client_id, medical_provider_id,
+            original_bill_amount, lien_amount, negotiation_id,
+            notes, status, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
+          ON CONFLICT (settlement_id, negotiation_id) WHERE negotiation_id IS NOT NULL DO NOTHING
+        `, [
+          settlement.id, lawFirmId, clientId, neg.medical_provider_id,
+          neg.bill_amount, neg.current_offer, neg.id,
+          `Auto-imported from negotiation: ${neg.bill_description || 'N/A'}`,
+          createdBy
+        ]);
+        if (insertResult.rowCount > 0) {
+          autoImportedCount++;
         }
-
-        if (autoImportedCount > 0) {
-          await db.query(`
-            UPDATE settlements 
-            SET total_medical_liens = (
-              SELECT COALESCE(SUM(lien_amount), 0) 
-              FROM medical_liens WHERE settlement_id = $1
-            ),
-            net_to_client = gross_settlement_amount - attorney_fees - attorney_costs - (
-              SELECT COALESCE(SUM(COALESCE(negotiated_amount, lien_amount)), 0) 
-              FROM medical_liens WHERE settlement_id = $1
-            ),
-            updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1
-          `, [settlement.id]);
-        }
-      } catch (importError) {
-        console.error('Error auto-importing negotiations as liens:', importError);
       }
     }
+
+    await client.query(`
+      UPDATE settlements 
+      SET total_medical_liens = (
+        SELECT COALESCE(SUM(lien_amount), 0) 
+        FROM medical_liens WHERE settlement_id = $1
+      ),
+      net_to_client = gross_settlement_amount - attorney_fees - attorney_costs - (
+        SELECT COALESCE(SUM(COALESCE(negotiated_amount, lien_amount)), 0) 
+        FROM medical_liens WHERE settlement_id = $1
+      ),
+      updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+    `, [settlement.id]);
+
+    await client.query('COMMIT');
 
     try {
       const clientResult = await db.query(
         'SELECT first_name, last_name, email FROM users WHERE id = $1',
         [clientId]
       );
-      const client = clientResult.rows[0];
+      const userData = clientResult.rows[0];
       
-      if (client && client.email) {
-        const clientName = client.first_name && client.last_name 
-          ? `${client.first_name} ${client.last_name}` 
+      if (userData && userData.email) {
+        const clientName = userData.first_name && userData.last_name 
+          ? `${userData.first_name} ${userData.last_name}` 
           : 'Client';
         
-        sendSettlementCreatedEmail(client.email, clientName, {
+        sendSettlementCreatedEmail(userData.email, clientName, {
           caseName: caseName,
           insuranceCompanyName: insuranceCompanyName,
           grossSettlementAmount: grossSettlementAmount
@@ -286,8 +278,11 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
       }
     });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Error creating settlement:', error);
     res.status(500).json({ error: 'Failed to create settlement' });
+  } finally {
+    client.release();
   }
 });
 
