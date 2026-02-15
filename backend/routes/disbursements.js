@@ -815,8 +815,16 @@ router.post('/process', authenticateToken, isLawFirm, requirePremiumLawFirm, asy
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Disbursement processing error:', error);
+    console.error('Disbursement error details:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n')
+    });
     res.status(500).json({ 
-      error: 'Failed to process disbursement' 
+      error: 'Failed to process disbursement',
+      details: error.message || 'Unknown error'
     });
   } finally {
     client.release();
