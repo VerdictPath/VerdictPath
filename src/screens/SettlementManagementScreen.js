@@ -1848,7 +1848,7 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowDisclaimerModal(false)}
+                onPress={() => { setShowDisclaimerModal(false); setDisclaimerSaved(false); setDisclaimerError(''); }}
               >
                 <Text style={styles.cancelButtonText}>Close</Text>
               </TouchableOpacity>
