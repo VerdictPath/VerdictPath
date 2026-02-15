@@ -34,6 +34,7 @@ import HIPAAFormsScreen from './src/screens/HIPAAFormsScreen';
 import LawFirmDashboardScreen from './src/screens/LawFirmDashboardScreen';
 import LawFirmClientDetailsScreen from './src/screens/LawFirmClientDetailsScreen';
 import DisbursementDashboardScreen from './src/screens/DisbursementDashboardScreen';
+import SettlementManagementScreen from './src/screens/SettlementManagementScreen';
 import ReceivedDisbursementsScreen from './src/screens/ReceivedDisbursementsScreen';
 import StripeConnectOnboardingScreen from './src/screens/StripeConnectOnboardingScreen';
 import MedicalProviderDashboardScreen from './src/screens/MedicalProviderDashboardScreen';
@@ -1840,6 +1841,16 @@ const AppContent = ({ user, setUser, currentScreen, setCurrentScreen }) => {
       {currentScreen === 'lawfirm-disbursements' && (
         <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
           <DisbursementDashboardScreen
+            user={user}
+            onBack={() => handleBackToLawFirmDashboard('notifications')}
+            onNavigate={handleNavigateInternal}
+          />
+        </View>
+      )}
+
+      {currentScreen === 'lawfirm-settlements' && (
+        <View style={{ flex: 1, marginBottom: Platform.OS === 'ios' ? 80 : 70 }}>
+          <SettlementManagementScreen
             user={user}
             onBack={() => handleBackToLawFirmDashboard('notifications')}
             onNavigate={handleNavigateInternal}

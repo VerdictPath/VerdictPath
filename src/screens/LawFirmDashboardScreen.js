@@ -225,6 +225,14 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
             <View style={styles.quickActionsRow}>
               <TouchableOpacity 
                 style={styles.quickActionButton}
+                onPress={() => onNavigate && onNavigate('lawfirm-settlements')}
+              >
+                <Text style={styles.quickActionIcon}>⚖️</Text>
+                <Text style={styles.quickActionText}>Settlements</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.quickActionButton}
                 onPress={() => onNavigate && onNavigate('lawfirm-negotiations')}
               >
                 <Text style={styles.quickActionIcon}>💰</Text>
@@ -324,6 +332,22 @@ const LawFirmDashboardScreen = ({ user, onNavigateToClient, onNavigate, onLogout
               <Text style={styles.notificationActionTitle}>Request Availability</Text>
               <Text style={styles.notificationActionDescription}>
                 Request depositions, mediations, and consultations from clients
+              </Text>
+            </View>
+            <Text style={styles.notificationActionArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationActionCard}
+            onPress={() => onNavigate && onNavigate('lawfirm-settlements')}
+          >
+            <View style={styles.notificationActionIcon}>
+              <Text style={styles.notificationActionIconText}>⚖️</Text>
+            </View>
+            <View style={styles.notificationActionContent}>
+              <Text style={styles.notificationActionTitle}>Settlements</Text>
+              <Text style={styles.notificationActionDescription}>
+                Create and manage client settlements, record IOLTA deposits
               </Text>
             </View>
             <Text style={styles.notificationActionArrow}>→</Text>

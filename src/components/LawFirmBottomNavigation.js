@@ -15,7 +15,7 @@ const LawFirmBottomNavigation = ({ currentScreen, onNavigate, notificationCount 
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
-        const actionScreens = ['lawfirm-assign-task', 'lawfirm-send-notification', 'lawfirm-notification-analytics', 'lawfirm-notifications', 'lawfirm-event-requests', 'lawfirm-negotiations', 'lawfirm-disbursements'];
+        const actionScreens = ['lawfirm-assign-task', 'lawfirm-send-notification', 'lawfirm-notification-analytics', 'lawfirm-notifications', 'lawfirm-event-requests', 'lawfirm-negotiations', 'lawfirm-disbursements', 'lawfirm-settlements'];
         const isActive = tab.screen === 'lawfirm-actions'
           ? actionScreens.includes(currentScreen)
           : currentScreen === tab.screen;
