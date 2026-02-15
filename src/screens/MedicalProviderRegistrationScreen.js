@@ -510,12 +510,12 @@ const MedicalProviderRegistrationScreen = ({
           <Text style={styles.label}>Provider Code</Text>
           <TextInput
             style={[styles.input, styles.codeInput]}
-            placeholder="VPM-XXXX"
+            placeholder="MED-XXXXXX"
             placeholderTextColor="rgba(255,255,255,0.5)"
             value={joinProviderCode}
             onChangeText={(text) => setJoinProviderCode(text.toUpperCase())}
             autoCapitalize="characters"
-            maxLength={8}
+            maxLength={10}
           />
 
           <Text style={styles.label}>Your First Name</Text>

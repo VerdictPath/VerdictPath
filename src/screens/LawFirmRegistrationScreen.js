@@ -426,12 +426,12 @@ const LawFirmRegistrationScreen = ({
           <Text style={styles.label}>Firm Code</Text>
           <TextInput
             style={[styles.input, styles.codeInput]}
-            placeholder="VPL-XXXX"
+            placeholder="LAW-XXXXXX"
             placeholderTextColor="rgba(255,255,255,0.5)"
             value={joinFirmCode}
             onChangeText={(text) => setJoinFirmCode(text.toUpperCase())}
             autoCapitalize="characters"
-            maxLength={8}
+            maxLength={10}
           />
 
           <Text style={styles.label}>Your First Name</Text>
