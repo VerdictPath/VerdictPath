@@ -573,11 +573,12 @@ router.post('/create-account', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating Stripe Connect account:', error.message || error);
+    console.error('Error creating Stripe Connect account:', error.type, error.code, error.message);
+    console.error('Full Stripe error details:', JSON.stringify({ type: error.type, code: error.code, param: error.param, statusCode: error.statusCode, rawMessage: error.raw?.message }));
     if (error.type === 'StripeInvalidRequestError') {
       if (error.message && error.message.includes('signed up for Connect')) {
         return res.status(400).json({ 
-          error: 'Payment disbursement service is being configured. This feature will be available soon. Please contact your administrator.',
+          error: 'Your Stripe platform account needs Connect enabled. Go to Stripe Dashboard > Settings > Connect to activate it. Stripe error: ' + error.message,
           setupRequired: true
         });
       }
