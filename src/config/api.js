@@ -248,6 +248,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `${API_BASE_URL}/api/settlements/${id}`,
     ADD_LIEN: (id) => `${API_BASE_URL}/api/settlements/${id}/liens`,
     SEND_STATEMENT: (id) => `${API_BASE_URL}/api/settlements/${id}/send-statement`,
+    CONNECTED_PROVIDERS: `${API_BASE_URL}/api/settlements/connected-providers`,
   },
 
   // Disbursements (Settlement Disbursements)

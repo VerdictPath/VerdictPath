@@ -406,13 +406,10 @@ const SettlementManagementScreen = ({ user, onBack, onNavigate }) => {
   const loadConnectedProviders = async () => {
     try {
       setLoadingProviders(true);
-      const response = await apiRequest(API_ENDPOINTS.CONNECTIONS.MY_CONNECTIONS, {
+      const response = await apiRequest(API_ENDPOINTS.SETTLEMENTS.CONNECTED_PROVIDERS, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
-      const providers = (response.connections || []).filter(c => 
-        c.type === 'medical_provider' || c.userType === 'medical_provider' || c.userType === 'medicalprovider'
-      );
-      setConnectedProviders(providers);
+      setConnectedProviders(response.providers || []);
     } catch (error) {
       setConnectedProviders([]);
     } finally {

@@ -183,6 +183,38 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
 });
 
 /**
+ * GET /api/settlements/connected-providers
+ * Get medical providers connected to this law firm
+ */
+router.get('/connected-providers', authenticateToken, isLawFirm, async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const result = await db.query(`
+      SELECT mp.id, mp.provider_name, mp.email, mp.phone_number, mp.provider_code, mp.stripe_account_id
+      FROM medical_provider_law_firms mplf
+      JOIN medical_providers mp ON mplf.medical_provider_id = mp.id
+      WHERE mplf.law_firm_id = $1 AND mplf.connection_status = 'active'
+      ORDER BY mp.provider_name ASC
+    `, [lawFirmId]);
+
+    res.json({
+      success: true,
+      providers: result.rows.map(p => ({
+        id: p.id,
+        providerName: p.provider_name,
+        email: p.email,
+        phone: p.phone_number,
+        providerCode: p.provider_code,
+        hasStripeAccount: !!p.stripe_account_id
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching connected providers:', error);
+    res.status(500).json({ error: 'Failed to fetch connected providers' });
+  }
+});
+
+/**
  * GET /api/settlements/:id
  * Get settlement details including liens
  */
