@@ -1073,6 +1073,75 @@ const deleteMedicalDocument = async (req, res) => {
   }
 };
 
+const deleteMedicalDocumentForPatient = async (req, res) => {
+  try {
+    const uploaderUserId = req.user.id;
+    const uploaderType = req.user.userType;
+    const { clientId, type, id } = req.params;
+
+    if (uploaderType !== 'medical_provider') {
+      return res.status(403).json({ error: 'Only medical providers can use this endpoint' });
+    }
+
+    let tableName;
+    if (type === 'record') {
+      tableName = 'medical_records';
+    } else if (type === 'bill') {
+      tableName = 'medical_billing';
+    } else {
+      return res.status(400).json({ error: 'Invalid document type' });
+    }
+
+    const mpResult = await pool.query('SELECT id FROM medical_providers WHERE email = $1', [req.user.email]);
+    if (mpResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Medical provider not found' });
+    }
+    const providerId = mpResult.rows[0].id;
+
+    const isAuthorized = await documentAccessService.verifyMedicalProviderPatientRelationship(providerId, clientId);
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'Not authorized to manage documents for this patient' });
+    }
+
+    const existing = await pool.query(
+      `SELECT id, file_name, s3_key, storage_type FROM ${tableName} WHERE id = $1 AND user_id = $2`,
+      [id, clientId]
+    );
+
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    const doc = existing.rows[0];
+
+    if (doc.s3_key) {
+      try {
+        await storageService.deleteFile(doc.s3_key, doc.storage_type);
+      } catch (e) {
+        console.warn('Failed to delete file from storage:', e.message);
+      }
+    }
+
+    await pool.query(`DELETE FROM ${tableName} WHERE id = $1 AND user_id = $2`, [id, clientId]);
+
+    await auditLogger.log({
+      actorId: uploaderUserId,
+      actorType: 'medical_provider',
+      action: 'DELETE_PATIENT_MEDICAL_DOCUMENT',
+      entityType: tableName,
+      entityId: id,
+      metadata: { fileName: doc.file_name, documentType: type, clientId, providerId },
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    res.json({ success: true, message: 'Document deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting patient medical document:', error);
+    res.status(500).json({ error: 'Failed to delete document' });
+  }
+};
+
 const viewMedicalDocument = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -1786,6 +1855,7 @@ module.exports = {
   getMyMedicalRecords,
   getMyMedicalBills,
   deleteMedicalDocument,
+  deleteMedicalDocumentForPatient,
   viewMedicalDocument,
   viewEvidenceDocument,
   uploadMedicalRecordOnBehalf,

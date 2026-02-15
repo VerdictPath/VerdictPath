@@ -197,6 +197,7 @@ router.get('/my-medical-bills', uploadController.getMyMedicalBills);
 router.get('/medical/:type/:id/view', uploadController.viewMedicalDocument);
 router.get('/evidence/:id/view', uploadController.viewEvidenceDocument);
 router.delete('/medical/:type/:id', uploadController.deleteMedicalDocument);
+router.delete('/medical-provider/:clientId/:type/:id', uploadController.deleteMedicalDocumentForPatient);
 
 router.post('/client/:clientId/medical-record',
   burstProtectionLimiter,

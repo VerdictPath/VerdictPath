@@ -3,17 +3,33 @@ import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform } from 'react
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 
-const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, minDate, maxDate, style }) => {
+const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, minDate, maxDate, style, variant = 'dark', accentColor }) => {
   const [showCalendar, setShowCalendar] = useState(false);
+  const isLight = variant === 'light';
+  const accent = accentColor || '#1E3A5F';
 
   const displayValue = value ? moment(value, ['YYYY-MM-DD', 'MM/DD/YYYY']).format('MM/DD/YYYY') : '';
   const calendarValue = value ? moment(value, ['YYYY-MM-DD', 'MM/DD/YYYY']).format('YYYY-MM-DD') : '';
 
   return (
     <View style={style}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <TouchableOpacity style={styles.inputButton} onPress={() => setShowCalendar(true)}>
-        <Text style={[styles.inputText, !displayValue && styles.placeholder]}>
+      {label ? <Text style={[styles.label, isLight && { color: '#333' }]}>{label}</Text> : null}
+      <TouchableOpacity
+        style={[
+          styles.inputButton,
+          isLight && {
+            backgroundColor: '#f9f9f9',
+            borderColor: '#ddd',
+            borderWidth: 1,
+          }
+        ]}
+        onPress={() => setShowCalendar(true)}
+      >
+        <Text style={[
+          styles.inputText,
+          isLight && { color: '#333' },
+          !displayValue && styles.placeholder
+        ]}>
           {displayValue || placeholder}
         </Text>
         <Text style={styles.icon}>📅</Text>
@@ -23,8 +39,8 @@ const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, 
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowCalendar(false)}>
           <View style={styles.popupContainer}>
             <TouchableOpacity activeOpacity={1}>
-              <View style={styles.popupHeader}>
-                <Text style={styles.popupTitle}>{label || 'Select Date'}</Text>
+              <View style={[styles.popupHeader, { backgroundColor: accent }]}>
+                <Text style={[styles.popupTitle, isLight && { color: '#fff' }]}>{label || 'Select Date'}</Text>
                 <TouchableOpacity onPress={() => setShowCalendar(false)}>
                   <Text style={styles.closeButton}>✕</Text>
                 </TouchableOpacity>
@@ -36,20 +52,20 @@ const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, 
                   setShowCalendar(false);
                 }}
                 markedDates={{
-                  [calendarValue]: { selected: true, selectedColor: '#1E3A5F' }
+                  [calendarValue]: { selected: true, selectedColor: accent }
                 }}
                 minDate={minDate}
                 maxDate={maxDate}
                 theme={{
                   backgroundColor: '#FFFFFF',
                   calendarBackground: '#FFFFFF',
-                  todayTextColor: '#1E3A5F',
-                  selectedDayBackgroundColor: '#1E3A5F',
+                  todayTextColor: accent,
+                  selectedDayBackgroundColor: accent,
                   selectedDayTextColor: '#ffffff',
                   dayTextColor: '#2d4150',
                   textDisabledColor: '#d9e1e8',
-                  arrowColor: '#1E3A5F',
-                  monthTextColor: '#1E3A5F',
+                  arrowColor: accent,
+                  monthTextColor: accent,
                   textDayFontSize: 16,
                   textMonthFontSize: 16,
                   textDayHeaderFontSize: 14
@@ -60,7 +76,7 @@ const DatePickerInput = ({ value, onChange, placeholder = 'Select date', label, 
                 onChange(today);
                 setShowCalendar(false);
               }}>
-                <Text style={styles.todayButtonText}>Today</Text>
+                <Text style={[styles.todayButtonText, { color: accent }]}>Today</Text>
               </TouchableOpacity>
             </TouchableOpacity>
           </View>

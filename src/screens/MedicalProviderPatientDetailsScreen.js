@@ -7,6 +7,7 @@ import { medicalProviderTheme as theme } from '../styles/medicalProviderTheme';
 import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
 import { LITIGATION_STAGES } from '../constants/mockData';
 import alert from '../utils/alert';
+import DatePickerInput from '../components/DatePickerInput';
 
 const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
   const { width } = useWindowDimensions();
@@ -382,6 +383,50 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
     return mimeMap[ext] || null;
   };
 
+  const [deletingDocId, setDeletingDocId] = useState(null);
+
+  const handleDeleteDocument = (docId, docType, fileName) => {
+    const typeLabel = docType === 'record' ? 'medical record' : 'medical bill';
+    alert(
+      'Delete ' + (docType === 'record' ? 'Record' : 'Bill'),
+      `Are you sure you want to delete this ${typeLabel}?\n\n"${fileName}"\n\nThis action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingDocId(docId);
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/uploads/medical-provider/${patientId}/${docType}/${docId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${user.token}`
+                }
+              });
+              const data = await response.json();
+              if (response.ok && data.success) {
+                alert('Success', `The ${typeLabel} has been deleted.`);
+                if (docType === 'record') {
+                  setMedicalRecords(prev => prev.filter(r => r.id !== docId));
+                } else {
+                  setMedicalBilling(prev => prev.filter(b => b.id !== docId));
+                }
+              } else {
+                alert('Error', data.error || `Failed to delete ${typeLabel}.`);
+              }
+            } catch (error) {
+              console.error('Error deleting document:', error);
+              alert('Error', `Failed to delete ${typeLabel}. Please try again.`);
+            } finally {
+              setDeletingDocId(null);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleUploadForPatient = (category) => {
     if (category === 'records') {
       setSelectedRecordType('Medical Record');
@@ -715,7 +760,20 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                       Uploaded: {new Date(record.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(record.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       {record.uploaded_by_name ? ` by ${record.uploaded_by_name}` : ''}
                     </Text>
-                    <Text style={styles.tapToView}>Tap to view</Text>
+                    <View style={styles.documentActions}>
+                      <Text style={styles.tapToView}>Tap to view</Text>
+                      <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={(e) => { e.stopPropagation && e.stopPropagation(); handleDeleteDocument(record.id, 'record', record.file_name); }}
+                        disabled={deletingDocId === record.id}
+                      >
+                        {deletingDocId === record.id ? (
+                          <ActivityIndicator size="small" color="#dc3545" />
+                        ) : (
+                          <Text style={styles.deleteBtnText}>🗑️ Delete</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
                   </TouchableOpacity>
                 ))
               )}
@@ -789,7 +847,20 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                         Uploaded: {new Date(bill.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(bill.uploaded_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                         {bill.uploaded_by_name ? ` by ${bill.uploaded_by_name}` : ''}
                       </Text>
-                      <Text style={styles.tapToView}>Tap to view</Text>
+                      <View style={styles.documentActions}>
+                        <Text style={styles.tapToView}>Tap to view</Text>
+                        <TouchableOpacity
+                          style={styles.deleteBtn}
+                          onPress={(e) => { e.stopPropagation && e.stopPropagation(); handleDeleteDocument(bill.id, 'bill', bill.file_name); }}
+                          disabled={deletingDocId === bill.id}
+                        >
+                          {deletingDocId === bill.id ? (
+                            <ActivityIndicator size="small" color="#dc3545" />
+                          ) : (
+                            <Text style={styles.deleteBtnText}>🗑️ Delete</Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </>
@@ -1033,13 +1104,15 @@ const MedicalProviderPatientDetailsScreen = ({ user, patientId, onBack }) => {
                 value={billFormData.facilityName}
                 onChangeText={(text) => setBillFormData(prev => ({ ...prev, facilityName: text }))}
               />
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6 }}>Date of Service</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, marginBottom: 12, backgroundColor: '#f9f9f9' }}
-                placeholder="MM/DD/YYYY"
-                placeholderTextColor="#999"
+              <DatePickerInput
                 value={billFormData.dateOfService}
-                onChangeText={(text) => setBillFormData(prev => ({ ...prev, dateOfService: text }))}
+                onChange={(dateStr) => setBillFormData(prev => ({ ...prev, dateOfService: dateStr }))}
+                placeholder="Select date"
+                label="Date of Service"
+                maxDate={new Date().toISOString().split('T')[0]}
+                style={{ marginBottom: 12 }}
+                variant="light"
+                accentColor={theme.colors.primary}
               />
               <Text style={{ fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6 }}>Description</Text>
               <TextInput
@@ -1312,6 +1385,27 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontStyle: 'italic',
     marginTop: 4,
+  },
+  documentActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(220, 53, 69, 0.3)',
+  },
+  deleteBtnText: {
+    fontSize: 12,
+    color: '#dc3545',
+    fontWeight: '600',
   },
   documentCard: {
     backgroundColor: theme.colors.offWhite,
