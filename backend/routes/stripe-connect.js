@@ -80,6 +80,24 @@ router.post('/create-customer', authenticateToken, async (req, res) => {
     const lawFirm = lawFirmResult.rows[0];
     let customerId = lawFirm.stripe_customer_id;
 
+    // Verify existing customer is valid, clear if stale/test-mode
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if (existing.deleted) {
+          customerId = null;
+        }
+      } catch (stripeErr) {
+        if (stripeErr.code === 'resource_missing' || stripeErr.statusCode === 404) {
+          console.log(`Clearing stale Stripe customer ${customerId} for law firm ${lawFirmId}`);
+          customerId = null;
+          await db.query('UPDATE law_firms SET stripe_customer_id = NULL WHERE id = $1', [lawFirmId]);
+        } else {
+          throw stripeErr;
+        }
+      }
+    }
+
     // Create customer if doesn't exist
     if (!customerId) {
       const customer = await stripe.customers.create({
