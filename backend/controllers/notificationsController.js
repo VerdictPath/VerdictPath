@@ -2214,8 +2214,9 @@ exports.getNotificationAnalytics = async (req, res) => {
     }
 
     const whereClause = conditions.join(' AND ');
+    const notifOnlyWhereClause = [...conditions, `type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder')`].join(' AND ');
 
-    // Get analytics data with average times
+    // Get analytics data with average times (exclude task-related notification types)
     const analyticsQuery = `
       SELECT 
         COUNT(*) as total_sent,
@@ -2239,29 +2240,26 @@ exports.getNotificationAnalytics = async (req, res) => {
         COUNT(CASE WHEN type = 'payment_notification' THEN 1 END) as payment_notification_count,
         COUNT(CASE WHEN type = 'document_request' THEN 1 END) as document_request_count,
         COUNT(CASE WHEN type = 'system_alert' THEN 1 END) as system_alert_count,
-        COUNT(CASE WHEN type = 'task_assigned' THEN 1 END) as task_assigned_count,
-        COUNT(CASE WHEN type = 'task_reminder' THEN 1 END) as task_reminder_count,
-        COUNT(CASE WHEN type = 'deadline_reminder' THEN 1 END) as deadline_reminder_count,
         COUNT(CASE WHEN type = 'general' THEN 1 END) as general_count
       FROM notifications
-      WHERE ${whereClause}
+      WHERE ${notifOnlyWhereClause}
     `;
 
     const analyticsResult = await pool.query(analyticsQuery, params);
 
-    // Get all-time stats
+    // Get all-time stats (exclude task-related types)
     const allTimeQuery = `
       SELECT 
         COUNT(*) as total_sent,
         COUNT(read_at) as total_read,
         COUNT(clicked_at) as total_clicked
       FROM notifications
-      WHERE sender_type = $1 AND sender_id = $2
+      WHERE sender_type = $1 AND sender_id = $2 AND type NOT IN ('task_assigned', 'task_reminder', 'deadline_reminder')
     `;
     const allTimeResult = await pool.query(allTimeQuery, [senderType, entityId]);
     const stats = analyticsResult.rows[0];
 
-    // Get recent notifications for activity timeline
+    // Get recent notifications for activity timeline (exclude task-related types)
     const recentQuery = `
       SELECT 
         id,
@@ -2274,7 +2272,7 @@ exports.getNotificationAnalytics = async (req, res) => {
         read_at,
         clicked_at
       FROM notifications
-      WHERE ${whereClause}
+      WHERE ${notifOnlyWhereClause}
       ORDER BY created_at DESC
       LIMIT 50
     `;
@@ -2454,9 +2452,6 @@ exports.getNotificationAnalytics = async (req, res) => {
           paymentNotification: parseInt(stats.payment_notification_count) || 0,
           documentRequest: parseInt(stats.document_request_count) || 0,
           systemAlert: parseInt(stats.system_alert_count) || 0,
-          taskAssigned: parseInt(stats.task_assigned_count) || 0,
-          taskReminder: parseInt(stats.task_reminder_count) || 0,
-          deadlineReminder: parseInt(stats.deadline_reminder_count) || 0,
           general: parseInt(stats.general_count) || 0
         },
         recentNotifications,
