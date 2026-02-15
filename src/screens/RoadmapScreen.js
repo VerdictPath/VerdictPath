@@ -299,7 +299,10 @@ const RoadmapScreen = ({
       const formData = new FormData();
       
       const fileUri = file.uri;
-      const fileName = file.fileName || file.name || `evidence_${Date.now()}.jpg`;
+      const rawFileName = file.fileName || file.name || `evidence_${Date.now()}.jpg`;
+      const fileExt = rawFileName.includes('.') ? rawFileName.substring(rawFileName.lastIndexOf('.')) : '';
+      const categoryPrefix = substageName ? substageName.replace(/[^a-zA-Z0-9 ]/g, '').trim() : 'Evidence';
+      const fileName = `${categoryPrefix}_${Date.now()}${fileExt}`;
       const fileType = file.mimeType || file.type || 'application/octet-stream';
       
       if (Platform.OS === 'web') {
@@ -357,11 +360,12 @@ const RoadmapScreen = ({
         [subStageId]: [...(prev[subStageId] || []), {
           id: docId,
           fileName: fileName,
+          title: substageName || fileName,
           uploadedAt: new Date().toISOString(),
         }]
       }));
 
-      alert('🏴‍☠️ Upload Successful!', `Your evidence "${fileName}" has been uploaded and will be available to your connected law firm.`);
+      alert('🏴‍☠️ Upload Successful!', `Your ${substageName || 'evidence'} "${fileName}" has been uploaded and will be available to your connected law firm.`);
 
       if (uploadData.substageCompleted) {
         onCompleteSubStage(stageId, subStageId, uploadData.coinsEarned || 0);
@@ -1013,7 +1017,7 @@ const RoadmapScreen = ({
                                         <Text style={styles.uploadedFileIcon}>📄</Text>
                                       )}
                                       <View style={styles.uploadedFileInfo}>
-                                        <Text style={styles.uploadedFileName} numberOfLines={1}>{file.fileName}</Text>
+                                        <Text style={styles.uploadedFileName} numberOfLines={1}>{file.title || file.fileName}</Text>
                                         {file.uploadedAt && (
                                           <Text style={styles.uploadedFileMeta}>
                                             {new Date(file.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(file.uploadedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
