@@ -879,7 +879,7 @@ const NotificationInboxScreen = ({ user, onNavigate, onNotificationPress, embedd
   // Use appropriate styles based on user type
   const currentStyles = isLawFirm ? lfStyles : (isMedicalProvider ? mpStyles : styles);
   const [activeTab, setActiveTab] = useState('inbox');
-  const [readFilter, setReadFilter] = useState('all');
+  const [readFilter, setReadFilter] = useState('unread');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
