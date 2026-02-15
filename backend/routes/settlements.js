@@ -183,6 +183,46 @@ router.post('/', authenticateToken, isLawFirm, requirePremiumLawFirm, async (req
 });
 
 /**
+ * GET /api/settlements/disclaimer
+ * Get the law firm's settlement disclaimer text
+ */
+router.get('/disclaimer', authenticateToken, isLawFirm, async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const result = await db.query(
+      'SELECT settlement_disclaimer FROM law_firms WHERE id = $1',
+      [lawFirmId]
+    );
+    res.json({
+      success: true,
+      disclaimer: result.rows[0]?.settlement_disclaimer || ''
+    });
+  } catch (error) {
+    console.error('Error fetching disclaimer:', error);
+    res.status(500).json({ error: 'Failed to fetch disclaimer' });
+  }
+});
+
+/**
+ * PUT /api/settlements/disclaimer
+ * Save the law firm's settlement disclaimer text
+ */
+router.put('/disclaimer', authenticateToken, isLawFirm, async (req, res) => {
+  try {
+    const lawFirmId = req.user.id;
+    const { disclaimer } = req.body;
+    await db.query(
+      'UPDATE law_firms SET settlement_disclaimer = $1, updated_at = NOW() WHERE id = $2',
+      [disclaimer || null, lawFirmId]
+    );
+    res.json({ success: true, message: 'Disclaimer saved successfully' });
+  } catch (error) {
+    console.error('Error saving disclaimer:', error);
+    res.status(500).json({ error: 'Failed to save disclaimer' });
+  }
+});
+
+/**
  * GET /api/settlements/connected-providers
  * Get medical providers connected to this law firm
  */
@@ -228,9 +268,11 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
         s.*,
         u.first_name || ' ' || u.last_name as client_name,
         u.email as client_email,
-        u.stripe_account_id as client_stripe_account
+        u.stripe_account_id as client_stripe_account,
+        lf.settlement_disclaimer
       FROM settlements s
       JOIN users u ON s.client_id = u.id
+      JOIN law_firms lf ON s.law_firm_id = lf.id
       WHERE s.id = $1 AND s.law_firm_id = $2
     `, [id, lawFirmId]);
 
@@ -285,6 +327,7 @@ router.get('/:id', authenticateToken, isLawFirm, async (req, res) => {
         settlementDate: settlement.settlement_date,
         status: settlement.status,
         notes: settlement.notes,
+        disclaimer: settlement.settlement_disclaimer || '',
         createdAt: settlement.created_at,
         updatedAt: settlement.updated_at
       },
@@ -1144,9 +1187,11 @@ router.post('/:id/send-statement', authenticateToken, isLawFirm, requirePremiumL
     const result = await db.query(`
       SELECT s.*, 
         u.first_name || ' ' || u.last_name as client_name,
-        u.email as client_email
+        u.email as client_email,
+        lf.settlement_disclaimer
       FROM settlements s
       JOIN users u ON s.client_id = u.id
+      JOIN law_firms lf ON s.law_firm_id = lf.id
       WHERE s.id = $1 AND s.law_firm_id = $2
     `, [id, lawFirmId]);
 
@@ -1183,6 +1228,7 @@ router.post('/:id/send-statement', authenticateToken, isLawFirm, requirePremiumL
       ioltaDepositAmount: settlement.iolta_deposit_amount ? parseFloat(settlement.iolta_deposit_amount) : null,
       ioltaReferenceNumber: settlement.iolta_reference_number,
       ioltaDepositDate: settlement.iolta_deposit_date,
+      disclaimer: settlement.settlement_disclaimer || '',
       liens: liensResult.rows.map(l => ({
         providerName: l.provider_name,
         originalBillAmount: parseFloat(l.original_bill_amount),
