@@ -36,7 +36,8 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadDisbursements(), loadBankInfo(), loadStripeStatus()]);
+      await Promise.all([loadDisbursements(), loadBankInfo()]);
+      loadStripeStatus();
     } finally {
       setLoading(false);
     }
