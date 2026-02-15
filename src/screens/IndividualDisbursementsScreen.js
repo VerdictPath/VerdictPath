@@ -6,28 +6,16 @@ import {
  ScrollView,
  TouchableOpacity,
  ActivityIndicator,
- RefreshControl,
- TextInput,
- Modal } from 'react-native';
+ RefreshControl } from 'react-native';
 import alert from '../utils/alert';
 import { theme } from '../styles/theme';
 import { apiRequest, API_ENDPOINTS } from '../config/api';
 
 const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
   const [disbursements, setDisbursements] = useState([]);
-  const [bankInfo, setBankInfo] = useState(null);
   const [stripeAccountStatus, setStripeAccountStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showBankModal, setShowBankModal] = useState(false);
-  const [savingBank, setSavingBank] = useState(false);
-  const [bankForm, setBankForm] = useState({
-    bankName: '',
-    accountHolder: '',
-    routingNumber: '',
-    accountNumber: '',
-    accountType: 'checking'
-  });
 
   useEffect(() => {
     loadData();
@@ -36,7 +24,7 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      await Promise.all([loadDisbursements(), loadBankInfo()]);
+      await Promise.all([loadDisbursements()]);
       loadStripeStatus();
     } finally {
       setLoading(false);
@@ -71,62 +59,10 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
     }
   };
 
-  const loadBankInfo = async () => {
-    try {
-      const response = await apiRequest(API_ENDPOINTS.BANK_INFO.GET, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-      setBankInfo(response.bankInfo);
-    } catch (error) {
-      console.error('Error loading bank info:', error);
-    }
-  };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  };
-
-  const handleSaveBankInfo = async () => {
-    if (!bankForm.bankName || !bankForm.accountHolder || !bankForm.routingNumber || !bankForm.accountNumber) {
-      alert('Missing Information', 'Please fill in all bank information fields.');
-      return;
-    }
-
-    if (!/^\d{9}$/.test(bankForm.routingNumber)) {
-      alert('Invalid Routing Number', 'Routing number must be exactly 9 digits.');
-      return;
-    }
-
-    if (!/^\d{4,17}$/.test(bankForm.accountNumber)) {
-      alert('Invalid Account Number', 'Account number must be between 4 and 17 digits.');
-      return;
-    }
-
-    try {
-      setSavingBank(true);
-      const response = await apiRequest(API_ENDPOINTS.BANK_INFO.SAVE, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: JSON.stringify(bankForm)
-      });
-
-      setBankInfo(response.bankInfo);
-      setShowBankModal(false);
-      setBankForm({ bankName: '', accountHolder: '', routingNumber: '', accountNumber: '', accountType: 'checking' });
-      alert('Success', 'Bank information saved securely.');
-    } catch (error) {
-      console.error('Error saving bank info:', error);
-      alert('Error', 'Failed to save bank information. Please try again.');
-    } finally {
-      setSavingBank(false);
-    }
   };
 
   const formatCurrency = (amount) => {
@@ -235,77 +171,6 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
     );
   };
 
-  const renderBankInfoSection = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Bank Information</Text>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={() => setShowBankModal(true)}
-        >
-          <Text style={styles.editButtonText}>{bankInfo ? 'Update' : 'Add'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {bankInfo ? (
-        <View style={styles.bankCard}>
-          <View style={styles.bankCardHeader}>
-            <Text style={styles.bankIcon}>🏦</Text>
-            <View style={styles.bankCardTitle}>
-              <Text style={styles.bankName}>{bankInfo.bankName}</Text>
-              <Text style={styles.accountHolder}>{bankInfo.accountHolder}</Text>
-            </View>
-            {bankInfo.isVerified && (
-              <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>Verified</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.bankCardDivider} />
-
-          <View style={styles.bankDetails}>
-            <View style={styles.bankDetailRow}>
-              <Text style={styles.bankDetailLabel}>Routing Number</Text>
-              <Text style={styles.bankDetailValue}>{bankInfo.routingNumberRedacted}</Text>
-            </View>
-            <View style={styles.bankDetailRow}>
-              <Text style={styles.bankDetailLabel}>Account Number</Text>
-              <Text style={styles.bankDetailValue}>{bankInfo.accountNumberRedacted}</Text>
-            </View>
-            <View style={styles.bankDetailRow}>
-              <Text style={styles.bankDetailLabel}>Account Type</Text>
-              <Text style={[styles.bankDetailValue, { textTransform: 'capitalize' }]}>
-                {bankInfo.accountType}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.securityNote}>
-            <Text style={styles.securityIcon}>🔒</Text>
-            <Text style={styles.securityText}>
-              Your bank information is encrypted and securely stored. Only partial numbers are displayed for your protection.
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.emptyBankCard}>
-          <Text style={styles.emptyBankIcon}>🏦</Text>
-          <Text style={styles.emptyBankTitle}>No Bank Information</Text>
-          <Text style={styles.emptyBankText}>
-            Add your bank account to receive settlement disbursements directly.
-          </Text>
-          <TouchableOpacity 
-            style={styles.addBankButton}
-            onPress={() => setShowBankModal(true)}
-          >
-            <Text style={styles.addBankButtonText}>Add Bank Account</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
   const renderDisbursementsSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Settlement Disbursements</Text>
@@ -358,136 +223,6 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
     </View>
   );
 
-  const renderBankModal = () => (
-    <Modal
-      visible={showBankModal}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setShowBankModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {bankInfo ? 'Update Bank Information' : 'Add Bank Information'}
-            </Text>
-            <TouchableOpacity onPress={() => setShowBankModal(false)}>
-              <Text style={styles.modalClose}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalBody}>
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Bank Name</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter bank name"
-                placeholderTextColor="#999"
-                value={bankForm.bankName}
-                onChangeText={(text) => setBankForm({ ...bankForm, bankName: text })}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Account Holder Name</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter account holder name"
-                placeholderTextColor="#999"
-                value={bankForm.accountHolder}
-                onChangeText={(text) => setBankForm({ ...bankForm, accountHolder: text })}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Routing Number (9 digits)</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter routing number"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={9}
-                value={bankForm.routingNumber}
-                onChangeText={(text) => setBankForm({ ...bankForm, routingNumber: text.replace(/\D/g, '') })}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Account Number</Text>
-              <TextInput
-                style={styles.formInput}
-                placeholder="Enter account number"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={17}
-                value={bankForm.accountNumber}
-                onChangeText={(text) => setBankForm({ ...bankForm, accountNumber: text.replace(/\D/g, '') })}
-                secureTextEntry={true}
-              />
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Account Type</Text>
-              <View style={styles.accountTypeButtons}>
-                <TouchableOpacity 
-                  style={[
-                    styles.accountTypeButton, 
-                    bankForm.accountType === 'checking' && styles.accountTypeButtonActive
-                  ]}
-                  onPress={() => setBankForm({ ...bankForm, accountType: 'checking' })}
-                >
-                  <Text style={[
-                    styles.accountTypeButtonText,
-                    bankForm.accountType === 'checking' && styles.accountTypeButtonTextActive
-                  ]}>Checking</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[
-                    styles.accountTypeButton, 
-                    bankForm.accountType === 'savings' && styles.accountTypeButtonActive
-                  ]}
-                  onPress={() => setBankForm({ ...bankForm, accountType: 'savings' })}
-                >
-                  <Text style={[
-                    styles.accountTypeButtonText,
-                    bankForm.accountType === 'savings' && styles.accountTypeButtonTextActive
-                  ]}>Savings</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.securityNote}>
-              <Text style={styles.securityIcon}>🔒</Text>
-              <Text style={styles.securityText}>
-                Your bank information is encrypted using AES-256 encryption and stored securely. We never store your full account number in plain text.
-              </Text>
-            </View>
-          </ScrollView>
-
-          <View style={styles.modalFooter}>
-            <TouchableOpacity 
-              style={styles.cancelButton}
-              onPress={() => setShowBankModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.saveButton, savingBank && styles.saveButtonDisabled]}
-              onPress={handleSaveBankInfo}
-              disabled={savingBank}
-            >
-              {savingBank ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.saveButtonText}>Save Securely</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -524,11 +259,8 @@ const IndividualDisbursementsScreen = ({ user, onBack, onNavigate }) => {
         }
       >
         {renderStripeConnectSection()}
-        {renderBankInfoSection()}
         {renderDisbursementsSection()}
       </ScrollView>
-
-      {renderBankModal()}
     </View>
   );
 };
